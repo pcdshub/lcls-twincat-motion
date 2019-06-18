@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_MotionStage" Id="{137c52b5-8983-4728-b719-31601503f20a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage
+VAR_IN_OUT
+	stMotionStage: DUT_MotionStage;
+END_VAR
+VAR
+	fbDriveVirtual: FB_DriveVirtual;
+	bExecute: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Start with an accurate status
+stMotionStage.Axis.ReadStatus();
+
+// Handle auto-enable timing
+CASE stMotionStage.nEnableMode OF
+	ENUM_StageEnableMode.STAGE_ENABLE_ALWAYS:
+		stMotionStage.bEnable := TRUE;
+		bExecute := stMotionStage.bExecute;
+	ENUM_StageEnableMode.STAGE_ENABLE_NEVER:
+		bExecute := stMotionStage.bExecute;
+	ENUM_StageEnableMode.STAGE_ENABLE_MOTION:
+		IF stMotionStage.bExecute THEN
+			stMotionStage.bEnable := TRUE;
+		END_IF
+		bExecute := stMotionStage.bExecute AND stMotionStage.bEnabled;
+END_CASE
+
+// Automatically fill the correct nCmdData for homing
+IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.EPICS_MOTOR_HOME THEN
+	stMotionStage.nCmdData := stMotionStage.nHomingMode;
+END_IF
+
+// Handle standard commands using ESS's FB
+fbDriveVirtual(En:=TRUE,
+	bEnable:=stMotionStage.bEnable,
+	bReset:=stMotionStage.bReset,
+	bExecute:=bExecute,
+	nCommand:=INT_TO_UINT(stMotionStage.nCommand),
+	nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
+	fVelocity:=stMotionStage.fVelocity,
+	fPosition:=stMotionStage.fPosition,
+	fAcceleration:=stMotionStage.fAcceleration,
+	fDeceleration:=stMotionStage.fDeceleration,
+	bLimitFwd:=stMotionStage.bLimFwd,
+	bLimitBwd:=stMotionStage.bLimBwd,
+	bHomeSensor:=stMotionStage.bHome,
+	fHomePosition:=stMotionStage.fHomePosition,
+	bPowerSelf:=stMotionStage.bPowerSelf,
+	nMotionAxisID=>stMotionStage.nMotionAxisID,
+	bBusy=>stMotionStage.bBusy,
+	bDone=>stMotionStage.bDone,
+	bError=>stMotionStage.bError,
+	sErrorMessage=>stMotionStage.sErrorMessage,
+	Axis:=stMotionStage.Axis);
+
+
+// Reset the FB if we have settled and there is no error
+IF stMotionStage.bDone THEN
+IF stMotionStage.Axis.Status.InTargetPosition THEN
+IF NOT stMotionStage.Axis.Status.Error THEN
+	bExecute := FALSE;
+	stMotionStage.bExecute := FALSE;
+	IF stMotionStage.nEnableMode = ENUM_StageEnableMode.STAGE_ENABLE_MOTION THEN
+		stMotionStage.bEnable := FALSE;
+	END_IF
+END_IF
+END_IF
+END_IF
+
+// Get a definitive bEnabled reading
+CASE stMotionStage.Axis.Status.MotionState OF
+	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
+		stMotionStage.bEnabled := FALSE;
+	ELSE
+		stMotionStage.bEnabled := TRUE;
+END_CASE
+
+// Handle the brake. TRUE means brake disabled.
+CASE stMotionStage.nBrakeMode OF
+	ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED:
+		stMotionStage.bBrake := stMotionStage.bEnabled;
+	ENUM_StageBrakeMode.STAGE_BRAKE_STANDSTILL:
+		IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+			stMotionStage.bBrake := FALSE;
+		ELSE
+			stMotionStage.bBrake := TRUE;
+		END_IF
+END_CASE
+CASE stMotionStage.Axis.Status.MotionState OF
+	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_ERRORSTOP:
+		stMotionStage.bBrake := FALSE;
+END_CASE
+
+// Sync the epics status struct
+stMotionStage.stAxisStatus := fbDriveVirtual.stAxisStatus;
+stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnabled;
+
+// Reset everything when bReset is flagged
+IF stMotionStage.bReset THEN
+	stMotionStage.bEnable := FALSE;
+	stMotionStage.bReset := FALSE;
+	stMotionStage.bExecute := FALSE;
+	bExecute := FALSE;
+END_IF
+
+// Ignore homing if we have the setting for it
+// e.g. for pre-calibrated absolute encoders
+IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE THEN
+	stMotionStage.stAxisStatus.bHomed := TRUE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_MotionStage">
+      <LineId Id="54" Count="0" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="90" Count="1" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="82" Count="3" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="150" Count="2" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="17" Count="2" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="23" Count="4" />
+      <LineId Id="29" Count="2" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="33" Count="1" />
+      <LineId Id="37" Count="1" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="103" Count="0" />
+      <LineId Id="99" Count="2" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="120" Count="1" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="47" Count="5" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="127" Count="2" />
+      <LineId Id="131" Count="3" />
+      <LineId Id="136" Count="1" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="130" Count="0" />
+      <LineId Id="138" Count="1" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="154" Count="0" />
+      <LineId Id="156" Count="1" />
+      <LineId Id="159" Count="1" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="155" Count="0" />
+      <LineId Id="143" Count="4" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

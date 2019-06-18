@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <DUT Name="DUT_MotionStage" Id="{10b5775d-5646-4d55-ad77-40abc3888de3}">
+    <Declaration><![CDATA[TYPE DUT_MotionStage :
+STRUCT
+	// Hardware
+	Axis: AXIS_REF;
+	bLimFwd AT %I*: BOOL;
+	bLimBwd AT %I*: BOOL;
+	bHome AT %I*: BOOL;
+	bBrake AT %Q*: BOOL;
+	
+	// Settings
+	bPowerSelf: BOOL:=TRUE;
+	nEnableMode: INT:=ENUM_StageEnableMode.STAGE_ENABLE_MOTION;
+	nBrakeMode: INT:=ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED;
+	nHomingMode: INT:=ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE;
+	
+	// Commands
+	bEnable: BOOL;
+	bReset: BOOL;
+	bExecute: BOOL;
+	
+	// Args
+	nCommand: INT;
+	nCmdData: INT;
+	fPosition: LREAL;
+	fVelocity: LREAL;
+	fAcceleration: LREAL;
+	fDeceleration: LREAL;
+	fHomePosition: LREAL;
+	
+	// Info
+	nMotionAxisID: UDINT:=0;
+	
+	// Returns
+	bEnabled: BOOL;
+	bBusy: BOOL;
+	bDone: BOOL;
+	bError: BOOL;
+	sErrorMessage: STRING;
+	stAxisStatus: DUT_AxisStatus_v0_01;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
