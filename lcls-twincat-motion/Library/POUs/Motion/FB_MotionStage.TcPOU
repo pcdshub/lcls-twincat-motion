@@ -50,24 +50,30 @@ fbDriveVirtual(En:=TRUE,
 	fHomePosition:=stMotionStage.fHomePosition,
 	bPowerSelf:=stMotionStage.bPowerSelf,
 	nMotionAxisID=>stMotionStage.nMotionAxisID,
-	bBusy=>stMotionStage.bBusy,
-	bDone=>stMotionStage.bDone,
 	bError=>stMotionStage.bError,
 	sErrorMessage=>stMotionStage.sErrorMessage,
 	Axis:=stMotionStage.Axis);
 
+IF NOT fbDriveVirtual.bDone THEN
+	stMotionStage.bDone := FALSE;
+END_IF
+IF fbDriveVirtual.bBusy THEN
+	stMotionStage.bBusy := TRUE;
+END_IF
 
 // Reset the FB if we have settled and there is no error
-IF stMotionStage.bDone THEN
-IF stMotionStage.Axis.Status.InTargetPosition THEN
-IF NOT stMotionStage.Axis.Status.Error THEN
-	bExecute := FALSE;
-	stMotionStage.bExecute := FALSE;
-	IF stMotionStage.nEnableMode = ENUM_StageEnableMode.STAGE_ENABLE_MOTION THEN
-		stMotionStage.bEnable := FALSE;
+IF fbDriveVirtual.bDone AND NOT fbDriveVirtual.bBusy THEN
+	IF stMotionStage.Axis.Status.InTargetPosition THEN
+		stMotionStage.bDone := TRUE;
+		stMotionStage.bBusy := FALSE;
+		IF NOT stMotionStage.Axis.Status.Error THEN
+			bExecute := FALSE;
+			stMotionStage.bExecute := FALSE;
+			IF stMotionStage.nEnableMode = ENUM_StageEnableMode.STAGE_ENABLE_MOTION THEN
+				stMotionStage.bEnable := FALSE;
+			END_IF
+		END_IF
 	END_IF
-END_IF
-END_IF
 END_IF
 
 // Get a definitive bEnabled reading
@@ -136,13 +142,15 @@ END_IF]]></ST>
       <LineId Id="29" Count="2" />
       <LineId Id="46" Count="0" />
       <LineId Id="45" Count="0" />
-      <LineId Id="33" Count="1" />
       <LineId Id="37" Count="1" />
       <LineId Id="40" Count="0" />
       <LineId Id="53" Count="0" />
+      <LineId Id="174" Count="5" />
       <LineId Id="56" Count="0" />
       <LineId Id="70" Count="1" />
       <LineId Id="119" Count="0" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="173" Count="0" />
       <LineId Id="118" Count="0" />
       <LineId Id="95" Count="0" />
       <LineId Id="103" Count="0" />
