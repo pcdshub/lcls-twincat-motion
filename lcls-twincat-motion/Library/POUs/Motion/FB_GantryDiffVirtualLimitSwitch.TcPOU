@@ -3,17 +3,16 @@
   <POU Name="FB_GantryDiffVirtualLimitSwitch" Id="{ae668e37-4b4c-400f-bda9-27f8d308d0b6}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_GantryDiffVirtualLimitSwitch
 VAR_INPUT
-	PEnc	:	ST_RenishawEnc;
-	SEnc	:	ST_RenishawEnc;
+	PEnc	:	ST_RenishawEnc; // Primary axis encoder (usually the upstream one)
+	SEnc	:	ST_RenishawEnc; // Secondary axis encoder (couples to the primary)
 	
-	GantDiffTol	:	LINT;
+	GantDiffTol	:	LINT;		// Gantry differenace tolerance in encoder counts
 END_VAR
 VAR_OUTPUT
-	PLimFwd		:	BOOL;
-	PLimBwd		:	BOOL;
-	
-	SLimFwd		:	BOOL;
-	SLimBwd		:	BOOL;
+	PLimFwd		:	BOOL; // Primary axis forward direction enable
+	PLimBwd		:	BOOL; // Primary axis reverse direction enable
+	SLimFwd		:	BOOL; // Secondary axis forward direction enable
+	SLimBwd		:	BOOL; // Secondary axis reverse direction enable
 END_VAR
 VAR
 	GantryDiff	:	LINT;
@@ -21,7 +20,7 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[(* Gantry Difference Virtual Limit Switch
-A. Wallace 17-2-15
+A. Wallace 2017-2-15
 
 Determines which direction is disabled due to it increasing the gantry difference.
 Refer to the ESD for actual conventions.
