@@ -59,6 +59,12 @@ IF fbDriveVirtual.bBusy THEN
 	stMotionStage.bDone := FALSE;
 END_IF
 
+IF stMotionStage.bError THEN
+	stMotionStage.bBusy := FALSE;
+	stMotionStage.bDone := FALSE;
+	stMotionStage.bEnable := FALSE;
+END_IF
+
 // Mark done if settled, then reset the FB if there is no error
 IF stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone THEN
 	stMotionStage.bDone := TRUE;
@@ -144,6 +150,9 @@ END_IF]]></ST>
       <LineId Id="174" Count="0" />
       <LineId Id="198" Count="0" />
       <LineId Id="211" Count="1" />
+      <LineId Id="221" Count="2" />
+      <LineId Id="225" Count="1" />
+      <LineId Id="224" Count="0" />
       <LineId Id="56" Count="0" />
       <LineId Id="70" Count="1" />
       <LineId Id="171" Count="0" />
