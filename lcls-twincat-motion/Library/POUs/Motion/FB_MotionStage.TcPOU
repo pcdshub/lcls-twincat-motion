@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_MotionStage" Id="{137c52b5-8983-4728-b719-31601503f20a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage
 VAR_IN_OUT
@@ -44,8 +44,8 @@ fbDriveVirtual(En:=TRUE,
 	fPosition:=stMotionStage.fPosition,
 	fAcceleration:=stMotionStage.fAcceleration,
 	fDeceleration:=stMotionStage.fDeceleration,
-	bLimitFwd:=stMotionStage.bLimFwd,
-	bLimitBwd:=stMotionStage.bLimBwd,
+	bLimitFwd:=stMotionStage.bLimFwd AND (stMotionStage.bLimGntFwd OR NOT stMotionStage.bGantryAxis),
+	bLimitBwd:=stMotionStage.bLimBwd AND (stMotionStage.bLimGntBwd OR NOT stMotionStage.bGantryAxis),
 	bHomeSensor:=stMotionStage.bHome,
 	fHomePosition:=stMotionStage.fHomePosition,
 	bPowerSelf:=stMotionStage.bPowerSelf,
@@ -147,13 +147,6 @@ END_IF]]></ST>
       <LineId Id="37" Count="1" />
       <LineId Id="40" Count="0" />
       <LineId Id="53" Count="0" />
-      <LineId Id="174" Count="0" />
-      <LineId Id="198" Count="0" />
-      <LineId Id="211" Count="1" />
-      <LineId Id="221" Count="2" />
-      <LineId Id="225" Count="1" />
-      <LineId Id="224" Count="0" />
-      <LineId Id="56" Count="0" />
       <LineId Id="70" Count="1" />
       <LineId Id="171" Count="0" />
       <LineId Id="173" Count="0" />

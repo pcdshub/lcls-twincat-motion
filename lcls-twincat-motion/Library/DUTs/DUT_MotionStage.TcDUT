@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="DUT_MotionStage" Id="{10b5775d-5646-4d55-ad77-40abc3888de3}">
     <Declaration><![CDATA[TYPE DUT_MotionStage :
 STRUCT
@@ -9,12 +9,21 @@ STRUCT
 	bLimBwd AT %I*: BOOL;
 	bHome AT %I*: BOOL;
 	bBrake AT %Q*: BOOL;
+	nEncCount	AT %I*	:	ULINT;
+	
+	//Psuedo-hardware
+	bLimGntFwd	:	BOOL := FALSE; //Forward virtual gantry limit switch
+	bLimGntBwd	:	BOOL := FALSE; //Reverse virtual gantry limit switch
 	
 	// Settings
 	bPowerSelf: BOOL:=TRUE;
 	nEnableMode: INT:=ENUM_StageEnableMode.STAGE_ENABLE_MOTION;
 	nBrakeMode: INT:=ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED;
 	nHomingMode: INT:=ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE;
+	
+	bGantryAxis	:	BOOL := FALSE; //Set true to activate gantry EPS
+	fGantryTol	:	LREAL := 0; //Set to gantry difference tolerance
+	nEncRef		:	ULINT	:=0;//Encoder count at which this axis is aligned with other axis
 	
 	// Commands
 	bEnable: BOOL;
