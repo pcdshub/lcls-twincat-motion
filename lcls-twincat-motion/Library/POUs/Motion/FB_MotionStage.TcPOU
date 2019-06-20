@@ -54,17 +54,13 @@ fbDriveVirtual(En:=TRUE,
 	sErrorMessage=>stMotionStage.sErrorMessage,
 	Axis:=stMotionStage.Axis);
 
-// bDone only used internally for aux commands
-IF fbDriveVirtual.bDone THEN
-	stMotionStage.bDone := TRUE;
-END_IF
 IF fbDriveVirtual.bBusy THEN
-	stMotionStage.bDone := FALSE;
 	stMotionStage.bBusy := TRUE;
+	stMotionStage.bDone := FALSE;
 END_IF
 
-// Reset the FB if we have settled and there is no error
-IF stMotionStage.Axis.Status.InTargetPosition AND NOT fbDriveVirtual.bBusy THEN
+// Mark done if settled, then reset the FB if there is no error
+IF stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone THEN
 	stMotionStage.bDone := TRUE;
 	stMotionStage.bBusy := FALSE;
 	IF NOT stMotionStage.Axis.Status.Error THEN
@@ -145,10 +141,9 @@ END_IF]]></ST>
       <LineId Id="37" Count="1" />
       <LineId Id="40" Count="0" />
       <LineId Id="53" Count="0" />
-      <LineId Id="189" Count="0" />
-      <LineId Id="174" Count="3" />
-      <LineId Id="188" Count="0" />
-      <LineId Id="178" Count="1" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="211" Count="1" />
       <LineId Id="56" Count="0" />
       <LineId Id="70" Count="1" />
       <LineId Id="171" Count="0" />
