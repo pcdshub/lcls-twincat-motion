@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_MotionStage" Id="{137c52b5-8983-4728-b719-31601503f20a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage
 VAR_IN_OUT
@@ -33,6 +33,10 @@ IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.EPICS_MOTOR_HOME THEN
 	stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
+//EPS Directional Enables
+stMotionStage.bLimAllFwd := stMotionStage.bLimFwd AND (stMotionStage.bLimGntFwd OR NOT stMotionStage.bGantryAxis);
+stMotionStage.bLimAllBwd := stMotionStage.bLimBwd AND (stMotionStage.bLimGntBwd OR NOT stMotionStage.bGantryAxis);
+
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
 	bEnable:=stMotionStage.bEnable,
@@ -44,8 +48,8 @@ fbDriveVirtual(En:=TRUE,
 	fPosition:=stMotionStage.fPosition,
 	fAcceleration:=stMotionStage.fAcceleration,
 	fDeceleration:=stMotionStage.fDeceleration,
-	bLimitFwd:=stMotionStage.bLimFwd,
-	bLimitBwd:=stMotionStage.bLimBwd,
+	bLimitFwd:=stMotionStage.bLimAllFwd,
+	bLimitBwd:=stMotionStage.bLimAllBwd,
 	bHomeSensor:=stMotionStage.bHome,
 	fHomePosition:=stMotionStage.fHomePosition,
 	bPowerSelf:=stMotionStage.bPowerSelf,
@@ -135,6 +139,7 @@ END_IF]]></ST>
       <LineId Id="148" Count="0" />
       <LineId Id="150" Count="2" />
       <LineId Id="149" Count="0" />
+      <LineId Id="185" Count="3" />
       <LineId Id="55" Count="0" />
       <LineId Id="42" Count="0" />
       <LineId Id="14" Count="0" />
@@ -147,13 +152,6 @@ END_IF]]></ST>
       <LineId Id="37" Count="1" />
       <LineId Id="40" Count="0" />
       <LineId Id="53" Count="0" />
-      <LineId Id="174" Count="0" />
-      <LineId Id="198" Count="0" />
-      <LineId Id="211" Count="1" />
-      <LineId Id="221" Count="2" />
-      <LineId Id="225" Count="1" />
-      <LineId Id="224" Count="0" />
-      <LineId Id="56" Count="0" />
       <LineId Id="70" Count="1" />
       <LineId Id="171" Count="0" />
       <LineId Id="173" Count="0" />
@@ -187,6 +185,11 @@ END_IF]]></ST>
       <LineId Id="155" Count="0" />
       <LineId Id="143" Count="4" />
       <LineId Id="9" Count="0" />
+      <LineId Id="174" Count="1" />
+      <LineId Id="102" Count="0" />
+      <LineId Id="176" Count="0" />
+      <LineId Id="104" Count="5" />
+      <LineId Id="2" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

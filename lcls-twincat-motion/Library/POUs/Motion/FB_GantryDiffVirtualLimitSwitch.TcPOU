@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_GantryDiffVirtualLimitSwitch" Id="{ae668e37-4b4c-400f-bda9-27f8d308d0b6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_GantryDiffVirtualLimitSwitch
+VAR_INPUT
+	PEnc: ST_RenishawAbsEnc; // Primary axis encoder (usually the upstream one)
+	SEnc: ST_RenishawAbsEnc; // Secondary axis encoder (couples to the primary)
+	
+	GantDiffTol: LINT;		// Gantry differenace tolerance in encoder counts
+END_VAR
+VAR_OUTPUT
+	PLimFwd: BOOL; // Primary axis forward direction enable
+	PLimBwd: BOOL; // Primary axis reverse direction enable
+	SLimFwd: BOOL; // Secondary axis forward direction enable
+	SLimBwd: BOOL; // Secondary axis reverse direction enable
+END_VAR
+VAR
+	GantryDiff: LINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* Gantry Difference Virtual Limit Switch
+A. Wallace 2017-2-15
+
+Determines which direction is disabled due to it increasing the gantry difference.
+Refer to the ESD for actual conventions.
+
+A positive gantry error refers to a CCW clocked assembly:
+eg. for X
+X1 upstream, X2 downstream. Primary axis is always upstream.
+Gantry difference > 0 when
+X2>X1
+Therefore
+X2 positive direction disabled
+X1 negative direction disabled
+
+Call before FB_MotionStage fb calls for the gantry axes.
+*)
+
+GantryDiff := ( ULINT_TO_LINT(PEnc.Count) - ULINT_TO_LINT(PEnc.Ref) ) - ( ULINT_TO_LINT(SEnc.Count) - ULINT_TO_LINT(SEnc.Ref) );
+
+IF ABS(GantryDiff) > GantDiffTol THEN
+	IF GantryDiff < 0  THEN
+		PLimBwd := FALSE;
+		SLimFwd := FALSE;
+	ELSE	
+		PLimBwd := TRUE;
+		SLimFwd := TRUE;
+	END_IF
+	IF GantryDiff > 0 THEN
+		PLimFwd := FALSE;
+		SLimBwd := FALSE;
+	ELSE
+		PLimFwd := TRUE;
+		SLimBwd := TRUE;
+	END_IF
+ELSE
+	//If there is no fault, all directions are enabled
+	PLimFwd := TRUE;
+	PLimBwd := TRUE;
+	SLimFwd := TRUE;
+	SLimBwd := TRUE;
+END_IF
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_GantryDiffVirtualLimitSwitch">
+      <LineId Id="243" Count="13" />
+      <LineId Id="306" Count="0" />
+      <LineId Id="305" Count="0" />
+      <LineId Id="257" Count="20" />
+      <LineId Id="280" Count="7" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
