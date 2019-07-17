@@ -36,7 +36,7 @@ IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.EPICS_MOTOR_HOME THEN
 	stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
-//EPS Directional Enables
+// EPS Directional Enables
 stMotionStage.bLimAllFwd := stMotionStage.bLimFwd AND (stMotionStage.bLimGntFwd OR NOT stMotionStage.bGantryAxis);
 stMotionStage.bLimAllBwd := stMotionStage.bLimBwd AND (stMotionStage.bLimGntBwd OR NOT stMotionStage.bGantryAxis);
 
@@ -95,6 +95,7 @@ END_IF
 
 // Get a definitive bEnabled reading
 CASE stMotionStage.Axis.Status.MotionState OF
+	// We are not enabled if there is an issue
 	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
 		stMotionStage.bEnabled := FALSE;
 	ELSE
