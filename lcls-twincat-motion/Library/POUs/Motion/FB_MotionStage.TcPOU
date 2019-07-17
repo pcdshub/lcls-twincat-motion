@@ -8,6 +8,9 @@ END_VAR
 VAR
 	fbDriveVirtual: FB_DriveVirtual;
 	bExecute: BOOL;
+	bFwdHit: BOOL;
+	bBwdHit: BOOL;
+	fbExecFallingEdge: F_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -69,8 +72,16 @@ IF stMotionStage.bError THEN
 	stMotionStage.bEnable := FALSE;
 END_IF
 
-// Mark done if settled, then reset the FB if there is no error
-IF stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone THEN
+// Check the limits and cancel execution if appropriate. Without this block we have infinite error spam
+bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bLimAllFwd;
+bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bLimAllBwd;
+IF bFwdHit OR bBwdHit THEN
+	stMotionStage.bExecute := FALSE;
+END_IF
+
+// Mark done if settled or if unexpected stop, then reset the FB if there is no error
+fbExecFallingEdge(CLK:=stMotionStage.bExecute);
+IF (stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone) OR fbExecFallingEdge.Q THEN
 	stMotionStage.bDone := TRUE;
 	stMotionStage.bBusy := FALSE;
 	IF NOT stMotionStage.Axis.Status.Error THEN
@@ -93,7 +104,7 @@ END_CASE
 // Handle the brake. TRUE means brake disabled.
 CASE stMotionStage.nBrakeMode OF
 	ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED:
-		stMotionStage.bBrake := stMotionStage.bEnabled;
+		stMotionStage.bBrake := stMotionStage.bEnabled AND stMotionStage.bExecute;
 	ENUM_StageBrakeMode.STAGE_BRAKE_STANDSTILL:
 		IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
 			stMotionStage.bBrake := FALSE;
@@ -160,14 +171,21 @@ END_IF]]></ST>
       <LineId Id="103" Count="0" />
       <LineId Id="99" Count="2" />
       <LineId Id="98" Count="0" />
+      <LineId Id="242" Count="0" />
+      <LineId Id="244" Count="4" />
+      <LineId Id="243" Count="0" />
       <LineId Id="121" Count="0" />
+      <LineId Id="250" Count="0" />
       <LineId Id="92" Count="0" />
       <LineId Id="58" Count="0" />
       <LineId Id="47" Count="5" />
       <LineId Id="124" Count="0" />
       <LineId Id="127" Count="2" />
-      <LineId Id="131" Count="3" />
-      <LineId Id="136" Count="1" />
+      <LineId Id="131" Count="1" />
+      <LineId Id="198" Count="0" />
+      <LineId Id="133" Count="1" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="207" Count="0" />
       <LineId Id="135" Count="0" />
       <LineId Id="130" Count="0" />
       <LineId Id="138" Count="1" />
@@ -178,7 +196,9 @@ END_IF]]></ST>
       <LineId Id="59" Count="0" />
       <LineId Id="142" Count="0" />
       <LineId Id="154" Count="0" />
-      <LineId Id="156" Count="1" />
+      <LineId Id="156" Count="0" />
+      <LineId Id="213" Count="0" />
+      <LineId Id="157" Count="0" />
       <LineId Id="159" Count="1" />
       <LineId Id="162" Count="0" />
       <LineId Id="158" Count="0" />
