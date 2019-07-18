@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="FB_StatePTPMove" Id="{a935a12e-6ee3-4ebb-8c29-e9b23b7cef37}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePTPMove
+VAR_INPUT
+	stPositionState: DUT_PositionState;
+	bExecute: BOOL;
+	bMPSOk: BOOL;
+	bEPSOk: BOOL;
+END_VAR
+VAR_IN_OUT
+	stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_OUTPUT
+	bAtState: BOOL;
+	bDone: BOOL;
+	bBusy: BOOL;
+	bError: BOOL;
+	sError: STRING;
+END_VAR
+VAR
+	bExecTrig: R_TRIG;
+	bExecEnd: F_TRIG;
+	fActPosition: LREAL;
+	fLowPos: LREAL;
+	fHighPos: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[bExecTrig(CLK:=bExecute);
+IF bExecTrig.Q AND bMPSOk AND bEPSOk THEN
+	IF stMotionStage.bDone AND NOT stMotionStage.bError THEN
+		stMotionStage.bExecute := TRUE;
+		stMotionStage.nCommand := ENUM_EpicsMotorCmd.EPICS_MOTOR_MOVE_ABS;
+		stMotionStage.fPosition := stPositionState.fPosition;
+		stMotionStage.fVelocity := stPositionState.fVelocity;
+		stMotionStage.fAcceleration := stPositionState.fAccel;
+		stMotionStage.fDeceleration := stPositionState.fDecel;
+		bDone := FALSE;
+		bBusy := TRUE;
+	END_IF
+END_IF
+bError := stMotionStage.bError;
+sError := stMotionStage.sErrorMessage;
+
+fActPosition := stMotionStage.stAxisStatus.fActPosition;
+fLowPos := stPositionState.fPosition - stPositionState.fDelta;
+fHighPos := stPositionState.fPosition + stPositionState.fDelta;
+IF (fLowPos < fActPosition) AND (fHighPos > fActPosition) THEN
+	bAtState := TRUE;
+	IF stMotionStage.bDone THEN
+		bDone := TRUE;
+		bBusy := FALSE;
+	END_IF
+ELSE
+	bAtState := FALSE;		
+END_IF
+
+bExecEnd(CLK:=bExecute);
+IF bExecEnd.Q AND bBusy THEN
+	stMotionStage.bExecute := FALSE;
+END_IF
+
+IF NOT stMotionStage.bExecute OR NOT bExecute THEN
+	bDone := TRUE;
+	bBusy := FALSE;
+END_IF]]></ST>
+    </Implementation>
+    <LineIds Name="FB_StatePTPMove">
+      <LineId Id="9" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="32" Count="3" />
+      <LineId Id="48" Count="1" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="56" Count="2" />
+      <LineId Id="65" Count="1" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="60" Count="2" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="81" Count="2" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="73" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
