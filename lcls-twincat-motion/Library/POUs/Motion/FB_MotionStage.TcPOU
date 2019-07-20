@@ -81,17 +81,19 @@ END_IF
 
 // Mark done if settled or if unexpected stop, then reset the FB if there is no error
 fbExecFallingEdge(CLK:=stMotionStage.bExecute);
-IF (stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone) OR fbExecFallingEdge.Q THEN
+IF (stMotionStage.Axis.Status.InTargetPosition AND NOT fbDriveVirtual.bBusy) OR fbExecFallingEdge.Q THEN
 	IF NOT stMotionStage.bDone THEN
 		stMotionStage.bDone := TRUE;
 		stMotionStage.bBusy := FALSE;
 		IF NOT stMotionStage.Axis.Status.Error THEN
 			bExecute := FALSE;
 			stMotionStage.bExecute := FALSE;
-			IF stMotionStage.nEnableMode = ENUM_StageEnableMode.STAGE_ENABLE_MOTION THEN
-				stMotionStage.bEnable := FALSE;
-			END_IF
 		END_IF
+	END_IF
+END_IF
+IF stMotionStage.nEnableMode = ENUM_StageEnableMode.STAGE_ENABLE_MOTION AND NOT bExecute THEN
+	IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+		stMotionStage.bEnable := FALSE;
 	END_IF
 END_IF
 
@@ -182,11 +184,15 @@ END_IF]]></ST>
       <LineId Id="92" Count="0" />
       <LineId Id="58" Count="0" />
       <LineId Id="251" Count="0" />
-      <LineId Id="47" Count="5" />
-      <LineId Id="124" Count="0" />
-      <LineId Id="127" Count="1" />
+      <LineId Id="47" Count="4" />
+      <LineId Id="128" Count="0" />
       <LineId Id="252" Count="0" />
       <LineId Id="129" Count="0" />
+      <LineId Id="254" Count="0" />
+      <LineId Id="256" Count="0" />
+      <LineId Id="255" Count="0" />
+      <LineId Id="257" Count="0" />
+      <LineId Id="253" Count="0" />
       <LineId Id="131" Count="1" />
       <LineId Id="198" Count="0" />
       <LineId Id="133" Count="1" />
