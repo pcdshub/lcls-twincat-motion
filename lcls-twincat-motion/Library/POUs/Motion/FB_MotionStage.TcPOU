@@ -109,17 +109,17 @@ END_CASE
 // Handle the brake. TRUE means brake disabled.
 CASE stMotionStage.nBrakeMode OF
 	ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED:
-		stMotionStage.bBrake := stMotionStage.bEnabled AND stMotionStage.bExecute;
+		stMotionStage.bBrakeRelease := stMotionStage.bEnabled AND stMotionStage.bExecute;
 	ENUM_StageBrakeMode.STAGE_BRAKE_STANDSTILL:
 		IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
-			stMotionStage.bBrake := FALSE;
+			stMotionStage.bBrakeRelease := FALSE;
 		ELSE
-			stMotionStage.bBrake := TRUE;
+			stMotionStage.bBrakeRelease := TRUE;
 		END_IF
 END_CASE
 CASE stMotionStage.Axis.Status.MotionState OF
 	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_ERRORSTOP:
-		stMotionStage.bBrake := FALSE;
+		stMotionStage.bBrakeRelease := FALSE;
 END_CASE
 
 // Sync the epics status struct
@@ -141,86 +141,8 @@ IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE THEN
 END_IF]]></ST>
     </Implementation>
     <LineIds Name="FB_MotionStage">
-      <LineId Id="54" Count="0" />
-      <LineId Id="43" Count="0" />
-      <LineId Id="88" Count="0" />
-      <LineId Id="73" Count="1" />
-      <LineId Id="76" Count="0" />
-      <LineId Id="79" Count="0" />
-      <LineId Id="90" Count="1" />
-      <LineId Id="77" Count="0" />
-      <LineId Id="82" Count="3" />
-      <LineId Id="75" Count="0" />
-      <LineId Id="61" Count="0" />
-      <LineId Id="148" Count="0" />
-      <LineId Id="150" Count="2" />
-      <LineId Id="149" Count="0" />
-      <LineId Id="185" Count="3" />
-      <LineId Id="55" Count="0" />
-      <LineId Id="42" Count="0" />
-      <LineId Id="14" Count="0" />
-      <LineId Id="17" Count="2" />
-      <LineId Id="21" Count="0" />
-      <LineId Id="23" Count="4" />
-      <LineId Id="29" Count="2" />
-      <LineId Id="46" Count="0" />
-      <LineId Id="45" Count="0" />
-      <LineId Id="37" Count="1" />
-      <LineId Id="40" Count="0" />
-      <LineId Id="53" Count="0" />
-      <LineId Id="70" Count="1" />
-      <LineId Id="171" Count="0" />
-      <LineId Id="173" Count="0" />
-      <LineId Id="118" Count="0" />
-      <LineId Id="95" Count="0" />
-      <LineId Id="103" Count="0" />
-      <LineId Id="99" Count="2" />
-      <LineId Id="98" Count="0" />
-      <LineId Id="242" Count="0" />
-      <LineId Id="244" Count="4" />
-      <LineId Id="243" Count="0" />
-      <LineId Id="121" Count="0" />
-      <LineId Id="250" Count="0" />
-      <LineId Id="92" Count="0" />
-      <LineId Id="58" Count="0" />
-      <LineId Id="251" Count="0" />
-      <LineId Id="47" Count="4" />
-      <LineId Id="128" Count="0" />
-      <LineId Id="252" Count="0" />
-      <LineId Id="129" Count="0" />
-      <LineId Id="254" Count="0" />
-      <LineId Id="256" Count="0" />
-      <LineId Id="255" Count="0" />
-      <LineId Id="257" Count="0" />
-      <LineId Id="253" Count="0" />
-      <LineId Id="131" Count="1" />
-      <LineId Id="198" Count="0" />
-      <LineId Id="133" Count="1" />
-      <LineId Id="136" Count="0" />
-      <LineId Id="207" Count="0" />
-      <LineId Id="135" Count="0" />
-      <LineId Id="130" Count="0" />
-      <LineId Id="138" Count="1" />
-      <LineId Id="141" Count="0" />
-      <LineId Id="140" Count="0" />
-      <LineId Id="96" Count="1" />
-      <LineId Id="41" Count="0" />
-      <LineId Id="59" Count="0" />
-      <LineId Id="142" Count="0" />
-      <LineId Id="154" Count="0" />
-      <LineId Id="156" Count="0" />
-      <LineId Id="213" Count="0" />
-      <LineId Id="157" Count="0" />
-      <LineId Id="159" Count="1" />
-      <LineId Id="162" Count="0" />
-      <LineId Id="158" Count="0" />
-      <LineId Id="155" Count="0" />
-      <LineId Id="143" Count="4" />
-      <LineId Id="9" Count="0" />
-      <LineId Id="174" Count="1" />
-      <LineId Id="102" Count="0" />
-      <LineId Id="176" Count="0" />
-      <LineId Id="104" Count="5" />
+      <LineId Id="269" Count="123" />
+      <LineId Id="109" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>
