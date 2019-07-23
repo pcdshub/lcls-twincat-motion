@@ -28,7 +28,7 @@ CASE stMotionStage.nEnableMode OF
 		IF stMotionStage.bExecute THEN
 			stMotionStage.bEnable := TRUE;
 		END_IF
-		bExecute := stMotionStage.bExecute AND stMotionStage.bEnabled;
+		bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
 END_CASE
 
 // Automatically fill the correct nCmdData for homing
@@ -101,15 +101,15 @@ END_IF
 CASE stMotionStage.Axis.Status.MotionState OF
 	// We are not enabled if there is an issue
 	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
-		stMotionStage.bEnabled := FALSE;
+		stMotionStage.bEnableDone := FALSE;
 	ELSE
-		stMotionStage.bEnabled := TRUE;
+		stMotionStage.bEnableDone := TRUE;
 END_CASE
 
 // Handle the brake. TRUE means brake disabled.
 CASE stMotionStage.nBrakeMode OF
 	ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED:
-		stMotionStage.bBrakeRelease := stMotionStage.bEnabled AND stMotionStage.bExecute;
+		stMotionStage.bBrakeRelease := stMotionStage.bEnableDone AND stMotionStage.bExecute;
 	ENUM_StageBrakeMode.STAGE_BRAKE_STANDSTILL:
 		IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
 			stMotionStage.bBrakeRelease := FALSE;
@@ -124,7 +124,7 @@ END_CASE
 
 // Sync the epics status struct
 stMotionStage.stAxisStatus := fbDriveVirtual.stAxisStatus;
-stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnabled;
+stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnableDone;
 
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
@@ -141,7 +141,7 @@ IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE THEN
 END_IF]]></ST>
     </Implementation>
     <LineIds Name="FB_MotionStage">
-      <LineId Id="269" Count="123" />
+      <LineId Id="404" Count="123" />
       <LineId Id="109" Count="0" />
     </LineIds>
   </POU>
