@@ -5,17 +5,17 @@
 STRUCT
 	// Hardware
 	Axis: AXIS_REF;
-	bLimFwd AT %I*: BOOL;
-	bLimBwd AT %I*: BOOL;
+	bLimitForwardEnable AT %I*: BOOL;
+	bLimitBackwardEnable AT %I*: BOOL;
 	bHome AT %I*: BOOL;
-	bBrake AT %Q*: BOOL;
+	bBrakeRelease AT %Q*: BOOL;
 	
 	// Psuedo-hardware
-	bLimAllFwd: BOOL:=FALSE; // Forward enable EPS summary
-	bLimAllBwd: BOOL:=FALSE; // Forward enable EPS summary 
+	bAllForwardEnable: BOOL:=FALSE; // Forward enable EPS summary
+	bAllBackwardEnable: BOOL:=FALSE; // Forward enable EPS summary
 	
-	bLimGntFwd: BOOL:=FALSE; // Forward virtual gantry limit switch
-	bLimGntBwd: BOOL:=FALSE; // Reverse virtual gantry limit switch
+	bGantryForwardEnable: BOOL:=FALSE; // Forward virtual gantry limit switch
+	bGantryBackwardEnable: BOOL:=FALSE; // Reverse virtual gantry limit switch
 	
 	// Settings
 	bPowerSelf: BOOL:=TRUE;
@@ -45,7 +45,7 @@ STRUCT
 	nMotionAxisID: UDINT:=0;
 	
 	// Returns
-	bEnabled: BOOL;
+	bEnableDone: BOOL;
 	bBusy: BOOL;
 	bDone: BOOL;
 	bError: BOOL;
