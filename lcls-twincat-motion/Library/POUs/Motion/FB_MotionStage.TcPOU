@@ -37,8 +37,8 @@ IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.EPICS_MOTOR_HOME THEN
 END_IF
 
 // EPS Directional Enables
-stMotionStage.bLimAllFwdOk := stMotionStage.bLimFwdOk AND (stMotionStage.bLimGntFwdOk OR NOT stMotionStage.bGantryAxis);
-stMotionStage.bLimAllBwdOk := stMotionStage.bLimBwdOk AND (stMotionStage.bLimGntBwdOk OR NOT stMotionStage.bGantryAxis);
+stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis);
+stMotionStage.bAllBackwardEnable := stMotionStage.bLimitBackwardEnable AND (stMotionStage.bGantryBackwardEnable OR NOT stMotionStage.bGantryAxis);
 
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
@@ -51,8 +51,8 @@ fbDriveVirtual(En:=TRUE,
 	fPosition:=stMotionStage.fPosition,
 	fAcceleration:=stMotionStage.fAcceleration,
 	fDeceleration:=stMotionStage.fDeceleration,
-	bLimitFwd:=stMotionStage.bLimAllFwdOk,
-	bLimitBwd:=stMotionStage.bLimAllBwdOk,
+	bLimitFwd:=stMotionStage.bAllForwardEnable,
+	bLimitBwd:=stMotionStage.bAllBackwardEnable,
 	bHomeSensor:=stMotionStage.bHome,
 	fHomePosition:=stMotionStage.fHomePosition,
 	bPowerSelf:=stMotionStage.bPowerSelf,
@@ -73,8 +73,8 @@ IF stMotionStage.bError THEN
 END_IF
 
 // Check the limits and cancel execution if appropriate. Without this block we have infinite error spam
-bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bLimAllFwdOk;
-bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bLimAllBwdOk;
+bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bAllForwardEnable;
+bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bAllBackwardEnable;
 IF bFwdHit OR bBwdHit THEN
 	stMotionStage.bExecute := FALSE;
 END_IF
