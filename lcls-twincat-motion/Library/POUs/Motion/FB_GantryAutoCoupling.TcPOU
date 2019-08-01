@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_GantryAutoCoupling" Id="{532dfcaf-6187-4140-aaad-e20a9bbe6b43}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_GantryAutoCoupling
+VAR_INPUT
+	fGantryTol : LREAL;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR_IN_OUT
+	Master : DUT_MotionStage;
+	MasterEnc : ST_RenishawAbsEnc;
+	Slave : DUT_MotionStage;
+	SlaveEnc : ST_RenishawAbsEnc;
+END_VAR
+VAR
+	gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
+	couple : MC_GEARIN;
+	decouple : MC_GEAROUT;
+	bGantryAlreadyCoupled : BOOL;
+	bExecuteCouple : BOOL;
+	bInitComplete : BOOL;
+	bExecuteDecouple : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Designate Master and SLave Axes
+Master.bGantryAxis := TRUE;
+Slave.bGantryAxis := TRUE;
+
+Master.fGantryTol := fGantryTol;
+Slave.fGantryTol := Master.fGantryTol;
+
+// Activate Gantry Virtual Limit Switch
+gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=LREAL_TO_LINT(Master.fGantryTol),
+				  PLimFwd=>Master.bLimGntFwd, PLimBwd=>Master.bLimGntBwd,
+				  SLimFwd=>Slave.bLimGntFwd, SLimBwd=>Slave.bLimGntBwd);
+
+// Coupling Status Bit
+bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
+
+// Make master and slave axes respect each other's limits
+IF bGantryAlreadyCoupled THEN
+	// Fwd limits
+	Master.bLimGntFwd := Master.bLimGntFwd AND Slave.bLimGntFwd AND Slave.bLimFwd;
+	Slave.bLimGntFwd := Master.bLimGntFwd AND Slave.bLimGntFwd AND Master.bLimFwd;
+	// Bwd limits
+	Master.bLimGntBwd := Master.bLimGntBwd AND Slave.bLimGntBwd AND Slave.bLimBwd;
+	Slave.bLimGntBwd := Master.bLimGntBwd AND Slave.bLimGntBwd AND Master.bLimBwd;
+END_IF
+
+// Coupling states
+// Auto-coupling at init and auto-reset of coupling boolean
+bExecuteCouple S= NOT bInitComplete;
+
+bExecuteCouple R= couple.Busy OR bGantryAlreadyCoupled;
+couple(Master:=Master.Axis, Slave:=Slave.Axis, Execute:=bExecuteCouple);
+
+bInitComplete S= bGantryAlreadyCoupled;
+
+// Decoupling with auto-reset of coupling boolean
+bExecuteDecouple R= decouple.Busy OR NOT bGantryAlreadyCoupled;
+decouple(Slave:=Slave.Axis, Execute:=bExecuteDecouple)]]></ST>
+    </Implementation>
+    <LineIds Name="FB_GantryAutoCoupling">
+      <LineId Id="17" Count="0" />
+      <LineId Id="14" Count="1" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="25" Count="2" />
+      <LineId Id="31" Count="2" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="37" Count="2" />
+      <LineId Id="43" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="44" Count="2" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="47" Count="2" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="54" Count="1" />
+      <LineId Id="57" Count="5" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
