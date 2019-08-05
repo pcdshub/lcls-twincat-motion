@@ -6,21 +6,23 @@ VAR_INPUT
 	fGantryTol : LREAL;
 END_VAR
 VAR_OUTPUT
+	bGantryAlreadyCoupled : BOOL;
 END_VAR
 VAR_IN_OUT
 	Master : DUT_MotionStage;
 	MasterEnc : ST_RenishawAbsEnc;
 	Slave : DUT_MotionStage;
 	SlaveEnc : ST_RenishawAbsEnc;
+	bExecuteCouple : BOOL;
+	bExecuteDecouple : BOOL;
 END_VAR
 VAR
 	gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
 	couple : MC_GEARIN;
 	decouple : MC_GEAROUT;
-	bGantryAlreadyCoupled : BOOL;
-	bExecuteCouple : BOOL;
+
+
 	bInitComplete : BOOL;
-	bExecuteDecouple : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -60,7 +62,7 @@ bInitComplete S= bGantryAlreadyCoupled;
 
 // Decoupling with auto-reset of coupling boolean
 bExecuteDecouple R= decouple.Busy OR NOT bGantryAlreadyCoupled;
-decouple(Slave:=Slave.Axis, Execute:=bExecuteDecouple)]]></ST>
+decouple(Slave:=Slave.Axis, Execute:=bExecuteDecouple);]]></ST>
     </Implementation>
     <LineIds Name="FB_GantryAutoCoupling">
       <LineId Id="17" Count="0" />
