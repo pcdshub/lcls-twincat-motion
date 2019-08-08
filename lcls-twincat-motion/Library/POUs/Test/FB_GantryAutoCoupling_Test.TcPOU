@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+  <POU Name="FB_GantryAutoCoupling_Test" Id="{3e5c3561-28ef-436b-b33a-73b0af1b1acd}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'call_after_init'}
+FUNCTION_BLOCK FB_GantryAutoCoupling_Test EXTENDS TcUnit.FB_TestSuite
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CoupledOnStartup();]]></ST>
+    </Implementation>
+    <Method Name="CoupledOnStartup" Id="{14e0e036-d1c6-49ab-8e38-ef361b3960ec}">
+      <Declaration><![CDATA[METHOD CoupledOnStartup
+VAR_INPUT
+END_VAR
+VAR
+	fbAutoCouple : FB_GantryAutoCoupling;
+	CouplingStatus : BOOL;
+	ExpectedStatus : BOOL := TRUE;
+	
+	M1 : DUT_MotionStage:=(nEnableMode:=0); // Test Master Axis
+	master_enc : ST_RenishawAbsEnc;
+	M2 : DUT_MotionStage:=(nEnableMode:=0); // Test Slave Axis
+	slave_enc : ST_RenishawAbsEnc;
+	bStartCouple : BOOL;
+	bStopCouple : BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('CoupledOnStartup');
+
+fbAutoCouple(fGantryTol:=5000, Master:=M1, MasterEnc:=master_enc, Slave:=M2,
+	         SlaveEnc:=slave_enc, bExecuteCouple:= bStartCouple,
+			 bExecuteDecouple:=bStopCouple,
+			 bGantryAlreadyCoupled=>CouplingStatus);
+
+AssertEquals(Expected:=ExpectedStatus, Actual:=CouplingStatus,
+	         Message:='Master and Slave did not start coupled');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_GantryAutoCoupling_Test">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_GantryAutoCoupling_Test.CoupledOnStartup">
+      <LineId Id="15" Count="9" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
