@@ -1457,6 +1457,25 @@ Drive Status 4 (manually linked):
 ]]>
 						</Comment>
 					</SubVar>
+<<<<<<< HEAD:lcls-twincat-motion/_Config/NC/Axes/Axis 1.xti
+=======
+				</Var>
+				<Var>
+					<Name>MAIN.M1.bLimitForwardEnable</Name>
+					<Type>BOOL</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.M1.bLimitBackwardEnable</Name>
+					<Type>BOOL</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.M1.bHome</Name>
+					<Type>BOOL</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
+					<Type GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}" Namespace="MC">NCTOPLC_AXIS_REF</Type>
+>>>>>>> WIP: Removed testing elements and added to new project:lcls-twincat-motion/_Config/PLC/Tests.xti
 					<SubVar>
 						<Name>nCtrl3</Name>
 						<Comment>
@@ -1542,9 +1561,44 @@ External Setpoint Generation:
 2: axis is master and slave
 3: axis is a slave axis
 ]]>
+<<<<<<< HEAD:lcls-twincat-motion/_Config/NC/Axes/Axis 1.xti
 					</Comment>
 				</SubVar>
 			</Var>
 		</Vars>
 	</Axis>
+=======
+						</Comment>
+					</SubVar>
+				</Var>
+			</Vars>
+			<Vars VarGrpType="2">
+				<Name>PlcTask Outputs</Name>
+				<Var>
+					<Name>MAIN.M1.Axis.PlcToNc</Name>
+					<Type GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}" Namespace="MC">PLCTONC_AXIS_REF</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.M1.bBrakeRelease</Name>
+					<Type>BOOL</Type>
+				</Var>
+				<Var>
+					<Name>MAIN.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
+					<Type GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}" Namespace="MC">PLCTONC_AXIS_REF</Type>
+				</Var>
+			</Vars>
+			<TaskPouOids>
+				<TaskPouOid Prio="20" OTCID="#x08502041"/>
+			</TaskPouOids>
+		</Instance>
+	</Project>
+	<Mappings>
+		<OwnerA Name="Tests Instance">
+			<OwnerB Name="TINC^NC-Task 1 SAF^Axes^Axis 1">
+				<Link VarA="PlcTask Inputs^MAIN.M1.Axis.NcToPlc" VarB="Outputs^ToPlc"/>
+				<Link VarA="PlcTask Outputs^MAIN.M1.Axis.PlcToNc" VarB="Inputs^FromPlc"/>
+			</OwnerB>
+		</OwnerA>
+	</Mappings>
+>>>>>>> WIP: Removed testing elements and added to new project:lcls-twincat-motion/_Config/PLC/Tests.xti
 </TcSmItem>
