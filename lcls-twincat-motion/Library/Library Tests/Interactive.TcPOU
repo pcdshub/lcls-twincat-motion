@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="Interactive" Id="{9e15d54f-806f-40b6-8fcc-67cd88d24764}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Interactive
+VAR
+	M1: DUT_MotionStage;
+	fbMotionStage: FB_MotionStage;
+	nCounter: UINT;
+	
+	stOut: DUT_PositionState;
+	fbGoOut: FB_StatePTPMove;
+	bOut: BOOL;
+	bGoOut: BOOL;
+	stIn: DUT_PositionState;
+	fbGoIn: FB_StatePTPMove;
+	bIn: BOOL;
+	bGoIn: BOOL;
+	stUnsafe: DUT_PositionState;
+	fbGoBad: FB_StatePTPMove;
+	bHCF: BOOL;
+	bGoHCF: BOOL;
+END_VAR
+
+    ]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[M1.bPowerSelf := TRUE;
+M1.bLimitBackwardEnable := TRUE;
+M1.bLimitForwardEnable := TRUE;
+fbMotionStage(stMotionStage:=M1);
+nCounter := nCounter + 1;
+
+stOut.sName := 'Out';
+stOut.fPosition := 100;
+stOut.fDelta := 20;
+stOut.fVelocity := 10;
+
+stIn.sName := 'In';
+stIn.fPosition := 0;
+stIn.fDelta := 0.1;
+stIn.fVelocity := 5;
+
+stUnsafe.sName := 'HCF';
+stUnsafe.fPosition := -999;
+stUnsafe.fDelta := 6;
+stUnsafe.fVelocity := 42;
+
+fbGoOut(
+	bExecute:=bGoOut,
+	stMotionStage:=M1,
+	stPositionState:=stOut,
+	bMPSOk:=TRUE,
+	bEPSOk:=TRUE,
+	bAtState=>bOut);
+fbGoIn(
+	bExecute:=bGoIn,
+	stMotionStage:=M1,
+	stPositionState:=stIn,
+	bMPSOk:=TRUE,
+	bEPSOk:=TRUE,
+	bAtState=>bIn);
+fbGoBad(
+	bExecute:=bGoHCF,
+	stMotionStage:=M1,
+	stPositionState:=stUnsafe,
+	bAtState=>bHCF);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
