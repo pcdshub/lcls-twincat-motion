@@ -2,20 +2,65 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
   <POU Name="FB_StatePTPMove" Id="{a935a12e-6ee3-4ebb-8c29-e9b23b7cef37}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePTPMove
+// For your pytmc pragma on this block, specify io accordingly:
+// 1. use input or i if you want the set position to be immutable
+// 2. use io if you want to set position to be mutable from epics
 VAR_INPUT
+	{attribute 'pytmc' := '
+		pv: INFO
+	'}
 	stPositionState: DUT_PositionState;
+	
+	{attribute 'pytmc' := '
+		pv: EXEC
+		io: io
+	'}
 	bExecute: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: MPS_OK
+		io: input
+	'}
 	bMPSOk: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: EPS_OK
+		io: input
+	'}
 	bEPSOk: BOOL;
 END_VAR
 VAR_IN_OUT
 	stMotionStage: DUT_MotionStage;
 END_VAR
 VAR_OUTPUT
+	{attribute 'pytmc' := '
+		pv: AT_STATE
+		io: input
+	'}
 	bAtState: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: DMOV
+		io: input
+	'}
 	bDone: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: BUSY
+		io: input
+	'}
 	bBusy: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: ERR
+		io: input
+	'}
 	bError: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: ERRMsg
+		io: input
+	'}
 	sError: STRING;
 END_VAR
 VAR
@@ -51,6 +96,7 @@ IF (fLowPos < fActPosition) AND (fHighPos > fActPosition) THEN
 	IF stMotionStage.bDone THEN
 		bDone := TRUE;
 		bBusy := FALSE;
+		bExecute := FALSE;
 	END_IF
 ELSE
 	bAtState := FALSE;		
@@ -66,33 +112,5 @@ IF NOT stMotionStage.bExecute OR NOT bExecute THEN
 	bBusy := FALSE;
 END_IF]]></ST>
     </Implementation>
-    <LineIds Name="FB_StatePTPMove">
-      <LineId Id="9" Count="0" />
-      <LineId Id="29" Count="0" />
-      <LineId Id="39" Count="0" />
-      <LineId Id="38" Count="0" />
-      <LineId Id="30" Count="0" />
-      <LineId Id="32" Count="3" />
-      <LineId Id="48" Count="1" />
-      <LineId Id="44" Count="0" />
-      <LineId Id="37" Count="0" />
-      <LineId Id="45" Count="1" />
-      <LineId Id="51" Count="0" />
-      <LineId Id="50" Count="0" />
-      <LineId Id="53" Count="0" />
-      <LineId Id="56" Count="2" />
-      <LineId Id="65" Count="1" />
-      <LineId Id="68" Count="0" />
-      <LineId Id="67" Count="0" />
-      <LineId Id="60" Count="2" />
-      <LineId Id="85" Count="0" />
-      <LineId Id="81" Count="2" />
-      <LineId Id="71" Count="0" />
-      <LineId Id="84" Count="0" />
-      <LineId Id="70" Count="0" />
-      <LineId Id="72" Count="0" />
-      <LineId Id="74" Count="0" />
-      <LineId Id="73" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
