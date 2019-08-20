@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
   <POU Name="FB_GantryAutoCoupling" Id="{532dfcaf-6187-4140-aaad-e20a9bbe6b43}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_GantryAutoCoupling
 VAR_INPUT
-	fGantryTol : LREAL;
+	nGantryTol : LINT;
 END_VAR
 VAR_OUTPUT
 	bGantryAlreadyCoupled : BOOL;
@@ -30,16 +30,17 @@ END_VAR
 Master.bGantryAxis := TRUE;
 Slave.bGantryAxis := TRUE;
 
-Master.fGantryTol := fGantryTol;
-Slave.fGantryTol := Master.fGantryTol;
+Master.nGantryTol := nGantryTol;
+Slave.nGantryTol := Master.nGantryTol;
 
 // Activate Gantry Virtual Limit Switch
-gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=LREAL_TO_LINT(Master.fGantryTol),
+gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=Master.nGantryTol,
 				  PLimFwd=>Master.bLimGntFwd, PLimBwd=>Master.bLimGntBwd,
 				  SLimFwd=>Slave.bLimGntFwd, SLimBwd=>Slave.bLimGntBwd);
 
 // Coupling Status Bit
 bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
+
 
 // Make master and slave axes respect each other's limits
 IF bGantryAlreadyCoupled THEN
@@ -50,6 +51,7 @@ IF bGantryAlreadyCoupled THEN
 	Master.bLimGntBwd := Master.bLimGntBwd AND Slave.bLimGntBwd AND Slave.bLimBwd;
 	Slave.bLimGntBwd := Master.bLimGntBwd AND Slave.bLimGntBwd AND Master.bLimBwd;
 END_IF
+
 
 // Coupling states
 // Auto-coupling at init and auto-reset of coupling boolean
@@ -64,26 +66,5 @@ bInitComplete S= bGantryAlreadyCoupled;
 bExecuteDecouple R= decouple.Busy OR NOT bGantryAlreadyCoupled;
 decouple(Slave:=Slave.Axis, Execute:=bExecuteDecouple);]]></ST>
     </Implementation>
-    <LineIds Name="FB_GantryAutoCoupling">
-      <LineId Id="17" Count="0" />
-      <LineId Id="14" Count="1" />
-      <LineId Id="18" Count="1" />
-      <LineId Id="25" Count="2" />
-      <LineId Id="31" Count="2" />
-      <LineId Id="36" Count="0" />
-      <LineId Id="34" Count="0" />
-      <LineId Id="37" Count="2" />
-      <LineId Id="43" Count="0" />
-      <LineId Id="40" Count="0" />
-      <LineId Id="42" Count="0" />
-      <LineId Id="44" Count="2" />
-      <LineId Id="41" Count="0" />
-      <LineId Id="47" Count="2" />
-      <LineId Id="51" Count="0" />
-      <LineId Id="54" Count="1" />
-      <LineId Id="57" Count="5" />
-      <LineId Id="65" Count="0" />
-      <LineId Id="9" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
