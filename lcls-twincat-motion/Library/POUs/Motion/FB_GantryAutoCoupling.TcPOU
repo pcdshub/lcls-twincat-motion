@@ -35,8 +35,8 @@ Slave.nGantryTol := Master.nGantryTol;
 
 // Activate Gantry Virtual Limit Switch
 gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=Master.nGantryTol,
-				  PLimFwd=>Master.bLimGntFwd, PLimBwd=>Master.bLimGntBwd,
-				  SLimFwd=>Slave.bLimGntFwd, SLimBwd=>Slave.bLimGntBwd);
+				  PLimFwd=>Master.bGantryForwardEnable, PLimBwd=>Master.bGantryBackwardEnable,
+				  SLimFwd=>Slave.bGantryForwardEnable, SLimBwd=>Slave.bGantryBackwardEnable);
 
 // Coupling Status Bit
 bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
@@ -45,11 +45,11 @@ bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPl
 // Make master and slave axes respect each other's limits
 IF bGantryAlreadyCoupled THEN
 	// Fwd limits
-	Master.bLimGntFwd := Master.bLimGntFwd AND Slave.bLimGntFwd AND Slave.bLimFwd;
-	Slave.bLimGntFwd := Master.bLimGntFwd AND Slave.bLimGntFwd AND Master.bLimFwd;
+	Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bGantryForwardEnable AND Slave.bLimitForwardEnable;
+	Slave.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bGantryForwardEnable AND Master.bLimitForwardEnable;
 	// Bwd limits
-	Master.bLimGntBwd := Master.bLimGntBwd AND Slave.bLimGntBwd AND Slave.bLimBwd;
-	Slave.bLimGntBwd := Master.bLimGntBwd AND Slave.bLimGntBwd AND Master.bLimBwd;
+	Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bGantryBackwardEnable AND Slave.bLimitBackwardEnable;
+	Slave.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bGantryBackwardEnable AND Master.bLimitBackwardEnable;
 END_IF
 
 
