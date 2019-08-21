@@ -41,7 +41,7 @@ gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=Master.nGantryTo
 // Coupling Status Bit
 bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
 
-
+(*
 // Make master and slave axes respect each other's limits
 IF bGantryAlreadyCoupled THEN
 	// Fwd limits
@@ -50,6 +50,14 @@ IF bGantryAlreadyCoupled THEN
 	// Bwd limits
 	Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bGantryBackwardEnable AND Slave.bLimitBackwardEnable;
 	Slave.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bGantryBackwardEnable AND Master.bLimitBackwardEnable;
+END_IF
+*)
+IF bGantryAlreadyCoupled THEN
+	Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bAllForwardEnable;
+	Slave.bGantryForwardEnable := Master.bAllForwardEnable AND Slave.bGantryForwardEnable;
+	
+	Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bAllBackwardEnable;
+	Slave.bGantryBackwardEnable := Master.bAllBackwardEnable AND Slave.bGantryBackwardEnable;
 END_IF
 
 
