@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="FB_SetEnables" Id="{9028a506-3476-4ab7-9f18-be1b77c07efa}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_SetEnables
+VAR_IN_OUT
+	stMotionStage: DUT_MotionStage;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis);
+stMotionStage.bAllBackwardEnable := stMotionStage.bLimitBackwardEnable AND (stMotionStage.bGantryBackwardEnable OR NOT stMotionStage.bGantryAxis);
+
+stMotionStage.bAllEnable := stMotionStage.bEnable AND stMotionStage.bHardwareEnable;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -11,6 +11,7 @@ VAR
 	bFwdHit: BOOL;
 	bBwdHit: BOOL;
 	fbExecFallingEdge: F_TRIG;
+	fbSetEnables: FB_SetEnables;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -36,11 +37,7 @@ IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.EPICS_MOTOR_HOME THEN
 	stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
-// EPS Directional Enables
-stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis);
-stMotionStage.bAllBackwardEnable := stMotionStage.bLimitBackwardEnable AND (stMotionStage.bGantryBackwardEnable OR NOT stMotionStage.bGantryAxis);
-
-stMotionStage.bAllEnable := stMotionStage.bEnable AND stMotionStage.bHardwareEnable;
+fbSetEnables(stMotionStage:=stMotionStage);
 
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
@@ -142,9 +139,5 @@ IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE THEN
 	stMotionStage.stAxisStatus.bHomed := TRUE;
 END_IF]]></ST>
     </Implementation>
-    <LineIds Name="FB_MotionStage">
-      <LineId Id="404" Count="123" />
-      <LineId Id="109" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>

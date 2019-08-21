@@ -20,9 +20,8 @@ VAR
 	gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
 	couple : MC_GEARIN;
 	decouple : MC_GEAROUT;
-
-
 	bInitComplete : BOOL;
+	fbSetEnables : FB_SetEnables;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -41,17 +40,9 @@ gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=Master.nGantryTo
 // Coupling Status Bit
 bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
 
-(*
-// Make master and slave axes respect each other's limits
-IF bGantryAlreadyCoupled THEN
-	// Fwd limits
-	Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bGantryForwardEnable AND Slave.bLimitForwardEnable;
-	Slave.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bGantryForwardEnable AND Master.bLimitForwardEnable;
-	// Bwd limits
-	Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bGantryBackwardEnable AND Slave.bLimitBackwardEnable;
-	Slave.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bGantryBackwardEnable AND Master.bLimitBackwardEnable;
-END_IF
-*)
+fbSetEnables(stMotionStage:=Master);
+fbSetEnables(stMotionStage:=Slave);
+
 IF bGantryAlreadyCoupled THEN
 	Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bAllForwardEnable;
 	Slave.bGantryForwardEnable := Master.bAllForwardEnable AND Slave.bGantryForwardEnable;
