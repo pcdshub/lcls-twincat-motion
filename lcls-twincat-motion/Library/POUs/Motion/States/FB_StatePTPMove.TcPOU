@@ -18,12 +18,6 @@ VAR_INPUT
 	bExecute: BOOL;
 	
 	{attribute 'pytmc' := '
-		pv: MPS_OK
-		io: input
-	'}
-	bMPSOk: BOOL;
-	
-	{attribute 'pytmc' := '
 		pv: EPS_OK
 		io: input
 	'}
@@ -66,51 +60,48 @@ END_VAR
 VAR
 	bExecTrig: R_TRIG;
 	bExecEnd: F_TRIG;
-	fActPosition: LREAL;
-	fLowPos: LREAL;
-	fHighPos: LREAL;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[bExecTrig(CLK:=bExecute);
-IF bExecTrig.Q AND bMPSOk AND bEPSOk THEN
-	IF NOT stMotionStage.bBusy AND NOT stMotionStage.bError THEN
-		stMotionStage.bExecute := TRUE;
-		stMotionStage.nCommand := ENUM_EpicsMotorCmd.EPICS_MOTOR_MOVE_ABS;
-		stMotionStage.fPosition := stPositionState.fPosition;
-		stMotionStage.fVelocity := stPositionState.fVelocity;
-		stMotionStage.fAcceleration := stPositionState.fAccel;
-		stMotionStage.fDeceleration := stPositionState.fDecel;
-		bDone := FALSE;
-		bBusy := TRUE;
+      <ST><![CDATA[IF stPositionState.bValid THEN
+	bExecTrig(CLK:=bExecute);
+	IF bExecTrig.Q AND bEPSOk THEN
+		IF NOT stMotionStage.bBusy AND NOT stMotionStage.bError THEN
+			stMotionStage.bExecute := TRUE;
+			stMotionStage.nCommand := ENUM_EpicsMotorCmd.EPICS_MOTOR_MOVE_ABS;
+			stMotionStage.fPosition := stPositionState.fPosition;
+			stMotionStage.fVelocity := stPositionState.fVelocity;
+			stMotionStage.fAcceleration := stPositionState.fAccel;
+			stMotionStage.fDeceleration := stPositionState.fDecel;
+			bDone := FALSE;
+			bBusy := TRUE;
+		END_IF
 	END_IF
-END_IF
-bError := stMotionStage.bError;
-sError := stMotionStage.sErrorMessage;
-
-fActPosition := stMotionStage.stAxisStatus.fActPosition;
-fLowPos := stPositionState.fPosition - stPositionState.fDelta;
-fHighPos := stPositionState.fPosition + stPositionState.fDelta;
-IF (fLowPos < fActPosition) AND (fHighPos > fActPosition) THEN
-	bAtState := TRUE;
-	IF NOT stMotionStage.bBusy THEN
+	bError := stMotionStage.bError;
+	sError := stMotionStage.sErrorMessage;
+	
+	bAtState := F_AtPosState(stPositionState:=stPositionState, stMotionStage:=stMotionStage);
+	IF bAtState AND NOT stMotionStage.bBusy THEN
+		bDone := TRUE;
+		bBusy := FALSE;
+		bExecute := FALSE;
+	END_IF
+	
+	bExecEnd(CLK:=bExecute);
+	IF bExecEnd.Q AND bBusy THEN
+		stMotionStage.bExecute := FALSE;
+	END_IF
+	
+	IF NOT stMotionStage.bExecute OR NOT bExecute THEN
 		bDone := TRUE;
 		bBusy := FALSE;
 		bExecute := FALSE;
 	END_IF
 ELSE
-	bAtState := FALSE;
-END_IF
-
-bExecEnd(CLK:=bExecute);
-IF bExecEnd.Q AND bBusy THEN
-	stMotionStage.bExecute := FALSE;
-END_IF
-
-IF NOT stMotionStage.bExecute OR NOT bExecute THEN
-	bDone := TRUE;
+	bDone := FALSE;
 	bBusy := FALSE;
-	bExecute := FALSE;
+	bError := TRUE;
+	sError := 'State Invalid';
 END_IF]]></ST>
     </Implementation>
   </POU>

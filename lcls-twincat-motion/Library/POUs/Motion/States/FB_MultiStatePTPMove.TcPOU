@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="FB_MultiStatePTPMove" Id="{f88a6144-c01d-4023-a4cc-1763fae9f976}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MultiStatePTPMove
+VAR_IN_OUT
+	arrStates: ARRAY [*] OF DUT_PositionState;
+	arrEPSOk: ARRAY [*] OF BOOL;
+	stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+	bExecute: BOOL;
+	nStateSet: INT;
+END_VAR
+VAR_OUTPUT
+	nStateGet: INT;
+	bDone: BOOL;
+	bBusy: BOOL;
+	bError: BOOL;
+	sError: STRING;
+END_VAR
+VAR
+	fbStateMove: FB_StatePTPMove;
+	bValidSet: BOOL;
+	nArrayIndex: DINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Check array bounds
+bValidSet := nStateSet >= LOWER_BOUND(arrStates, 1)
+		 AND nStateSet <= UPPER_BOUND(arrStates, 1)
+		 AND nStateSet >= LOWER_BOUND(arrEPSOK, 1)
+		 AND nStateSet <= UPPER_BOUND(arrEPSOK, 1);
+
+// Hand down the move
+IF bValidSet THEN
+	fbStateMove(
+		stPositionState:=arrStates[nStateSet],
+		bExecute:=bExecute,
+		bEPSOk:=arrEPSOk[nStateSet],
+		stMotionStage:=stMotionStage,
+		bDone=>bDone,
+		bBusy=>bBusy,
+		bError=>bError,
+		sError=>sError);
+END_IF
+
+// Check which state we're in
+nStateGet := F_GetPosState(arrStates:=arrStates, stMotionStage:=stMotionStage);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

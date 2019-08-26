@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="F_GetPosState" Id="{f63e1aaf-7983-43a8-8a7f-8e3b7b596a2d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_GetPosState : INT
+VAR_IN_OUT
+	arrStates: ARRAY [*] OF DUT_PositionState;
+	stMotionStage: DUT_MotionStage;
+END_VAR
+VAR
+	nArrayIndex: DINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_GetPosState := 0;
+FOR nArrayIndex := LOWER_BOUND(arrStates, 1) TO UPPER_BOUND(arrStates, 1) DO
+	IF F_AtPosState(stPositionState:=arrStates[nArrayIndex], stMotionStage:=stMotionStage) THEN
+		F_GetPosState := DINT_TO_INT(nArrayIndex);
+		EXIT;
+	END_IF
+END_FOR]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

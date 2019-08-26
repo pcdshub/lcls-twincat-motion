@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="F_AtPosState" Id="{85a1e256-a737-4ec7-9925-f8a514933341}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_AtPosState : BOOL
+VAR_IN_OUT
+	stPositionState: DUT_PositionState;
+	stMotionStage: DUT_MotionStage;
+END_VAR
+VAR
+	fPos: LREAL;
+	fLowPos: LREAL;
+	fHighPos: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fPos := stMotionStage.stAxisStatus.fActPosition;
+fLowPos := stPositionState.fPosition - stPositionState.fDelta;
+fHighPos := stPositionState.fPosition + stPositionState.fDelta;
+F_AtPosState := (fLowPos < fPos) AND (fHighPos > fPos);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

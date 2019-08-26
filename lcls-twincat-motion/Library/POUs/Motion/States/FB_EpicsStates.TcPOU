@@ -1,0 +1,209 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="FB_EpicsStates" Id="{7205e73f-b4d6-4288-b38c-565a2f8530c6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EpicsStates
+VAR_IN_OUT
+	// The EPICS state readback and set
+	nState: INT;
+	stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+	bEnable: BOOL;
+	bReset: BOOL := TRUE;
+	
+	{attribute 'pytmc' := 'pv: STATE:01'}
+	stState1: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:02'}
+	stState2: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:03'}
+	stState3: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:04'}
+	stState4: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:05'}
+	stState5: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:06'}
+	stState6: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:07'}
+	stState7: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:08'}
+	stState8: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:09'}
+	stState9: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:10'}
+	stState10: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:11'}
+	stState11: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:12'}
+	stState12: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:13'}
+	stState13: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:14'}
+	stState14: DUT_PositionState;
+	{attribute 'pytmc' := 'pv: STATE:15'}
+	stState15: DUT_PositionState;
+	{attribute 'pytmc' := '
+		pv: STATE:01:EPS_OK
+		io: input
+	'}
+	bState1EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:02:EPS_OK
+		io: input
+	'}
+	bState2EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:03:EPS_OK
+		io: input
+	'}
+	bState3EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:04:EPS_OK
+		io: input
+	'}
+	bState4EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:05:EPS_OK
+		io: input
+	'}
+	bState5EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:06:EPS_OK
+		io: input
+	'}
+	bState6EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:07:EPS_OK
+		io: input
+	'}
+	bState7EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:08:EPS_OK
+		io: input
+	'}
+	bState8EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:09:EPS_OK
+		io: input
+	'}
+	bState9EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:10:EPS_OK
+		io: input
+	'}
+	bState10EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:11:EPS_OK
+		io: input
+	'}
+	bState11EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:12:EPS_OK
+		io: input
+	'}
+	bState12EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:13:EPS_OK
+		io: input
+	'}
+	bState13EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:14:EPS_OK
+		io: input
+	'}
+	bState14EPSOk: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:15:EPS_OK
+		io: input
+	'}
+	bState15EPSOk: BOOL;
+END_VAR
+VAR_OUTPUT
+	// The actual current state reading
+	nCurrState: INT;
+	bDone: BOOL;
+	bBusy: BOOL;
+	bError: BOOL;
+	sError: STRING;
+END_VAR
+VAR
+	fbMultiStateMove: FB_MultiStatePTPMove;
+	arrStates: ARRAY[1..15] OF DUT_PositionState;
+	arrEPSOk: ARRAY[1..15] OF BOOL;
+	// The last state we asked for
+	nLastState: INT;
+	bExecute: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Stuff the arrays
+arrStates[1] := stState1;
+arrStates[2] := stState2;
+arrStates[3] := stState3;
+arrStates[4] := stState4;
+arrStates[5] := stState5;
+arrStates[6] := stState6;
+arrStates[7] := stState7;
+arrStates[8] := stState8;
+arrStates[9] := stState9;
+arrStates[10] := stState10;
+arrStates[11] := stState11;
+arrStates[12] := stState12;
+arrStates[13] := stState13;
+arrStates[14] := stState14;
+arrStates[15] := stState15;
+
+arrEPSOK[1] := bState1EPSOk;
+arrEPSOK[2] := bState2EPSOk;
+arrEPSOK[3] := bState3EPSOk;
+arrEPSOK[4] := bState4EPSOk;
+arrEPSOK[5] := bState5EPSOk;
+arrEPSOK[6] := bState6EPSOk;
+arrEPSOK[7] := bState7EPSOk;
+arrEPSOK[8] := bState8EPSOk;
+arrEPSOK[9] := bState9EPSOk;
+arrEPSOK[10] := bState10EPSOk;
+arrEPSOK[11] := bState11EPSOk;
+arrEPSOK[12] := bState12EPSOk;
+arrEPSOK[13] := bState13EPSOk;
+arrEPSOK[14] := bState14EPSOk;
+arrEPSOK[15] := bState15EPSOk;
+
+// Do the move if applicable
+IF bEnable AND NOT bReset THEN
+	// Check if no move and nState changed between cycles
+	IF NOT stMotionStage.bBusy AND nState <> nCurrState THEN
+		// It's time to start a move
+		nLastState := nState;
+		bExecute := TRUE;
+	END_IF
+	fbMultiStateMove(
+		arrStates:=arrStates,
+		arrEPSOk:=arrEPSOk,
+		stMotionStage:=stMotionStage,
+		bExecute:=bExecute,
+		nStateSet:=nLastState,
+		bDone => bDone,
+		bBusy => bBusy,
+		bError => bError,
+		sError => sError);
+	IF bDone AND NOT bError THEN
+		bExecute := FALSE;
+	END_IF
+END_IF
+
+// Where are we?
+nCurrState := F_GetPosState(arrStates:=arrStates, stMotionStage:=stMotionStage);
+// Update the RBV PV. End every cycle with these in sync.
+nState := nCurrState;
+
+// Reinitialize state variables and execute bit
+IF bReset THEN
+	nState := nCurrState;
+	nLastState := nCurrState;
+	bExecute := FALSE;
+	bReset := FALSE;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
