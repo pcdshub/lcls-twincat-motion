@@ -2,6 +2,17 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
   <POU Name="FB_EpicsStates" Id="{7205e73f-b4d6-4288-b38c-565a2f8530c6}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_EpicsStates
+(*
+To use this FB properly, you must create and pragma your own enum type with:
+  pv: {prefix}:STATE
+and this FB with
+  pv: {prefix}
+In your enum, you must have:
+  state 0 as the defacto "unknown" state
+  states 1-15 as whatever you want
+Pass in your enum as nState.
+You do not have to use all states, but you must not skip numbers
+*)
 VAR_IN_OUT
 	// The EPICS state readback and set
 	nState: INT;
@@ -9,6 +20,10 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
 	bEnable: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:RESET
+		io: output
+	'}
 	bReset: BOOL := TRUE;
 	
 	{attribute 'pytmc' := 'pv: STATE:01'}
@@ -120,9 +135,25 @@ END_VAR
 VAR_OUTPUT
 	// The actual current state reading
 	nCurrState: INT;
+	{attribute 'pytmc' := '
+		pv: STATE:DONE
+		io: input
+	'}
 	bDone: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:BUSY
+		io: input
+	'}
 	bBusy: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:ERR
+		io: input
+	'}
 	bError: BOOL;
+	{attribute 'pytmc' := '
+		pv: STATE:ERRMSG
+		io: input
+	'}
 	sError: STRING;
 END_VAR
 VAR
