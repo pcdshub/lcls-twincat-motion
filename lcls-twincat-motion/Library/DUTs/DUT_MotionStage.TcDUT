@@ -8,12 +8,16 @@ STRUCT
 	bLimitForwardEnable AT %I*: BOOL;
 	bLimitBackwardEnable AT %I*: BOOL;
 	bHome AT %I*: BOOL;
+
 	bBrakeRelease AT %Q*: BOOL;
 	
 	// Psuedo-hardware
 	bAllForwardEnable: BOOL:=FALSE; // Forward enable EPS summary
 	bAllBackwardEnable: BOOL:=FALSE; // Forward enable EPS summary
+	bHardwareEnable AT %I*: BOOL; // True when Emergency stop button is not activated
 	
+	bAllEnable: BOOL:=FALSE; // Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
+
 	bGantryForwardEnable: BOOL:=FALSE; // Forward virtual gantry limit switch
 	bGantryBackwardEnable: BOOL:=FALSE; // Reverse virtual gantry limit switch
 	
@@ -24,7 +28,7 @@ STRUCT
 	nHomingMode: INT:=ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE;
 	
 	bGantryAxis: BOOL:=FALSE; // Set true to activate gantry EPS
-	fGantryTol: LREAL:=0; // Set to gantry difference tolerance
+	nGantryTol: LINT:=0; // Set to gantry difference tolerance
 	nEncRef: ULINT:=0; // Encoder count at which this axis is aligned with other axis
 	
 	// Commands
