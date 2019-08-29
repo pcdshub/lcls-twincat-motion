@@ -19,6 +19,18 @@ VAR
 	fbGoBad: FB_StatePTPMove;
 	bHCF: BOOL;
 	bGoHCF: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: TST:LIB:STATE
+		io: io
+	'}
+	enumStates: ENUM_EpicsStatesGeneric;
+	
+	{attribute 'pytmc' := '
+		pv: TST:LIB
+		io: io
+	'}
+	fbEpicsStates: FB_EpicsStates;
 END_VAR
 
     ]]></Declaration>
@@ -60,7 +72,17 @@ fbGoBad(
 	bExecute:=bGoHCF,
 	stMotionStage:=M1,
 	stPositionState:=stUnsafe,
-	bAtState=>bHCF);]]></ST>
+	bAtState=>bHCF);
+
+fbEpicsStates(
+	nState:=enumStates,
+	stMotionStage:=M1,
+	bEnable:=TRUE,
+	stState1:=stOut,
+	stState2:=stIn,
+	stState3:=stUnsafe,
+	bState1EPSOk:=TRUE,
+	bState2EPSOk:=TRUE);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
