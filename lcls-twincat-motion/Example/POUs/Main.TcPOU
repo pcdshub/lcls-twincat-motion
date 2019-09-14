@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+  <POU Name="Main" Id="{7b41e58a-08f0-4959-90b4-af08ef5cbf10}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM Main
+VAR
+	// Simulated motor that is always allowed to move
+	{attribute 'pytmc' := 'pv: TST:SIM:MOT:01'}
+	M1: DUT_MotionStage;
+	
+	// Simulated motor that is never allowed to move
+	{attribute 'pytmc' := 'pv: TST:SIM:MOT:01'}
+	M2: DUT_MotionStage;
+	
+	fbMotion1: FB_MotionStage;
+	fbMotion2: FB_MotionStage;
+END_VAR
+
+    ]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[M1.bLimitForwardEnable := TRUE;
+M1.bLimitBackwardEnable := TRUE;
+M1.bHardwareEnable := TRUE;
+M1.bPowerSelf := TRUE;
+M1.nEnableMode := ENUM_StageEnableMode.STAGE_ENABLE_ALWAYS;
+fbMotion1(stMotionStage := M1);
+fbMotion2(stMotionStage := M2);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
