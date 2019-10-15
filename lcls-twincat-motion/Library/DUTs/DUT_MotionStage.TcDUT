@@ -9,31 +9,31 @@ STRUCT
 	Axis: AXIS_REF;
 	// NC Forward Limit Switch: TRUE if ok to move
 	{attribute 'pytmc': '
-		pv: IO:ENA:FWD
+		pv: PLC:bLimitForwardEnable
 		io: i
 	'}
 	bLimitForwardEnable AT %I*: BOOL;
 	// NC Backward Limit Switch: TRUE if ok to move
 	{attribute 'pytmc': '
-		pv: IO:ENA:BWD
+		pv: PLC:bLimitBackwardEnable
 		io: i
 	'}
 	bLimitBackwardEnable AT %I*: BOOL;
 	// NO Home Switch: TRUE if at home
 	{attribute 'pytmc': '
-		pv: IO:HOME
+		pv: PLC:bHome
 		io: i
 	'}
 	bHome AT %I*: BOOL;
 	// NC Brake Output: TRUE to release brake
 	{attribute 'pytmc': '
-		pv: IO:BRAKE
+		pv: PLC:bBrakeRelease
 		io: i
 	'}
 	bBrakeRelease AT %Q*: BOOL;
 	// NC STO Input: TRUE if ok to move
 	{attribute 'pytmc': '
-		pv: IO:STO
+		pv: PLC:bHardwareEnable
 		io: i
 	'}
 	bHardwareEnable AT %I*: BOOL;
@@ -42,31 +42,31 @@ STRUCT
 	
 	// Forward enable EPS summary
 	{attribute 'pytmc': '
-		pv: EPS:ENA:FWD
+		pv: PLC:bAllForwardEnable
 		io: i
 	'}
 	bAllForwardEnable: BOOL:=FALSE;
 	// Backward enable EPS summary
 	{attribute 'pytmc': '
-		pv: EPS:ENA:BWD
+		pv: PLC:bAllBackwardEnable
 		io: i
 	'}
 	bAllBackwardEnable: BOOL:=FALSE; 
 	// Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
 	{attribute 'pytmc': '
-		pv: EPS:ENA:AMP
+		pv: PLC:bAllEnable
 		io: i
 	'}
 	bAllEnable: BOOL:=FALSE;
 	// Forward virtual gantry limit switch
 	{attribute 'pytmc': '
-		pv: GANTRY:ENA:FWD
+		pv: PLC:bGantryForwardEnable
 		io: i
 	'}
 	bGantryForwardEnable: BOOL:=FALSE;
 	// Backward virtual gantry limit switch
 	{attribute 'pytmc': '
-		pv: GANTRY:ENA:BWD
+		pv: PLC:bGantryBackwardEnable
 		io: i
 	'}
 	bGantryBackwardEnable: BOOL:=FALSE;
@@ -74,43 +74,43 @@ STRUCT
 	(* Settings *)
 	// Change to FALSE if MC_POWER is somewhere else in the project
 	{attribute 'pytmc': '
-		pv: SETTING:bPowerSelf
+		pv: PLC:bPowerSelf
 		io: i
 	'}
 	bPowerSelf: BOOL:=TRUE;
 	// Determines when we automatically enable the motor
 	{attribute 'pytmc': '
-		pv: SETTING:nEnableMode
+		pv: PLC:nEnableMode
 		io: i
 	'}
 	nEnableMode: INT:=ENUM_StageEnableMode.STAGE_ENABLE_MOTION;
 	// Determines when we automatically disengage the brake
 	{attribute 'pytmc': '
-		pv: SETTING:nBrakeMode
+		pv: PLC:nBrakeMode
 		io: i
 	'}
 	nBrakeMode: INT:=ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED;
 	// Determines our encoder homing strategy
 	{attribute 'pytmc': '
-		pv: SETTING:nHomingMode
+		pv: PLC:nHomingMode
 		io: i
 	'}
 	nHomingMode: INT:=ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE;
 	// Set true to activate gantry EPS
 	{attribute 'pytmc': '
-		pv: SETTING:bGantryAxis
+		pv: PLC:bGantryAxis
 		io: i
 	'}
 	bGantryAxis: BOOL:=FALSE;
 	// Set to gantry difference tolerance
 	{attribute 'pytmc': '
-		pv: SETTING:nGantryTol
+		pv: PLC:nGantryTol
 		io: i
 	'}
 	nGantryTol: LINT:=0;
 	// Encoder count at which this axis is aligned with other axis
 	{attribute 'pytmc': '
-		pv: SETTING:nEncRef
+		pv: PLC:nEncRef
 		io: i
 	'}
 	nEncRef: ULINT:=0;
@@ -118,19 +118,19 @@ STRUCT
 	(* Commands *)
 	// Used internally to request enables
 	{attribute 'pytmc': '
-		pv: CMD:bEnable
+		pv: PLC:bEnable
 		io: io
 	'}
 	bEnable: BOOL;
 	// Used internally to reset errors and other state
 	{attribute 'pytmc': '
-		pv: CMD:bReset
+		pv: PLC:bReset
 		io: io
 	'}
 	bReset: BOOL;
 	// Used internally and by the IOC to start or stop a move
 	{attribute 'pytmc': '
-		pv: CMD:bExecute
+		pv: PLC:bExecute
 		io: io
 	'}
 	bExecute: BOOL;
@@ -138,43 +138,43 @@ STRUCT
 	(* Command Args *)
 	// Used internally and by the IOC to pick what kind of move to do
 	{attribute 'pytmc': '
-		pv: ARG:nCommand
+		pv: PLC:nCommand
 		io: io
 	'}
 	nCommand: INT;
 	// Used internally and by the IOC to pass additional data to some commands
 	{attribute 'pytmc': '
-		pv: ARG:nCmdData
+		pv: PLC:nCmdData
 		io: io
 	'}
 	nCmdData: INT;
 	// Used internally and by the IOC to pick a destination for the move
 	{attribute 'pytmc': '
-		pv: ARG:fPosition
+		pv: PLC:fPosition
 		io: io
 	'}
 	fPosition: LREAL;
 	// Used internally and by the IOC to pick a move velocity
 	{attribute 'pytmc': '
-		pv: ARG:fVelocity
+		pv: PLC:fVelocity
 		io: io
 	'}
 	fVelocity: LREAL;
 	// Used internally and by the IOC to pick a move acceleration
 	{attribute 'pytmc': '
-		pv: ARG:fAcceleration
+		pv: PLC:fAcceleration
 		io: io
 	'}
 	fAcceleration: LREAL;
 	// Used internally and by the IOC to pick a move deceleration
 	{attribute 'pytmc': '
-		pv: ARG:fDeceleration
+		pv: PLC:fDeceleration
 		io: io
 	'}
 	fDeceleration: LREAL;
 	// Used internally and by the IOC to pick a home position
 	{attribute 'pytmc': '
-		pv: ARG:fHomePosition
+		pv: PLC:fHomePosition
 		io: io
 	'}
 	fHomePosition: LREAL;
@@ -182,7 +182,7 @@ STRUCT
 	(* Info *)
 	// Unique ID assigned to each axis in the NC
 	{attribute 'pytmc': '
-		pv: ID
+		pv: PLC:nMotionAxisID
 		io: i
 	'}
 	nMotionAxisID: UDINT:=0;
@@ -190,31 +190,31 @@ STRUCT
 	(* Returns *)
 	// TRUE if done enabling
 	{attribute 'pytmc': '
-		pv: RVAL:bEnableDone
+		pv: PLC:bEnableDone
 		io: i
 	'}
 	bEnableDone: BOOL;
 	// TRUE if in the middle of a command
 	{attribute 'pytmc': '
-		pv: RVAL:bBusy
+		pv: PLC:bBusy
 		io: i
 	'}
 	bBusy: BOOL;
 	// TRUE if we've done a command and it has finished
 	{attribute 'pytmc': '
-		pv: RVAL:bDone
+		pv: PLC:bDone
 		io: i
 	'}
 	bDone: BOOL;
 	// TRUE if we're in an error state
 	{attribute 'pytmc': '
-		pv: RVAL:bError
+		pv: PLC:bError
 		io: i
 	'}
 	bError: BOOL;
 	// Message to identify the error state
 	{attribute 'pytmc': '
-		pv: RVAL:sErrorMessage
+		pv: PLC:sErrorMessage
 		io: i
 	'}
 	sErrorMessage: STRING;
