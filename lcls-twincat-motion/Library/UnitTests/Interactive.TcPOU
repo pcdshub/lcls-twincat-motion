@@ -4,7 +4,7 @@
     <Declaration><![CDATA[PROGRAM Interactive
 VAR
 	M1: DUT_MotionStage;
-	fbMotionStage: FB_MotionStage;
+	fbMotionStageSim: FB_MotionStageSim;
 	nCounter: UINT;
 	
 	stOut: DUT_PositionState;
@@ -23,10 +23,7 @@ END_VAR
 
     ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[M1.bPowerSelf := TRUE;
-M1.bLimitBackwardEnable := TRUE;
-M1.bLimitForwardEnable := TRUE;
-fbMotionStage(stMotionStage:=M1);
+      <ST><![CDATA[fbMotionStageSim(stMotionStage:=M1);
 nCounter := nCounter + 1;
 
 stOut.sName := 'Out';
