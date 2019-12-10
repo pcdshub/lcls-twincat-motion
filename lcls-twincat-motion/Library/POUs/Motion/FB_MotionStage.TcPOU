@@ -137,7 +137,11 @@ END_IF
 // e.g. for pre-calibrated absolute encoders
 IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE THEN
 	stMotionStage.stAxisStatus.bHomed := TRUE;
-END_IF]]></ST>
+END_IF
+
+// Small stuff for the Visu
+stMotionStage.bVisuLowLim := NOT stMotionStage.bAllBackwardEnable;
+stMotionStage.bVisuHighLim := NOT stMotionStage.bAllForwardEnable;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
