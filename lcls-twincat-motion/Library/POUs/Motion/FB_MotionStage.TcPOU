@@ -2,6 +2,11 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_MotionStage" Id="{137c52b5-8983-4728-b719-31601503f20a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage
+(*
+	Default implementation for PLC behavior when motor IOC asks for a move
+	This can be extended or replaced in your PLC project if you want
+	non-default behavior to arise from the motor record processing
+*)
 VAR_IN_OUT
 	stMotionStage: DUT_MotionStage;
 END_VAR
@@ -39,6 +44,7 @@ IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
 	stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
+// Update all enable booleans
 fbSetEnables(stMotionStage:=stMotionStage);
 
 // Handle standard commands using ESS's FB
@@ -62,15 +68,17 @@ fbDriveVirtual(En:=TRUE,
 	sErrorMessage=>stMotionStage.sErrorMessage,
 	Axis:=stMotionStage.Axis);
 
-// Update status again after the move starts
+// Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
 
+// When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);
 IF rtExec.Q THEN
 	stMotionStage.bBusy := TRUE;
 	stMotionStage.bDone := FALSE;
 END_IF
 
+// Force everything off in case of error
 IF stMotionStage.bError THEN
 	stMotionStage.bBusy := FALSE;
 	stMotionStage.bDone := FALSE;
@@ -84,10 +92,9 @@ IF bFwdHit OR bBwdHit THEN
 	stMotionStage.bExecute := FALSE;
 END_IF
 
-// Mark done if settled or if unexpected stop, then reset the FB if there is no error
+// Check done moving via fbDriveVirtual and from Target Position Monitoring. Must satisfy both conditions.
 ftExec(CLK:=stMotionStage.bExecute);
 rtTarget(CLK:=stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone);
-//IF (stMotionStage.Axis.Status.InTargetPosition AND NOT fbDriveVirtual.bBusy) OR ftExec.Q THEN
 IF rtTarget.Q OR ftExec.Q THEN
 	IF NOT stMotionStage.bDone THEN
 		stMotionStage.bDone := TRUE;
@@ -98,6 +105,8 @@ IF rtTarget.Q OR ftExec.Q THEN
 		END_IF
 	END_IF
 END_IF
+
+// Handle auto-disable timing
 IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT bExecute THEN
 	IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
 		stMotionStage.bEnable := FALSE;
@@ -113,7 +122,7 @@ CASE stMotionStage.Axis.Status.MotionState OF
 		stMotionStage.bEnableDone := TRUE;
 END_CASE
 
-// Handle the brake. TRUE means brake disabled.
+// Handle the brake. TRUE means brake disabled/released
 CASE stMotionStage.nBrakeMode OF
 	ENUM_StageBrakeMode.DISABLED:
 		stMotionStage.bBrakeRelease := stMotionStage.bEnableDone AND stMotionStage.bExecute;
@@ -124,6 +133,8 @@ CASE stMotionStage.nBrakeMode OF
 			stMotionStage.bBrakeRelease := TRUE;
 		END_IF
 END_CASE
+
+// Always brake if something bad happened
 CASE stMotionStage.Axis.Status.MotionState OF
 	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_ERRORSTOP:
 		stMotionStage.bBrakeRelease := FALSE;

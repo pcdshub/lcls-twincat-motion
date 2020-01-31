@@ -5,14 +5,17 @@
 // Request a move to a particular state from an axis controlled via EPICS
 // pytmc PVs here only exposed if using directly and not through FB_PositionStateManager
 VAR_IN_OUT
+	// Motor to move
 	stMotionStage: DUT_MotionStage;
 	
+	// State to move to
 	{attribute 'pytmc' := '
 		pv:
 	'}
 	stPositionState: DUT_PositionState;
 END_VAR
 VAR_INPUT
+	// Start move on rising edge, stop move on falling edge
 	{attribute 'pytmc' := '
 		pv: GO
 		io: io
@@ -21,6 +24,7 @@ VAR_INPUT
 	'}
 	bExecute: BOOL;
 
+	// Rising edge error reset
 	{attribute 'pytmc' := '
 		pv: RESET
 		io: io
@@ -29,9 +33,11 @@ VAR_INPUT
 	'}
 	bReset: BOOL;
 
+	// Define behavior for when a move is already active
 	enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
 END_VAR
 VAR_OUTPUT
+	// TRUE if the motor is at this state
 	{attribute 'pytmc' := '
 		pv: AT_STATE
 		io: input
@@ -39,7 +45,8 @@ VAR_OUTPUT
 		field: ONAM True
 	'}
 	bAtState: BOOL;
-	
+
+	// TRUE if we have an error
 	{attribute 'pytmc' := '
 		pv: ERR
 		io: input
@@ -47,13 +54,15 @@ VAR_OUTPUT
 		field: ONAM True
 	'}
 	bError: BOOL;
-	
+
+	// Usually an error code
 	{attribute 'pytmc' := '
 		pv: ERRMSG
 		io: input
 	'}
 	sErrorMessage: STRING;
 
+	// TRUE if we are moving to a state
 	{attribute 'pytmc' := '
 		pv: BUSY
 		io: input
@@ -62,6 +71,7 @@ VAR_OUTPUT
 	'}
 	bBusy: BOOL;
 
+	// TRUE if we are note moving and we reached a state successfully on our last move
 	{attribute 'pytmc' := '
 		pv: DONE
 		io: input
@@ -76,7 +86,10 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[bAllowMove := stPositionState.bMoveOk AND stPositionState.bValid;
+      <ST><![CDATA[// Veto the move for uninitialized and unsafe states
+bAllowMove := stPositionState.bMoveOk AND stPositionState.bValid;
+
+// Do the move
 fbMotionRequest(
 	stMotionStage := stMotionStage,
 	bExecute := bExecute AND bAllowMove,
@@ -90,6 +103,8 @@ fbMotionRequest(
 	sErrorMessage => sErrorMessage,
 	bBusy => bBusy,
 	bDone => bDone);
+
+// Inject custom error if we can't move because of bMoveOk or bValid
 IF bExecute AND NOT bAllowMove THEN
 	bError := TRUE;
 	IF stPositionState.bValid THEN
@@ -98,6 +113,8 @@ IF bExecute AND NOT bAllowMove THEN
 		sErrorMessage := 'Position invalid';
 	END_IF
 END_IF
+
+// This can be useful if we're running this FB standalone for some reason
 bAtState := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stPositionState);]]></ST>
     </Implementation>
   </POU>

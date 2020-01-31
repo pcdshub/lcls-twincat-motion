@@ -2,42 +2,60 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_MotionRequest" Id="{f3ce72e2-b968-4260-9a64-8e0267e89e51}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionRequest
-// Request a move from an axis controlled via EPICS using FB_MotionStage
+(*
+	Request a move from an axis controlled via EPICS using FB_MotionStage
+	This exists to manage situations where different bits of code may need to move the same motor.
+	With just the DUT_MotionStage/FB_MotionStage setup it is possible for two function blocks to
+	fight with and interfere with each other and with the EPICS commands.
+*)
 VAR_IN_OUT
-        stMotionStage: DUT_MotionStage;
+	// Motor to move
+    stMotionStage: DUT_MotionStage;
 END_VAR
 VAR_INPUT
-        bExecute: BOOL;
-        bReset: BOOL;
-        enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
-        fPos: LREAL;
-        fVel: LREAL;
-        fAcc: LREAL;
-        fDec: LREAL;
+	// Start move on rising edge, stop move on falling edge
+    bExecute: BOOL;
+	// Reset errors on rising edge
+    bReset: BOOL;
+	// Define behavior for when the motor is already moving
+    enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+	// Goal position
+    fPos: LREAL;
+	// Move velocity
+    fVel: LREAL;
+	// Optional acceleration
+    fAcc: LREAL;
+	// Optional deceleration
+    fDec: LREAL;
 END_VAR
 VAR_OUTPUT
-        bError: BOOL;
-        sErrorMessage: STRING;
-        bBusy: BOOL;
-        bDone: BOOL;
+	// True if in error state
+    bError: BOOL;
+	// Error code, usually
+    sErrorMessage: STRING;
+	// If TRUE, we are moving the motor
+    bBusy: BOOL;
+	// If TRUE, we are not moving the motor and our most recent move was successful
+    bDone: BOOL;
 END_VAR
 VAR
-        rtExec: R_TRIG;
-        ftExec: F_TRIG;
-        rtReset: R_TRIG;
-        ftBusy: F_TRIG;
-        nState: UINT := 0;
-        nQueuedState: UINT;
-        bMyMove: BOOL;
+    rtExec: R_TRIG;
+    ftExec: F_TRIG;
+    rtReset: R_TRIG;
+    ftBusy: F_TRIG;
+    nState: UINT := 0;
+    nQueuedState: UINT;
+    bMyMove: BOOL;
 END_VAR
+// Define local constants for our state machine states
 VAR CONSTANT
-        INIT: UINT := 0;
-        EXEC: UINT := 1;
-        START: UINT := 2;
-        MOVING: UINT := 3;
-        DONE: UINT := 4;
-        STOP: UINT := 5;
-        ERROR: UINT := 6;
+    INIT: UINT := 0;
+    EXEC: UINT := 1;
+    START: UINT := 2;
+    MOVING: UINT := 3;
+    DONE: UINT := 4;
+    STOP: UINT := 5;
+    ERROR: UINT := 6;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -45,76 +63,91 @@ END_VAR
 ftExec(CLK:=bExecute);
 rtReset(CLK:=bReset);
 
+// Go back to INIT state on reset
 IF rtReset.Q THEN
-        nState := INIT;
-        nQueuedState := INIT;
+    nState := INIT;
+    nQueuedState := INIT;
 END_IF
 IF rtExec.Q OR ftExec.Q THEN
 	bDone := FALSE;
 END_IF
 
 CASE nState OF
-        INIT:
-                nState := EXEC;
-                bError := FALSE;
-                sErrorMessage := '';
-                bBusy := FALSE;
-                bDone := FALSE;
-        EXEC:
-                bMyMove := FALSE;
-                IF rtExec.Q THEN
-                        IF stMotionStage.bExecute THEN
-                                CASE enumMotionRequest OF
-                                        ENUM_MotionRequest.WAIT:
-                                                nState := MOVING;
-                                                nQueuedState := START;
-                                        ENUM_MotionRequest.INTERRUPT:
-                                                nState := STOP;
-                                                nQueuedState := START;
-                                        ENUM_MotionRequest.ABORT:
-                                                nState := EXEC;
-                                END_CASE
-                        ELSE
-                                nState := START;
-                        END_IF
-                END_IF
-        START:
-                bMyMove := TRUE;
-                stMotionStage.bExecute := TRUE;
-                stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
-                stMotionStage.fPosition := fPos;
-                stMotionStage.fVelocity := fVel;
-                stMotionStage.fAcceleration := fAcc;
-                stMotionStage.fDeceleration := fDec;
-                nState := MOVING;
-                nQueuedState := DONE;
-        MOVING:
-                bBusy := stMotionStage.bBusy;
-                ftBusy(CLK:=bBusy);
-                IF ftBusy.Q THEN
-                        nState := nQueuedState;
-                END_IF
-                IF ftExec.Q AND bMyMove THEN
+	// Start by setting everything to a known value
+    INIT:
+        nState := EXEC;
+        bError := FALSE;
+        sErrorMessage := '';
+        bBusy := FALSE;
+        bDone := FALSE;
+	// Normal "waiting for move" state
+    EXEC:
+        bMyMove := FALSE;
+		// Looking for a rising edge on bExecute
+        IF rtExec.Q THEN
+			bDone := FALSE;
+            IF stMotionStage.bExecute THEN
+				// Pick interruption behavior via state machine if a move is in progress
+                CASE enumMotionRequest OF
+                    ENUM_MotionRequest.WAIT:
+                        nState := MOVING;
+                        nQueuedState := START;
+                    ENUM_MotionRequest.INTERRUPT:
                         nState := STOP;
-                        nQueuedState := EXEC;
-                END_IF
-        DONE:
-                bDone := stMotionStage.bDone;
-                nState := EXEC;
-        STOP:
-                bMyMove := TRUE;
-                stMotionStage.bExecute := FALSE;
-                IF NOT stMotionStage.bBusy THEN
-                        nState := nQueuedState;
-                END_IF
-        ERROR:
-                bMyMove := FALSE;
+                        nQueuedState := START;
+                    ENUM_MotionRequest.ABORT:
+                        nState := EXEC;
+                END_CASE
+            ELSE
+                nState := START;
+            END_IF
+        END_IF
+	// Set the correct values on DUT_MotionStage to start a new absolute move
+    START:
+        bMyMove := TRUE;
+        stMotionStage.bExecute := TRUE;
+        stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+        stMotionStage.fPosition := fPos;
+        stMotionStage.fVelocity := fVel;
+        stMotionStage.fAcceleration := fAcc;
+        stMotionStage.fDeceleration := fDec;
+        nState := MOVING;
+        nQueuedState := DONE;
+	// Watch an ongoing move, look for the move to end or requests to stop the move from this FB
+    MOVING:
+        bBusy := stMotionStage.bBusy;
+        ftBusy(CLK:=bBusy);
+        IF ftBusy.Q THEN
+			// This will send us to DONE if this was our move and START if we were waiting for someone else's move
+            nState := nQueuedState;
+        END_IF
+		// Implement stop on falling trigger
+        IF ftExec.Q AND bMyMove THEN
+            nState := STOP;
+            nQueuedState := EXEC;
+        END_IF
+	// Pick out the bDone state and return to waiting
+    DONE:
+        bDone := stMotionStage.bDone;
+        nState := EXEC;
+	// Request a stop and wait for it to happen
+    STOP:
+        bMyMove := TRUE;
+        stMotionStage.bExecute := FALSE;
+        IF NOT stMotionStage.bBusy THEN
+			// Sends us to EXEC if we are stopping our own move, or to START if interrupting someone else's
+            nState := nQueuedState;
+        END_IF
+	// Lock us into the error state until the FB is reset
+    ERROR:
+        bMyMove := FALSE;
 END_CASE
 
+// Transition to the ERROR state if applicable
 IF bMyMove AND stMotionStage.bError THEN
-        nState := ERROR;
-        bError := TRUE;
-        sErrorMessage := stMotionStage.sErrorMessage;
+    nState := ERROR;
+    bError := TRUE;
+    sErrorMessage := stMotionStage.sErrorMessage;
 END_IF]]></ST>
     </Implementation>
   </POU>
