@@ -1,24 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="Interactive" Id="{9e15d54f-806f-40b6-8fcc-67cd88d24764}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM Interactive
 VAR
+	bInit: BOOL := FALSE;
+
 	M1: DUT_MotionStage;
 	fbMotionStageSim: FB_MotionStageSim;
 	nCounter: UINT;
 	
 	stOut: DUT_PositionState;
-	fbGoOut: FB_StatePTPMove;
+	fbGoOut: FB_PositionStateMove;
 	bOut: BOOL;
 	bGoOut: BOOL;
 	stIn: DUT_PositionState;
-	fbGoIn: FB_StatePTPMove;
+	fbGoIn: FB_PositionStateMove;
 	bIn: BOOL;
 	bGoIn: BOOL;
 	stUnsafe: DUT_PositionState;
-	fbGoBad: FB_StatePTPMove;
+	fbGoBad: FB_PositionStateMove;
 	bHCF: BOOL;
 	bGoHCF: BOOL;
+
+	{attribute 'pytmc' := '
+		pv: TST:STATE
+		io: io
+	'}
+	fbEpicsInOut: FB_EpicsInOut;
+
+	fbStateManager: FB_PositionStateManager;
+	setState: INT;
+	arrStates: ARRAY [1..15] OF DUT_PositionState;
 END_VAR
 
     ]]></Declaration>
@@ -26,38 +38,63 @@ END_VAR
       <ST><![CDATA[fbMotionStageSim(stMotionStage:=M1);
 nCounter := nCounter + 1;
 
-stOut.sName := 'Out';
-stOut.fPosition := 100;
-stOut.fDelta := 20;
-stOut.fVelocity := 10;
-
-stIn.sName := 'In';
-stIn.fPosition := 0;
-stIn.fDelta := 0.1;
-stIn.fVelocity := 5;
-
-stUnsafe.sName := 'HCF';
-stUnsafe.fPosition := -999;
-stUnsafe.fDelta := 6;
-stUnsafe.fVelocity := 42;
+IF NOT bInit THEN
+	bInit := TRUE;
+	
+	stOut.sName := 'Out';
+	stOut.fPosition := 100;
+	stOut.fDelta := 20;
+	stOut.fVelocity := 10;
+	stOut.bValid := TRUE;
+	stOut.bMoveOk := TRUE;
+	
+	stIn.sName := 'In';
+	stIn.fPosition := 0;
+	stIn.fDelta := 0.1;
+	stIn.fVelocity := 5;
+	stIn.bValid := TRUE;
+	stIn.bMoveOk := TRUE;
+	
+	stUnsafe.sName := 'HCF';
+	stUnsafe.fPosition := -999;
+	stUnsafe.fDelta := 6;
+	stUnsafe.fVelocity := 42;
+	stUnsafe.bValid := TRUE;
+	stUnsafe.bMoveOk := FALSE;
+	
+	fbEpicsInOut.bEnable := TRUE;
+	fbStateManager.bEnable := TRUE;
+END_IF
 
 fbGoOut(
 	bExecute:=bGoOut,
 	stMotionStage:=M1,
 	stPositionState:=stOut,
-	bMoveOk:=TRUE,
 	bAtState=>bOut);
 fbGoIn(
 	bExecute:=bGoIn,
 	stMotionStage:=M1,
 	stPositionState:=stIn,
-	bMoveOk:=TRUE,
 	bAtState=>bIn);
 fbGoBad(
 	bExecute:=bGoHCF,
 	stMotionStage:=M1,
 	stPositionState:=stUnsafe,
-	bAtState=>bHCF);]]></ST>
+	bAtState=>bHCF);
+
+arrStates[1] := stOut;
+arrStates[2] := stIn;
+arrStates[3] := stUnsafe;
+	
+fbEpicsInOut(
+	stMotionStage := M1,
+	stOut := stOut,
+	stIn := stIn);
+	
+fbStateManager(
+	stMotionStage := M1,
+	arrStates := arrStates,
+	setState := setState);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

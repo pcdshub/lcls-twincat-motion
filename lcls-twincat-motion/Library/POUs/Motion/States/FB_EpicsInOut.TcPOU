@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_EpicsInOut" Id="{13bd60fa-f200-43aa-9bf2-b14d410be016}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EpicsInOut
+// Example usage of FB_PositionStateManager for a simple IN/OUT axis
+// Also usable as a drop-in for these cases
+VAR_IN_OUT
+	stMotionStage: DUT_MotionStage;
+	// Do not pragma these, let it happen in the manager.
+	stOut: DUT_PositionState;
+	stIn: DUT_PositionState;
+END_VAR
+VAR_INPUT
+	bEnable: BOOL;
+	// Take care here: only set this value from TwinCAT when you want it to change
+	{attribute 'pytmc' := '
+		pv: SET
+		io: io
+	'}
+	enumSet: ENUM_EpicsInOut;
+END_VAR
+VAR_OUTPUT
+	bError: BOOL;
+	sErrorMessage: STRING;
+	bBusy: BOOL;
+	bDone: BOOL;
+	// The actual real state readback
+	{attribute 'pytmc' := '
+		pv: GET
+		io: io
+	'}
+	enumGet: ENUM_EpicsInOut;
+END_VAR
+VAR
+	bInit: BOOL;
+	arrStates: ARRAY[1..15] OF DUT_PositionState;
+
+	{attribute 'pytmc' := '
+		pv:
+		io: io
+	'}
+	fbStateManager: FB_PositionStateManager;
+	fbLockOut: FB_PositionStateLock;
+	fbLockIn: FB_PositionStateLock;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT bInit THEN
+	stOut.sName := 'OUT';
+	stIn.sName := 'IN';
+	bInit := TRUE;
+END_IF
+fbLockOut(stPositionState:=stOut);
+fbLockIn(stPositionState:=stIn);
+arrStates[1] := stOut;
+arrStates[2] := stIn;
+
+fbStateManager(
+	stMotionStage := stMotionStage,
+	arrStates := arrStates,
+	setState := enumSet,
+	bEnable := bEnable,
+	bError => bError,
+	sErrorMessage => sErrorMessage,
+	bBusy => bBusy,
+	bDone => bDone,
+	getState => enumGet);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

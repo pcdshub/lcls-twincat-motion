@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_MotionStage" Id="{137c52b5-8983-4728-b719-31601503f20a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage
 VAR_IN_OUT
@@ -10,7 +10,9 @@ VAR
 	bExecute: BOOL;
 	bFwdHit: BOOL;
 	bBwdHit: BOOL;
-	fbExecFallingEdge: F_TRIG;
+	ftExec: F_TRIG;
+	rtExec: R_TRIG;
+	rtTarget: R_TRIG;
 	fbSetEnables: FB_SetEnables;
 END_VAR
 ]]></Declaration>
@@ -20,12 +22,12 @@ stMotionStage.Axis.ReadStatus();
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
-	ENUM_StageEnableMode.STAGE_ENABLE_ALWAYS:
+	ENUM_StageEnableMode.ALWAYS:
 		stMotionStage.bEnable := TRUE;
 		bExecute := stMotionStage.bExecute;
-	ENUM_StageEnableMode.STAGE_ENABLE_NEVER:
+	ENUM_StageEnableMode.NEVER:
 		bExecute := stMotionStage.bExecute;
-	ENUM_StageEnableMode.STAGE_ENABLE_MOTION:
+	ENUM_StageEnableMode.DURING_MOTION:
 		IF stMotionStage.bExecute THEN
 			stMotionStage.bEnable := TRUE;
 		END_IF
@@ -33,7 +35,7 @@ CASE stMotionStage.nEnableMode OF
 END_CASE
 
 // Automatically fill the correct nCmdData for homing
-IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.EPICS_MOTOR_HOME THEN
+IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
 	stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
@@ -60,7 +62,11 @@ fbDriveVirtual(En:=TRUE,
 	sErrorMessage=>stMotionStage.sErrorMessage,
 	Axis:=stMotionStage.Axis);
 
-IF fbDriveVirtual.bBusy THEN
+// Update status again after the move starts
+stMotionStage.Axis.ReadStatus();
+
+rtExec(CLK:=bExecute);
+IF rtExec.Q THEN
 	stMotionStage.bBusy := TRUE;
 	stMotionStage.bDone := FALSE;
 END_IF
@@ -79,8 +85,10 @@ IF bFwdHit OR bBwdHit THEN
 END_IF
 
 // Mark done if settled or if unexpected stop, then reset the FB if there is no error
-fbExecFallingEdge(CLK:=stMotionStage.bExecute);
-IF (stMotionStage.Axis.Status.InTargetPosition AND NOT fbDriveVirtual.bBusy) OR fbExecFallingEdge.Q THEN
+ftExec(CLK:=stMotionStage.bExecute);
+rtTarget(CLK:=stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone);
+//IF (stMotionStage.Axis.Status.InTargetPosition AND NOT fbDriveVirtual.bBusy) OR ftExec.Q THEN
+IF rtTarget.Q OR ftExec.Q THEN
 	IF NOT stMotionStage.bDone THEN
 		stMotionStage.bDone := TRUE;
 		stMotionStage.bBusy := FALSE;
@@ -90,7 +98,7 @@ IF (stMotionStage.Axis.Status.InTargetPosition AND NOT fbDriveVirtual.bBusy) OR 
 		END_IF
 	END_IF
 END_IF
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.STAGE_ENABLE_MOTION AND NOT bExecute THEN
+IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT bExecute THEN
 	IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
 		stMotionStage.bEnable := FALSE;
 	END_IF
@@ -107,9 +115,9 @@ END_CASE
 
 // Handle the brake. TRUE means brake disabled.
 CASE stMotionStage.nBrakeMode OF
-	ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED:
+	ENUM_StageBrakeMode.DISABLED:
 		stMotionStage.bBrakeRelease := stMotionStage.bEnableDone AND stMotionStage.bExecute;
-	ENUM_StageBrakeMode.STAGE_BRAKE_STANDSTILL:
+	ENUM_StageBrakeMode.STANDSTILL:
 		IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
 			stMotionStage.bBrakeRelease := FALSE;
 		ELSE
@@ -135,7 +143,7 @@ END_IF
 
 // Ignore homing if we have the setting for it
 // e.g. for pre-calibrated absolute encoders
-IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE THEN
+IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
 	stMotionStage.stAxisStatus.bHomed := TRUE;
 END_IF]]></ST>
     </Implementation>

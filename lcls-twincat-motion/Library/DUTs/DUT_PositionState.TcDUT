@@ -1,16 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="DUT_PositionState" Id="{85d45494-8a84-426c-8efe-9136ee5821c6}">
     <Declaration><![CDATA[TYPE DUT_PositionState :
-// Include io: input on things that should never be mutable in EPICS.
-// Omit io on things that may or may not need to be mutable, allow engineer to decide in their pragma.
-// Currently: some installations would want position and delta to be mutable.
 STRUCT
 	{attribute 'pytmc' := '
 		pv: NAME
 		io: input
 	'}
-	sName: STRING;
+	sName: STRING := 'Invalid';
 
 	{attribute 'pytmc' := '
 		pv: SETPOINT
@@ -41,6 +38,24 @@ STRUCT
 		io: io
 	'}
 	fDecel: LREAL;
+	
+	{attribute 'pymtc' := '
+		pv: MOVE_OK
+		io: io
+	'}
+	bMoveOk: BOOL;
+	
+	{attribute 'pymtc' := '
+		pv: LOCKED
+		io: i
+	'}
+	bLocked: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: VALID
+		io: i
+	'}
+	bValid: BOOL;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>

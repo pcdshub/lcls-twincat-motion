@@ -1,0 +1,121 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MotionRequest" Id="{f3ce72e2-b968-4260-9a64-8e0267e89e51}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionRequest
+// Request a move from an axis controlled via EPICS using FB_MotionStage
+VAR_IN_OUT
+        stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+        bExecute: BOOL;
+        bReset: BOOL;
+        enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+        fPos: LREAL;
+        fVel: LREAL;
+        fAcc: LREAL;
+        fDec: LREAL;
+END_VAR
+VAR_OUTPUT
+        bError: BOOL;
+        sErrorMessage: STRING;
+        bBusy: BOOL;
+        bDone: BOOL;
+END_VAR
+VAR
+        rtExec: R_TRIG;
+        ftExec: F_TRIG;
+        rtReset: R_TRIG;
+        ftBusy: F_TRIG;
+        nState: UINT := 0;
+        nQueuedState: UINT;
+        bMyMove: BOOL;
+END_VAR
+VAR CONSTANT
+        INIT: UINT := 0;
+        EXEC: UINT := 1;
+        START: UINT := 2;
+        MOVING: UINT := 3;
+        DONE: UINT := 4;
+        STOP: UINT := 5;
+        ERROR: UINT := 6;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtExec(CLK:=bExecute);
+ftExec(CLK:=bExecute);
+rtReset(CLK:=bReset);
+
+IF rtReset.Q THEN
+        nState := INIT;
+        nQueuedState := INIT;
+END_IF
+IF rtExec.Q OR ftExec.Q THEN
+	bDone := FALSE;
+END_IF
+
+CASE nState OF
+        INIT:
+                nState := EXEC;
+                bError := FALSE;
+                sErrorMessage := '';
+                bBusy := FALSE;
+                bDone := FALSE;
+        EXEC:
+                bMyMove := FALSE;
+                IF rtExec.Q THEN
+                        IF stMotionStage.bExecute THEN
+                                CASE enumMotionRequest OF
+                                        ENUM_MotionRequest.WAIT:
+                                                nState := MOVING;
+                                                nQueuedState := START;
+                                        ENUM_MotionRequest.INTERRUPT:
+                                                nState := STOP;
+                                                nQueuedState := START;
+                                        ENUM_MotionRequest.ABORT:
+                                                nState := EXEC;
+                                END_CASE
+                        ELSE
+                                nState := START;
+                        END_IF
+                END_IF
+        START:
+                bMyMove := TRUE;
+                stMotionStage.bExecute := TRUE;
+                stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+                stMotionStage.fPosition := fPos;
+                stMotionStage.fVelocity := fVel;
+                stMotionStage.fAcceleration := fAcc;
+                stMotionStage.fDeceleration := fDec;
+                nState := MOVING;
+                nQueuedState := DONE;
+        MOVING:
+                bBusy := stMotionStage.bBusy;
+                ftBusy(CLK:=bBusy);
+                IF ftBusy.Q THEN
+                        nState := nQueuedState;
+                END_IF
+                IF ftExec.Q AND bMyMove THEN
+                        nState := STOP;
+                        nQueuedState := EXEC;
+                END_IF
+        DONE:
+                bDone := stMotionStage.bDone;
+                nState := EXEC;
+        STOP:
+                bMyMove := TRUE;
+                stMotionStage.bExecute := FALSE;
+                IF NOT stMotionStage.bBusy THEN
+                        nState := nQueuedState;
+                END_IF
+        ERROR:
+                bMyMove := FALSE;
+END_CASE
+
+IF bMyMove AND stMotionStage.bError THEN
+        nState := ERROR;
+        bError := TRUE;
+        sErrorMessage := stMotionStage.sErrorMessage;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

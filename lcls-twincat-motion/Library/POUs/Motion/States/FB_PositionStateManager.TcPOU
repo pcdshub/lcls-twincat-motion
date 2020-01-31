@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateManager" Id="{925eb9bb-c0f7-4b79-a387-ef7d0fb5ed46}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateManager
+// Handle EPICS moves between multiple states for a single axis
+VAR_IN_OUT
+	stMotionStage: DUT_MotionStage;
+	
+	{attribute 'pytmc' := '
+		pv: 
+		io: io
+		expand: %.2d
+	'}
+	arrStates: ARRAY[1..15] OF DUT_PositionState;
+	setState: INT;
+END_VAR
+VAR_INPUT
+	bEnable: BOOL;
+	{attribute 'pytmc' := '
+		pv: RESET
+		io: io
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bReset: BOOL;
+END_VAR
+VAR_OUTPUT
+	{attribute 'pytmc' := '
+		pv: ERR
+		io: i
+		type: ENUM
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bError: BOOL;
+	{attribute 'pytmc' := '
+		pv: ERRMSG
+		io: i
+	'}
+	sErrorMessage: STRING;
+	{attribute 'pytmc' := '
+		pv: BUSY
+		io: i
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bBusy: BOOL;
+	{attribute 'pytmc' := '
+		pv: DONE
+		io: i
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bDone: BOOL;
+	goalState: INT;
+	getState: INT;
+END_VAR
+VAR
+	bInit: BOOL;
+	stUnknown: DUT_PositionState;
+	stGoal: DUT_PositionState;
+	fbStateMove: FB_PositionStateMove;
+	nIndex: INT;
+	bNewGoal: BOOL;
+	bInnerExec: BOOL;
+	bInnerReset: BOOL;
+	rtReset: R_TRIG;
+	bMoveRequested: BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtReset(CLK:=bReset);
+IF rtReset.Q THEN
+	bInit := FALSE;
+END_IF
+IF NOT bInit THEN
+	bError := FALSE;
+	sErrorMessage := '';
+	bBusy := FALSE;
+	bDone := FALSE;
+	bNewGoal := FALSE;
+	bInnerExec := FALSE;
+	bInnerReset := TRUE;
+	setState := 0;
+	goalState := 0;
+END_IF
+
+getState := 0;
+FOR nIndex := 1 TO 15 DO
+	IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
+		getState := nIndex;
+	END_IF
+END_FOR
+
+IF setState <> goalState THEN
+	goalState := setState;
+	bNewGoal := TRUE;
+END_IF
+
+IF bError OR NOT bEnable THEN
+	bInnerExec := FALSE;
+ELSIF bInnerExec AND bNewGoal THEN
+	bInnerExec := FALSE;
+	bInnerReset := TRUE;
+ELSIF bNewGoal THEN
+	bInnerExec := TRUE;
+	bInnerReset := FALSE;
+	bNewGoal := FALSE;
+END_IF
+
+IF goalState = 0 THEN
+	stGoal := stUnknown;
+ELSE
+	stGoal := arrStates[goalState];
+END_IF
+fbStateMove(
+	stMotionStage := stMotionStage,
+	stPositionState := stGoal,
+	bExecute := bInnerExec,
+	bReset := bInnerReset,
+	enumMotionRequest := ENUM_MotionRequest.INTERRUPT,
+	bBusy => bBusy);
+IF bInnerExec THEN
+	bDone := fbStateMove.bDone;
+END_IF
+
+bMoveRequested := bInnerExec AND NOT bDone;
+
+IF NOT bError THEN
+	bError := fbStateMove.bError;
+	sErrorMessage := fbStateMove.sErrorMessage;
+END_IF
+
+IF NOT bError AND NOT bNewGoal AND NOT bMoveRequested THEN
+	setState := 0;
+	goalState := 0;
+	bInnerExec := FALSE;
+END_IF
+
+IF NOT bInit THEN
+	bInit := TRUE;
+	bInnerReset := FALSE;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

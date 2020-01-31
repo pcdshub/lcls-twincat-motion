@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateMove" Id="{a935a12e-6ee3-4ebb-8c29-e9b23b7cef37}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateMove
+// Request a move to a particular state from an axis controlled via EPICS
+// pytmc PVs here only exposed if using directly and not through FB_PositionStateManager
+VAR_IN_OUT
+	stMotionStage: DUT_MotionStage;
+	
+	{attribute 'pytmc' := '
+		pv:
+	'}
+	stPositionState: DUT_PositionState;
+END_VAR
+VAR_INPUT
+	{attribute 'pytmc' := '
+		pv: GO
+		io: io
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bExecute: BOOL;
+
+	{attribute 'pytmc' := '
+		pv: RESET
+		io: io
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bReset: BOOL;
+
+	enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+END_VAR
+VAR_OUTPUT
+	{attribute 'pytmc' := '
+		pv: AT_STATE
+		io: input
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bAtState: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: ERR
+		io: input
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bError: BOOL;
+	
+	{attribute 'pytmc' := '
+		pv: ERRMSG
+		io: input
+	'}
+	sErrorMessage: STRING;
+
+	{attribute 'pytmc' := '
+		pv: BUSY
+		io: input
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bBusy: BOOL;
+
+	{attribute 'pytmc' := '
+		pv: DONE
+		io: input
+		field: ZNAM False
+		field: ONAM True
+	'}
+	bDone: BOOL;
+END_VAR
+VAR
+	fbMotionRequest: FB_MotionRequest;
+	bAllowMove: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[bAllowMove := stPositionState.bMoveOk AND stPositionState.bValid;
+fbMotionRequest(
+	stMotionStage := stMotionStage,
+	bExecute := bExecute AND bAllowMove,
+	bReset := bReset,
+	enumMotionRequest := enumMotionRequest,
+	fPos := stPositionState.fPosition,
+	fVel := stPositionState.fVelocity,
+	fAcc := stPositionState.fAccel,
+	fDec := stPositionState.fDecel,
+	bError => bError,
+	sErrorMessage => sErrorMessage,
+	bBusy => bBusy,
+	bDone => bDone);
+IF bExecute AND NOT bAllowMove THEN
+	bError := TRUE;
+	IF stPositionState.bValid THEN
+		sErrorMessage := 'Position unsafe';
+	ELSE
+		sErrorMessage := 'Position invalid';
+	END_IF
+END_IF
+bAtState := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stPositionState);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="F_AtPositionState" Id="{058abbc4-740d-4ed6-b83c-7fdc99dbdef5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_AtPositionState : BOOL
+VAR_INPUT
+	stMotionStage: DUT_MotionStage;
+	stPositionState: DUT_PositionState;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_AtPositionState := FALSE;
+IF stPositionState.bValid AND NOT stMotionStage.bExecute THEN
+	IF stMotionStage.stAxisStatus.fActPosition < stPositionState.fPosition + stPositionState.fDelta AND
+	   stMotionStage.stAxisStatus.fActPosition > stPositionState.fPosition - stPositionState.fDelta THEN
+	   F_AtPositionState := TRUE;
+	END_IF
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

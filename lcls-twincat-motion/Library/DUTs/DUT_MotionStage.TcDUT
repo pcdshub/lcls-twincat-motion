@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="DUT_MotionStage" Id="{10b5775d-5646-4d55-ad77-40abc3888de3}">
     <Declaration><![CDATA[TYPE DUT_MotionStage :
 STRUCT
@@ -83,19 +83,19 @@ STRUCT
 		pv: PLC:nEnableMode
 		io: i
 	'}
-	nEnableMode: INT:=ENUM_StageEnableMode.STAGE_ENABLE_MOTION;
+	nEnableMode: ENUM_StageEnableMode:=ENUM_StageEnableMode.DURING_MOTION;
 	// Determines when we automatically disengage the brake
 	{attribute 'pytmc' := '
 		pv: PLC:nBrakeMode
 		io: i
 	'}
-	nBrakeMode: INT:=ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED;
+	nBrakeMode: ENUM_StageBrakeMode:=ENUM_StageBrakeMode.DISABLED;
 	// Determines our encoder homing strategy
 	{attribute 'pytmc' := '
 		pv: PLC:nHomingMode
 		io: i
 	'}
-	nHomingMode: INT:=ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE;
+	nHomingMode: ENUM_EpicsHomeCmd:=ENUM_EpicsHomeCmd.NONE;
 	// Set true to activate gantry EPS
 	{attribute 'pytmc' := '
 		pv: PLC:bGantryAxis

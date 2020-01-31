@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateLock" Id="{fec9bba1-f69e-45d4-9e61-8f615c0e3bb9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateLock
+// Implement locking for a locked DUT_PositionState
+VAR_IN_OUT
+	stPositionState: DUT_PositionState;
+END_VAR
+VAR
+	stCachedPositionState: DUT_PositionState;
+	bInit: BOOL := FALSE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bInit AND stPositionState.bLocked THEN
+	stPositionState.sName := stCachedPositionState.sName;
+	stPositionState.fPosition := stCachedPositionState.fPosition;
+	stPositionState.fDelta := stCachedPositionState.fDelta;
+	stPositionState.fVelocity := stCachedPositionState.fVelocity;
+	stPositionState.fAccel := stCachedPositionState.fAccel;
+	stPositionState.fDecel := stCachedPositionState.fDecel;
+ELSIF NOT bInit AND stPositionState.bLocked THEN
+	stCachedPositionState.sName := stPositionState.sName;
+	stCachedPositionState.fPosition := stPositionState.fPosition;
+	stCachedPositionState.fDelta := stPositionState.fDelta;
+	stCachedPositionState.fVelocity := stPositionState.fVelocity;
+	stCachedPositionState.fAccel := stPositionState.fAccel;
+	stCachedPositionState.fDecel := stPositionState.fDecel;
+	bInit := TRUE;
+ELSIF NOT stPositionState.bLocked THEN
+	bInit := FALSE;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
