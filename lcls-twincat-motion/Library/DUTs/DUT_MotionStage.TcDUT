@@ -73,12 +73,12 @@ STRUCT
 	bGantryBackwardEnable: BOOL:=FALSE;
 	
 	(* Settings *)
-	// Change to FALSE if MC_POWER is somewhere else in the project
+	// If TRUE, we want to enable the motor independently of PMPS or other safety systems.
 	{attribute 'pytmc' := '
 		pv: PLC:bPowerSelf
 		io: i
 	'}
-	bPowerSelf: BOOL:=TRUE;
+	bPowerSelf: BOOL:=FALSE;
 	// Determines when we automatically enable the motor
 	{attribute 'pytmc' := '
 		pv: PLC:nEnableMode
