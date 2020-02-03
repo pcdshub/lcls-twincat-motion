@@ -12,7 +12,7 @@ And invoking as:
 fbMotion1(stMotionStage:=M1);
 ```
 
-You would then link your hardware as appropriate to `M1.Axis`, `M1.bLimitForwardEnable`, `M1.bLimitBackwardEnable`, `M1.bHome`, `M1.bBrakeRelease`, and `M1.bHardwareEnable`. It is important to set `M1.bEnableMode` the value the most fits your use case (see settings below). You also need to set `bPowerSelf` to `TRUE`, unless your device participates in LCLS's PMPS system, where it must be `FALSE`.
+You would then link your hardware as appropriate to `M1.Axis`, `M1.bLimitForwardEnable`, `M1.bLimitBackwardEnable`, `M1.bHome`, `M1.bBrakeRelease`, and `M1.bHardwareEnable`. It is important to set `M1.nEnableMode` the value the most fits your use case (see settings below). You also need to set `bPowerSelf` to `TRUE`, unless your device participates in LCLS's PMPS system, where it must be `FALSE`.
 
 Note that currently, the `DUT_MotionStage` instances must be named `Main.M1`, `Main.M2`... etc. due to limitations in the EPICS driver.
 
