@@ -37,7 +37,7 @@ fbMotionStage(stMotionStage := stMotionStage);
 
 | Setting | Type | Usage |
 | --- | --- | --- |
-| `bPowerSelf` | `BOOL` | If `TRUE` (default), this function block will call `MC_Power` based on the `bEnable` attribute in the struct. Otherwise, you'll have to call `MC_Power` somewhere else (perhaps for MPS) |
+| `bPowerSelf` | `BOOL` | If `FALSE` (default), then `FB_MotionStage` will expect an external PMPS function block to call `MC_Power` appropriately. You can switch this to `TRUE` to opt out of PMPS and handle motor enabling within `FB_MotionStage`. |
 | `nEnableMode` | `ENUM_StageEnableMode` | Automatically enable the NC Axis always, never, or only during motion (default). Switch this to always if you want active position correction at all times and to never if you're doing checkout with the TwinCAT NC GUI. |
 | `nBrakeMode` | `ENUM_StageBrakeMode` | Disable the brake when the axis is enabled (default), or when it is in the standstill state. Note that this does nothing unless a brake is linked to `bBrakeRelease`. |
 | `nHomingMode` | `ENUM_EpicsHomeCmd` | Pick which switch to home to, or not to require homing (default) |
