@@ -11,19 +11,23 @@ VAR_IN_OUT
 END_VAR
 VAR
 	fbMotionStage: FB_MotionStage;
+	bInit: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Stand-in for no forward limit
-stMotionStage.bLimitForwardEnable := TRUE;
-// Stand-in for no reverse limit
-stMotionStage.bLimitBackwardEnable := TRUE;
-// Stand-in for no STO button
-stMotionStage.bHardwareEnable := TRUE;
-// Stand-in for no PMPS governer
-stMotionStage.bPowerSelf := TRUE;
-// Always keep it enabled for testing ease
-stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+      <ST><![CDATA[IF NOT bInit THEN
+	bInit := TRUE;
+	// Stand-in for no forward limit
+	stMotionStage.bLimitForwardEnable := TRUE;
+	// Stand-in for no reverse limit
+	stMotionStage.bLimitBackwardEnable := TRUE;
+	// Stand-in for no STO button
+	stMotionStage.bHardwareEnable := TRUE;
+	// Stand-in for no PMPS governer
+	stMotionStage.bPowerSelf := TRUE;
+	// Always keep it enabled for testing ease
+	stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+END_IF
 // Call FB_MotionStage to do the thing
 fbMotionStage(stMotionStage := stMotionStage);]]></ST>
     </Implementation>
