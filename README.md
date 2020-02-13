@@ -12,7 +12,7 @@ And invoking as:
 fbMotion1(stMotionStage:=M1);
 ```
 
-You would then link your hardware as appropriate to `M1.Axis`, `M1.bLimitForwardEnable`, `M1.bLimitBackwardEnable`, `M1.bHome`, `M1.bBrakeRelease`, and `M1.bHardwareEnable`. It is important to set `M1.bEnableMode` the value the most fits your use case (see settings below). You also need to set `bPowerSelf` to `TRUE`, unless your device participates in LCLS's PMPS system, where it must be `FALSE`.
+You would then link your hardware as appropriate to `M1.Axis`, `M1.bLimitForwardEnable`, `M1.bLimitBackwardEnable`, `M1.bHome`, `M1.bBrakeRelease`, and `M1.bHardwareEnable`. It is important to set `M1.nEnableMode` the value the most fits your use case (see settings below). You also need to set `bPowerSelf` to `TRUE`, unless your device participates in LCLS's PMPS system, where it must be `FALSE`.
 
 Note that currently, the `DUT_MotionStage` instances must be named `Main.M1`, `Main.M2`... etc. due to limitations in the EPICS driver.
 
@@ -37,7 +37,7 @@ fbMotionStage(stMotionStage := stMotionStage);
 
 | Setting | Type | Usage |
 | --- | --- | --- |
-| `bPowerSelf` | `BOOL` | If `TRUE` (default), this function block will call `MC_Power` based on the `bEnable` attribute in the struct. Otherwise, you'll have to call `MC_Power` somewhere else (perhaps for MPS) |
+| `bPowerSelf` | `BOOL` | If `FALSE` (default), then `FB_MotionStage` will expect an external PMPS function block to call `MC_Power` appropriately. You can switch this to `TRUE` to opt out of PMPS and handle motor enabling within `FB_MotionStage`. |
 | `nEnableMode` | `ENUM_StageEnableMode` | Automatically enable the NC Axis always, never, or only during motion (default). Switch this to always if you want active position correction at all times and to never if you're doing checkout with the TwinCAT NC GUI. |
 | `nBrakeMode` | `ENUM_StageBrakeMode` | Disable the brake when the axis is enabled (default), or when it is in the standstill state. Note that this does nothing unless a brake is linked to `bBrakeRelease`. |
 | `nHomingMode` | `ENUM_EpicsHomeCmd` | Pick which switch to home to, or not to require homing (default) |
