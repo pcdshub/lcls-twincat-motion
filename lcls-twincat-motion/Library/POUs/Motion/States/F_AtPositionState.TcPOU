@@ -14,8 +14,8 @@ END_VAR
       <ST><![CDATA[F_AtPositionState := FALSE;
 // We can never be at invalid states. We are also not at a state if a move has been requested, we are instead transitioning.
 IF stPositionState.bValid AND NOT stMotionStage.bExecute THEN
-	IF stMotionStage.stAxisStatus.fActPosition < stPositionState.fPosition + stPositionState.fDelta AND
-	   stMotionStage.stAxisStatus.fActPosition > stPositionState.fPosition - stPositionState.fDelta THEN
+	IF stMotionStage.stAxisStatus.fActPosition < stPositionState.fPosition + ABS(stPositionState.fDelta) AND
+	   stMotionStage.stAxisStatus.fActPosition > stPositionState.fPosition - ABS(stPositionState.fDelta) THEN
 	   F_AtPositionState := TRUE;
 	END_IF
 END_IF]]></ST>
