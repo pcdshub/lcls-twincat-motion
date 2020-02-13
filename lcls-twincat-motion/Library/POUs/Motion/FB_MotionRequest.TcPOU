@@ -96,7 +96,9 @@ CASE nState OF
                         nState := STOP;
                         nQueuedState := START;
                     ENUM_MotionRequest.ABORT:
-                        nState := EXEC;
+                        nState := ERROR;
+                        bError := TRUE;
+                        sErrorMessage := 'Move already in progress';
                 END_CASE
             ELSE
                 nState := START;
