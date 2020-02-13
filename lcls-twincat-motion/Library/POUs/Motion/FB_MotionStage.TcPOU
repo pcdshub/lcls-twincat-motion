@@ -123,22 +123,22 @@ CASE stMotionStage.Axis.Status.MotionState OF
 END_CASE
 
 // Handle the brake. TRUE means brake disabled/released
-CASE stMotionStage.nBrakeMode OF
-	ENUM_StageBrakeMode.DISABLED:
-		stMotionStage.bBrakeRelease := stMotionStage.bEnableDone AND stMotionStage.bExecute;
-	ENUM_StageBrakeMode.STANDSTILL:
-		IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+IF stMotionStage.nBrakeMode <> ENUM_StageBrakeMode.NEVER THEN
+	CASE stMotionStage.Axis.Status.MotionState OF
+		MC_AXISSTATE_UNDEFINED,
+		MC_AXISSTATE_DISABLED,
+		MC_AXISSTATE_ERRORSTOP:
 			stMotionStage.bBrakeRelease := FALSE;
+		MC_AXISSTATE_STANDSTILL:
+			IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.STANDSTILL THEN
+				stMotionStage.bBrakeRelease := FALSE;
+			ELSE
+				stMotionStage.bBrakeRelease := TRUE;
+			END_IF
 		ELSE
 			stMotionStage.bBrakeRelease := TRUE;
-		END_IF
-END_CASE
-
-// Always brake if something bad happened
-CASE stMotionStage.Axis.Status.MotionState OF
-	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_ERRORSTOP:
-		stMotionStage.bBrakeRelease := FALSE;
-END_CASE
+	END_CASE
+END_IF
 
 // Sync the epics status struct
 stMotionStage.stAxisStatus := fbDriveVirtual.stAxisStatus;
