@@ -35,15 +35,15 @@ fbMotionStage(stMotionStage := stMotionStage);
 ## Settings
 `DUT_MotionStage` has the following settings:
 
-| Setting | Type | Usage |
-| --- | --- | --- |
-| `bPowerSelf` | `BOOL` | If `FALSE` (default), then `FB_MotionStage` will expect an external PMPS function block to call `MC_Power` appropriately. You can switch this to `TRUE` to opt out of PMPS and handle motor enabling within `FB_MotionStage`. |
-| `nEnableMode` | `ENUM_StageEnableMode` | Automatically enable the NC Axis always, never, or only during motion (default). Switch this to always if you want active position correction at all times and to never if you're doing checkout with the TwinCAT NC GUI. |
-| `nBrakeMode` | `ENUM_StageBrakeMode` | Engage the brake when the axis is disabled (default), or also when it is in the standstill state. Note that this does nothing unless a brake is linked to `bBrakeRelease`. |
-| `nHomingMode` | `ENUM_EpicsHomeCmd` | Pick which switch to home to, or not to require homing (default) |
-| `bGantryMode` | `BOOL` | Set to `TRUE` to activate gantry EPS |
-| `nGantryTol` | `LINT` | If the gantry error is greater than this number of encoder counts, trigger a virtual limit. |
-| `nEncRef` | `ULINT` | Encoder count for gantry motion where the two axes are aligned. |
+| Setting | Type | Usage | Default |
+| --- | --- | --- | --- |
+| `bPowerSelf` | `BOOL` | If `FALSE` (default), then `FB_MotionStage` will expect an external PMPS function block to call `MC_Power` appropriately. You can switch this to `TRUE` to opt out of PMPS and handle motor enabling within `FB_MotionStage`. | `FALSE` |
+| `nEnableMode` | `ENUM_StageEnableMode` | Automatically enable the NC Axis `ALWAYS`, `NEVER`, or only `DURING_MOTION` (default). Switch this to `ALWAYS` if you want active position correction at all times and to `NEVER` if you're doing checkout with the TwinCAT NC GUI. | `DURING_MOTION` |
+| `nBrakeMode` | `ENUM_StageBrakeMode` | Engage the brake when the axis is `DISABLED` (default), or also when it is in the `STANDSTILL` state. Note that this does nothing unless a brake is linked to `bBrakeRelease`. | `DISABLED` |
+| `nHomingMode` | `ENUM_EpicsHomeCmd` | Pick which switch to home to, or not to require homing (default) | `NONE` |
+| `bGantryMode` | `BOOL` | Set to `TRUE` to activate gantry EPS | `FALSE` |
+| `nGantryTol` | `LINT` | If the gantry error is greater than this number of encoder counts, trigger a virtual limit. | 0 |
+| `nEncRef` | `ULINT` | Encoder count for gantry motion where the two axes are aligned. | 0 |
 
 ## Provided Resources
 | Resource | Type | Usage |
