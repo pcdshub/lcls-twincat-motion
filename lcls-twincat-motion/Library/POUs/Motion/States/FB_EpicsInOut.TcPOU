@@ -25,6 +25,8 @@ END_VAR
 VAR_OUTPUT
 	// If TRUE, we are in an error state
 	bError: BOOL; // NOTE: do not pragma these, already has pragma in manager
+    // Error code
+    nErrorId: UDINT;
 	// Message associated with bError = TRUE
 	sErrorMessage: STRING;
 	// If TRUE, we are currently moving between states
@@ -74,6 +76,7 @@ fbStateManager(
 	setState := enumSet,
 	bEnable := bEnable,
 	bError => bError,
+    nErrorId => nErrorId,
 	sErrorMessage => sErrorMessage,
 	bBusy => bBusy,
 	bDone => bDone,

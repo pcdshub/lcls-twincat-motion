@@ -65,11 +65,14 @@ fbDriveVirtual(En:=TRUE,
 	bPowerSelf:=stMotionStage.bPowerSelf,
 	nMotionAxisID=>stMotionStage.nMotionAxisID,
 	bError=>stMotionStage.bError,
-	sErrorMessage=>stMotionStage.sErrorMessage,
+    nErrorId=>stMotionStage.nErrorId,
 	Axis:=stMotionStage.Axis);
 
 // Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
+
+// Set the error message if we have one
+stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
 
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);

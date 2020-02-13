@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="F_MotionErrorCodeLookup" Id="{71c436f2-8bc4-46b7-82a0-e1e338c02dd9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_MotionErrorCodeLookup : STRING
+VAR_INPUT
+    nErrorId: UDINT;
+END_VAR
+VAR
+    msg: STRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE nErrorId OF
+    // Common NC errors
+    16#4221: msg:='Requested set velocity is not allowed';
+    16#4222: msg:='Requested set position is not allowed';
+    16#4225: msg:='Drive not ready during axis start';
+    16#4260: msg:='Drive disabled';
+
+    // Custom error definitions
+    16#7900: msg:='Aborted move request with active move in progress';
+    16#7901: msg:='Position state unsafe';
+    16#7902: msg:='Position state invalid';
+
+    // Fallbacks
+    0: msg:='';
+    ELSE
+        msg:='Contact PCDS to add new message';
+END_CASE
+F_MotionErrorCodeLookup := msg;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

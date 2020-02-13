@@ -43,6 +43,12 @@ VAR_OUTPUT
 		field: ONAM True
 	'}
 	bError: BOOL;
+    // Error ID
+    {attribute 'pytmc' := '
+        pv: ERRID
+        io: i
+    '}
+    nErrorId: UDINT;
 	// The error that caused bError to flip TRUE
 	{attribute 'pytmc' := '
 		pv: ERRMSG
@@ -156,6 +162,7 @@ END_IF
 // Pick up any new errors, but don't override uncleared existing errors
 IF NOT bError THEN
 	bError := fbStateMove.bError;
+    nErrorId := fbStateMove.nErrorId;
 	sErrorMessage := fbStateMove.sErrorMessage;
 END_IF
 

@@ -31,7 +31,9 @@ END_VAR
 VAR_OUTPUT
 	// True if in error state
     bError: BOOL;
-	// Error code, usually
+	// Error code
+    nErrorId: UDINT;
+    // What the error code means
     sErrorMessage: STRING;
 	// If TRUE, we are moving the motor
     bBusy: BOOL;
@@ -45,6 +47,7 @@ VAR
     ftBusy: F_TRIG;
     nState: UINT := 0;
     bMyMove: BOOL;
+    bCausedError: BOOL;
 END_VAR
 // Define local constants for our state machine states
 VAR CONSTANT
@@ -68,6 +71,9 @@ rtReset(CLK:=bReset);
 // Go back to INIT state on reset
 IF rtReset.Q THEN
     nState := INIT;
+    IF bError AND stMotionStage.bError AND bCausedError THEN
+        stMotionStage.bReset := TRUE;
+	END_IF
 END_IF
 IF rtExec.Q OR ftExec.Q THEN
 	bDone := FALSE;
@@ -80,6 +86,7 @@ CASE nState OF
         bError := FALSE;
         sErrorMessage := '';
         bDone := FALSE;
+        bCausedError := FALSE;
 	// Normal "waiting for move command" state
     WAIT_EXEC:
         bMyMove := FALSE;
@@ -99,7 +106,7 @@ CASE nState OF
                 ENUM_MotionRequest.ABORT:
                     nState := ERROR;
                     bError := TRUE;
-                    sErrorMessage := 'Move already in progress';
+                    nErrorId := 16#7900;
             END_CASE
         ELSE
             nState := START_MOVE;
@@ -155,8 +162,10 @@ END_CASE
 IF bMyMove AND stMotionStage.bError THEN
     nState := ERROR;
     bError := TRUE;
-    sErrorMessage := stMotionStage.sErrorMessage;
+    nErrorId := stMotionStage.nErrorId;
+    bCausedError := TRUE;
 END_IF
+sErrorMessage := F_MotionErrorCodeLookup(nErrorId := nErrorId);
 
 CASE nState OF
 INIT, WAIT_EXEC, ERROR:

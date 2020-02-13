@@ -55,7 +55,14 @@ VAR_OUTPUT
 	'}
 	bError: BOOL;
 
-	// Usually an error code
+	// Error code
+    {attribute 'pytmc' := '
+        pv: ERRID
+        io: input
+    '}
+    nErrorID: UDINT;
+
+    // Error description
 	{attribute 'pytmc' := '
 		pv: ERRMSG
 		io: input
@@ -100,6 +107,7 @@ fbMotionRequest(
 	fAcc := stPositionState.fAccel,
 	fDec := stPositionState.fDecel,
 	bError => bError,
+    nErrorId => nErrorId,
 	sErrorMessage => sErrorMessage,
 	bBusy => bBusy,
 	bDone => bDone);
@@ -108,10 +116,11 @@ fbMotionRequest(
 IF bExecute AND NOT bAllowMove THEN
 	bError := TRUE;
 	IF stPositionState.bValid THEN
-		sErrorMessage := 'Position unsafe';
+		nErrorId := 16#7901;
 	ELSE
-		sErrorMessage := 'Position invalid';
+		nErrorId := 16#7902;
 	END_IF
+    sErrorMessage := F_MotionErrorCodeLookup(nErrorId := nErrorID);
 END_IF
 
 // This can be useful if we're running this FB standalone for some reason
