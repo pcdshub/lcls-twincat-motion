@@ -123,14 +123,14 @@ CASE stMotionStage.Axis.Status.MotionState OF
 END_CASE
 
 // Handle the brake. TRUE means brake disabled/released
-IF stMotionStage.nBrakeMode <> ENUM_StageBrakeMode.NEVER THEN
+IF stMotionStage.nBrakeMode <> ENUM_StageBrakeMode.NO_BRAKE THEN
 	CASE stMotionStage.Axis.Status.MotionState OF
 		MC_AXISSTATE_UNDEFINED,
 		MC_AXISSTATE_DISABLED,
 		MC_AXISSTATE_ERRORSTOP:
 			stMotionStage.bBrakeRelease := FALSE;
 		MC_AXISSTATE_STANDSTILL:
-			IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.STANDSTILL THEN
+			IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.IF_MOVING THEN
 				stMotionStage.bBrakeRelease := FALSE;
 			ELSE
 				stMotionStage.bBrakeRelease := TRUE;
