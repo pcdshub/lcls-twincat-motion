@@ -78,7 +78,6 @@ CASE nState OF
         nState := EXEC;
         bError := FALSE;
         sErrorMessage := '';
-        bBusy := FALSE;
         bDone := FALSE;
 	// Normal "waiting for move" state
     EXEC:
@@ -117,8 +116,7 @@ CASE nState OF
         nQueuedState := DONE;
 	// Watch an ongoing move, look for the move to end or requests to stop the move from this FB
     MOVING:
-        bBusy := stMotionStage.bBusy;
-        ftBusy(CLK:=bBusy);
+        ftBusy(CLK:=stMotionStage.bBusy);
         IF ftBusy.Q THEN
 			// This will send us to DONE if this was our move and START if we were waiting for someone else's move
             nState := nQueuedState;
@@ -143,6 +141,13 @@ CASE nState OF
 	// Lock us into the error state until the FB is reset
     ERROR:
         bMyMove := FALSE;
+END_CASE
+
+CASE nState OF
+START, MOVING, STOP:
+    bBusy := TRUE;
+ELSE
+    bBusy := FALSE;
 END_CASE
 
 // Transition to the ERROR state if applicable
