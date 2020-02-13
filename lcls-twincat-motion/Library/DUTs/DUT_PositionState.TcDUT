@@ -8,6 +8,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: NAME
 		io: input
+		field: DESC Name of this position state
 	'}
 	sName: STRING := 'Invalid';
 
@@ -15,6 +16,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: SETPOINT
 		io: io
+		field: DESC Axis position associated with this state
 	'}
 	fPosition: LREAL;
 	
@@ -22,6 +24,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: DELTA
 		io: io
+		field: DESC Max deviation from position at this state
 	'}
 	fDelta: LREAL;
 	
@@ -29,6 +32,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: VELO
 		io: io
+		field: DESC Speed at which to move to this state
 	'}
 	fVelocity: LREAL;
 	
@@ -36,6 +40,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: ACCL
 		io: io
+		field: DESC Acceleration to use for moves to this state
 	'}
 	fAccel: LREAL;
 	
@@ -43,6 +48,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: DCCL
 		io: io
+		field: DESC Deceleration to use for moves to this state
 	'}
 	fDecel: LREAL;
 	
@@ -50,6 +56,9 @@ STRUCT
 	{attribute 'pymtc' := '
 		pv: MOVE_OK
 		io: io
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if the move would be safe
 	'}
 	bMoveOk: BOOL;
 	
@@ -57,6 +66,9 @@ STRUCT
 	{attribute 'pymtc' := '
 		pv: LOCKED
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if state is immutable
 	'}
 	bLocked: BOOL;
 	
@@ -64,6 +76,9 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: VALID
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if this is a real state
 	'}
 	bValid: BOOL;
 END_STRUCT
