@@ -19,11 +19,16 @@ VAR
 	rtExec: R_TRIG;
 	rtTarget: R_TRIG;
 	fbSetEnables: FB_SetEnables;
+    bPosGoal: BOOL;
+    bNegGoal: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Start with an accurate status
 stMotionStage.Axis.ReadStatus();
+
+bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
+bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
@@ -34,7 +39,21 @@ CASE stMotionStage.nEnableMode OF
 		bExecute := stMotionStage.bExecute;
 	ENUM_StageEnableMode.DURING_MOTION:
 		IF stMotionStage.bExecute THEN
-			stMotionStage.bEnable := TRUE;
+            IF bPosGoal THEN
+                IF stMotionStage.bAllForwardEnable THEN
+                    stMotionStage.bEnable := TRUE;
+                ELSE
+                    stMotionStage.bError := TRUE;
+                    stMotionStage.nErrorId := 16#4358;
+				END_IF
+            ELSIF bNegGoal THEN
+                IF stMotionStage.bAllBackwardEnable THEN
+                    stMotionStage.bEnable := TRUE;
+                ELSE
+                    stMotionStage.bError := TRUE;
+                    stMotionStage.nErrorId := 16#4357;
+				END_IF
+			END_IF
 		END_IF
 		bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
 END_CASE
@@ -64,12 +83,16 @@ fbDriveVirtual(En:=TRUE,
 	fHomePosition:=stMotionStage.fHomePosition,
 	bPowerSelf:=stMotionStage.bPowerSelf,
 	nMotionAxisID=>stMotionStage.nMotionAxisID,
-	bError=>stMotionStage.bError,
-    nErrorId=>stMotionStage.nErrorId,
 	Axis:=stMotionStage.Axis);
 
 // Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
+
+// Check for a new error
+IF NOT stMotionStage.bError THEN
+    stMotionStage.bError := fbDriveVirtual.bError;
+    stMotionStage.nErrorId := fbDriveVirtual.nErrorId;
+END_IF
 
 // Set the error message if we have one
 stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
@@ -152,6 +175,9 @@ IF stMotionStage.bReset THEN
 	stMotionStage.bEnable := FALSE;
 	stMotionStage.bReset := FALSE;
 	stMotionStage.bExecute := FALSE;
+    stMotionStage.bError := FALSE;
+    stMotionStage.nErrorId := 0;
+    stMotionStage.sErrorMessage := '';
 	bExecute := FALSE;
 END_IF
 
