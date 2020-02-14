@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_EpicsInOut" Id="{13bd60fa-f200-43aa-9bf2-b14d410be016}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EpicsInOut
+// Example usage of FB_PositionStateManager for a simple IN/OUT axis. See NOTE: comments.
+// Also usable as a drop-in for these cases (no need to roll your own in/out)
+VAR_IN_OUT
+	// Motor to apply states to
+	stMotionStage: DUT_MotionStage;
+	// Information about the OUT position
+	stOut: DUT_PositionState; // NOTE: Do not pragma these, let it happen in the manager.
+	// Information about the IN parameter
+	stIn: DUT_PositionState;
+END_VAR
+VAR_INPUT
+	// If TRUE, the motor will be moved when enumSet is changed
+	bEnable: BOOL;
+	// When changed, sets the destination and starts a move
+	{attribute 'pytmc' := '
+		pv: SET
+		io: io
+	'}
+	enumSet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumSet
+END_VAR
+VAR_OUTPUT
+	// If TRUE, we are in an error state
+	bError: BOOL; // NOTE: do not pragma these, already has pragma in manager
+    // Error code
+    nErrorId: UDINT;
+	// Message associated with bError = TRUE
+	sErrorMessage: STRING;
+	// If TRUE, we are currently moving between states
+	bBusy: BOOL;
+	// If TRUE, we asked for a move between states, it completed successfully, and there is no ongoing move
+	bDone: BOOL;
+	// The current state readback
+	{attribute 'pytmc' := '
+		pv: GET
+		io: i
+	'}
+	enumGet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumGet
+END_VAR
+VAR
+	bInit: BOOL;
+	arrStates: ARRAY[1..15] OF DUT_PositionState;
+
+	{attribute 'pytmc' := '
+		pv:
+		io: io
+	'}
+	fbStateManager: FB_PositionStateManager; // NOTE: Please copy this pragma exactly to pick up the standard PVs
+	fbLockOut: FB_PositionStateLock;
+	fbLockIn: FB_PositionStateLock;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Fist cycle setup
+IF NOT bInit THEN
+	stOut.sName := 'OUT';
+	stIn.sName := 'IN';
+	bInit := TRUE;
+END_IF
+
+// If either of these have bLocked = TRUE, do not allow user to change them
+fbLockOut(stPositionState:=stOut);
+fbLockIn(stPositionState:=stIn);
+
+// Stuff first two values of the 15 element array for the manager
+arrStates[1] := stOut;
+arrStates[2] := stIn;
+
+// Call the function block every cycle
+fbStateManager(
+	stMotionStage := stMotionStage,
+	arrStates := arrStates,
+	setState := enumSet,
+	bEnable := bEnable,
+	bError => bError,
+    nErrorId => nErrorId,
+	sErrorMessage => sErrorMessage,
+	bBusy => bBusy,
+	bDone => bDone,
+	getState => enumGet); // Cannot do this assignment if enumGet has attribute strict]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

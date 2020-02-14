@@ -1,13 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="ENUM_StageEnableMode" Id="{1486ae25-467b-42a2-8f52-1fc72b49b60d}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_StageEnableMode :
+	// Define conditions when FB_MotionStage automatically sets bEnable
 (
-	STAGE_ENABLE_ALWAYS, // Always set bEnable to TRUE
-	STAGE_ENABLE_NEVER,  // Only change bEnable on errors
-	STAGE_ENABLE_MOTION  // Enable before motion, disable after motion
+	ALWAYS, // Always set bEnable to TRUE
+	NEVER,  // Only change bEnable on errors
+	DURING_MOTION  // Enable before motion, disable after motion
 );
 END_TYPE
 ]]></Declaration>

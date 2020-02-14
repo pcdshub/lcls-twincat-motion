@@ -1,16 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="ENUM_EpicsHomeCmd" Id="{97391387-6673-4061-a135-1a0002888344}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_EpicsHomeCmd :
+	// Defines the valid options for homing in FB_MotionStage
 (
-	EPICS_MOTOR_HOME_LLS := 1, // Low limit switch
-	EPICS_MOTOR_HOME_HLS := 2, // High limit switch
-	EPICS_MOTOR_HOME_LHS := 3, // Home switch via low switch
-	EPICS_MOTOR_HOME_HHS := 4, // Home switch via high switch
-	EPICS_MOTOR_HOME_ABS := 15, // Set here to be fHomePosition
-	EPICS_MOTOR_HOME_NONE := -1 // Do not home, ever
+	LOW_LIMIT := 1, // Low limit switch
+	HIGH_LIMIT := 2, // High limit switch
+	HOME_VIA_LOW := 3, // Home switch via low switch
+	HOME_VIA_HIGH := 4, // Home switch via high switch
+	ABSOLUTE_SET := 15, // Set here to be fHomePosition
+	NONE := -1 // Do not home, ever
 );
 END_TYPE
 ]]></Declaration>

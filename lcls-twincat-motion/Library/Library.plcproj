@@ -25,6 +25,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="POUs\Motion\Utils" />
+    <Folder Include="POUs\Motion\States" />
+    <Folder Include="POUs\ImplicitChecks" />
+    <Folder Include="POUs\Deprecated" />
     <Folder Include="UnitTests" />
     <Folder Include="POUs" />
     <Folder Include="POUs\Motion" />
@@ -63,7 +67,13 @@
     <Compile Include="DUTs\ENUM_EpicsHomeCmd.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\ENUM_EpicsInOut.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ENUM_EpicsMotorCmd.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ENUM_MotionRequest.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ENUM_StageBrakeMode.TcDUT">
@@ -79,16 +89,31 @@
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Deprecated\FB_StatePTPMove.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\ImplicitChecks\CheckBounds.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\ImplicitChecks\CheckDivDInt.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\ImplicitChecks\CheckDivLInt.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\ImplicitChecks\CheckDivLReal.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\ImplicitChecks\CheckDivReal.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\FB_MotionRequest.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Motion\FB_MotionStage.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\FB_MotionStageSim.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\Motion\FB_SetEnables.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\Motion\FB_StatePTPMove.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\Gantry\FB_GantryAutoCoupling.TcPOU">
@@ -97,6 +122,27 @@
     <Compile Include="POUs\Motion\Gantry\FB_GantryDiffVirtualLimitSwitch.TcPOU">
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_EpicsInOut.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateLock.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateManager.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateMove.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\F_AtPositionState.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\Utils\FB_SetEnables.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\Utils\F_MotionErrorCodeLookup.TcPOU">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\MotorTesting\FB_MicroStepCountTest.TcPOU">
       <SubType>Code</SubType>
@@ -243,6 +289,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="tc_mca_std_lib\POUs\Motion\Homing\FB_HomeWriteSoftLimEnable.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UnitTests\BasicTests.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="UnitTests\Interactive.TcPOU">

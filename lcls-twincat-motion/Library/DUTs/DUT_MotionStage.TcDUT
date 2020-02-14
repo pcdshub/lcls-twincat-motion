@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="DUT_MotionStage" Id="{10b5775d-5646-4d55-ad77-40abc3888de3}">
     <Declaration><![CDATA[TYPE DUT_MotionStage :
+	// Defines the EPICS interface to moving a motor in TwinCAT
 STRUCT
 	(* Hardware *)
 	
@@ -11,30 +12,45 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: PLC:bLimitForwardEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC FALSE if forward limit hit
 	'}
 	bLimitForwardEnable AT %I*: BOOL;
 	// NC Backward Limit Switch: TRUE if ok to move
 	{attribute 'pytmc' := '
 		pv: PLC:bLimitBackwardEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC FALSE if reverse limit hit
 	'}
 	bLimitBackwardEnable AT %I*: BOOL;
 	// NO Home Switch: TRUE if at home
 	{attribute 'pytmc' := '
 		pv: PLC:bHome
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if at homing switch
 	'}
 	bHome AT %I*: BOOL;
 	// NC Brake Output: TRUE to release brake
 	{attribute 'pytmc' := '
 		pv: PLC:bBrakeRelease
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if brake released
 	'}
 	bBrakeRelease AT %Q*: BOOL;
 	// NC STO Input: TRUE if ok to move
 	{attribute 'pytmc' := '
 		pv: PLC:bHardwareEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if STO not hit
 	'}
 	bHardwareEnable AT %I*: BOOL;
 
@@ -44,62 +60,86 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: PLC:bAllForwardEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC Summary of axis permission to move forward
 	'}
 	bAllForwardEnable: BOOL:=FALSE;
 	// Backward enable EPS summary
 	{attribute 'pytmc' := '
 		pv: PLC:bAllBackwardEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC Summary of axis permission to move backward
 	'}
 	bAllBackwardEnable: BOOL:=FALSE; 
 	// Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
 	{attribute 'pytmc' := '
 		pv: PLC:bAllEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC Summary of axis permission to have power
 	'}
 	bAllEnable: BOOL:=FALSE;
 	// Forward virtual gantry limit switch
 	{attribute 'pytmc' := '
 		pv: PLC:bGantryForwardEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if gantry ok to move forward
 	'}
 	bGantryForwardEnable: BOOL:=FALSE;
 	// Backward virtual gantry limit switch
 	{attribute 'pytmc' := '
 		pv: PLC:bGantryBackwardEnable
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if gantry ok to move backward
 	'}
 	bGantryBackwardEnable: BOOL:=FALSE;
 	
 	(* Settings *)
-	// Change to FALSE if MC_POWER is somewhere else in the project
+	// If TRUE, we want to enable the motor independently of PMPS or other safety systems.
 	{attribute 'pytmc' := '
 		pv: PLC:bPowerSelf
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC FALSE if axis is in PMPS
 	'}
-	bPowerSelf: BOOL:=TRUE;
+	bPowerSelf: BOOL:=FALSE;
 	// Determines when we automatically enable the motor
 	{attribute 'pytmc' := '
 		pv: PLC:nEnableMode
 		io: i
+		field: DESC Describes when the axis will automatically get power
 	'}
-	nEnableMode: INT:=ENUM_StageEnableMode.STAGE_ENABLE_MOTION;
+	nEnableMode: ENUM_StageEnableMode:=ENUM_StageEnableMode.DURING_MOTION;
 	// Determines when we automatically disengage the brake
 	{attribute 'pytmc' := '
 		pv: PLC:nBrakeMode
 		io: i
+		field: DESC Describes when the brake will be released
 	'}
-	nBrakeMode: INT:=ENUM_StageBrakeMode.STAGE_BRAKE_DISABLED;
+	nBrakeMode: ENUM_StageBrakeMode:=ENUM_StageBrakeMode.IF_ENABLED;
 	// Determines our encoder homing strategy
 	{attribute 'pytmc' := '
 		pv: PLC:nHomingMode
 		io: i
+		field: DESC Describes our homing strategy
 	'}
-	nHomingMode: INT:=ENUM_EpicsHomeCmd.EPICS_MOTOR_HOME_NONE;
+	nHomingMode: ENUM_EpicsHomeCmd:=ENUM_EpicsHomeCmd.NONE;
 	// Set true to activate gantry EPS
 	{attribute 'pytmc' := '
 		pv: PLC:bGantryAxis
 		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if gantry EPS active
 	'}
 	bGantryAxis: BOOL:=FALSE;
 	
@@ -114,18 +154,27 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: PLC:bEnable
 		io: io
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC Used internally to request enables
 	'}
 	bEnable: BOOL;
 	// Used internally to reset errors and other state
 	{attribute 'pytmc' := '
 		pv: PLC:bReset
 		io: io
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC Used internally to reset errors
 	'}
 	bReset: BOOL;
 	// Used internally and by the IOC to start or stop a move
 	{attribute 'pytmc' := '
 		pv: PLC:bExecute
 		io: io
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC Used internally and by the IOC to start or stop
 	'}
 	bExecute: BOOL;
 	
@@ -134,42 +183,49 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: PLC:nCommand
 		io: io
+		field: DESC Used internally and by the IOC to pick move type
 	'}
 	nCommand: INT;
 	// Used internally and by the IOC to pass additional data to some commands
 	{attribute 'pytmc' := '
 		pv: PLC:nCmdData
 		io: io
+		field: DESC Used internally and by the IOC to pass extra args
 	'}
 	nCmdData: INT;
 	// Used internally and by the IOC to pick a destination for the move
 	{attribute 'pytmc' := '
 		pv: PLC:fPosition
 		io: io
+		field: DESC Used internally and by the IOC as the set position
 	'}
 	fPosition: LREAL;
 	// Used internally and by the IOC to pick a move velocity
 	{attribute 'pytmc' := '
 		pv: PLC:fVelocity
 		io: io
+		field: DESC Used internally and by the IOC to set velocity
 	'}
 	fVelocity: LREAL;
 	// Used internally and by the IOC to pick a move acceleration
 	{attribute 'pytmc' := '
 		pv: PLC:fAcceleration
 		io: io
+		field: DESC Used internally and by the IOC to set acceleration
 	'}
 	fAcceleration: LREAL;
 	// Used internally and by the IOC to pick a move deceleration
 	{attribute 'pytmc' := '
 		pv: PLC:fDeceleration
 		io: io
+		field: DESC Used internally and by the IOC to set deceleration
 	'}
 	fDeceleration: LREAL;
 	// Used internally and by the IOC to pick a home position
 	{attribute 'pytmc' := '
 		pv: PLC:fHomePosition
 		io: io
+		field: DESC Used internally and by the IOC to pick home position
 	'}
 	fHomePosition: LREAL;
 	
@@ -178,6 +234,7 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: PLC:nMotionAxisID
 		io: i
+		field: DESC Unique ID assigned to each axis in the NC
 	'}
 	nMotionAxisID: UDINT:=0;
 	
@@ -186,30 +243,50 @@ STRUCT
 	{attribute 'pytmc' := '
 		pv: PLC:bEnableDone
 		io: i
+		field: ONAM FALSE
+		field: ZNAM TRUE
+		field: DESC TRUE if done enabling
 	'}
 	bEnableDone: BOOL;
 	// TRUE if in the middle of a command
 	{attribute 'pytmc' := '
 		pv: PLC:bBusy
 		io: i
+		field: ONAM FALSE
+		field: ZNAM TRUE
+		field: DESC TRUE if in the middle of a command
 	'}
 	bBusy: BOOL;
 	// TRUE if we've done a command and it has finished
 	{attribute 'pytmc' := '
 		pv: PLC:bDone
 		io: i
+		field: ONAM FALSE
+		field: ZNAM TRUE
+		field: DESC TRUE if command finished successfully
 	'}
 	bDone: BOOL;
 	// TRUE if we're in an error state
 	{attribute 'pytmc' := '
 		pv: PLC:bError
 		io: i
+		field: ONAM FALSE
+		field: ZNAM TRUE
+		field: DESC TRUE if we're in an error state
 	'}
 	bError: BOOL;
+    // Error code if nonzero
+    {attribute 'pytmc' := '
+        pv: PLC:nErrorId
+        io: i
+        field: DESC Error code if nonzero
+    '}
+    nErrorId: UDINT;
 	// Message to identify the error state
 	{attribute 'pytmc' := '
 		pv: PLC:sErrorMessage
 		io: i
+		field: DESC Message to identify the error state
 	'}
 	sErrorMessage: STRING;
 	// Misc axis status information for the IOC

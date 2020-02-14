@@ -1,12 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4020.14">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="ENUM_StageBrakeMode" Id="{36cc1de7-1431-45ad-a25e-c90656daff0a}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_StageBrakeMode :
+	// Defines when to send the brake disengage signal in FB_MotionStage
 (
-	STAGE_BRAKE_DISABLED,
-	STAGE_BRAKE_STANDSTILL
+	IF_ENABLED, // Disengage brake when the motor is enabled
+	IF_MOVING, // Disengage brake when the motor is moving
+	NO_BRAKE // Do not change the brake state in FB_MotionStage
 );
 END_TYPE
 ]]></Declaration>

@@ -1,10 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
-  <POU Name="FB_StatePTPMove" Id="{a935a12e-6ee3-4ebb-8c29-e9b23b7cef37}" SpecialFunc="None">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_StatePTPMove" Id="{425806ee-2b8b-43fd-93f1-34dff217483a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePTPMove
-// For your pytmc pragma on this block, specify io accordingly:
-// 1. use input or i if you want the set position to be immutable
-// 2. use io if you want to set position to be mutable from epics
+// Do not use, this is deprecated
 VAR_INPUT
 	{attribute 'pytmc' := '
 		pv:
@@ -82,7 +80,7 @@ END_VAR
 IF bExecTrig.Q AND bMoveOk THEN
 	IF NOT stMotionStage.bBusy AND NOT stMotionStage.bError THEN
 		stMotionStage.bExecute := TRUE;
-		stMotionStage.nCommand := ENUM_EpicsMotorCmd.EPICS_MOTOR_MOVE_ABS;
+		stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
 		stMotionStage.fPosition := stPositionState.fPosition;
 		stMotionStage.fVelocity := stPositionState.fVelocity;
 		stMotionStage.fAcceleration := stPositionState.fAccel;

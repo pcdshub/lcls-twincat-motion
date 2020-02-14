@@ -1,46 +1,87 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <DUT Name="DUT_PositionState" Id="{85d45494-8a84-426c-8efe-9136ee5821c6}">
     <Declaration><![CDATA[TYPE DUT_PositionState :
-// Include io: input on things that should never be mutable in EPICS.
-// Omit io on things that may or may not need to be mutable, allow engineer to decide in their pragma.
-// Currently: some installations would want position and delta to be mutable.
+	// Defines settings and current safety status for moves to specific positions for an axis
 STRUCT
+	// Name as queried via the NAME PV in EPICS
 	{attribute 'pytmc' := '
 		pv: NAME
 		io: input
+		field: DESC Name of this position state
 	'}
-	sName: STRING;
+	sName: STRING := 'Invalid';
 
+	// Position associated with this state
 	{attribute 'pytmc' := '
 		pv: SETPOINT
 		io: io
+		field: DESC Axis position associated with this state
 	'}
 	fPosition: LREAL;
 	
+	// Maximum allowable deviation from fPosition while at the state 
 	{attribute 'pytmc' := '
 		pv: DELTA
 		io: io
+        field: DRVL 0.0
+		field: DESC Max deviation from position at this state
 	'}
 	fDelta: LREAL;
 	
+	// Speed at which to move to this state
 	{attribute 'pytmc' := '
 		pv: VELO
 		io: io
+		field: DESC Speed at which to move to this state
 	'}
 	fVelocity: LREAL;
 	
+	// (optional) Acceleration to use for moves to this state
 	{attribute 'pytmc' := '
 		pv: ACCL
 		io: io
+		field: DESC Acceleration to use for moves to this state
 	'}
 	fAccel: LREAL;
 	
+	// (optional) Deceleration to use for moves to this state
 	{attribute 'pytmc' := '
 		pv: DCCL
 		io: io
+		field: DESC Deceleration to use for moves to this state
 	'}
 	fDecel: LREAL;
+	
+	// Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
+	{attribute 'pymtc' := '
+		pv: MOVE_OK
+		io: io
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if the move would be safe
+	'}
+	bMoveOk: BOOL;
+	
+	// Signifies to FB_PositionStateLock that this state should be immutable
+	{attribute 'pymtc' := '
+		pv: LOCKED
+		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if state is immutable
+	'}
+	bLocked: BOOL;
+	
+	// Set this to TRUE when you make your state. This defaults to FALSE so that uninitialized states can never be moved to
+	{attribute 'pytmc' := '
+		pv: VALID
+		io: i
+		field: ZNAM FALSE
+		field: ONAM TRUE
+		field: DESC TRUE if this is a real state
+	'}
+	bValid: BOOL;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>
