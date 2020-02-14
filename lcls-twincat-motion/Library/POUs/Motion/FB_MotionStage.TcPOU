@@ -17,6 +17,7 @@ VAR
 	bBwdHit: BOOL;
 	ftExec: F_TRIG;
 	rtExec: R_TRIG;
+	rtUserExec: R_TRIG;
 	rtTarget: R_TRIG;
 	fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
@@ -27,6 +28,7 @@ END_VAR
       <ST><![CDATA[// Start with an accurate status
 stMotionStage.Axis.ReadStatus();
 
+rtUserExec(CLK := stMotionStage.bExecute);
 bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
@@ -38,7 +40,7 @@ CASE stMotionStage.nEnableMode OF
 	ENUM_StageEnableMode.NEVER:
 		bExecute := stMotionStage.bExecute;
 	ENUM_StageEnableMode.DURING_MOTION:
-		IF stMotionStage.bExecute THEN
+		IF rtUserExec.Q THEN
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
                     stMotionStage.bEnable := TRUE;
@@ -65,6 +67,11 @@ END_IF
 
 // Update all enable booleans
 fbSetEnables(stMotionStage:=stMotionStage);
+
+// No moves allowed in error states
+IF stMotionStage.bError THEN
+	bExecute := FALSE;
+END_IF
 
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
@@ -133,7 +140,7 @@ IF rtTarget.Q OR ftExec.Q THEN
 END_IF
 
 // Handle auto-disable timing
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT bExecute THEN
+IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT stMotionStage.bExecute THEN
 	IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
 		stMotionStage.bEnable := FALSE;
 	END_IF
