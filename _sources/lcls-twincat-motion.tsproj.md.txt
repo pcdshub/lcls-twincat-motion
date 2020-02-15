@@ -107,279 +107,279 @@ DUTs/DUT_MotionStage.TcDUT (TcPlcObject)
 
 ```vhdl
 TYPE DUT_MotionStage :
-	// Defines the EPICS interface to moving a motor in TwinCAT
+    // Defines the EPICS interface to moving a motor in TwinCAT
 STRUCT
-	(* Hardware *)
-	
-	// PLC Axis Reference
-	Axis: AXIS_REF;
-	// NC Forward Limit Switch: TRUE if ok to move
-	{attribute 'pytmc' := '
-		pv: PLC:bLimitForwardEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC FALSE if forward limit hit
-	'}
-	bLimitForwardEnable AT %I*: BOOL;
-	// NC Backward Limit Switch: TRUE if ok to move
-	{attribute 'pytmc' := '
-		pv: PLC:bLimitBackwardEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC FALSE if reverse limit hit
-	'}
-	bLimitBackwardEnable AT %I*: BOOL;
-	// NO Home Switch: TRUE if at home
-	{attribute 'pytmc' := '
-		pv: PLC:bHome
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if at homing switch
-	'}
-	bHome AT %I*: BOOL;
-	// NC Brake Output: TRUE to release brake
-	{attribute 'pytmc' := '
-		pv: PLC:bBrakeRelease
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if brake released
-	'}
-	bBrakeRelease AT %Q*: BOOL;
-	// NC STO Input: TRUE if ok to move
-	{attribute 'pytmc' := '
-		pv: PLC:bHardwareEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if STO not hit
-	'}
-	bHardwareEnable AT %I*: BOOL;
+    (* Hardware *)
 
-	(* Psuedo-hardware *)
-	
-	// Forward enable EPS summary
-	{attribute 'pytmc' := '
-		pv: PLC:bAllForwardEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC Summary of axis permission to move forward
-	'}
-	bAllForwardEnable: BOOL:=FALSE;
-	// Backward enable EPS summary
-	{attribute 'pytmc' := '
-		pv: PLC:bAllBackwardEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC Summary of axis permission to move backward
-	'}
-	bAllBackwardEnable: BOOL:=FALSE; 
-	// Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
-	{attribute 'pytmc' := '
-		pv: PLC:bAllEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC Summary of axis permission to have power
-	'}
-	bAllEnable: BOOL:=FALSE;
-	// Forward virtual gantry limit switch
-	{attribute 'pytmc' := '
-		pv: PLC:bGantryForwardEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if gantry ok to move forward
-	'}
-	bGantryForwardEnable: BOOL:=FALSE;
-	// Backward virtual gantry limit switch
-	{attribute 'pytmc' := '
-		pv: PLC:bGantryBackwardEnable
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if gantry ok to move backward
-	'}
-	bGantryBackwardEnable: BOOL:=FALSE;
-	
-	(* Settings *)
-	// If TRUE, we want to enable the motor independently of PMPS or other safety systems.
-	{attribute 'pytmc' := '
-		pv: PLC:bPowerSelf
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC FALSE if axis is in PMPS
-	'}
-	bPowerSelf: BOOL:=FALSE;
-	// Determines when we automatically enable the motor
-	{attribute 'pytmc' := '
-		pv: PLC:nEnableMode
-		io: i
-		field: DESC Describes when the axis will automatically get power
-	'}
-	nEnableMode: ENUM_StageEnableMode:=ENUM_StageEnableMode.DURING_MOTION;
-	// Determines when we automatically disengage the brake
-	{attribute 'pytmc' := '
-		pv: PLC:nBrakeMode
-		io: i
-		field: DESC Describes when the brake will be released
-	'}
-	nBrakeMode: ENUM_StageBrakeMode:=ENUM_StageBrakeMode.IF_ENABLED;
-	// Determines our encoder homing strategy
-	{attribute 'pytmc' := '
-		pv: PLC:nHomingMode
-		io: i
-		field: DESC Describes our homing strategy
-	'}
-	nHomingMode: ENUM_EpicsHomeCmd:=ENUM_EpicsHomeCmd.NONE;
-	// Set true to activate gantry EPS
-	{attribute 'pytmc' := '
-		pv: PLC:bGantryAxis
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if gantry EPS active
-	'}
-	bGantryAxis: BOOL:=FALSE;
-	
-	// Set to gantry difference tolerance
-	nGantryTol: LINT:=0;
-	
-	// Encoder count at which this axis is aligned with other axis
-	nEncRef: ULINT:=0;
-	
-	(* Commands *)
-	// Used internally to request enables
-	{attribute 'pytmc' := '
-		pv: PLC:bEnable
-		io: io
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC Used internally to request enables
-	'}
-	bEnable: BOOL;
-	// Used internally to reset errors and other state
-	{attribute 'pytmc' := '
-		pv: PLC:bReset
-		io: io
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC Used internally to reset errors
-	'}
-	bReset: BOOL;
-	// Used internally and by the IOC to start or stop a move
-	{attribute 'pytmc' := '
-		pv: PLC:bExecute
-		io: io
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC Used internally and by the IOC to start or stop
-	'}
-	bExecute: BOOL;
-	
-	(* Command Args *)
-	// Used internally and by the IOC to pick what kind of move to do
-	{attribute 'pytmc' := '
-		pv: PLC:nCommand
-		io: io
-		field: DESC Used internally and by the IOC to pick move type
-	'}
-	nCommand: INT;
-	// Used internally and by the IOC to pass additional data to some commands
-	{attribute 'pytmc' := '
-		pv: PLC:nCmdData
-		io: io
-		field: DESC Used internally and by the IOC to pass extra args
-	'}
-	nCmdData: INT;
-	// Used internally and by the IOC to pick a destination for the move
-	{attribute 'pytmc' := '
-		pv: PLC:fPosition
-		io: io
-		field: DESC Used internally and by the IOC as the set position
-	'}
-	fPosition: LREAL;
-	// Used internally and by the IOC to pick a move velocity
-	{attribute 'pytmc' := '
-		pv: PLC:fVelocity
-		io: io
-		field: DESC Used internally and by the IOC to set velocity
-	'}
-	fVelocity: LREAL;
-	// Used internally and by the IOC to pick a move acceleration
-	{attribute 'pytmc' := '
-		pv: PLC:fAcceleration
-		io: io
-		field: DESC Used internally and by the IOC to set acceleration
-	'}
-	fAcceleration: LREAL;
-	// Used internally and by the IOC to pick a move deceleration
-	{attribute 'pytmc' := '
-		pv: PLC:fDeceleration
-		io: io
-		field: DESC Used internally and by the IOC to set deceleration
-	'}
-	fDeceleration: LREAL;
-	// Used internally and by the IOC to pick a home position
-	{attribute 'pytmc' := '
-		pv: PLC:fHomePosition
-		io: io
-		field: DESC Used internally and by the IOC to pick home position
-	'}
-	fHomePosition: LREAL;
-	
-	(* Info *)
-	// Unique ID assigned to each axis in the NC
-	{attribute 'pytmc' := '
-		pv: PLC:nMotionAxisID
-		io: i
-		field: DESC Unique ID assigned to each axis in the NC
-	'}
-	nMotionAxisID: UDINT:=0;
-	
-	(* Returns *)
-	// TRUE if done enabling
-	{attribute 'pytmc' := '
-		pv: PLC:bEnableDone
-		io: i
-		field: ONAM FALSE
-		field: ZNAM TRUE
-		field: DESC TRUE if done enabling
-	'}
-	bEnableDone: BOOL;
-	// TRUE if in the middle of a command
-	{attribute 'pytmc' := '
-		pv: PLC:bBusy
-		io: i
-		field: ONAM FALSE
-		field: ZNAM TRUE
-		field: DESC TRUE if in the middle of a command
-	'}
-	bBusy: BOOL;
-	// TRUE if we've done a command and it has finished
-	{attribute 'pytmc' := '
-		pv: PLC:bDone
-		io: i
-		field: ONAM FALSE
-		field: ZNAM TRUE
-		field: DESC TRUE if command finished successfully
-	'}
-	bDone: BOOL;
-	// TRUE if we're in an error state
-	{attribute 'pytmc' := '
-		pv: PLC:bError
-		io: i
-		field: ONAM FALSE
-		field: ZNAM TRUE
-		field: DESC TRUE if we're in an error state
-	'}
-	bError: BOOL;
+    // PLC Axis Reference
+    Axis: AXIS_REF;
+    // NC Forward Limit Switch: TRUE if ok to move
+    {attribute 'pytmc' := '
+        pv: PLC:bLimitForwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC FALSE if forward limit hit
+    '}
+    bLimitForwardEnable AT %I*: BOOL;
+    // NC Backward Limit Switch: TRUE if ok to move
+    {attribute 'pytmc' := '
+        pv: PLC:bLimitBackwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC FALSE if reverse limit hit
+    '}
+    bLimitBackwardEnable AT %I*: BOOL;
+    // NO Home Switch: TRUE if at home
+    {attribute 'pytmc' := '
+        pv: PLC:bHome
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if at homing switch
+    '}
+    bHome AT %I*: BOOL;
+    // NC Brake Output: TRUE to release brake
+    {attribute 'pytmc' := '
+        pv: PLC:bBrakeRelease
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if brake released
+    '}
+    bBrakeRelease AT %Q*: BOOL;
+    // NC STO Input: TRUE if ok to move
+    {attribute 'pytmc' := '
+        pv: PLC:bHardwareEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if STO not hit
+    '}
+    bHardwareEnable AT %I*: BOOL;
+
+    (* Psuedo-hardware *)
+
+    // Forward enable EPS summary
+    {attribute 'pytmc' := '
+        pv: PLC:bAllForwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Summary of axis permission to move forward
+    '}
+    bAllForwardEnable: BOOL:=FALSE;
+    // Backward enable EPS summary
+    {attribute 'pytmc' := '
+        pv: PLC:bAllBackwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Summary of axis permission to move backward
+    '}
+    bAllBackwardEnable: BOOL:=FALSE;
+    // Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
+    {attribute 'pytmc' := '
+        pv: PLC:bAllEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Summary of axis permission to have power
+    '}
+    bAllEnable: BOOL:=FALSE;
+    // Forward virtual gantry limit switch
+    {attribute 'pytmc' := '
+        pv: PLC:bGantryForwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if gantry ok to move forward
+    '}
+    bGantryForwardEnable: BOOL:=FALSE;
+    // Backward virtual gantry limit switch
+    {attribute 'pytmc' := '
+        pv: PLC:bGantryBackwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if gantry ok to move backward
+    '}
+    bGantryBackwardEnable: BOOL:=FALSE;
+
+    (* Settings *)
+    // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
+    {attribute 'pytmc' := '
+        pv: PLC:bPowerSelf
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC FALSE if axis is in PMPS
+    '}
+    bPowerSelf: BOOL:=FALSE;
+    // Determines when we automatically enable the motor
+    {attribute 'pytmc' := '
+        pv: PLC:nEnableMode
+        io: i
+        field: DESC Describes when the axis will automatically get power
+    '}
+    nEnableMode: ENUM_StageEnableMode:=ENUM_StageEnableMode.DURING_MOTION;
+    // Determines when we automatically disengage the brake
+    {attribute 'pytmc' := '
+        pv: PLC:nBrakeMode
+        io: i
+        field: DESC Describes when the brake will be released
+    '}
+    nBrakeMode: ENUM_StageBrakeMode:=ENUM_StageBrakeMode.IF_ENABLED;
+    // Determines our encoder homing strategy
+    {attribute 'pytmc' := '
+        pv: PLC:nHomingMode
+        io: i
+        field: DESC Describes our homing strategy
+    '}
+    nHomingMode: ENUM_EpicsHomeCmd:=ENUM_EpicsHomeCmd.NONE;
+    // Set true to activate gantry EPS
+    {attribute 'pytmc' := '
+        pv: PLC:bGantryAxis
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if gantry EPS active
+    '}
+    bGantryAxis: BOOL:=FALSE;
+
+    // Set to gantry difference tolerance
+    nGantryTol: LINT:=0;
+
+    // Encoder count at which this axis is aligned with other axis
+    nEncRef: ULINT:=0;
+
+    (* Commands *)
+    // Used internally to request enables
+    {attribute 'pytmc' := '
+        pv: PLC:bEnable
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Used internally to request enables
+    '}
+    bEnable: BOOL;
+    // Used internally to reset errors and other state
+    {attribute 'pytmc' := '
+        pv: PLC:bReset
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Used internally to reset errors
+    '}
+    bReset: BOOL;
+    // Used internally and by the IOC to start or stop a move
+    {attribute 'pytmc' := '
+        pv: PLC:bExecute
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Used internally and by the IOC to start or stop
+    '}
+    bExecute: BOOL;
+
+    (* Command Args *)
+    // Used internally and by the IOC to pick what kind of move to do
+    {attribute 'pytmc' := '
+        pv: PLC:nCommand
+        io: io
+        field: DESC Used internally and by the IOC to pick move type
+    '}
+    nCommand: INT;
+    // Used internally and by the IOC to pass additional data to some commands
+    {attribute 'pytmc' := '
+        pv: PLC:nCmdData
+        io: io
+        field: DESC Used internally and by the IOC to pass extra args
+    '}
+    nCmdData: INT;
+    // Used internally and by the IOC to pick a destination for the move
+    {attribute 'pytmc' := '
+        pv: PLC:fPosition
+        io: io
+        field: DESC Used internally and by the IOC as the set position
+    '}
+    fPosition: LREAL;
+    // Used internally and by the IOC to pick a move velocity
+    {attribute 'pytmc' := '
+        pv: PLC:fVelocity
+        io: io
+        field: DESC Used internally and by the IOC to set velocity
+    '}
+    fVelocity: LREAL;
+    // Used internally and by the IOC to pick a move acceleration
+    {attribute 'pytmc' := '
+        pv: PLC:fAcceleration
+        io: io
+        field: DESC Used internally and by the IOC to set acceleration
+    '}
+    fAcceleration: LREAL;
+    // Used internally and by the IOC to pick a move deceleration
+    {attribute 'pytmc' := '
+        pv: PLC:fDeceleration
+        io: io
+        field: DESC Used internally and by the IOC to set deceleration
+    '}
+    fDeceleration: LREAL;
+    // Used internally and by the IOC to pick a home position
+    {attribute 'pytmc' := '
+        pv: PLC:fHomePosition
+        io: io
+        field: DESC Used internally and by the IOC to pick home position
+    '}
+    fHomePosition: LREAL;
+
+    (* Info *)
+    // Unique ID assigned to each axis in the NC
+    {attribute 'pytmc' := '
+        pv: PLC:nMotionAxisID
+        io: i
+        field: DESC Unique ID assigned to each axis in the NC
+    '}
+    nMotionAxisID: UDINT:=0;
+
+    (* Returns *)
+    // TRUE if done enabling
+    {attribute 'pytmc' := '
+        pv: PLC:bEnableDone
+        io: i
+        field: ONAM FALSE
+        field: ZNAM TRUE
+        field: DESC TRUE if done enabling
+    '}
+    bEnableDone: BOOL;
+    // TRUE if in the middle of a command
+    {attribute 'pytmc' := '
+        pv: PLC:bBusy
+        io: i
+        field: ONAM FALSE
+        field: ZNAM TRUE
+        field: DESC TRUE if in the middle of a command
+    '}
+    bBusy: BOOL;
+    // TRUE if we've done a command and it has finished
+    {attribute 'pytmc' := '
+        pv: PLC:bDone
+        io: i
+        field: ONAM FALSE
+        field: ZNAM TRUE
+        field: DESC TRUE if command finished successfully
+    '}
+    bDone: BOOL;
+    // TRUE if we're in an error state
+    {attribute 'pytmc' := '
+        pv: PLC:bError
+        io: i
+        field: ONAM FALSE
+        field: ZNAM TRUE
+        field: DESC TRUE if we're in an error state
+    '}
+    bError: BOOL;
     // Error code if nonzero
     {attribute 'pytmc' := '
         pv: PLC:nErrorId
@@ -387,15 +387,15 @@ STRUCT
         field: DESC Error code if nonzero
     '}
     nErrorId: UDINT;
-	// Message to identify the error state
-	{attribute 'pytmc' := '
-		pv: PLC:sErrorMessage
-		io: i
-		field: DESC Message to identify the error state
-	'}
-	sErrorMessage: STRING;
-	// Misc axis status information for the IOC
-	stAxisStatus: DUT_AxisStatus_v0_01;
+    // Message to identify the error state
+    {attribute 'pytmc' := '
+        pv: PLC:sErrorMessage
+        io: i
+        field: DESC Message to identify the error state
+    '}
+    sErrorMessage: STRING;
+    // Misc axis status information for the IOC
+    stAxisStatus: DUT_AxisStatus_v0_01;
 END_STRUCT
 END_TYPE
 ```
@@ -408,86 +408,86 @@ DUTs/DUT_PositionState.TcDUT (TcPlcObject)
 
 ```vhdl
 TYPE DUT_PositionState :
-	// Defines settings and current safety status for moves to specific positions for an axis
+    // Defines settings and current safety status for moves to specific positions for an axis
 STRUCT
-	// Name as queried via the NAME PV in EPICS
-	{attribute 'pytmc' := '
-		pv: NAME
-		io: input
-		field: DESC Name of this position state
-	'}
-	sName: STRING := 'Invalid';
+    // Name as queried via the NAME PV in EPICS
+    {attribute 'pytmc' := '
+        pv: NAME
+        io: input
+        field: DESC Name of this position state
+    '}
+    sName: STRING := 'Invalid';
 
-	// Position associated with this state
-	{attribute 'pytmc' := '
-		pv: SETPOINT
-		io: io
-		field: DESC Axis position associated with this state
-	'}
-	fPosition: LREAL;
-	
-	// Maximum allowable deviation from fPosition while at the state 
-	{attribute 'pytmc' := '
-		pv: DELTA
-		io: io
+    // Position associated with this state
+    {attribute 'pytmc' := '
+        pv: SETPOINT
+        io: io
+        field: DESC Axis position associated with this state
+    '}
+    fPosition: LREAL;
+
+    // Maximum allowable deviation from fPosition while at the state
+    {attribute 'pytmc' := '
+        pv: DELTA
+        io: io
         field: DRVL 0.0
-		field: DESC Max deviation from position at this state
-	'}
-	fDelta: LREAL;
-	
-	// Speed at which to move to this state
-	{attribute 'pytmc' := '
-		pv: VELO
-		io: io
-		field: DESC Speed at which to move to this state
-	'}
-	fVelocity: LREAL;
-	
-	// (optional) Acceleration to use for moves to this state
-	{attribute 'pytmc' := '
-		pv: ACCL
-		io: io
-		field: DESC Acceleration to use for moves to this state
-	'}
-	fAccel: LREAL;
-	
-	// (optional) Deceleration to use for moves to this state
-	{attribute 'pytmc' := '
-		pv: DCCL
-		io: io
-		field: DESC Deceleration to use for moves to this state
-	'}
-	fDecel: LREAL;
-	
-	// Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
-	{attribute 'pymtc' := '
-		pv: MOVE_OK
-		io: io
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if the move would be safe
-	'}
-	bMoveOk: BOOL;
-	
-	// Signifies to FB_PositionStateLock that this state should be immutable
-	{attribute 'pymtc' := '
-		pv: LOCKED
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if state is immutable
-	'}
-	bLocked: BOOL;
-	
-	// Set this to TRUE when you make your state. This defaults to FALSE so that uninitialized states can never be moved to
-	{attribute 'pytmc' := '
-		pv: VALID
-		io: i
-		field: ZNAM FALSE
-		field: ONAM TRUE
-		field: DESC TRUE if this is a real state
-	'}
-	bValid: BOOL;
+        field: DESC Max deviation from position at this state
+    '}
+    fDelta: LREAL;
+
+    // Speed at which to move to this state
+    {attribute 'pytmc' := '
+        pv: VELO
+        io: io
+        field: DESC Speed at which to move to this state
+    '}
+    fVelocity: LREAL;
+
+    // (optional) Acceleration to use for moves to this state
+    {attribute 'pytmc' := '
+        pv: ACCL
+        io: io
+        field: DESC Acceleration to use for moves to this state
+    '}
+    fAccel: LREAL;
+
+    // (optional) Deceleration to use for moves to this state
+    {attribute 'pytmc' := '
+        pv: DCCL
+        io: io
+        field: DESC Deceleration to use for moves to this state
+    '}
+    fDecel: LREAL;
+
+    // Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
+    {attribute 'pymtc' := '
+        pv: MOVE_OK
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if the move would be safe
+    '}
+    bMoveOk: BOOL;
+
+    // Signifies to FB_PositionStateLock that this state should be immutable
+    {attribute 'pymtc' := '
+        pv: LOCKED
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if state is immutable
+    '}
+    bLocked: BOOL;
+
+    // Set this to TRUE when you make your state. This defaults to FALSE so that uninitialized states can never be moved to
+    {attribute 'pytmc' := '
+        pv: VALID
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if this is a real state
+    '}
+    bValid: BOOL;
 END_STRUCT
 END_TYPE
 ```
@@ -515,14 +515,14 @@ DUTs/ENUM_EpicsHomeCmd.TcDUT (TcPlcObject)
 {attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_EpicsHomeCmd :
-	// Defines the valid options for homing in FB_MotionStage
+    // Defines the valid options for homing in FB_MotionStage
 (
-	LOW_LIMIT := 1, // Low limit switch
-	HIGH_LIMIT := 2, // High limit switch
-	HOME_VIA_LOW := 3, // Home switch via low switch
-	HOME_VIA_HIGH := 4, // Home switch via high switch
-	ABSOLUTE_SET := 15, // Set here to be fHomePosition
-	NONE := -1 // Do not home, ever
+    LOW_LIMIT := 1, // Low limit switch
+    HIGH_LIMIT := 2, // High limit switch
+    HOME_VIA_LOW := 3, // Home switch via low switch
+    HOME_VIA_HIGH := 4, // Home switch via high switch
+    ABSOLUTE_SET := 15, // Set here to be fHomePosition
+    NONE := -1 // Do not home, ever
 );
 END_TYPE
 ```
@@ -539,9 +539,9 @@ DUTs/ENUM_EpicsInOut.TcDUT (TcPlcObject)
 // Remove strict attribute for easier handling
 TYPE ENUM_EpicsInOut :
 (
-	UNKNOWN := 0, // UNKNOWN must be in slot 0 or the FB breaks
-	OUT := 1, // OUT at slot 1 is a convention
-	IN := 2
+    UNKNOWN := 0, // UNKNOWN must be in slot 0 or the FB breaks
+    OUT := 1, // OUT at slot 1 is a convention
+    IN := 2
 );
 END_TYPE
 ```
@@ -556,15 +556,15 @@ DUTs/ENUM_EpicsMotorCmd.TcDUT (TcPlcObject)
 {attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_EpicsMotorCmd :
-	// Defines valid EPICS commands for nCommand
+    // Defines valid EPICS commands for nCommand
 (
-	JOG := 0,
-	MOVE_VELOCITY := 1,
-	MOVE_RELATIVE := 2,
-	MOVE_ABSOLUTE := 3,
-	MOVE_MODULO := 4,
-	HOME := 10,
-	GEAR := 30
+    JOG := 0,
+    MOVE_VELOCITY := 1,
+    MOVE_RELATIVE := 2,
+    MOVE_ABSOLUTE := 3,
+    MOVE_MODULO := 4,
+    HOME := 10,
+    GEAR := 30
 );
 END_TYPE
 ```
@@ -579,11 +579,11 @@ DUTs/ENUM_MotionRequest.TcDUT (TcPlcObject)
 {attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_MotionRequest :
-	// Defines behavior options for when FB_MotionRequest is run during an active move from another source
+    // Defines behavior options for when FB_MotionRequest is run during an active move from another source
 (
-	WAIT := 0,
-	INTERRUPT := 1,
-	ABORT := 2
+    WAIT := 0,
+    INTERRUPT := 1,
+    ABORT := 2
 );
 END_TYPE
 ```
@@ -598,11 +598,11 @@ DUTs/ENUM_StageBrakeMode.TcDUT (TcPlcObject)
 {attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_StageBrakeMode :
-	// Defines when to send the brake disengage signal in FB_MotionStage
+    // Defines when to send the brake disengage signal in FB_MotionStage
 (
-	IF_ENABLED, // Disengage brake when the motor is enabled
-	IF_MOVING, // Disengage brake when the motor is moving
-	NO_BRAKE // Do not change the brake state in FB_MotionStage
+    IF_ENABLED, // Disengage brake when the motor is enabled
+    IF_MOVING, // Disengage brake when the motor is moving
+    NO_BRAKE // Do not change the brake state in FB_MotionStage
 );
 END_TYPE
 ```
@@ -617,11 +617,11 @@ DUTs/ENUM_StageEnableMode.TcDUT (TcPlcObject)
 {attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE ENUM_StageEnableMode :
-	// Define conditions when FB_MotionStage automatically sets bEnable
+    // Define conditions when FB_MotionStage automatically sets bEnable
 (
-	ALWAYS, // Always set bEnable to TRUE
-	NEVER,  // Only change bEnable on errors
-	DURING_MOTION  // Enable before motion, disable after motion
+    ALWAYS, // Always set bEnable to TRUE
+    NEVER,  // Only change bEnable on errors
+    DURING_MOTION  // Enable before motion, disable after motion
 );
 END_TYPE
 ```
@@ -633,12 +633,12 @@ DUTs/ST_RenishawAbsEnc.TcDUT (TcPlcObject)
 ### ST_RenishawAbsEnc: Declaration
 
 ```vhdl
-// Renishaw BiSS-C absolute encoder used with an EL5042 
+// Renishaw BiSS-C absolute encoder used with an EL5042
 TYPE ST_RenishawAbsEnc :
 STRUCT
-	Count AT %I*: ULINT; // Connect to encoder "Position" input
-	Status: EL5042_Status; // Status struct placeholder
-	Ref: ULINT; // Encoder zero position (useful for aligned position with gantries)
+    Count AT %I*: ULINT; // Connect to encoder "Position" input
+    Status: EL5042_Status; // Status struct placeholder
+    Ref: ULINT; // Encoder zero position (useful for aligned position with gantries)
 END_STRUCT
 END_TYPE
 ```
@@ -657,75 +657,75 @@ POUs/Deprecated/FB_StatePTPMove.TcPOU (TcPlcObject)
 FUNCTION_BLOCK FB_StatePTPMove
 // Do not use, this is deprecated
 VAR_INPUT
-	{attribute 'pytmc' := '
-		pv:
-	'}
-	stPositionState: DUT_PositionState;
-	
-	{attribute 'pytmc' := '
-		pv: GO
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bExecute: BOOL;
-	
-	{attribute 'pytmc' := '
-		pv: MOVE_OK
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bMoveOk: BOOL;
+    {attribute 'pytmc' := '
+        pv:
+    '}
+    stPositionState: DUT_PositionState;
+
+    {attribute 'pytmc' := '
+        pv: GO
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bExecute: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: MOVE_OK
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bMoveOk: BOOL;
 END_VAR
 VAR_IN_OUT
-	stMotionStage: DUT_MotionStage;
+    stMotionStage: DUT_MotionStage;
 END_VAR
 VAR_OUTPUT
-	{attribute 'pytmc' := '
-		pv: AT_STATE
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bAtState: BOOL;
-	
-	{attribute 'pytmc' := '
-		pv: DMOV
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bDone: BOOL;
-	
-	{attribute 'pytmc' := '
-		pv: BUSY
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bBusy: BOOL;
-	
-	{attribute 'pytmc' := '
-		pv: ERR
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bError: BOOL;
-	
-	{attribute 'pytmc' := '
-		pv: ERRMSG
-		io: input
-	'}
-	sError: STRING;
+    {attribute 'pytmc' := '
+        pv: AT_STATE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bAtState: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: DMOV
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bDone: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: BUSY
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bBusy: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: ERR
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bError: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: ERRMSG
+        io: input
+    '}
+    sError: STRING;
 END_VAR
 VAR
-	bExecTrig: R_TRIG;
-	bExecEnd: F_TRIG;
-	fActPosition: LREAL;
-	fLowPos: LREAL;
-	fHighPos: LREAL;
+    bExecTrig: R_TRIG;
+    bExecEnd: F_TRIG;
+    fActPosition: LREAL;
+    fLowPos: LREAL;
+    fHighPos: LREAL;
 END_VAR
 ```
 
@@ -734,16 +734,16 @@ END_VAR
 ```vhdl
 bExecTrig(CLK:=bExecute);
 IF bExecTrig.Q AND bMoveOk THEN
-	IF NOT stMotionStage.bBusy AND NOT stMotionStage.bError THEN
-		stMotionStage.bExecute := TRUE;
-		stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
-		stMotionStage.fPosition := stPositionState.fPosition;
-		stMotionStage.fVelocity := stPositionState.fVelocity;
-		stMotionStage.fAcceleration := stPositionState.fAccel;
-		stMotionStage.fDeceleration := stPositionState.fDecel;
-		bDone := FALSE;
-		bBusy := TRUE;
-	END_IF
+    IF NOT stMotionStage.bBusy AND NOT stMotionStage.bError THEN
+        stMotionStage.bExecute := TRUE;
+        stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+        stMotionStage.fPosition := stPositionState.fPosition;
+        stMotionStage.fVelocity := stPositionState.fVelocity;
+        stMotionStage.fAcceleration := stPositionState.fAccel;
+        stMotionStage.fDeceleration := stPositionState.fDecel;
+        bDone := FALSE;
+        bBusy := TRUE;
+    END_IF
 END_IF
 bError := stMotionStage.bError;
 sError := stMotionStage.sErrorMessage;
@@ -752,25 +752,25 @@ fActPosition := stMotionStage.stAxisStatus.fActPosition;
 fLowPos := stPositionState.fPosition - stPositionState.fDelta;
 fHighPos := stPositionState.fPosition + stPositionState.fDelta;
 IF (fLowPos < fActPosition) AND (fHighPos > fActPosition) THEN
-	bAtState := TRUE;
-	IF NOT stMotionStage.bBusy THEN
-		bDone := TRUE;
-		bBusy := FALSE;
-		bExecute := FALSE;
-	END_IF
+    bAtState := TRUE;
+    IF NOT stMotionStage.bBusy THEN
+        bDone := TRUE;
+        bBusy := FALSE;
+        bExecute := FALSE;
+    END_IF
 ELSE
-	bAtState := FALSE;
+    bAtState := FALSE;
 END_IF
 
 bExecEnd(CLK:=bExecute);
 IF bExecEnd.Q AND bBusy THEN
-	stMotionStage.bExecute := FALSE;
+    stMotionStage.bExecute := FALSE;
 END_IF
 
 IF NOT stMotionStage.bExecute OR NOT bExecute THEN
-	bDone := TRUE;
-	bBusy := FALSE;
-	bExecute := FALSE;
+    bDone := TRUE;
+    bBusy := FALSE;
+    bExecute := FALSE;
 END_IF
 ```
 
@@ -784,7 +784,7 @@ POUs/ImplicitChecks/CheckBounds.TcPOU (TcPlcObject)
 // Implicitly generated code : DO NOT EDIT
 FUNCTION CheckBounds : DINT
 VAR_INPUT
-	index, lower, upper: DINT;
+    index, lower, upper: DINT;
 END_VAR
 ```
 
@@ -794,11 +794,11 @@ END_VAR
 // Implicitly generated code : Only an Implementation suggestion
 {noflow}
 IF  index < lower THEN
-	CheckBounds := lower;
+    CheckBounds := lower;
 ELSIF  index > upper THEN
-	CheckBounds := upper;
-ELSE  
-	CheckBounds := index;
+    CheckBounds := upper;
+ELSE
+    CheckBounds := index;
 END_IF
 {flow}
 ```
@@ -813,7 +813,7 @@ POUs/ImplicitChecks/CheckDivDInt.TcPOU (TcPlcObject)
 // Implicitly generated code : DO NOT EDIT
 FUNCTION CheckDivDInt : DINT
 VAR_INPUT
-	divisor:DINT;
+    divisor:DINT;
 END_VAR
 ```
 
@@ -823,9 +823,9 @@ END_VAR
 // Implicitly generated code : Only an Implementation suggestion
 {noflow}
 IF divisor = 0 THEN
-	CheckDivDInt:=1;
+    CheckDivDInt:=1;
 ELSE
-	CheckDivDInt:=divisor;
+    CheckDivDInt:=divisor;
 END_IF;
 {flow}
 ```
@@ -840,7 +840,7 @@ POUs/ImplicitChecks/CheckDivLInt.TcPOU (TcPlcObject)
 // Implicitly generated code : DO NOT EDIT
 FUNCTION CheckDivLInt : LINT
 VAR_INPUT
-	divisor:LINT;
+    divisor:LINT;
 END_VAR
 ```
 
@@ -850,9 +850,9 @@ END_VAR
 // Implicitly generated code : Only an Implementation suggestion
 {noflow}
 IF divisor = 0 THEN
-	CheckDivLInt:=1;
+    CheckDivLInt:=1;
 ELSE
-	CheckDivLInt:=divisor;
+    CheckDivLInt:=divisor;
 END_IF;
 {flow}
 ```
@@ -867,7 +867,7 @@ POUs/ImplicitChecks/CheckDivLReal.TcPOU (TcPlcObject)
 // Implicitly generated code : DO NOT EDIT
 FUNCTION CheckDivLReal : LREAL
 VAR_INPUT
-	divisor:LREAL;
+    divisor:LREAL;
 END_VAR
 ```
 
@@ -877,9 +877,9 @@ END_VAR
 // Implicitly generated code : Only an Implementation suggestion
 {noflow}
 IF divisor = 0 THEN
-	CheckDivLReal:=1;
+    CheckDivLReal:=1;
 ELSE
-	CheckDivLReal:=divisor;
+    CheckDivLReal:=divisor;
 END_IF;
 {flow}
 ```
@@ -894,7 +894,7 @@ POUs/ImplicitChecks/CheckDivReal.TcPOU (TcPlcObject)
 // Implicitly generated code : DO NOT EDIT
 FUNCTION CheckDivReal : REAL
 VAR_INPUT
-	divisor:REAL;
+    divisor:REAL;
 END_VAR
 ```
 
@@ -904,9 +904,9 @@ END_VAR
 // Implicitly generated code : Only an Implementation suggestion
 {noflow}
 IF divisor = 0 THEN
-	CheckDivReal:=1;
+    CheckDivReal:=1;
 ELSE
-	CheckDivReal:=divisor;
+    CheckDivReal:=divisor;
 END_IF;
 {flow}
 ```
@@ -920,41 +920,41 @@ POUs/Motion/FB_MotionRequest.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_MotionRequest
 (*
-	Request a move from an axis controlled via EPICS using FB_MotionStage
-	This exists to manage situations where different bits of code may need to move the same motor.
-	With just the DUT_MotionStage/FB_MotionStage setup it is possible for two function blocks to
-	fight with and interfere with each other and with the EPICS commands.
+    Request a move from an axis controlled via EPICS using FB_MotionStage
+    This exists to manage situations where different bits of code may need to move the same motor.
+    With just the DUT_MotionStage/FB_MotionStage setup it is possible for two function blocks to
+    fight with and interfere with each other and with the EPICS commands.
 *)
 VAR_IN_OUT
-	// Motor to move
+    // Motor to move
     stMotionStage: DUT_MotionStage;
 END_VAR
 VAR_INPUT
-	// Start move on rising edge, stop move on falling edge
+    // Start move on rising edge, stop move on falling edge
     bExecute: BOOL;
-	// Reset errors on rising edge
+    // Reset errors on rising edge
     bReset: BOOL;
-	// Define behavior for when the motor is already moving
+    // Define behavior for when the motor is already moving
     enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
-	// Goal position
+    // Goal position
     fPos: LREAL;
-	// Move velocity
+    // Move velocity
     fVel: LREAL;
-	// Optional acceleration
+    // Optional acceleration
     fAcc: LREAL;
-	// Optional deceleration
+    // Optional deceleration
     fDec: LREAL;
 END_VAR
 VAR_OUTPUT
-	// True if in error state
+    // True if in error state
     bError: BOOL;
-	// Error code
+    // Error code
     nErrorId: UDINT;
     // What the error code means
     sErrorMessage: STRING;
-	// If TRUE, we are moving the motor
+    // If TRUE, we are moving the motor
     bBusy: BOOL;
-	// If TRUE, we are not moving the motor and our most recent move was successful
+    // If TRUE, we are not moving the motor and our most recent move was successful
     bDone: BOOL;
 END_VAR
 VAR
@@ -993,26 +993,26 @@ IF rtReset.Q THEN
     nState := INIT;
     IF bError AND stMotionStage.bError AND bCausedError THEN
         stMotionStage.bReset := TRUE;
-	END_IF
+    END_IF
 END_IF
 IF rtExec.Q OR ftExec.Q THEN
-	bDone := FALSE;
+    bDone := FALSE;
 END_IF
 
 CASE nState OF
-	// Start by setting everything to a known value
+    // Start by setting everything to a known value
     INIT:
         nState := WAIT_EXEC;
         bError := FALSE;
         sErrorMessage := '';
         bDone := FALSE;
         bCausedError := FALSE;
-	// Normal "waiting for move command" state
+    // Normal "waiting for move command" state
     WAIT_EXEC:
         bMyMove := FALSE;
-		// Looking for a rising edge on bExecute
+        // Looking for a rising edge on bExecute
         IF rtExec.Q THEN
-			bDone := FALSE;
+            bDone := FALSE;
             nState := PICK_REQUEST;
         END_IF
     // Decide how to handle the request
@@ -1034,7 +1034,7 @@ CASE nState OF
     // Watch the other move, then see if it's our turn
     WAIT_OTHER_MOVE:
         IF NOT stMotionStage.bBusy THEN
-			// Try to pick request again next cycle once the move is over
+            // Try to pick request again next cycle once the move is over
             nState := PICK_REQUEST;
         END_IF
     // Interrupt the other move, then go to start ours
@@ -1042,8 +1042,8 @@ CASE nState OF
         stMotionStage.bExecute := FALSE;
         IF NOT stMotionStage.bBusy THEN
             nState := START_MOVE;
-		END_IF
-	// Set the correct values on DUT_MotionStage to start a new absolute move
+        END_IF
+    // Set the correct values on DUT_MotionStage to start a new absolute move
     START_MOVE:
         bMyMove := TRUE;
         stMotionStage.bExecute := TRUE;
@@ -1053,27 +1053,27 @@ CASE nState OF
         stMotionStage.fAcceleration := fAcc;
         stMotionStage.fDeceleration := fDec;
         nState := WAIT_MY_MOVE;
-	// Watch our ongoing move, look for the move to end or requests to stop the move from this FB
+    // Watch our ongoing move, look for the move to end or requests to stop the move from this FB
     WAIT_MY_MOVE:
         ftBusy(CLK:=stMotionStage.bBusy);
         IF ftBusy.Q THEN
             nState := DONE_MOVING;
-		END_IF
-		// Implement stop on falling trigger
+        END_IF
+        // Implement stop on falling trigger
         IF ftExec.Q THEN
             nState := STOP_MY_MOVE;
         END_IF
-	// Request a stop and wait for it to happen
+    // Request a stop and wait for it to happen
     STOP_MY_MOVE:
         stMotionStage.bExecute := FALSE;
         IF NOT stMotionStage.bBusy THEN
             nState := DONE_MOVING;
         END_IF
-	// Pick out the bDone state and return to waiting
+    // Pick out the bDone state and return to waiting
     DONE_MOVING:
         bDone := stMotionStage.bDone;
         nState := WAIT_EXEC;
-	// Lock us into the error state until the FB is reset
+    // Lock us into the error state until the FB is reset
     ERROR:
         bMyMove := FALSE;
 END_CASE
@@ -1104,23 +1104,23 @@ POUs/Motion/FB_MotionStage.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_MotionStage
 (*
-	Default implementation for PLC behavior when motor IOC asks for a move
-	This can be extended or replaced in your PLC project if you want
-	non-default behavior to arise from the motor record processing
+    Default implementation for PLC behavior when motor IOC asks for a move
+    This can be extended or replaced in your PLC project if you want
+    non-default behavior to arise from the motor record processing
 *)
 VAR_IN_OUT
-	stMotionStage: DUT_MotionStage;
+    stMotionStage: DUT_MotionStage;
 END_VAR
 VAR
-	fbDriveVirtual: FB_DriveVirtual;
-	bExecute: BOOL;
-	bFwdHit: BOOL;
-	bBwdHit: BOOL;
-	ftExec: F_TRIG;
-	rtExec: R_TRIG;
-	rtUserExec: R_TRIG;
-	rtTarget: R_TRIG;
-	fbSetEnables: FB_SetEnables;
+    fbDriveVirtual: FB_DriveVirtual;
+    bExecute: BOOL;
+    bFwdHit: BOOL;
+    bBwdHit: BOOL;
+    ftExec: F_TRIG;
+    rtExec: R_TRIG;
+    rtUserExec: R_TRIG;
+    rtTarget: R_TRIG;
+    fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
     bNegGoal: BOOL;
 END_VAR
@@ -1138,35 +1138,35 @@ bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
-	ENUM_StageEnableMode.ALWAYS:
-		stMotionStage.bEnable := TRUE;
-		bExecute := stMotionStage.bExecute;
-	ENUM_StageEnableMode.NEVER:
-		bExecute := stMotionStage.bExecute;
-	ENUM_StageEnableMode.DURING_MOTION:
-		IF rtUserExec.Q THEN
+    ENUM_StageEnableMode.ALWAYS:
+        stMotionStage.bEnable := TRUE;
+        bExecute := stMotionStage.bExecute;
+    ENUM_StageEnableMode.NEVER:
+        bExecute := stMotionStage.bExecute;
+    ENUM_StageEnableMode.DURING_MOTION:
+        IF rtUserExec.Q THEN
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
                     stMotionStage.bEnable := TRUE;
                 ELSE
                     stMotionStage.bError := TRUE;
                     stMotionStage.nErrorId := 16#4358;
-				END_IF
+                END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
                     stMotionStage.bEnable := TRUE;
                 ELSE
                     stMotionStage.bError := TRUE;
                     stMotionStage.nErrorId := 16#4357;
-				END_IF
-			END_IF
-		END_IF
-		bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
+                END_IF
+            END_IF
+        END_IF
+        bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
 END_CASE
 
 // Automatically fill the correct nCmdData for homing
 IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
-	stMotionStage.nCmdData := stMotionStage.nHomingMode;
+    stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
 // Update all enable booleans
@@ -1174,27 +1174,27 @@ fbSetEnables(stMotionStage:=stMotionStage);
 
 // No moves allowed in error states
 IF stMotionStage.bError THEN
-	bExecute := FALSE;
+    bExecute := FALSE;
 END_IF
 
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
-	bEnable:=stMotionStage.bAllEnable,
-	bReset:=stMotionStage.bReset,
-	bExecute:=bExecute,
-	nCommand:=INT_TO_UINT(stMotionStage.nCommand),
-	nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
-	fVelocity:=stMotionStage.fVelocity,
-	fPosition:=stMotionStage.fPosition,
-	fAcceleration:=stMotionStage.fAcceleration,
-	fDeceleration:=stMotionStage.fDeceleration,
-	bLimitFwd:=stMotionStage.bAllForwardEnable,
-	bLimitBwd:=stMotionStage.bAllBackwardEnable,
-	bHomeSensor:=stMotionStage.bHome,
-	fHomePosition:=stMotionStage.fHomePosition,
-	bPowerSelf:=stMotionStage.bPowerSelf,
-	nMotionAxisID=>stMotionStage.nMotionAxisID,
-	Axis:=stMotionStage.Axis);
+    bEnable:=stMotionStage.bAllEnable,
+    bReset:=stMotionStage.bReset,
+    bExecute:=bExecute,
+    nCommand:=INT_TO_UINT(stMotionStage.nCommand),
+    nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
+    fVelocity:=stMotionStage.fVelocity,
+    fPosition:=stMotionStage.fPosition,
+    fAcceleration:=stMotionStage.fAcceleration,
+    fDeceleration:=stMotionStage.fDeceleration,
+    bLimitFwd:=stMotionStage.bAllForwardEnable,
+    bLimitBwd:=stMotionStage.bAllBackwardEnable,
+    bHomeSensor:=stMotionStage.bHome,
+    fHomePosition:=stMotionStage.fHomePosition,
+    bPowerSelf:=stMotionStage.bPowerSelf,
+    nMotionAxisID=>stMotionStage.nMotionAxisID,
+    Axis:=stMotionStage.Axis);
 
 // Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
@@ -1211,70 +1211,70 @@ stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);
 IF rtExec.Q THEN
-	stMotionStage.bBusy := TRUE;
-	stMotionStage.bDone := FALSE;
+    stMotionStage.bBusy := TRUE;
+    stMotionStage.bDone := FALSE;
 END_IF
 
 // Force everything off in case of error
 IF stMotionStage.bError THEN
-	stMotionStage.bBusy := FALSE;
-	stMotionStage.bDone := FALSE;
-	stMotionStage.bEnable := FALSE;
+    stMotionStage.bBusy := FALSE;
+    stMotionStage.bDone := FALSE;
+    stMotionStage.bEnable := FALSE;
 END_IF
 
 // Check the limits and cancel execution if appropriate. Without this block we have infinite error spam
 bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bAllForwardEnable;
 bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bAllBackwardEnable;
 IF bFwdHit OR bBwdHit THEN
-	stMotionStage.bExecute := FALSE;
+    stMotionStage.bExecute := FALSE;
 END_IF
 
 // Check done moving via fbDriveVirtual and from Target Position Monitoring. Must satisfy both conditions.
 ftExec(CLK:=stMotionStage.bExecute);
 rtTarget(CLK:=stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone);
 IF rtTarget.Q OR ftExec.Q THEN
-	IF NOT stMotionStage.bDone THEN
-		stMotionStage.bDone := TRUE;
-		stMotionStage.bBusy := FALSE;
-		IF NOT stMotionStage.Axis.Status.Error THEN
-			bExecute := FALSE;
-			stMotionStage.bExecute := FALSE;
-		END_IF
-	END_IF
+    IF NOT stMotionStage.bDone THEN
+        stMotionStage.bDone := TRUE;
+        stMotionStage.bBusy := FALSE;
+        IF NOT stMotionStage.Axis.Status.Error THEN
+            bExecute := FALSE;
+            stMotionStage.bExecute := FALSE;
+        END_IF
+    END_IF
 END_IF
 
 // Handle auto-disable timing
 IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT stMotionStage.bExecute THEN
-	IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
-		stMotionStage.bEnable := FALSE;
-	END_IF
+    IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+        stMotionStage.bEnable := FALSE;
+    END_IF
 END_IF
 
 // Get a definitive bEnabled reading
 CASE stMotionStage.Axis.Status.MotionState OF
-	// We are not enabled if there is an issue
-	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
-		stMotionStage.bEnableDone := FALSE;
-	ELSE
-		stMotionStage.bEnableDone := TRUE;
+    // We are not enabled if there is an issue
+    MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
+        stMotionStage.bEnableDone := FALSE;
+    ELSE
+        stMotionStage.bEnableDone := TRUE;
 END_CASE
 
 // Handle the brake. TRUE means brake disabled/released
 IF stMotionStage.nBrakeMode <> ENUM_StageBrakeMode.NO_BRAKE THEN
-	CASE stMotionStage.Axis.Status.MotionState OF
-		MC_AXISSTATE_UNDEFINED,
-		MC_AXISSTATE_DISABLED,
-		MC_AXISSTATE_ERRORSTOP:
-			stMotionStage.bBrakeRelease := FALSE;
-		MC_AXISSTATE_STANDSTILL:
-			IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.IF_MOVING THEN
-				stMotionStage.bBrakeRelease := FALSE;
-			ELSE
-				stMotionStage.bBrakeRelease := TRUE;
-			END_IF
-		ELSE
-			stMotionStage.bBrakeRelease := TRUE;
-	END_CASE
+    CASE stMotionStage.Axis.Status.MotionState OF
+        MC_AXISSTATE_UNDEFINED,
+        MC_AXISSTATE_DISABLED,
+        MC_AXISSTATE_ERRORSTOP:
+            stMotionStage.bBrakeRelease := FALSE;
+        MC_AXISSTATE_STANDSTILL:
+            IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.IF_MOVING THEN
+                stMotionStage.bBrakeRelease := FALSE;
+            ELSE
+                stMotionStage.bBrakeRelease := TRUE;
+            END_IF
+        ELSE
+            stMotionStage.bBrakeRelease := TRUE;
+    END_CASE
 END_IF
 
 // Sync the epics status struct
@@ -1283,19 +1283,19 @@ stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnableDone;
 
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
-	stMotionStage.bEnable := FALSE;
-	stMotionStage.bReset := FALSE;
-	stMotionStage.bExecute := FALSE;
+    stMotionStage.bEnable := FALSE;
+    stMotionStage.bReset := FALSE;
+    stMotionStage.bExecute := FALSE;
     stMotionStage.bError := FALSE;
     stMotionStage.nErrorId := 0;
     stMotionStage.sErrorMessage := '';
-	bExecute := FALSE;
+    bExecute := FALSE;
 END_IF
 
 // Ignore homing if we have the setting for it
 // e.g. for pre-calibrated absolute encoders
 IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
-	stMotionStage.stAxisStatus.bHomed := TRUE;
+    stMotionStage.stAxisStatus.bHomed := TRUE;
 END_IF
 ```
 
@@ -1308,15 +1308,15 @@ POUs/Motion/FB_MotionStageSim.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_MotionStageSim
 (*
-	Set all the values needed for a fake motor to be movable
-	via the IOC, then call FB_MotionStage
+    Set all the values needed for a fake motor to be movable
+    via the IOC, then call FB_MotionStage
 *)
 VAR_IN_OUT
-	stMotionStage: DUT_MotionStage;
+    stMotionStage: DUT_MotionStage;
 END_VAR
 VAR
-	fbMotionStage: FB_MotionStage;
-	bInit: BOOL;
+    fbMotionStage: FB_MotionStage;
+    bInit: BOOL;
 END_VAR
 ```
 
@@ -1324,17 +1324,17 @@ END_VAR
 
 ```vhdl
 IF NOT bInit THEN
-	bInit := TRUE;
-	// Stand-in for no forward limit
-	stMotionStage.bLimitForwardEnable := TRUE;
-	// Stand-in for no reverse limit
-	stMotionStage.bLimitBackwardEnable := TRUE;
-	// Stand-in for no STO button
-	stMotionStage.bHardwareEnable := TRUE;
-	// Stand-in for no PMPS governer
-	stMotionStage.bPowerSelf := TRUE;
-	// Always keep it enabled for testing ease
-	stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    bInit := TRUE;
+    // Stand-in for no forward limit
+    stMotionStage.bLimitForwardEnable := TRUE;
+    // Stand-in for no reverse limit
+    stMotionStage.bLimitBackwardEnable := TRUE;
+    // Stand-in for no STO button
+    stMotionStage.bHardwareEnable := TRUE;
+    // Stand-in for no PMPS governer
+    stMotionStage.bPowerSelf := TRUE;
+    // Always keep it enabled for testing ease
+    stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
 END_IF
 // Call FB_MotionStage to do the thing
 fbMotionStage(stMotionStage := stMotionStage);
@@ -1349,25 +1349,25 @@ POUs/Motion/Gantry/FB_GantryAutoCoupling.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_GantryAutoCoupling
 VAR_INPUT
-	nGantryTol : LINT;
+    nGantryTol : LINT;
 END_VAR
 VAR_OUTPUT
-	bGantryAlreadyCoupled : BOOL;
+    bGantryAlreadyCoupled : BOOL;
 END_VAR
 VAR_IN_OUT
-	Master : DUT_MotionStage;
-	MasterEnc : ST_RenishawAbsEnc;
-	Slave : DUT_MotionStage;
-	SlaveEnc : ST_RenishawAbsEnc;
-	bExecuteCouple : BOOL;
-	bExecuteDecouple : BOOL;
+    Master : DUT_MotionStage;
+    MasterEnc : ST_RenishawAbsEnc;
+    Slave : DUT_MotionStage;
+    SlaveEnc : ST_RenishawAbsEnc;
+    bExecuteCouple : BOOL;
+    bExecuteDecouple : BOOL;
 END_VAR
 VAR
-	gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
-	couple : MC_GEARIN;
-	decouple : MC_GEAROUT;
-	bInitComplete : BOOL;
-	fbSetEnables : FB_SetEnables;
+    gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
+    couple : MC_GEARIN;
+    decouple : MC_GEAROUT;
+    bInitComplete : BOOL;
+    fbSetEnables : FB_SetEnables;
 END_VAR
 ```
 
@@ -1383,8 +1383,8 @@ Slave.nGantryTol := Master.nGantryTol;
 
 // Activate Gantry Virtual Limit Switch
 gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=Master.nGantryTol,
-				  PLimFwd=>Master.bGantryForwardEnable, PLimBwd=>Master.bGantryBackwardEnable,
-				  SLimFwd=>Slave.bGantryForwardEnable, SLimBwd=>Slave.bGantryBackwardEnable);
+                  PLimFwd=>Master.bGantryForwardEnable, PLimBwd=>Master.bGantryBackwardEnable,
+                  SLimFwd=>Slave.bGantryForwardEnable, SLimBwd=>Slave.bGantryBackwardEnable);
 
 // Coupling Status Bit
 bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
@@ -1393,11 +1393,11 @@ fbSetEnables(stMotionStage:=Master);
 fbSetEnables(stMotionStage:=Slave);
 
 IF bGantryAlreadyCoupled THEN
-	Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bAllForwardEnable;
-	Slave.bGantryForwardEnable := Master.bAllForwardEnable AND Slave.bGantryForwardEnable;
-	
-	Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bAllBackwardEnable;
-	Slave.bGantryBackwardEnable := Master.bAllBackwardEnable AND Slave.bGantryBackwardEnable;
+    Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bAllForwardEnable;
+    Slave.bGantryForwardEnable := Master.bAllForwardEnable AND Slave.bGantryForwardEnable;
+
+    Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bAllBackwardEnable;
+    Slave.bGantryBackwardEnable := Master.bAllBackwardEnable AND Slave.bGantryBackwardEnable;
 END_IF
 
 
@@ -1424,19 +1424,19 @@ POUs/Motion/Gantry/FB_GantryDiffVirtualLimitSwitch.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_GantryDiffVirtualLimitSwitch
 VAR_INPUT
-	PEnc: ST_RenishawAbsEnc; // Primary axis encoder (usually the upstream one)
-	SEnc: ST_RenishawAbsEnc; // Secondary axis encoder (couples to the primary)
-	
-	GantDiffTol: LINT;		// Gantry differenace tolerance in encoder counts
+    PEnc: ST_RenishawAbsEnc; // Primary axis encoder (usually the upstream one)
+    SEnc: ST_RenishawAbsEnc; // Secondary axis encoder (couples to the primary)
+
+    GantDiffTol: LINT;        // Gantry differenace tolerance in encoder counts
 END_VAR
 VAR_OUTPUT
-	PLimFwd: BOOL; // Primary axis forward direction enable
-	PLimBwd: BOOL; // Primary axis reverse direction enable
-	SLimFwd: BOOL; // Secondary axis forward direction enable
-	SLimBwd: BOOL; // Secondary axis reverse direction enable
+    PLimFwd: BOOL; // Primary axis forward direction enable
+    PLimBwd: BOOL; // Primary axis reverse direction enable
+    SLimFwd: BOOL; // Secondary axis forward direction enable
+    SLimBwd: BOOL; // Secondary axis reverse direction enable
 END_VAR
 VAR
-	GantryDiff: LINT;
+    GantryDiff: LINT;
 END_VAR
 ```
 
@@ -1464,26 +1464,26 @@ Call before FB_MotionStage fb calls for the gantry axes.
 GantryDiff := ( ULINT_TO_LINT(PEnc.Count) - ULINT_TO_LINT(PEnc.Ref) ) - ( ULINT_TO_LINT(SEnc.Count) - ULINT_TO_LINT(SEnc.Ref) );
 
 IF ABS(GantryDiff) > GantDiffTol THEN
-	IF GantryDiff < 0  THEN
-		PLimBwd := FALSE;
-		SLimFwd := FALSE;
-	ELSE	
-		PLimBwd := TRUE;
-		SLimFwd := TRUE;
-	END_IF
-	IF GantryDiff > 0 THEN
-		PLimFwd := FALSE;
-		SLimBwd := FALSE;
-	ELSE
-		PLimFwd := TRUE;
-		SLimBwd := TRUE;
-	END_IF
+    IF GantryDiff < 0  THEN
+        PLimBwd := FALSE;
+        SLimFwd := FALSE;
+    ELSE
+        PLimBwd := TRUE;
+        SLimFwd := TRUE;
+    END_IF
+    IF GantryDiff > 0 THEN
+        PLimFwd := FALSE;
+        SLimBwd := FALSE;
+    ELSE
+        PLimFwd := TRUE;
+        SLimBwd := TRUE;
+    END_IF
 ELSE
-	//If there is no fault, all directions are enabled
-	PLimFwd := TRUE;
-	PLimBwd := TRUE;
-	SLimFwd := TRUE;
-	SLimBwd := TRUE;
+    //If there is no fault, all directions are enabled
+    PLimFwd := TRUE;
+    PLimBwd := TRUE;
+    SLimFwd := TRUE;
+    SLimBwd := TRUE;
 END_IF
 ```
 
@@ -1498,52 +1498,52 @@ FUNCTION_BLOCK FB_EpicsInOut
 // Example usage of FB_PositionStateManager for a simple IN/OUT axis. See NOTE: comments.
 // Also usable as a drop-in for these cases (no need to roll your own in/out)
 VAR_IN_OUT
-	// Motor to apply states to
-	stMotionStage: DUT_MotionStage;
-	// Information about the OUT position
-	stOut: DUT_PositionState; // NOTE: Do not pragma these, let it happen in the manager.
-	// Information about the IN parameter
-	stIn: DUT_PositionState;
+    // Motor to apply states to
+    stMotionStage: DUT_MotionStage;
+    // Information about the OUT position
+    stOut: DUT_PositionState; // NOTE: Do not pragma these, let it happen in the manager.
+    // Information about the IN parameter
+    stIn: DUT_PositionState;
 END_VAR
 VAR_INPUT
-	// If TRUE, the motor will be moved when enumSet is changed
-	bEnable: BOOL;
-	// When changed, sets the destination and starts a move
-	{attribute 'pytmc' := '
-		pv: SET
-		io: io
-	'}
-	enumSet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumSet
+    // If TRUE, the motor will be moved when enumSet is changed
+    bEnable: BOOL;
+    // When changed, sets the destination and starts a move
+    {attribute 'pytmc' := '
+        pv: SET
+        io: io
+    '}
+    enumSet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumSet
 END_VAR
 VAR_OUTPUT
-	// If TRUE, we are in an error state
-	bError: BOOL; // NOTE: do not pragma these, already has pragma in manager
+    // If TRUE, we are in an error state
+    bError: BOOL; // NOTE: do not pragma these, already has pragma in manager
     // Error code
     nErrorId: UDINT;
-	// Message associated with bError = TRUE
-	sErrorMessage: STRING;
-	// If TRUE, we are currently moving between states
-	bBusy: BOOL;
-	// If TRUE, we asked for a move between states, it completed successfully, and there is no ongoing move
-	bDone: BOOL;
-	// The current state readback
-	{attribute 'pytmc' := '
-		pv: GET
-		io: i
-	'}
-	enumGet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumGet
+    // Message associated with bError = TRUE
+    sErrorMessage: STRING;
+    // If TRUE, we are currently moving between states
+    bBusy: BOOL;
+    // If TRUE, we asked for a move between states, it completed successfully, and there is no ongoing move
+    bDone: BOOL;
+    // The current state readback
+    {attribute 'pytmc' := '
+        pv: GET
+        io: i
+    '}
+    enumGet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumGet
 END_VAR
 VAR
-	bInit: BOOL;
-	arrStates: ARRAY[1..15] OF DUT_PositionState;
+    bInit: BOOL;
+    arrStates: ARRAY[1..15] OF DUT_PositionState;
 
-	{attribute 'pytmc' := '
-		pv:
-		io: io
-	'}
-	fbStateManager: FB_PositionStateManager; // NOTE: Please copy this pragma exactly to pick up the standard PVs
-	fbLockOut: FB_PositionStateLock;
-	fbLockIn: FB_PositionStateLock;
+    {attribute 'pytmc' := '
+        pv:
+        io: io
+    '}
+    fbStateManager: FB_PositionStateManager; // NOTE: Please copy this pragma exactly to pick up the standard PVs
+    fbLockOut: FB_PositionStateLock;
+    fbLockIn: FB_PositionStateLock;
 END_VAR
 ```
 
@@ -1552,9 +1552,9 @@ END_VAR
 ```vhdl
 // Fist cycle setup
 IF NOT bInit THEN
-	stOut.sName := 'OUT';
-	stIn.sName := 'IN';
-	bInit := TRUE;
+    stOut.sName := 'OUT';
+    stIn.sName := 'IN';
+    bInit := TRUE;
 END_IF
 
 // If either of these have bLocked = TRUE, do not allow user to change them
@@ -1567,16 +1567,16 @@ arrStates[2] := stIn;
 
 // Call the function block every cycle
 fbStateManager(
-	stMotionStage := stMotionStage,
-	arrStates := arrStates,
-	setState := enumSet,
-	bEnable := bEnable,
-	bError => bError,
+    stMotionStage := stMotionStage,
+    arrStates := arrStates,
+    setState := enumSet,
+    bEnable := bEnable,
+    bError => bError,
     nErrorId => nErrorId,
-	sErrorMessage => sErrorMessage,
-	bBusy => bBusy,
-	bDone => bDone,
-	getState => enumGet); // Cannot do this assignment if enumGet has attribute strict
+    sErrorMessage => sErrorMessage,
+    bBusy => bBusy,
+    bDone => bDone,
+    getState => enumGet); // Cannot do this assignment if enumGet has attribute strict
 ```
 
 
@@ -1587,16 +1587,16 @@ POUs/Motion/States/FB_PositionStateLock.TcPOU (TcPlcObject)
 
 ```vhdl
 FUNCTION_BLOCK FB_PositionStateLock
-(* 
-	Implements immutability for a locked DUT_PositionState
-	Once this is called the first time, the parameters at the time of the call will be restored on all subsequent calls.
+(*
+    Implements immutability for a locked DUT_PositionState
+    Once this is called the first time, the parameters at the time of the call will be restored on all subsequent calls.
 *)
 VAR_IN_OUT
-	stPositionState: DUT_PositionState;
+    stPositionState: DUT_PositionState;
 END_VAR
 VAR
-	stCachedPositionState: DUT_PositionState;
-	bInit: BOOL := FALSE;
+    stCachedPositionState: DUT_PositionState;
+    bInit: BOOL := FALSE;
 END_VAR
 ```
 
@@ -1605,24 +1605,24 @@ END_VAR
 ```vhdl
 // Force values to be cached if we've cached something
 IF bInit AND stPositionState.bLocked THEN
-	stPositionState.sName := stCachedPositionState.sName;
-	stPositionState.fPosition := stCachedPositionState.fPosition;
-	stPositionState.fDelta := stCachedPositionState.fDelta;
-	stPositionState.fVelocity := stCachedPositionState.fVelocity;
-	stPositionState.fAccel := stCachedPositionState.fAccel;
-	stPositionState.fDecel := stCachedPositionState.fDecel;
+    stPositionState.sName := stCachedPositionState.sName;
+    stPositionState.fPosition := stCachedPositionState.fPosition;
+    stPositionState.fDelta := stCachedPositionState.fDelta;
+    stPositionState.fVelocity := stCachedPositionState.fVelocity;
+    stPositionState.fAccel := stCachedPositionState.fAccel;
+    stPositionState.fDecel := stCachedPositionState.fDecel;
 // If we haven't cached and we should, make the cache. Note that we skip bLocked, bValid, and bMoveOk
 ELSIF NOT bInit AND stPositionState.bLocked THEN
-	stCachedPositionState.sName := stPositionState.sName;
-	stCachedPositionState.fPosition := stPositionState.fPosition;
-	stCachedPositionState.fDelta := stPositionState.fDelta;
-	stCachedPositionState.fVelocity := stPositionState.fVelocity;
-	stCachedPositionState.fAccel := stPositionState.fAccel;
-	stCachedPositionState.fDecel := stPositionState.fDecel;
-	bInit := TRUE;
+    stCachedPositionState.sName := stPositionState.sName;
+    stCachedPositionState.fPosition := stPositionState.fPosition;
+    stCachedPositionState.fDelta := stPositionState.fDelta;
+    stCachedPositionState.fVelocity := stPositionState.fVelocity;
+    stCachedPositionState.fAccel := stPositionState.fAccel;
+    stCachedPositionState.fDecel := stPositionState.fDecel;
+    bInit := TRUE;
 // Do nothing, or unlock the state if bLocked goes FALSE
 ELSIF NOT stPositionState.bLocked THEN
-	bInit := FALSE;
+    bInit := FALSE;
 END_IF
 ```
 
@@ -1635,91 +1635,91 @@ POUs/Motion/States/FB_PositionStateManager.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_PositionStateManager
 (*
-	Handles EPICS moves between multiple states for a single axis
-	Should be wrapped inside a block with enums for states,
-	see FB_EpicsInOut for an example.
+    Handles EPICS moves between multiple states for a single axis
+    Should be wrapped inside a block with enums for states,
+    see FB_EpicsInOut for an example.
 *)
 VAR_IN_OUT
-	// Motor to move
-	stMotionStage: DUT_MotionStage;
-	
-	// Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
-	{attribute 'pytmc' := '
-		pv: 
-		io: io
-		expand: %.2d
-	'}
-	arrStates: ARRAY[1..15] OF DUT_PositionState;
-	
-	// Corresponding arrStates index to move to, or 0 if no move selected
-	setState: INT;
+    // Motor to move
+    stMotionStage: DUT_MotionStage;
+
+    // Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
+    {attribute 'pytmc' := '
+        pv:
+        io: io
+        expand: %.2d
+    '}
+    arrStates: ARRAY[1..15] OF DUT_PositionState;
+
+    // Corresponding arrStates index to move to, or 0 if no move selected
+    setState: INT;
 END_VAR
 VAR_INPUT
-	// If TRUE, start a move when setState transitions to a nonzero number
-	bEnable: BOOL;
-	// On rising edge, reset this FB
-	{attribute 'pytmc' := '
-		pv: RESET
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bReset: BOOL;
+    // If TRUE, start a move when setState transitions to a nonzero number
+    bEnable: BOOL;
+    // On rising edge, reset this FB
+    {attribute 'pytmc' := '
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bReset: BOOL;
 END_VAR
 VAR_OUTPUT
-	// If TRUE, there is an error
-	{attribute 'pytmc' := '
-		pv: ERR
-		io: i
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bError: BOOL;
+    // If TRUE, there is an error
+    {attribute 'pytmc' := '
+        pv: ERR
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bError: BOOL;
     // Error ID
     {attribute 'pytmc' := '
         pv: ERRID
         io: i
     '}
     nErrorId: UDINT;
-	// The error that caused bError to flip TRUE
-	{attribute 'pytmc' := '
-		pv: ERRMSG
-		io: i
-	'}
-	sErrorMessage: STRING;
-	// If TRUE, we are moving the motor
-	{attribute 'pytmc' := '
-		pv: BUSY
-		io: i
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bBusy: BOOL;
-	// If TRUE, we are not moving the motor and the last move completed successfully
-	{attribute 'pytmc' := '
-		pv: DONE
-		io: i
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bDone: BOOL;
-	
-	// The current position we are trying to reach, or 0
-	goalState: INT;
-	// The readback position
-	getState: INT;
+    // The error that caused bError to flip TRUE
+    {attribute 'pytmc' := '
+        pv: ERRMSG
+        io: i
+    '}
+    sErrorMessage: STRING;
+    // If TRUE, we are moving the motor
+    {attribute 'pytmc' := '
+        pv: BUSY
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bBusy: BOOL;
+    // If TRUE, we are not moving the motor and the last move completed successfully
+    {attribute 'pytmc' := '
+        pv: DONE
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bDone: BOOL;
+
+    // The current position we are trying to reach, or 0
+    goalState: INT;
+    // The readback position
+    getState: INT;
 END_VAR
 VAR
-	bInit: BOOL;
-	stUnknown: DUT_PositionState;
-	stGoal: DUT_PositionState;
-	fbStateMove: FB_PositionStateMove;
-	nIndex: INT;
-	bNewGoal: BOOL;
-	bInnerExec: BOOL;
-	bInnerReset: BOOL;
-	rtReset: R_TRIG;
-	bMoveRequested: BOOL;
+    bInit: BOOL;
+    stUnknown: DUT_PositionState;
+    stGoal: DUT_PositionState;
+    fbStateMove: FB_PositionStateMove;
+    nIndex: INT;
+    bNewGoal: BOOL;
+    bInnerExec: BOOL;
+    bInnerReset: BOOL;
+    rtReset: R_TRIG;
+    bMoveRequested: BOOL;
 END_VAR
 ```
 
@@ -1729,92 +1729,92 @@ END_VAR
 // Reset just goes through the first-cycle init again
 rtReset(CLK:=bReset);
 IF rtReset.Q THEN
-	bInit := FALSE;
+    bInit := FALSE;
 END_IF
 
 // First-cycle init
 IF NOT bInit THEN
-	bError := FALSE;
-	sErrorMessage := '';
-	bBusy := FALSE;
-	bDone := FALSE;
-	bNewGoal := FALSE;
-	bInnerExec := FALSE;
-	bInnerReset := TRUE;
-	setState := 0;
-	goalState := 0;
+    bError := FALSE;
+    sErrorMessage := '';
+    bBusy := FALSE;
+    bDone := FALSE;
+    bNewGoal := FALSE;
+    bInnerExec := FALSE;
+    bInnerReset := TRUE;
+    setState := 0;
+    goalState := 0;
 END_IF
 
 // Check where we are by going through all possible states.
 // Note this favors the highest-number state that we're at, it's up to you to make your states mutually exclusive.
 getState := 0;
 FOR nIndex := 1 TO 15 DO
-	IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
-		getState := nIndex;
-	END_IF
+    IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
+        getState := nIndex;
+    END_IF
 END_FOR
 
 // Use the changing set pv as a rising-edge trigger
 IF setState <> goalState THEN
-	goalState := setState;
-	bNewGoal := TRUE;
+    goalState := setState;
+    bNewGoal := TRUE;
 END_IF
 
 // Special move handling for error/enable state
 IF bError OR NOT bEnable THEN
-	bInnerExec := FALSE;
+    bInnerExec := FALSE;
 // Reset inner block this cycle if we were already moving but want a new move
 ELSIF bInnerExec AND bNewGoal THEN
-	bInnerExec := FALSE;
-	bInnerReset := TRUE;
+    bInnerExec := FALSE;
+    bInnerReset := TRUE;
 // If we hit this branch, we're starting a new move
 ELSIF bNewGoal THEN
-	bInnerExec := TRUE;
-	bInnerReset := FALSE;
-	bNewGoal := FALSE;
+    bInnerExec := TRUE;
+    bInnerReset := FALSE;
+    bNewGoal := FALSE;
 END_IF
 
 // Pick the correct goal structure or Unknown
 IF goalState = 0 THEN
-	stGoal := stUnknown;
+    stGoal := stUnknown;
 ELSE
-	stGoal := arrStates[goalState];
+    stGoal := arrStates[goalState];
 END_IF
 
 // Do the move
 fbStateMove(
-	stMotionStage := stMotionStage,
-	stPositionState := stGoal,
-	bExecute := bInnerExec,
-	bReset := bInnerReset,
-	enumMotionRequest := ENUM_MotionRequest.INTERRUPT,
-	bBusy => bBusy);
+    stMotionStage := stMotionStage,
+    stPositionState := stGoal,
+    bExecute := bInnerExec,
+    bReset := bInnerReset,
+    enumMotionRequest := ENUM_MotionRequest.INTERRUPT,
+    bBusy => bBusy);
 
 // Only pass up bDone information if this FB is active
 IF bInnerExec THEN
-	bDone := fbStateMove.bDone;
+    bDone := fbStateMove.bDone;
 END_IF
 
 // Pick up any new errors, but don't override uncleared existing errors
 IF NOT bError THEN
-	bError := fbStateMove.bError;
+    bError := fbStateMove.bError;
     nErrorId := fbStateMove.nErrorId;
-	sErrorMessage := fbStateMove.sErrorMessage;
+    sErrorMessage := fbStateMove.sErrorMessage;
 END_IF
 
 // Reset the setpoint and goal to 0 if we're not doing anything
 // because FB is waiting for a change from 0 to "something"
 bMoveRequested := bInnerExec AND NOT bDone;
 IF NOT bError AND NOT bNewGoal AND NOT bMoveRequested THEN
-	setState := 0;
-	goalState := 0;
-	bInnerExec := FALSE;
+    setState := 0;
+    goalState := 0;
+    bInnerExec := FALSE;
 END_IF
 
 // Bring inner reset back low at the end of the init cycle so that it can be triggered again later
 IF NOT bInit THEN
-	bInit := TRUE;
-	bInnerReset := FALSE;
+    bInit := TRUE;
+    bInnerReset := FALSE;
 END_IF
 ```
 
@@ -1829,57 +1829,57 @@ FUNCTION_BLOCK FB_PositionStateMove
 // Request a move to a particular state from an axis controlled via EPICS
 // pytmc PVs here only exposed if using directly and not through FB_PositionStateManager
 VAR_IN_OUT
-	// Motor to move
-	stMotionStage: DUT_MotionStage;
-	
-	// State to move to
-	{attribute 'pytmc' := '
-		pv:
-	'}
-	stPositionState: DUT_PositionState;
+    // Motor to move
+    stMotionStage: DUT_MotionStage;
+
+    // State to move to
+    {attribute 'pytmc' := '
+        pv:
+    '}
+    stPositionState: DUT_PositionState;
 END_VAR
 VAR_INPUT
-	// Start move on rising edge, stop move on falling edge
-	{attribute 'pytmc' := '
-		pv: GO
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bExecute: BOOL;
+    // Start move on rising edge, stop move on falling edge
+    {attribute 'pytmc' := '
+        pv: GO
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bExecute: BOOL;
 
-	// Rising edge error reset
-	{attribute 'pytmc' := '
-		pv: RESET
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bReset: BOOL;
+    // Rising edge error reset
+    {attribute 'pytmc' := '
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bReset: BOOL;
 
-	// Define behavior for when a move is already active
-	enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+    // Define behavior for when a move is already active
+    enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
 END_VAR
 VAR_OUTPUT
-	// TRUE if the motor is at this state
-	{attribute 'pytmc' := '
-		pv: AT_STATE
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bAtState: BOOL;
+    // TRUE if the motor is at this state
+    {attribute 'pytmc' := '
+        pv: AT_STATE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bAtState: BOOL;
 
-	// TRUE if we have an error
-	{attribute 'pytmc' := '
-		pv: ERR
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bError: BOOL;
+    // TRUE if we have an error
+    {attribute 'pytmc' := '
+        pv: ERR
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bError: BOOL;
 
-	// Error code
+    // Error code
     {attribute 'pytmc' := '
         pv: ERRID
         io: input
@@ -1887,33 +1887,33 @@ VAR_OUTPUT
     nErrorID: UDINT;
 
     // Error description
-	{attribute 'pytmc' := '
-		pv: ERRMSG
-		io: input
-	'}
-	sErrorMessage: STRING;
+    {attribute 'pytmc' := '
+        pv: ERRMSG
+        io: input
+    '}
+    sErrorMessage: STRING;
 
-	// TRUE if we are moving to a state
-	{attribute 'pytmc' := '
-		pv: BUSY
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bBusy: BOOL;
+    // TRUE if we are moving to a state
+    {attribute 'pytmc' := '
+        pv: BUSY
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bBusy: BOOL;
 
-	// TRUE if we are note moving and we reached a state successfully on our last move
-	{attribute 'pytmc' := '
-		pv: DONE
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bDone: BOOL;
+    // TRUE if we are note moving and we reached a state successfully on our last move
+    {attribute 'pytmc' := '
+        pv: DONE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bDone: BOOL;
 END_VAR
 VAR
-	fbMotionRequest: FB_MotionRequest;
-	bAllowMove: BOOL;
+    fbMotionRequest: FB_MotionRequest;
+    bAllowMove: BOOL;
 END_VAR
 ```
 
@@ -1925,28 +1925,28 @@ bAllowMove := stPositionState.bMoveOk AND stPositionState.bValid;
 
 // Do the move
 fbMotionRequest(
-	stMotionStage := stMotionStage,
-	bExecute := bExecute AND bAllowMove,
-	bReset := bReset,
-	enumMotionRequest := enumMotionRequest,
-	fPos := stPositionState.fPosition,
-	fVel := stPositionState.fVelocity,
-	fAcc := stPositionState.fAccel,
-	fDec := stPositionState.fDecel,
-	bError => bError,
+    stMotionStage := stMotionStage,
+    bExecute := bExecute AND bAllowMove,
+    bReset := bReset,
+    enumMotionRequest := enumMotionRequest,
+    fPos := stPositionState.fPosition,
+    fVel := stPositionState.fVelocity,
+    fAcc := stPositionState.fAccel,
+    fDec := stPositionState.fDecel,
+    bError => bError,
     nErrorId => nErrorId,
-	sErrorMessage => sErrorMessage,
-	bBusy => bBusy,
-	bDone => bDone);
+    sErrorMessage => sErrorMessage,
+    bBusy => bBusy,
+    bDone => bDone);
 
 // Inject custom error if we can't move because of bMoveOk or bValid
 IF bExecute AND NOT bAllowMove THEN
-	bError := TRUE;
-	IF stPositionState.bValid THEN
-		nErrorId := 16#7901;
-	ELSE
-		nErrorId := 16#7902;
-	END_IF
+    bError := TRUE;
+    IF stPositionState.bValid THEN
+        nErrorId := 16#7901;
+    ELSE
+        nErrorId := 16#7902;
+    END_IF
     sErrorMessage := F_MotionErrorCodeLookup(nErrorId := nErrorID);
 END_IF
 
@@ -1962,10 +1962,10 @@ POUs/Motion/States/F_AtPositionState.TcPOU (TcPlcObject)
 
 ```vhdl
 FUNCTION F_AtPositionState : BOOL
-	// Check if the motor is within the state bounds
+    // Check if the motor is within the state bounds
 VAR_INPUT
-	stMotionStage: DUT_MotionStage;
-	stPositionState: DUT_PositionState;
+    stMotionStage: DUT_MotionStage;
+    stPositionState: DUT_PositionState;
 END_VAR
 VAR
 END_VAR
@@ -1977,10 +1977,10 @@ END_VAR
 F_AtPositionState := FALSE;
 // We can never be at invalid states. We are also not at a state if a move has been requested, we are instead transitioning.
 IF stPositionState.bValid AND NOT stMotionStage.bExecute THEN
-	IF stMotionStage.stAxisStatus.fActPosition < stPositionState.fPosition + ABS(stPositionState.fDelta) AND
-	   stMotionStage.stAxisStatus.fActPosition > stPositionState.fPosition - ABS(stPositionState.fDelta) THEN
-	   F_AtPositionState := TRUE;
-	END_IF
+    IF stMotionStage.stAxisStatus.fActPosition < stPositionState.fPosition + ABS(stPositionState.fDelta) AND
+       stMotionStage.stAxisStatus.fActPosition > stPositionState.fPosition - ABS(stPositionState.fDelta) THEN
+       F_AtPositionState := TRUE;
+    END_IF
 END_IF
 ```
 
@@ -1994,7 +1994,7 @@ POUs/Motion/Utils/FB_SetEnables.TcPOU (TcPlcObject)
 FUNCTION_BLOCK FB_SetEnables
 // Update the all enable booleans based on the booleans that make them up
 VAR_IN_OUT
-	stMotionStage: DUT_MotionStage;
+    stMotionStage: DUT_MotionStage;
 END_VAR
 ```
 
@@ -2034,7 +2034,7 @@ CASE nErrorId OF
     16#4260: msg:='Drive disabled';
     16#4357: msg:='Negative limit hit';
     16#4358: msg:='Positive limit hit';
-	16#4550: msg:='Stall: position lag monitoring error';
+    16#4550: msg:='Stall: position lag monitoring error';
 
     // Custom error definitions
     16#7900: msg:='Aborted move request with active move in progress';
@@ -2058,38 +2058,38 @@ POUs/MotorTesting/FB_MicroStepCountTest.TcPOU (TcPlcObject)
 ```vhdl
 FUNCTION_BLOCK FB_MicroStepCountTest
 VAR_INPUT
-	bExecute: BOOL;
-	fStepSize: LREAL;
-	nSteps: UINT;
-	fMicroStep: LREAL;
-	fVelocity: LREAL;
-	tSettleTime: TIME;
+    bExecute: BOOL;
+    fStepSize: LREAL;
+    nSteps: UINT;
+    fMicroStep: LREAL;
+    fVelocity: LREAL;
+    tSettleTime: TIME;
 END_VAR
 VAR_IN_OUT
-	Axis: AXIS_REF;
+    Axis: AXIS_REF;
 END_VAR
 VAR_OUTPUT
-	nStepsCounted: UINT;
-	nTheorySteps: UINT;
-	fPercent: LREAL;
-	fEstMicroSize: LREAL;
+    nStepsCounted: UINT;
+    nTheorySteps: UINT;
+    fPercent: LREAL;
+    fEstMicroSize: LREAL;
 END_VAR
 VAR
-	fbMoveRel: MC_MoveRelative;
-	fbSettleTimer: TON;
-	bDoMove: BOOL;
-	nStepCounter: UINT;
-	
-	arrPosBuffer: ARRAY [0..99] OF LREAL;
-	fAvgPos: LREAL;
-	nArrIndex: UINT;
-	nLoopIndex: UINT;
-	
-	fStartPos: LREAL;
-	fPrevPos: LREAL;
-	fStepChange: LREAL;
-	
-	fStepSum: LREAL;
+    fbMoveRel: MC_MoveRelative;
+    fbSettleTimer: TON;
+    bDoMove: BOOL;
+    nStepCounter: UINT;
+
+    arrPosBuffer: ARRAY [0..99] OF LREAL;
+    fAvgPos: LREAL;
+    nArrIndex: UINT;
+    nLoopIndex: UINT;
+
+    fStartPos: LREAL;
+    fPrevPos: LREAL;
+    fStepChange: LREAL;
+
+    fStepSum: LREAL;
 END_VAR
 ```
 
@@ -2098,14 +2098,14 @@ END_VAR
 ```vhdl
 // Motion FB
 fbMoveRel(Axis:=Axis,
-	Execute:=bDoMove,
-	Distance:=fStepSize,
-	Velocity:=fVelocity);
-	
+    Execute:=bDoMove,
+    Distance:=fStepSize,
+    Velocity:=fVelocity);
+
 // Settle time
 fbSettleTimer(IN:=fbMoveRel.Done,
-	PT:=tSettleTime);
-	
+    PT:=tSettleTime);
+
 // Re-enable the move for next cycle
 bDoMove := bExecute AND nStepCounter < nSteps;
 
@@ -2113,37 +2113,37 @@ bDoMove := bExecute AND nStepCounter < nSteps;
 arrPosBuffer[nArrIndex] := Axis.NcToPlc.ActPos;
 fAvgPos := 0;
 FOR nLoopIndex := 0 TO 99 DO
-	fAvgPos := fAvgPos + arrPosBuffer[nLoopIndex];
+    fAvgPos := fAvgPos + arrPosBuffer[nLoopIndex];
 END_FOR;
 fAvgPos := fAvgPos / 100;
 nArrIndex := (nArrIndex + 1) MOD 100;
 
 // Initialize starting variables
 IF NOT bExecute THEN
-	fStartPos := fAvgPos;
-	fPrevPos := fAvgPos;
+    fStartPos := fAvgPos;
+    fPrevPos := fAvgPos;
 END_IF
 
 // Check results
 IF fbSettleTimer.Q THEN
-	fStepChange := fAvgPos - fPrevPos;
-	// Invert fStepChange if we were doing negative steps
-	IF fStepSize < 0 THEN
-		fStepChange := fStepChange * -1;
-	END_IF
-	IF fStepChange > fMicroStep * 0.5 THEN
-		nStepsCounted := nStepsCounted + 1;
-		fStepSum := fStepSum + fStepChange;
-		fEstMicroSize := fStepSum / nStepsCounted;
-	END_IF
-	nTheorySteps := DINT_TO_UINT(TRUNC(ABS((fStartPos - fAvgPos) / fMicroStep)));
-	IF nTheorySteps > 0 THEN
-		fPercent := 100 * nStepsCounted / nTheorySteps;
-	END_IF
-	fPrevPos := fAvgPos;
-	nStepCounter := nStepCounter + 1;
-	// Reset the move block
-	bDoMove := FALSE;
+    fStepChange := fAvgPos - fPrevPos;
+    // Invert fStepChange if we were doing negative steps
+    IF fStepSize < 0 THEN
+        fStepChange := fStepChange * -1;
+    END_IF
+    IF fStepChange > fMicroStep * 0.5 THEN
+        nStepsCounted := nStepsCounted + 1;
+        fStepSum := fStepSum + fStepChange;
+        fEstMicroSize := fStepSum / nStepsCounted;
+    END_IF
+    nTheorySteps := DINT_TO_UINT(TRUNC(ABS((fStartPos - fAvgPos) / fMicroStep)));
+    IF nTheorySteps > 0 THEN
+        fPercent := 100 * nStepsCounted / nTheorySteps;
+    END_IF
+    fPrevPos := fAvgPos;
+    nStepCounter := nStepCounter + 1;
+    // Reset the move block
+    bDoMove := FALSE;
 END_IF
 ```
 
@@ -6139,12 +6139,12 @@ UnitTests/BasicTests.TcPOU (TcPlcObject)
 ```vhdl
 PROGRAM BasicTests
 VAR
-	Motor: DUT_MotionStage;
-	fbMotion: FB_MotionStageSim;
-	fbRequest: FB_MotionRequest;
-	
-	bError: BOOL;
-	errState: MC_AxisStates;
+    Motor: DUT_MotionStage;
+    fbMotion: FB_MotionStageSim;
+    fbRequest: FB_MotionRequest;
+
+    bError: BOOL;
+    errState: MC_AxisStates;
 END_VAR
 ```
 
@@ -6161,10 +6161,10 @@ CASE Motor.Axis.Status.MotionState OF
    MC_AXISSTATE_DISCRETEMOTION,
    MC_AXISSTATE_CONTINOUSMOTION,
    MC_AXISSTATE_SYNCHRONIZEDMOTION:
-		IF NOT Motor.bBrakeRelease THEN
-			bError := TRUE;
-			errState := Motor.Axis.Status.MotionState;
-		END_IF
+        IF NOT Motor.bBrakeRelease THEN
+            bError := TRUE;
+            errState := Motor.Axis.Status.MotionState;
+        END_IF
 END_CASE
 ```
 
@@ -6177,34 +6177,34 @@ UnitTests/Interactive.TcPOU (TcPlcObject)
 ```vhdl
 PROGRAM Interactive
 VAR
-	bInit: BOOL := FALSE;
+    bInit: BOOL := FALSE;
 
-	M1: DUT_MotionStage;
-	fbMotionStageSim: FB_MotionStageSim;
-	nCounter: UINT;
-	
-	stOut: DUT_PositionState;
-	fbGoOut: FB_PositionStateMove;
-	bOut: BOOL;
-	bGoOut: BOOL;
-	stIn: DUT_PositionState;
-	fbGoIn: FB_PositionStateMove;
-	bIn: BOOL;
-	bGoIn: BOOL;
-	stUnsafe: DUT_PositionState;
-	fbGoBad: FB_PositionStateMove;
-	bHCF: BOOL;
-	bGoHCF: BOOL;
+    M1: DUT_MotionStage;
+    fbMotionStageSim: FB_MotionStageSim;
+    nCounter: UINT;
 
-	{attribute 'pytmc' := '
-		pv: TST:STATE
-		io: io
-	'}
-	fbEpicsInOut: FB_EpicsInOut;
+    stOut: DUT_PositionState;
+    fbGoOut: FB_PositionStateMove;
+    bOut: BOOL;
+    bGoOut: BOOL;
+    stIn: DUT_PositionState;
+    fbGoIn: FB_PositionStateMove;
+    bIn: BOOL;
+    bGoIn: BOOL;
+    stUnsafe: DUT_PositionState;
+    fbGoBad: FB_PositionStateMove;
+    bHCF: BOOL;
+    bGoHCF: BOOL;
 
-	fbStateManager: FB_PositionStateManager;
-	setState: INT;
-	arrStates: ARRAY [1..15] OF DUT_PositionState;
+    {attribute 'pytmc' := '
+        pv: TST:STATE
+        io: io
+    '}
+    fbEpicsInOut: FB_EpicsInOut;
+
+    fbStateManager: FB_PositionStateManager;
+    setState: INT;
+    arrStates: ARRAY [1..15] OF DUT_PositionState;
 END_VAR
 ```
 
@@ -6217,62 +6217,62 @@ fbMotionStageSim(stMotionStage:=M1);
 nCounter := nCounter + 1;
 
 IF NOT bInit THEN
-	bInit := TRUE;
-	
-	stOut.sName := 'Out';
-	stOut.fPosition := 100;
-	stOut.fDelta := 20;
-	stOut.fVelocity := 10;
-	stOut.bValid := TRUE;
-	stOut.bMoveOk := TRUE;
-	
-	stIn.sName := 'In';
-	stIn.fPosition := 0;
-	stIn.fDelta := 0.1;
-	stIn.fVelocity := 5;
-	stIn.bValid := TRUE;
-	stIn.bMoveOk := TRUE;
-	
-	stUnsafe.sName := 'HCF';
-	stUnsafe.fPosition := -999;
-	stUnsafe.fDelta := 6;
-	stUnsafe.fVelocity := 42;
-	stUnsafe.bValid := TRUE;
-	stUnsafe.bMoveOk := FALSE;
-	
-	fbEpicsInOut.bEnable := TRUE;
-	fbStateManager.bEnable := TRUE;
+    bInit := TRUE;
+
+    stOut.sName := 'Out';
+    stOut.fPosition := 100;
+    stOut.fDelta := 20;
+    stOut.fVelocity := 10;
+    stOut.bValid := TRUE;
+    stOut.bMoveOk := TRUE;
+
+    stIn.sName := 'In';
+    stIn.fPosition := 0;
+    stIn.fDelta := 0.1;
+    stIn.fVelocity := 5;
+    stIn.bValid := TRUE;
+    stIn.bMoveOk := TRUE;
+
+    stUnsafe.sName := 'HCF';
+    stUnsafe.fPosition := -999;
+    stUnsafe.fDelta := 6;
+    stUnsafe.fVelocity := 42;
+    stUnsafe.bValid := TRUE;
+    stUnsafe.bMoveOk := FALSE;
+
+    fbEpicsInOut.bEnable := TRUE;
+    fbStateManager.bEnable := TRUE;
 END_IF
 
 fbGoOut(
-	bExecute:=bGoOut,
-	stMotionStage:=M1,
-	stPositionState:=stOut,
-	bAtState=>bOut);
+    bExecute:=bGoOut,
+    stMotionStage:=M1,
+    stPositionState:=stOut,
+    bAtState=>bOut);
 fbGoIn(
-	bExecute:=bGoIn,
-	stMotionStage:=M1,
-	stPositionState:=stIn,
-	bAtState=>bIn);
+    bExecute:=bGoIn,
+    stMotionStage:=M1,
+    stPositionState:=stIn,
+    bAtState=>bIn);
 fbGoBad(
-	bExecute:=bGoHCF,
-	stMotionStage:=M1,
-	stPositionState:=stUnsafe,
-	bAtState=>bHCF);
+    bExecute:=bGoHCF,
+    stMotionStage:=M1,
+    stPositionState:=stUnsafe,
+    bAtState=>bHCF);
 
 arrStates[1] := stOut;
 arrStates[2] := stIn;
 arrStates[3] := stUnsafe;
-	
+
 fbEpicsInOut(
-	stMotionStage := M1,
-	stOut := stOut,
-	stIn := stIn);
-	
+    stMotionStage := M1,
+    stOut := stOut,
+    stIn := stIn);
+
 fbStateManager(
-	stMotionStage := M1,
-	arrStates := arrStates,
-	setState := setState);
+    stMotionStage := M1,
+    arrStates := arrStates,
+    setState := setState);
 ```
 
 
@@ -6607,16 +6607,16 @@ POUs/Main.TcPOU (TcPlcObject)
 ```vhdl
 PROGRAM Main
 VAR
-	// Simulated motor that is always allowed to move
-	{attribute 'pytmc' := 'pv: TST:SIM:MOT:01'}
-	M1: DUT_MotionStage;
-	
-	// Simulated motor that is never allowed to move
-	{attribute 'pytmc' := 'pv: TST:SIM:MOT:01'}
-	M2: DUT_MotionStage;
-	
-	fbMotion1: FB_MotionStage;
-	fbMotion2: FB_MotionStage;
+    // Simulated motor that is always allowed to move
+    {attribute 'pytmc' := 'pv: TST:SIM:MOT:01'}
+    M1: DUT_MotionStage;
+
+    // Simulated motor that is never allowed to move
+    {attribute 'pytmc' := 'pv: TST:SIM:MOT:01'}
+    M2: DUT_MotionStage;
+
+    fbMotion1: FB_MotionStage;
+    fbMotion2: FB_MotionStage;
 END_VAR
 ```
 
