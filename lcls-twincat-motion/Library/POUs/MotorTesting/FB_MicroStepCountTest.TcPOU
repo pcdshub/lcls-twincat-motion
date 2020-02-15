@@ -3,50 +3,50 @@
   <POU Name="FB_MicroStepCountTest" Id="{b953130d-6adb-468e-991b-b389a0e4364b}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MicroStepCountTest
 VAR_INPUT
-	bExecute: BOOL;
-	fStepSize: LREAL;
-	nSteps: UINT;
-	fMicroStep: LREAL;
-	fVelocity: LREAL;
-	tSettleTime: TIME;
+    bExecute: BOOL;
+    fStepSize: LREAL;
+    nSteps: UINT;
+    fMicroStep: LREAL;
+    fVelocity: LREAL;
+    tSettleTime: TIME;
 END_VAR
 VAR_IN_OUT
-	Axis: AXIS_REF;
+    Axis: AXIS_REF;
 END_VAR
 VAR_OUTPUT
-	nStepsCounted: UINT;
-	nTheorySteps: UINT;
-	fPercent: LREAL;
-	fEstMicroSize: LREAL;
+    nStepsCounted: UINT;
+    nTheorySteps: UINT;
+    fPercent: LREAL;
+    fEstMicroSize: LREAL;
 END_VAR
 VAR
-	fbMoveRel: MC_MoveRelative;
-	fbSettleTimer: TON;
-	bDoMove: BOOL;
-	nStepCounter: UINT;
-	
-	arrPosBuffer: ARRAY [0..99] OF LREAL;
-	fAvgPos: LREAL;
-	nArrIndex: UINT;
-	nLoopIndex: UINT;
-	
-	fStartPos: LREAL;
-	fPrevPos: LREAL;
-	fStepChange: LREAL;
-	
-	fStepSum: LREAL;
+    fbMoveRel: MC_MoveRelative;
+    fbSettleTimer: TON;
+    bDoMove: BOOL;
+    nStepCounter: UINT;
+
+    arrPosBuffer: ARRAY [0..99] OF LREAL;
+    fAvgPos: LREAL;
+    nArrIndex: UINT;
+    nLoopIndex: UINT;
+
+    fStartPos: LREAL;
+    fPrevPos: LREAL;
+    fStepChange: LREAL;
+
+    fStepSum: LREAL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Motion FB
 fbMoveRel(Axis:=Axis,
-	Execute:=bDoMove,
-	Distance:=fStepSize,
-	Velocity:=fVelocity);
-	
+    Execute:=bDoMove,
+    Distance:=fStepSize,
+    Velocity:=fVelocity);
+
 // Settle time
 fbSettleTimer(IN:=fbMoveRel.Done,
-	PT:=tSettleTime);
-	
+    PT:=tSettleTime);
+
 // Re-enable the move for next cycle
 bDoMove := bExecute AND nStepCounter < nSteps;
 
@@ -54,37 +54,37 @@ bDoMove := bExecute AND nStepCounter < nSteps;
 arrPosBuffer[nArrIndex] := Axis.NcToPlc.ActPos;
 fAvgPos := 0;
 FOR nLoopIndex := 0 TO 99 DO
-	fAvgPos := fAvgPos + arrPosBuffer[nLoopIndex];
+    fAvgPos := fAvgPos + arrPosBuffer[nLoopIndex];
 END_FOR;
 fAvgPos := fAvgPos / 100;
 nArrIndex := (nArrIndex + 1) MOD 100;
 
 // Initialize starting variables
 IF NOT bExecute THEN
-	fStartPos := fAvgPos;
-	fPrevPos := fAvgPos;
+    fStartPos := fAvgPos;
+    fPrevPos := fAvgPos;
 END_IF
 
 // Check results
 IF fbSettleTimer.Q THEN
-	fStepChange := fAvgPos - fPrevPos;
-	// Invert fStepChange if we were doing negative steps
-	IF fStepSize < 0 THEN
-		fStepChange := fStepChange * -1;
-	END_IF
-	IF fStepChange > fMicroStep * 0.5 THEN
-		nStepsCounted := nStepsCounted + 1;
-		fStepSum := fStepSum + fStepChange;
-		fEstMicroSize := fStepSum / nStepsCounted;
-	END_IF
-	nTheorySteps := DINT_TO_UINT(TRUNC(ABS((fStartPos - fAvgPos) / fMicroStep)));
-	IF nTheorySteps > 0 THEN
-		fPercent := 100 * nStepsCounted / nTheorySteps;
-	END_IF
-	fPrevPos := fAvgPos;
-	nStepCounter := nStepCounter + 1;
-	// Reset the move block
-	bDoMove := FALSE;
+    fStepChange := fAvgPos - fPrevPos;
+    // Invert fStepChange if we were doing negative steps
+    IF fStepSize < 0 THEN
+        fStepChange := fStepChange * -1;
+    END_IF
+    IF fStepChange > fMicroStep * 0.5 THEN
+        nStepsCounted := nStepsCounted + 1;
+        fStepSum := fStepSum + fStepChange;
+        fEstMicroSize := fStepSum / nStepsCounted;
+    END_IF
+    nTheorySteps := DINT_TO_UINT(TRUNC(ABS((fStartPos - fAvgPos) / fMicroStep)));
+    IF nTheorySteps > 0 THEN
+        fPercent := 100 * nStepsCounted / nTheorySteps;
+    END_IF
+    fPrevPos := fAvgPos;
+    nStepCounter := nStepCounter + 1;
+    // Reset the move block
+    bDoMove := FALSE;
 END_IF]]></ST>
     </Implementation>
     <LineIds Name="FB_MicroStepCountTest">

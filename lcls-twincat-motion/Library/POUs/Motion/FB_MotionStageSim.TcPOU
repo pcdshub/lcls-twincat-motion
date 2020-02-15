@@ -3,30 +3,30 @@
   <POU Name="FB_MotionStageSim" Id="{d9a67e97-6cca-43d0-9ed9-24a1d18bbca1}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStageSim
 (*
-	Set all the values needed for a fake motor to be movable
-	via the IOC, then call FB_MotionStage
+    Set all the values needed for a fake motor to be movable
+    via the IOC, then call FB_MotionStage
 *)
 VAR_IN_OUT
-	stMotionStage: DUT_MotionStage;
+    stMotionStage: DUT_MotionStage;
 END_VAR
 VAR
-	fbMotionStage: FB_MotionStage;
-	bInit: BOOL;
+    fbMotionStage: FB_MotionStage;
+    bInit: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT bInit THEN
-	bInit := TRUE;
-	// Stand-in for no forward limit
-	stMotionStage.bLimitForwardEnable := TRUE;
-	// Stand-in for no reverse limit
-	stMotionStage.bLimitBackwardEnable := TRUE;
-	// Stand-in for no STO button
-	stMotionStage.bHardwareEnable := TRUE;
-	// Stand-in for no PMPS governer
-	stMotionStage.bPowerSelf := TRUE;
-	// Always keep it enabled for testing ease
-	stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    bInit := TRUE;
+    // Stand-in for no forward limit
+    stMotionStage.bLimitForwardEnable := TRUE;
+    // Stand-in for no reverse limit
+    stMotionStage.bLimitBackwardEnable := TRUE;
+    // Stand-in for no STO button
+    stMotionStage.bHardwareEnable := TRUE;
+    // Stand-in for no PMPS governer
+    stMotionStage.bPowerSelf := TRUE;
+    // Always keep it enabled for testing ease
+    stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
 END_IF
 // Call FB_MotionStage to do the thing
 fbMotionStage(stMotionStage := stMotionStage);]]></ST>

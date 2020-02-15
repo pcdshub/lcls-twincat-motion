@@ -3,25 +3,25 @@
   <POU Name="FB_GantryAutoCoupling" Id="{532dfcaf-6187-4140-aaad-e20a9bbe6b43}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_GantryAutoCoupling
 VAR_INPUT
-	nGantryTol : LINT;
+    nGantryTol : LINT;
 END_VAR
 VAR_OUTPUT
-	bGantryAlreadyCoupled : BOOL;
+    bGantryAlreadyCoupled : BOOL;
 END_VAR
 VAR_IN_OUT
-	Master : DUT_MotionStage;
-	MasterEnc : ST_RenishawAbsEnc;
-	Slave : DUT_MotionStage;
-	SlaveEnc : ST_RenishawAbsEnc;
-	bExecuteCouple : BOOL;
-	bExecuteDecouple : BOOL;
+    Master : DUT_MotionStage;
+    MasterEnc : ST_RenishawAbsEnc;
+    Slave : DUT_MotionStage;
+    SlaveEnc : ST_RenishawAbsEnc;
+    bExecuteCouple : BOOL;
+    bExecuteDecouple : BOOL;
 END_VAR
 VAR
-	gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
-	couple : MC_GEARIN;
-	decouple : MC_GEAROUT;
-	bInitComplete : BOOL;
-	fbSetEnables : FB_SetEnables;
+    gantry_diff_limit : FB_GantryDiffVirtualLimitSwitch;
+    couple : MC_GEARIN;
+    decouple : MC_GEAROUT;
+    bInitComplete : BOOL;
+    fbSetEnables : FB_SetEnables;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -34,8 +34,8 @@ Slave.nGantryTol := Master.nGantryTol;
 
 // Activate Gantry Virtual Limit Switch
 gantry_diff_limit(Penc:=MasterEnc, SEnc:=SlaveEnc, GantDiffTol:=Master.nGantryTol,
-				  PLimFwd=>Master.bGantryForwardEnable, PLimBwd=>Master.bGantryBackwardEnable,
-				  SLimFwd=>Slave.bGantryForwardEnable, SLimBwd=>Slave.bGantryBackwardEnable);
+                  PLimFwd=>Master.bGantryForwardEnable, PLimBwd=>Master.bGantryBackwardEnable,
+                  SLimFwd=>Slave.bGantryForwardEnable, SLimBwd=>Slave.bGantryBackwardEnable);
 
 // Coupling Status Bit
 bGantryAlreadyCoupled := Master.Axis.NcToPlc.CoupleState=1 AND Slave.Axis.NcToPlc.CoupleState=3;
@@ -44,11 +44,11 @@ fbSetEnables(stMotionStage:=Master);
 fbSetEnables(stMotionStage:=Slave);
 
 IF bGantryAlreadyCoupled THEN
-	Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bAllForwardEnable;
-	Slave.bGantryForwardEnable := Master.bAllForwardEnable AND Slave.bGantryForwardEnable;
-	
-	Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bAllBackwardEnable;
-	Slave.bGantryBackwardEnable := Master.bAllBackwardEnable AND Slave.bGantryBackwardEnable;
+    Master.bGantryForwardEnable := Master.bGantryForwardEnable AND Slave.bAllForwardEnable;
+    Slave.bGantryForwardEnable := Master.bAllForwardEnable AND Slave.bGantryForwardEnable;
+
+    Master.bGantryBackwardEnable := Master.bGantryBackwardEnable AND Slave.bAllBackwardEnable;
+    Slave.bGantryBackwardEnable := Master.bAllBackwardEnable AND Slave.bGantryBackwardEnable;
 END_IF
 
 

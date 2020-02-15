@@ -3,41 +3,41 @@
   <POU Name="FB_MotionRequest" Id="{f3ce72e2-b968-4260-9a64-8e0267e89e51}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionRequest
 (*
-	Request a move from an axis controlled via EPICS using FB_MotionStage
-	This exists to manage situations where different bits of code may need to move the same motor.
-	With just the DUT_MotionStage/FB_MotionStage setup it is possible for two function blocks to
-	fight with and interfere with each other and with the EPICS commands.
+    Request a move from an axis controlled via EPICS using FB_MotionStage
+    This exists to manage situations where different bits of code may need to move the same motor.
+    With just the DUT_MotionStage/FB_MotionStage setup it is possible for two function blocks to
+    fight with and interfere with each other and with the EPICS commands.
 *)
 VAR_IN_OUT
-	// Motor to move
+    // Motor to move
     stMotionStage: DUT_MotionStage;
 END_VAR
 VAR_INPUT
-	// Start move on rising edge, stop move on falling edge
+    // Start move on rising edge, stop move on falling edge
     bExecute: BOOL;
-	// Reset errors on rising edge
+    // Reset errors on rising edge
     bReset: BOOL;
-	// Define behavior for when the motor is already moving
+    // Define behavior for when the motor is already moving
     enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
-	// Goal position
+    // Goal position
     fPos: LREAL;
-	// Move velocity
+    // Move velocity
     fVel: LREAL;
-	// Optional acceleration
+    // Optional acceleration
     fAcc: LREAL;
-	// Optional deceleration
+    // Optional deceleration
     fDec: LREAL;
 END_VAR
 VAR_OUTPUT
-	// True if in error state
+    // True if in error state
     bError: BOOL;
-	// Error code
+    // Error code
     nErrorId: UDINT;
     // What the error code means
     sErrorMessage: STRING;
-	// If TRUE, we are moving the motor
+    // If TRUE, we are moving the motor
     bBusy: BOOL;
-	// If TRUE, we are not moving the motor and our most recent move was successful
+    // If TRUE, we are not moving the motor and our most recent move was successful
     bDone: BOOL;
 END_VAR
 VAR
@@ -73,26 +73,26 @@ IF rtReset.Q THEN
     nState := INIT;
     IF bError AND stMotionStage.bError AND bCausedError THEN
         stMotionStage.bReset := TRUE;
-	END_IF
+    END_IF
 END_IF
 IF rtExec.Q OR ftExec.Q THEN
-	bDone := FALSE;
+    bDone := FALSE;
 END_IF
 
 CASE nState OF
-	// Start by setting everything to a known value
+    // Start by setting everything to a known value
     INIT:
         nState := WAIT_EXEC;
         bError := FALSE;
         sErrorMessage := '';
         bDone := FALSE;
         bCausedError := FALSE;
-	// Normal "waiting for move command" state
+    // Normal "waiting for move command" state
     WAIT_EXEC:
         bMyMove := FALSE;
-		// Looking for a rising edge on bExecute
+        // Looking for a rising edge on bExecute
         IF rtExec.Q THEN
-			bDone := FALSE;
+            bDone := FALSE;
             nState := PICK_REQUEST;
         END_IF
     // Decide how to handle the request
@@ -114,7 +114,7 @@ CASE nState OF
     // Watch the other move, then see if it's our turn
     WAIT_OTHER_MOVE:
         IF NOT stMotionStage.bBusy THEN
-			// Try to pick request again next cycle once the move is over
+            // Try to pick request again next cycle once the move is over
             nState := PICK_REQUEST;
         END_IF
     // Interrupt the other move, then go to start ours
@@ -122,8 +122,8 @@ CASE nState OF
         stMotionStage.bExecute := FALSE;
         IF NOT stMotionStage.bBusy THEN
             nState := START_MOVE;
-		END_IF
-	// Set the correct values on DUT_MotionStage to start a new absolute move
+        END_IF
+    // Set the correct values on DUT_MotionStage to start a new absolute move
     START_MOVE:
         bMyMove := TRUE;
         stMotionStage.bExecute := TRUE;
@@ -133,27 +133,27 @@ CASE nState OF
         stMotionStage.fAcceleration := fAcc;
         stMotionStage.fDeceleration := fDec;
         nState := WAIT_MY_MOVE;
-	// Watch our ongoing move, look for the move to end or requests to stop the move from this FB
+    // Watch our ongoing move, look for the move to end or requests to stop the move from this FB
     WAIT_MY_MOVE:
         ftBusy(CLK:=stMotionStage.bBusy);
         IF ftBusy.Q THEN
             nState := DONE_MOVING;
-		END_IF
-		// Implement stop on falling trigger
+        END_IF
+        // Implement stop on falling trigger
         IF ftExec.Q THEN
             nState := STOP_MY_MOVE;
         END_IF
-	// Request a stop and wait for it to happen
+    // Request a stop and wait for it to happen
     STOP_MY_MOVE:
         stMotionStage.bExecute := FALSE;
         IF NOT stMotionStage.bBusy THEN
             nState := DONE_MOVING;
         END_IF
-	// Pick out the bDone state and return to waiting
+    // Pick out the bDone state and return to waiting
     DONE_MOVING:
         bDone := stMotionStage.bDone;
         nState := WAIT_EXEC;
-	// Lock us into the error state until the FB is reset
+    // Lock us into the error state until the FB is reset
     ERROR:
         bMyMove := FALSE;
 END_CASE

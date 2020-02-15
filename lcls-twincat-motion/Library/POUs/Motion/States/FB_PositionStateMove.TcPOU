@@ -5,57 +5,57 @@
 // Request a move to a particular state from an axis controlled via EPICS
 // pytmc PVs here only exposed if using directly and not through FB_PositionStateManager
 VAR_IN_OUT
-	// Motor to move
-	stMotionStage: DUT_MotionStage;
-	
-	// State to move to
-	{attribute 'pytmc' := '
-		pv:
-	'}
-	stPositionState: DUT_PositionState;
+    // Motor to move
+    stMotionStage: DUT_MotionStage;
+
+    // State to move to
+    {attribute 'pytmc' := '
+        pv:
+    '}
+    stPositionState: DUT_PositionState;
 END_VAR
 VAR_INPUT
-	// Start move on rising edge, stop move on falling edge
-	{attribute 'pytmc' := '
-		pv: GO
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bExecute: BOOL;
+    // Start move on rising edge, stop move on falling edge
+    {attribute 'pytmc' := '
+        pv: GO
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bExecute: BOOL;
 
-	// Rising edge error reset
-	{attribute 'pytmc' := '
-		pv: RESET
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bReset: BOOL;
+    // Rising edge error reset
+    {attribute 'pytmc' := '
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bReset: BOOL;
 
-	// Define behavior for when a move is already active
-	enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+    // Define behavior for when a move is already active
+    enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
 END_VAR
 VAR_OUTPUT
-	// TRUE if the motor is at this state
-	{attribute 'pytmc' := '
-		pv: AT_STATE
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bAtState: BOOL;
+    // TRUE if the motor is at this state
+    {attribute 'pytmc' := '
+        pv: AT_STATE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bAtState: BOOL;
 
-	// TRUE if we have an error
-	{attribute 'pytmc' := '
-		pv: ERR
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bError: BOOL;
+    // TRUE if we have an error
+    {attribute 'pytmc' := '
+        pv: ERR
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bError: BOOL;
 
-	// Error code
+    // Error code
     {attribute 'pytmc' := '
         pv: ERRID
         io: input
@@ -63,33 +63,33 @@ VAR_OUTPUT
     nErrorID: UDINT;
 
     // Error description
-	{attribute 'pytmc' := '
-		pv: ERRMSG
-		io: input
-	'}
-	sErrorMessage: STRING;
+    {attribute 'pytmc' := '
+        pv: ERRMSG
+        io: input
+    '}
+    sErrorMessage: STRING;
 
-	// TRUE if we are moving to a state
-	{attribute 'pytmc' := '
-		pv: BUSY
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bBusy: BOOL;
+    // TRUE if we are moving to a state
+    {attribute 'pytmc' := '
+        pv: BUSY
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bBusy: BOOL;
 
-	// TRUE if we are note moving and we reached a state successfully on our last move
-	{attribute 'pytmc' := '
-		pv: DONE
-		io: input
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bDone: BOOL;
+    // TRUE if we are note moving and we reached a state successfully on our last move
+    {attribute 'pytmc' := '
+        pv: DONE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bDone: BOOL;
 END_VAR
 VAR
-	fbMotionRequest: FB_MotionRequest;
-	bAllowMove: BOOL;
+    fbMotionRequest: FB_MotionRequest;
+    bAllowMove: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -98,28 +98,28 @@ bAllowMove := stPositionState.bMoveOk AND stPositionState.bValid;
 
 // Do the move
 fbMotionRequest(
-	stMotionStage := stMotionStage,
-	bExecute := bExecute AND bAllowMove,
-	bReset := bReset,
-	enumMotionRequest := enumMotionRequest,
-	fPos := stPositionState.fPosition,
-	fVel := stPositionState.fVelocity,
-	fAcc := stPositionState.fAccel,
-	fDec := stPositionState.fDecel,
-	bError => bError,
+    stMotionStage := stMotionStage,
+    bExecute := bExecute AND bAllowMove,
+    bReset := bReset,
+    enumMotionRequest := enumMotionRequest,
+    fPos := stPositionState.fPosition,
+    fVel := stPositionState.fVelocity,
+    fAcc := stPositionState.fAccel,
+    fDec := stPositionState.fDecel,
+    bError => bError,
     nErrorId => nErrorId,
-	sErrorMessage => sErrorMessage,
-	bBusy => bBusy,
-	bDone => bDone);
+    sErrorMessage => sErrorMessage,
+    bBusy => bBusy,
+    bDone => bDone);
 
 // Inject custom error if we can't move because of bMoveOk or bValid
 IF bExecute AND NOT bAllowMove THEN
-	bError := TRUE;
-	IF stPositionState.bValid THEN
-		nErrorId := 16#7901;
-	ELSE
-		nErrorId := 16#7902;
-	END_IF
+    bError := TRUE;
+    IF stPositionState.bValid THEN
+        nErrorId := 16#7901;
+    ELSE
+        nErrorId := 16#7902;
+    END_IF
     sErrorMessage := F_MotionErrorCodeLookup(nErrorId := nErrorID);
 END_IF
 

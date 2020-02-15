@@ -3,23 +3,23 @@
   <POU Name="FB_MotionStage" Id="{137c52b5-8983-4728-b719-31601503f20a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage
 (*
-	Default implementation for PLC behavior when motor IOC asks for a move
-	This can be extended or replaced in your PLC project if you want
-	non-default behavior to arise from the motor record processing
+    Default implementation for PLC behavior when motor IOC asks for a move
+    This can be extended or replaced in your PLC project if you want
+    non-default behavior to arise from the motor record processing
 *)
 VAR_IN_OUT
-	stMotionStage: DUT_MotionStage;
+    stMotionStage: DUT_MotionStage;
 END_VAR
 VAR
-	fbDriveVirtual: FB_DriveVirtual;
-	bExecute: BOOL;
-	bFwdHit: BOOL;
-	bBwdHit: BOOL;
-	ftExec: F_TRIG;
-	rtExec: R_TRIG;
-	rtUserExec: R_TRIG;
-	rtTarget: R_TRIG;
-	fbSetEnables: FB_SetEnables;
+    fbDriveVirtual: FB_DriveVirtual;
+    bExecute: BOOL;
+    bFwdHit: BOOL;
+    bBwdHit: BOOL;
+    ftExec: F_TRIG;
+    rtExec: R_TRIG;
+    rtUserExec: R_TRIG;
+    rtTarget: R_TRIG;
+    fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
     bNegGoal: BOOL;
 END_VAR
@@ -34,35 +34,35 @@ bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
-	ENUM_StageEnableMode.ALWAYS:
-		stMotionStage.bEnable := TRUE;
-		bExecute := stMotionStage.bExecute;
-	ENUM_StageEnableMode.NEVER:
-		bExecute := stMotionStage.bExecute;
-	ENUM_StageEnableMode.DURING_MOTION:
-		IF rtUserExec.Q THEN
+    ENUM_StageEnableMode.ALWAYS:
+        stMotionStage.bEnable := TRUE;
+        bExecute := stMotionStage.bExecute;
+    ENUM_StageEnableMode.NEVER:
+        bExecute := stMotionStage.bExecute;
+    ENUM_StageEnableMode.DURING_MOTION:
+        IF rtUserExec.Q THEN
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
                     stMotionStage.bEnable := TRUE;
                 ELSE
                     stMotionStage.bError := TRUE;
                     stMotionStage.nErrorId := 16#4358;
-				END_IF
+                END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
                     stMotionStage.bEnable := TRUE;
                 ELSE
                     stMotionStage.bError := TRUE;
                     stMotionStage.nErrorId := 16#4357;
-				END_IF
-			END_IF
-		END_IF
-		bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
+                END_IF
+            END_IF
+        END_IF
+        bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
 END_CASE
 
 // Automatically fill the correct nCmdData for homing
 IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
-	stMotionStage.nCmdData := stMotionStage.nHomingMode;
+    stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
 // Update all enable booleans
@@ -70,27 +70,27 @@ fbSetEnables(stMotionStage:=stMotionStage);
 
 // No moves allowed in error states
 IF stMotionStage.bError THEN
-	bExecute := FALSE;
+    bExecute := FALSE;
 END_IF
 
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
-	bEnable:=stMotionStage.bAllEnable,
-	bReset:=stMotionStage.bReset,
-	bExecute:=bExecute,
-	nCommand:=INT_TO_UINT(stMotionStage.nCommand),
-	nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
-	fVelocity:=stMotionStage.fVelocity,
-	fPosition:=stMotionStage.fPosition,
-	fAcceleration:=stMotionStage.fAcceleration,
-	fDeceleration:=stMotionStage.fDeceleration,
-	bLimitFwd:=stMotionStage.bAllForwardEnable,
-	bLimitBwd:=stMotionStage.bAllBackwardEnable,
-	bHomeSensor:=stMotionStage.bHome,
-	fHomePosition:=stMotionStage.fHomePosition,
-	bPowerSelf:=stMotionStage.bPowerSelf,
-	nMotionAxisID=>stMotionStage.nMotionAxisID,
-	Axis:=stMotionStage.Axis);
+    bEnable:=stMotionStage.bAllEnable,
+    bReset:=stMotionStage.bReset,
+    bExecute:=bExecute,
+    nCommand:=INT_TO_UINT(stMotionStage.nCommand),
+    nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
+    fVelocity:=stMotionStage.fVelocity,
+    fPosition:=stMotionStage.fPosition,
+    fAcceleration:=stMotionStage.fAcceleration,
+    fDeceleration:=stMotionStage.fDeceleration,
+    bLimitFwd:=stMotionStage.bAllForwardEnable,
+    bLimitBwd:=stMotionStage.bAllBackwardEnable,
+    bHomeSensor:=stMotionStage.bHome,
+    fHomePosition:=stMotionStage.fHomePosition,
+    bPowerSelf:=stMotionStage.bPowerSelf,
+    nMotionAxisID=>stMotionStage.nMotionAxisID,
+    Axis:=stMotionStage.Axis);
 
 // Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
@@ -107,70 +107,70 @@ stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);
 IF rtExec.Q THEN
-	stMotionStage.bBusy := TRUE;
-	stMotionStage.bDone := FALSE;
+    stMotionStage.bBusy := TRUE;
+    stMotionStage.bDone := FALSE;
 END_IF
 
 // Force everything off in case of error
 IF stMotionStage.bError THEN
-	stMotionStage.bBusy := FALSE;
-	stMotionStage.bDone := FALSE;
-	stMotionStage.bEnable := FALSE;
+    stMotionStage.bBusy := FALSE;
+    stMotionStage.bDone := FALSE;
+    stMotionStage.bEnable := FALSE;
 END_IF
 
 // Check the limits and cancel execution if appropriate. Without this block we have infinite error spam
 bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bAllForwardEnable;
 bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bAllBackwardEnable;
 IF bFwdHit OR bBwdHit THEN
-	stMotionStage.bExecute := FALSE;
+    stMotionStage.bExecute := FALSE;
 END_IF
 
 // Check done moving via fbDriveVirtual and from Target Position Monitoring. Must satisfy both conditions.
 ftExec(CLK:=stMotionStage.bExecute);
 rtTarget(CLK:=stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone);
 IF rtTarget.Q OR ftExec.Q THEN
-	IF NOT stMotionStage.bDone THEN
-		stMotionStage.bDone := TRUE;
-		stMotionStage.bBusy := FALSE;
-		IF NOT stMotionStage.Axis.Status.Error THEN
-			bExecute := FALSE;
-			stMotionStage.bExecute := FALSE;
-		END_IF
-	END_IF
+    IF NOT stMotionStage.bDone THEN
+        stMotionStage.bDone := TRUE;
+        stMotionStage.bBusy := FALSE;
+        IF NOT stMotionStage.Axis.Status.Error THEN
+            bExecute := FALSE;
+            stMotionStage.bExecute := FALSE;
+        END_IF
+    END_IF
 END_IF
 
 // Handle auto-disable timing
 IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT stMotionStage.bExecute THEN
-	IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
-		stMotionStage.bEnable := FALSE;
-	END_IF
+    IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+        stMotionStage.bEnable := FALSE;
+    END_IF
 END_IF
 
 // Get a definitive bEnabled reading
 CASE stMotionStage.Axis.Status.MotionState OF
-	// We are not enabled if there is an issue
-	MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
-		stMotionStage.bEnableDone := FALSE;
-	ELSE
-		stMotionStage.bEnableDone := TRUE;
+    // We are not enabled if there is an issue
+    MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
+        stMotionStage.bEnableDone := FALSE;
+    ELSE
+        stMotionStage.bEnableDone := TRUE;
 END_CASE
 
 // Handle the brake. TRUE means brake disabled/released
 IF stMotionStage.nBrakeMode <> ENUM_StageBrakeMode.NO_BRAKE THEN
-	CASE stMotionStage.Axis.Status.MotionState OF
-		MC_AXISSTATE_UNDEFINED,
-		MC_AXISSTATE_DISABLED,
-		MC_AXISSTATE_ERRORSTOP:
-			stMotionStage.bBrakeRelease := FALSE;
-		MC_AXISSTATE_STANDSTILL:
-			IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.IF_MOVING THEN
-				stMotionStage.bBrakeRelease := FALSE;
-			ELSE
-				stMotionStage.bBrakeRelease := TRUE;
-			END_IF
-		ELSE
-			stMotionStage.bBrakeRelease := TRUE;
-	END_CASE
+    CASE stMotionStage.Axis.Status.MotionState OF
+        MC_AXISSTATE_UNDEFINED,
+        MC_AXISSTATE_DISABLED,
+        MC_AXISSTATE_ERRORSTOP:
+            stMotionStage.bBrakeRelease := FALSE;
+        MC_AXISSTATE_STANDSTILL:
+            IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.IF_MOVING THEN
+                stMotionStage.bBrakeRelease := FALSE;
+            ELSE
+                stMotionStage.bBrakeRelease := TRUE;
+            END_IF
+        ELSE
+            stMotionStage.bBrakeRelease := TRUE;
+    END_CASE
 END_IF
 
 // Sync the epics status struct
@@ -179,19 +179,19 @@ stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnableDone;
 
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
-	stMotionStage.bEnable := FALSE;
-	stMotionStage.bReset := FALSE;
-	stMotionStage.bExecute := FALSE;
+    stMotionStage.bEnable := FALSE;
+    stMotionStage.bReset := FALSE;
+    stMotionStage.bExecute := FALSE;
     stMotionStage.bError := FALSE;
     stMotionStage.nErrorId := 0;
     stMotionStage.sErrorMessage := '';
-	bExecute := FALSE;
+    bExecute := FALSE;
 END_IF
 
 // Ignore homing if we have the setting for it
 // e.g. for pre-calibrated absolute encoders
 IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
-	stMotionStage.stAxisStatus.bHomed := TRUE;
+    stMotionStage.stAxisStatus.bHomed := TRUE;
 END_IF]]></ST>
     </Implementation>
   </POU>
