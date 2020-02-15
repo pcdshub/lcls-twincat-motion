@@ -3,19 +3,19 @@
   <POU Name="FB_GantryDiffVirtualLimitSwitch" Id="{ae668e37-4b4c-400f-bda9-27f8d308d0b6}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_GantryDiffVirtualLimitSwitch
 VAR_INPUT
-	PEnc: ST_RenishawAbsEnc; // Primary axis encoder (usually the upstream one)
-	SEnc: ST_RenishawAbsEnc; // Secondary axis encoder (couples to the primary)
-	
-	GantDiffTol: LINT;		// Gantry differenace tolerance in encoder counts
+    PEnc: ST_RenishawAbsEnc; // Primary axis encoder (usually the upstream one)
+    SEnc: ST_RenishawAbsEnc; // Secondary axis encoder (couples to the primary)
+
+    GantDiffTol: LINT;        // Gantry differenace tolerance in encoder counts
 END_VAR
 VAR_OUTPUT
-	PLimFwd: BOOL; // Primary axis forward direction enable
-	PLimBwd: BOOL; // Primary axis reverse direction enable
-	SLimFwd: BOOL; // Secondary axis forward direction enable
-	SLimBwd: BOOL; // Secondary axis reverse direction enable
+    PLimFwd: BOOL; // Primary axis forward direction enable
+    PLimBwd: BOOL; // Primary axis reverse direction enable
+    SLimFwd: BOOL; // Secondary axis forward direction enable
+    SLimBwd: BOOL; // Secondary axis reverse direction enable
 END_VAR
 VAR
-	GantryDiff: LINT;
+    GantryDiff: LINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -40,26 +40,26 @@ Call before FB_MotionStage fb calls for the gantry axes.
 GantryDiff := ( ULINT_TO_LINT(PEnc.Count) - ULINT_TO_LINT(PEnc.Ref) ) - ( ULINT_TO_LINT(SEnc.Count) - ULINT_TO_LINT(SEnc.Ref) );
 
 IF ABS(GantryDiff) > GantDiffTol THEN
-	IF GantryDiff < 0  THEN
-		PLimBwd := FALSE;
-		SLimFwd := FALSE;
-	ELSE	
-		PLimBwd := TRUE;
-		SLimFwd := TRUE;
-	END_IF
-	IF GantryDiff > 0 THEN
-		PLimFwd := FALSE;
-		SLimBwd := FALSE;
-	ELSE
-		PLimFwd := TRUE;
-		SLimBwd := TRUE;
-	END_IF
+    IF GantryDiff < 0  THEN
+        PLimBwd := FALSE;
+        SLimFwd := FALSE;
+    ELSE
+        PLimBwd := TRUE;
+        SLimFwd := TRUE;
+    END_IF
+    IF GantryDiff > 0 THEN
+        PLimFwd := FALSE;
+        SLimBwd := FALSE;
+    ELSE
+        PLimFwd := TRUE;
+        SLimBwd := TRUE;
+    END_IF
 ELSE
-	//If there is no fault, all directions are enabled
-	PLimFwd := TRUE;
-	PLimBwd := TRUE;
-	SLimFwd := TRUE;
-	SLimBwd := TRUE;
+    //If there is no fault, all directions are enabled
+    PLimFwd := TRUE;
+    PLimBwd := TRUE;
+    SLimFwd := TRUE;
+    SLimBwd := TRUE;
 END_IF
 
 

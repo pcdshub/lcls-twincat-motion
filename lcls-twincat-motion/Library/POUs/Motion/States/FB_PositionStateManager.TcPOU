@@ -3,182 +3,182 @@
   <POU Name="FB_PositionStateManager" Id="{925eb9bb-c0f7-4b79-a387-ef7d0fb5ed46}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateManager
 (*
-	Handles EPICS moves between multiple states for a single axis
-	Should be wrapped inside a block with enums for states,
-	see FB_EpicsInOut for an example.
+    Handles EPICS moves between multiple states for a single axis
+    Should be wrapped inside a block with enums for states,
+    see FB_EpicsInOut for an example.
 *)
 VAR_IN_OUT
-	// Motor to move
-	stMotionStage: DUT_MotionStage;
-	
-	// Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
-	{attribute 'pytmc' := '
-		pv: 
-		io: io
-		expand: %.2d
-	'}
-	arrStates: ARRAY[1..15] OF DUT_PositionState;
-	
-	// Corresponding arrStates index to move to, or 0 if no move selected
-	setState: INT;
+    // Motor to move
+    stMotionStage: DUT_MotionStage;
+
+    // Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
+    {attribute 'pytmc' := '
+        pv:
+        io: io
+        expand: %.2d
+    '}
+    arrStates: ARRAY[1..15] OF DUT_PositionState;
+
+    // Corresponding arrStates index to move to, or 0 if no move selected
+    setState: INT;
 END_VAR
 VAR_INPUT
-	// If TRUE, start a move when setState transitions to a nonzero number
-	bEnable: BOOL;
-	// On rising edge, reset this FB
-	{attribute 'pytmc' := '
-		pv: RESET
-		io: io
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bReset: BOOL;
+    // If TRUE, start a move when setState transitions to a nonzero number
+    bEnable: BOOL;
+    // On rising edge, reset this FB
+    {attribute 'pytmc' := '
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bReset: BOOL;
 END_VAR
 VAR_OUTPUT
-	// If TRUE, there is an error
-	{attribute 'pytmc' := '
-		pv: ERR
-		io: i
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bError: BOOL;
+    // If TRUE, there is an error
+    {attribute 'pytmc' := '
+        pv: ERR
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bError: BOOL;
     // Error ID
     {attribute 'pytmc' := '
         pv: ERRID
         io: i
     '}
     nErrorId: UDINT;
-	// The error that caused bError to flip TRUE
-	{attribute 'pytmc' := '
-		pv: ERRMSG
-		io: i
-	'}
-	sErrorMessage: STRING;
-	// If TRUE, we are moving the motor
-	{attribute 'pytmc' := '
-		pv: BUSY
-		io: i
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bBusy: BOOL;
-	// If TRUE, we are not moving the motor and the last move completed successfully
-	{attribute 'pytmc' := '
-		pv: DONE
-		io: i
-		field: ZNAM False
-		field: ONAM True
-	'}
-	bDone: BOOL;
-	
-	// The current position we are trying to reach, or 0
-	goalState: INT;
-	// The readback position
-	getState: INT;
+    // The error that caused bError to flip TRUE
+    {attribute 'pytmc' := '
+        pv: ERRMSG
+        io: i
+    '}
+    sErrorMessage: STRING;
+    // If TRUE, we are moving the motor
+    {attribute 'pytmc' := '
+        pv: BUSY
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bBusy: BOOL;
+    // If TRUE, we are not moving the motor and the last move completed successfully
+    {attribute 'pytmc' := '
+        pv: DONE
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bDone: BOOL;
+
+    // The current position we are trying to reach, or 0
+    goalState: INT;
+    // The readback position
+    getState: INT;
 END_VAR
 VAR
-	bInit: BOOL;
-	stUnknown: DUT_PositionState;
-	stGoal: DUT_PositionState;
-	fbStateMove: FB_PositionStateMove;
-	nIndex: INT;
-	bNewGoal: BOOL;
-	bInnerExec: BOOL;
-	bInnerReset: BOOL;
-	rtReset: R_TRIG;
-	bMoveRequested: BOOL;
+    bInit: BOOL;
+    stUnknown: DUT_PositionState;
+    stGoal: DUT_PositionState;
+    fbStateMove: FB_PositionStateMove;
+    nIndex: INT;
+    bNewGoal: BOOL;
+    bInnerExec: BOOL;
+    bInnerReset: BOOL;
+    rtReset: R_TRIG;
+    bMoveRequested: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Reset just goes through the first-cycle init again
 rtReset(CLK:=bReset);
 IF rtReset.Q THEN
-	bInit := FALSE;
+    bInit := FALSE;
 END_IF
 
 // First-cycle init
 IF NOT bInit THEN
-	bError := FALSE;
-	sErrorMessage := '';
-	bBusy := FALSE;
-	bDone := FALSE;
-	bNewGoal := FALSE;
-	bInnerExec := FALSE;
-	bInnerReset := TRUE;
-	setState := 0;
-	goalState := 0;
+    bError := FALSE;
+    sErrorMessage := '';
+    bBusy := FALSE;
+    bDone := FALSE;
+    bNewGoal := FALSE;
+    bInnerExec := FALSE;
+    bInnerReset := TRUE;
+    setState := 0;
+    goalState := 0;
 END_IF
 
 // Check where we are by going through all possible states.
 // Note this favors the highest-number state that we're at, it's up to you to make your states mutually exclusive.
 getState := 0;
 FOR nIndex := 1 TO 15 DO
-	IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
-		getState := nIndex;
-	END_IF
+    IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
+        getState := nIndex;
+    END_IF
 END_FOR
 
 // Use the changing set pv as a rising-edge trigger
 IF setState <> goalState THEN
-	goalState := setState;
-	bNewGoal := TRUE;
+    goalState := setState;
+    bNewGoal := TRUE;
 END_IF
 
 // Special move handling for error/enable state
 IF bError OR NOT bEnable THEN
-	bInnerExec := FALSE;
+    bInnerExec := FALSE;
 // Reset inner block this cycle if we were already moving but want a new move
 ELSIF bInnerExec AND bNewGoal THEN
-	bInnerExec := FALSE;
-	bInnerReset := TRUE;
+    bInnerExec := FALSE;
+    bInnerReset := TRUE;
 // If we hit this branch, we're starting a new move
 ELSIF bNewGoal THEN
-	bInnerExec := TRUE;
-	bInnerReset := FALSE;
-	bNewGoal := FALSE;
+    bInnerExec := TRUE;
+    bInnerReset := FALSE;
+    bNewGoal := FALSE;
 END_IF
 
 // Pick the correct goal structure or Unknown
 IF goalState = 0 THEN
-	stGoal := stUnknown;
+    stGoal := stUnknown;
 ELSE
-	stGoal := arrStates[goalState];
+    stGoal := arrStates[goalState];
 END_IF
 
 // Do the move
 fbStateMove(
-	stMotionStage := stMotionStage,
-	stPositionState := stGoal,
-	bExecute := bInnerExec,
-	bReset := bInnerReset,
-	enumMotionRequest := ENUM_MotionRequest.INTERRUPT,
-	bBusy => bBusy);
+    stMotionStage := stMotionStage,
+    stPositionState := stGoal,
+    bExecute := bInnerExec,
+    bReset := bInnerReset,
+    enumMotionRequest := ENUM_MotionRequest.INTERRUPT,
+    bBusy => bBusy);
 
 // Only pass up bDone information if this FB is active
 IF bInnerExec THEN
-	bDone := fbStateMove.bDone;
+    bDone := fbStateMove.bDone;
 END_IF
 
 // Pick up any new errors, but don't override uncleared existing errors
 IF NOT bError THEN
-	bError := fbStateMove.bError;
+    bError := fbStateMove.bError;
     nErrorId := fbStateMove.nErrorId;
-	sErrorMessage := fbStateMove.sErrorMessage;
+    sErrorMessage := fbStateMove.sErrorMessage;
 END_IF
 
 // Reset the setpoint and goal to 0 if we're not doing anything
 // because FB is waiting for a change from 0 to "something"
 bMoveRequested := bInnerExec AND NOT bDone;
 IF NOT bError AND NOT bNewGoal AND NOT bMoveRequested THEN
-	setState := 0;
-	goalState := 0;
-	bInnerExec := FALSE;
+    setState := 0;
+    goalState := 0;
+    bInnerExec := FALSE;
 END_IF
 
 // Bring inner reset back low at the end of the init cycle so that it can be triggered again later
 IF NOT bInit THEN
-	bInit := TRUE;
-	bInnerReset := FALSE;
+    bInit := TRUE;
+    bInnerReset := FALSE;
 END_IF]]></ST>
     </Implementation>
   </POU>
