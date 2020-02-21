@@ -460,9 +460,9 @@ STRUCT
     fDecel: LREAL;
 
     // Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
-    {attribute 'pymtc' := '
+    {attribute 'pytmc' := '
         pv: MOVE_OK
-        io: io
+        io: i
         field: ZNAM FALSE
         field: ONAM TRUE
         field: DESC TRUE if the move would be safe
@@ -470,7 +470,7 @@ STRUCT
     bMoveOk: BOOL;
 
     // Signifies to FB_PositionStateLock that this state should be immutable
-    {attribute 'pymtc' := '
+    {attribute 'pytmc' := '
         pv: LOCKED
         io: i
         field: ZNAM FALSE
@@ -6627,7 +6627,7 @@ M1.bLimitForwardEnable := TRUE;
 M1.bLimitBackwardEnable := TRUE;
 M1.bHardwareEnable := TRUE;
 M1.bPowerSelf := TRUE;
-M1.nEnableMode := ENUM_StageEnableMode.STAGE_ENABLE_ALWAYS;
+M1.nEnableMode := ENUM_StageEnableMode.ALWAYS;
 fbMotion1(stMotionStage := M1);
 fbMotion2(stMotionStage := M2);
 ```
@@ -6636,10 +6636,10 @@ fbMotion2(stMotionStage := M2);
 Symbols
 -------
 
-    Constants.CompilerVersion : VERSION (4702848 64)
-    Constants.CompilerVersionNumeric : DWORD (4702944 32)
-    Constants.RuntimeVersion : VERSION (4702784 64)
-    Constants.RuntimeVersionNumeric : DWORD (4702912 32)
+    Constants.CompilerVersion : VERSION (4703744 64)
+    Constants.CompilerVersionNumeric : DWORD (4703840 32)
+    Constants.RuntimeVersion : VERSION (4703680 64)
+    Constants.RuntimeVersionNumeric : DWORD (4703808 32)
     Constants.bFPUSupport : BOOL (4313904 8)
     Constants.bLittleEndian : BOOL (4306336 8)
     Constants.bSimulationMode : BOOL (4306344 8)
@@ -6883,17 +6883,17 @@ Symbols
     Main.M2.bHome : BOOL (4355664 8)
     Main.M2.bLimitBackwardEnable : BOOL (4355656 8)
     Main.M2.bLimitForwardEnable : BOOL (4355648 8)
-    Main.fbMotion1 : lcls_twincat_motion.FB_MotionStage (4357888 169984)
+    Main.fbMotion1 : lcls_twincat_motion.FB_MotionStage (4357888 170432)
     Main.fbMotion1.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (4360512 2048)
     Main.fbMotion1.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (4359488 1024)
-    Main.fbMotion2 : lcls_twincat_motion.FB_MotionStage (4527872 169984)
-    Main.fbMotion2.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (4530496 2048)
-    Main.fbMotion2.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (4529472 1024)
-    TwinCAT_SystemInfoVarList._AppInfo : PlcAppSystemInfo (4702976 2048)
-    TwinCAT_SystemInfoVarList._TaskInfo : PlcTaskSystemInfo (4705024 1024)
-    TwinCAT_SystemInfoVarList._TaskOid_PlcTask : OTCID (4706080 32)
-    TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask : OTCID (4706048 32)
-    TwinCAT_SystemInfoVarList.__PlcTask : _Implicit_Task_Info (4706112 896)
+    Main.fbMotion2 : lcls_twincat_motion.FB_MotionStage (4528320 170432)
+    Main.fbMotion2.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (4530944 2048)
+    Main.fbMotion2.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (4529920 1024)
+    TwinCAT_SystemInfoVarList._AppInfo : PlcAppSystemInfo (4703872 2048)
+    TwinCAT_SystemInfoVarList._TaskInfo : PlcTaskSystemInfo (4705920 1024)
+    TwinCAT_SystemInfoVarList._TaskOid_PlcTask : OTCID (4706976 32)
+    TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask : OTCID (4706944 32)
+    TwinCAT_SystemInfoVarList.__PlcTask : _Implicit_Task_Info (4707008 896)
 
 Boxes
 -----

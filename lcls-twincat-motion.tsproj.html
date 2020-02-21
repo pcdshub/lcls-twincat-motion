@@ -490,9 +490,9 @@ STRUCT
     fDecel: LREAL;
 
     // Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
-    {attribute &#39;pymtc&#39; := &#39;
+    {attribute &#39;pytmc&#39; := &#39;
         pv: MOVE_OK
-        io: io
+        io: i
         field: ZNAM FALSE
         field: ONAM TRUE
         field: DESC TRUE if the move would be safe
@@ -500,7 +500,7 @@ STRUCT
     bMoveOk: BOOL;
 
     // Signifies to FB_PositionStateLock that this state should be immutable
-    {attribute &#39;pymtc&#39; := &#39;
+    {attribute &#39;pytmc&#39; := &#39;
         pv: LOCKED
         io: i
         field: ZNAM FALSE
@@ -6578,7 +6578,7 @@ END_VAR
 <span class="n">M1</span><span class="p">.</span><span class="n">bLimitBackwardEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 <span class="n">M1</span><span class="p">.</span><span class="n">bHardwareEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 <span class="n">M1</span><span class="p">.</span><span class="n">bPowerSelf</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-<span class="n">M1</span><span class="p">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">ENUM_StageEnableMode</span><span class="p">.</span><span class="n">STAGE_ENABLE_ALWAYS</span><span class="p">;</span>
+<span class="n">M1</span><span class="p">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">ENUM_StageEnableMode</span><span class="p">.</span><span class="n">ALWAYS</span><span class="p">;</span>
 <span class="n">fbMotion1</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">M1</span><span class="p">);</span>
 <span class="n">fbMotion2</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">M2</span><span class="p">);</span>
 </pre></div>
@@ -6587,10 +6587,10 @@ END_VAR
 </div>
 <div class="section" id="id2">
 <h2>Symbols<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">4702848</span> <span class="mi">64</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">4702944</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">4702784</span> <span class="mi">64</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">4702912</span> <span class="mi">32</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">4703744</span> <span class="mi">64</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">4703840</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">4703680</span> <span class="mi">64</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">4703808</span> <span class="mi">32</span><span class="p">)</span>
 <span class="n">Constants</span><span class="o">.</span><span class="n">bFPUSupport</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">4313904</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Constants</span><span class="o">.</span><span class="n">bLittleEndian</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">4306336</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Constants</span><span class="o">.</span><span class="n">bSimulationMode</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">4306344</span> <span class="mi">8</span><span class="p">)</span>
@@ -6834,17 +6834,17 @@ END_VAR
 <span class="n">Main</span><span class="o">.</span><span class="n">M2</span><span class="o">.</span><span class="n">bHome</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">4355664</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Main</span><span class="o">.</span><span class="n">M2</span><span class="o">.</span><span class="n">bLimitBackwardEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">4355656</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Main</span><span class="o">.</span><span class="n">M2</span><span class="o">.</span><span class="n">bLimitForwardEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">4355648</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion1</span> <span class="p">:</span> <span class="n">lcls_twincat_motion</span><span class="o">.</span><span class="n">FB_MotionStage</span> <span class="p">(</span><span class="mi">4357888</span> <span class="mi">169984</span><span class="p">)</span>
+<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion1</span> <span class="p">:</span> <span class="n">lcls_twincat_motion</span><span class="o">.</span><span class="n">FB_MotionStage</span> <span class="p">(</span><span class="mi">4357888</span> <span class="mi">170432</span><span class="p">)</span>
 <span class="n">Main</span><span class="o">.</span><span class="n">fbMotion1</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">4360512</span> <span class="mi">2048</span><span class="p">)</span>
 <span class="n">Main</span><span class="o">.</span><span class="n">fbMotion1</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">4359488</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion2</span> <span class="p">:</span> <span class="n">lcls_twincat_motion</span><span class="o">.</span><span class="n">FB_MotionStage</span> <span class="p">(</span><span class="mi">4527872</span> <span class="mi">169984</span><span class="p">)</span>
-<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion2</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">4530496</span> <span class="mi">2048</span><span class="p">)</span>
-<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion2</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">4529472</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_AppInfo</span> <span class="p">:</span> <span class="n">PlcAppSystemInfo</span> <span class="p">(</span><span class="mi">4702976</span> <span class="mi">2048</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskInfo</span> <span class="p">:</span> <span class="n">PlcTaskSystemInfo</span> <span class="p">(</span><span class="mi">4705024</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">4706080</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskPouOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">4706048</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">__PlcTask</span> <span class="p">:</span> <span class="n">_Implicit_Task_Info</span> <span class="p">(</span><span class="mi">4706112</span> <span class="mi">896</span><span class="p">)</span>
+<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion2</span> <span class="p">:</span> <span class="n">lcls_twincat_motion</span><span class="o">.</span><span class="n">FB_MotionStage</span> <span class="p">(</span><span class="mi">4528320</span> <span class="mi">170432</span><span class="p">)</span>
+<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion2</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">4530944</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">Main</span><span class="o">.</span><span class="n">fbMotion2</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">4529920</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_AppInfo</span> <span class="p">:</span> <span class="n">PlcAppSystemInfo</span> <span class="p">(</span><span class="mi">4703872</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskInfo</span> <span class="p">:</span> <span class="n">PlcTaskSystemInfo</span> <span class="p">(</span><span class="mi">4705920</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">4706976</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskPouOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">4706944</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">__PlcTask</span> <span class="p">:</span> <span class="n">_Implicit_Task_Info</span> <span class="p">(</span><span class="mi">4707008</span> <span class="mi">896</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7171,7 +7171,7 @@ END_VAR
       &copy;2019, SLAC National Accelerator Laboratory.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
