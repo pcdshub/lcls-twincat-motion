@@ -26,7 +26,7 @@ if __name__ == '__main__':
     app = QApplication([])
     typhos.use_stylesheet()
     dirname, _ = os.path.split(os.path.abspath(__file__))
-    template = dirname + '/detailed_beckhoff_motor.ui'
+    template = os.path.join(dirname, 'detailed_beckhoff_motor.ui')
     suite = typhos.TyphosSuite.from_device(motor)
     suite.get_subdisplay(motor).load_template(macros=macros)
     suite.get_subdisplay(motor).force_template = template
