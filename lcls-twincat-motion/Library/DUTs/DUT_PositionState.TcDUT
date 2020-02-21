@@ -54,9 +54,9 @@ STRUCT
     fDecel: LREAL;
 
     // Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
-    {attribute 'pymtc' := '
+    {attribute 'pytmc' := '
         pv: MOVE_OK
-        io: io
+        io: i
         field: ZNAM FALSE
         field: ONAM TRUE
         field: DESC TRUE if the move would be safe
@@ -64,7 +64,7 @@ STRUCT
     bMoveOk: BOOL;
 
     // Signifies to FB_PositionStateLock that this state should be immutable
-    {attribute 'pymtc' := '
+    {attribute 'pytmc' := '
         pv: LOCKED
         io: i
         field: ZNAM FALSE
