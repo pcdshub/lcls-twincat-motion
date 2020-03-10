@@ -4,7 +4,7 @@
 
 epicsEnvSet("ADS_IOC_TOP", "$(TOP)" )
 
-epicsEnvSet("IOCNAME", "ioc-tst-motion" )
+epicsEnvSet("IOCNAME", "ioc-tc-mot-example" )
 epicsEnvSet("ENGINEER", "zlentz" )
 epicsEnvSet("LOCATION", "PLC:TST:MOT" )
 epicsEnvSet("IOCSH_PS1", "$(IOCNAME)> " )
