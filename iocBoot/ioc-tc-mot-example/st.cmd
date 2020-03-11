@@ -19,7 +19,7 @@ adsIoc_registerRecordDeviceDriver(pdbbase)
 epicsEnvSet("ASYN_PORT",        "ASYN_PLC")
 epicsEnvSet("IPADDR",           "172.21.148.148")
 epicsEnvSet("AMSID",            "172.21.148.148.1.1")
-epicsEnvSet("AMS_PORT",         "851")
+epicsEnvSet("AMS_PORT",         "852")
 epicsEnvSet("ADS_MAX_PARAMS",   "10000")
 epicsEnvSet("ADS_SAMPLE_MS",    "50")
 epicsEnvSet("ADS_MAX_DELAY_MS", "100")
@@ -87,7 +87,7 @@ asynSetTraceInfoMask("$(ASYN_PORT)", -1, 5)
 #define AMPLIFIER_ON_FLAG_WHEN_HOMING  2
 #define AMPLIFIER_ON_FLAG_USING_CNEN   4
 
-epicsEnvSet("AXIS_NO",         "3")
+epicsEnvSet("AXIS_NO",         "1")
 epicsEnvSet("MOTOR_PREFIX",    "PLC:TST:MOT:SIM:")
 epicsEnvSet("MOTOR_NAME",      "01")
 epicsEnvSet("DESC",            "Main.M1 / Example 1 Simulated Working")
@@ -102,7 +102,7 @@ dbLoadRecords("EthercatMC.template", "PREFIX=$(MOTOR_PREFIX), MOTOR_NAME=$(MOTOR
 dbLoadRecords("EthercatMCreadback.template", "PREFIX=$(MOTOR_PREFIX), MOTOR_NAME=$(MOTOR_NAME), R=$(MOTOR_NAME)-, MOTOR_PORT=$(MOTOR_PORT), ASYN_PORT=$(ASYN_PORT), AXIS_NO=$(AXIS_NO), DESC=$(DESC), PREC=$(PREC) ")
 dbLoadRecords("EthercatMCdebug.template", "PREFIX=$(MOTOR_PREFIX), MOTOR_NAME=$(MOTOR_NAME), MOTOR_PORT=$(MOTOR_PORT), AXIS_NO=$(AXIS_NO), PREC=3")
 
-epicsEnvSet("AXIS_NO",         "4")
+epicsEnvSet("AXIS_NO",         "2")
 epicsEnvSet("MOTOR_PREFIX",    "PLC:TST:MOT:SIM:")
 epicsEnvSet("MOTOR_NAME",      "02")
 epicsEnvSet("DESC",            "Main.M2 / Example 2 Simulated Broken")
@@ -117,7 +117,7 @@ dbLoadRecords("EthercatMC.template", "PREFIX=$(MOTOR_PREFIX), MOTOR_NAME=$(MOTOR
 dbLoadRecords("EthercatMCreadback.template", "PREFIX=$(MOTOR_PREFIX), MOTOR_NAME=$(MOTOR_NAME), R=$(MOTOR_NAME)-, MOTOR_PORT=$(MOTOR_PORT), ASYN_PORT=$(ASYN_PORT), AXIS_NO=$(AXIS_NO), DESC=$(DESC), PREC=$(PREC) ")
 dbLoadRecords("EthercatMCdebug.template", "PREFIX=$(MOTOR_PREFIX), MOTOR_NAME=$(MOTOR_NAME), MOTOR_PORT=$(MOTOR_PORT), AXIS_NO=$(AXIS_NO), PREC=3")
 
-epicsEnvSet("AXIS_NO",         "5")
+epicsEnvSet("AXIS_NO",         "3")
 epicsEnvSet("MOTOR_PREFIX",    "PLC:TST:MOT:SIM:")
 epicsEnvSet("MOTOR_NAME",      "03")
 epicsEnvSet("DESC",            "Main.M3 / Example 3 Simulated Limits")
