@@ -1,0 +1,1 @@
+dbLoadRecords("Example.db", "PORT=ASYN_PLC,PREFIX=PLC:TST:MOT:,IOCNAME=$(IOCNAME)")
