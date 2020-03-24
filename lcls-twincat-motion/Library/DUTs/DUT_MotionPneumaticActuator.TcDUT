@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.3">
+  <DUT Name="DUT_MotionPneumaticActuator" Id="{ee78164b-027c-4a52-afc0-269c58a42ceb}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE DUT_MotionPneumaticActuator :
+    // Defines the EPICS interface to actuating a pneumatic stage
+STRUCT
+     (* Hardware *)
+    //Readbacks
+    //Limit Switch
+    {attribute 'pytmc' := '
+     pv: PLC:bInLimitSwitch
+     io: i
+     field: ZNAM FALSE
+     field: ONAM TRUE
+     field: DESC TRUE if IN limit is reached
+    '}
+    i_bInLimitSwitch    :    BOOL;
+    {attribute 'pytmc' := '
+     pv: PLC:bOutLimitSwitch
+     io: i
+     field: ZNAM FALSE
+     field: ONAM TRUE
+     field: DESC TRUE if OUT limit is reached
+    '}
+    i_bOutLimitSwitch    :    BOOL;
+    //Controls
+    //Digital outputs
+    {attribute 'pytmc' := '
+    pv: bRetractDigitalOutput;
+    io: i;
+    field: ONAM FALSE
+    field: ZNAM TRUE
+    field: DESC TRUE if Retract digital output is active
+    '}
+    q_bRetract    :    BOOL;
+    {attribute 'pytmc' := '
+    pv: bInsetDigitalOutput;
+    io: i;
+    field: ONAM FALSE
+    field: ZNAM TRUE
+    field: DESC TRUE if Insert digital output is active
+    '}
+    q_bInsert    :    BOOL;
+
+
+    //Logic and supervisory
+    {attribute 'pytmc' := '
+    pv: bInterlockOK;
+    io: i;
+    field: ZNAM FALSE
+    field: ONAM TRUE
+    field: DESC True if the actuator has permission to move in either direction
+    '}
+    bILK_OK: BOOL;
+    {attribute 'pytmc' := '
+    pv: bInsertEnable;
+    io: i;
+    field: ZNAM FALSE
+    field: ONAM TRUE
+    field: DESC True if the actuator had permission to be retracted
+    '}
+    bInsertOK    :    BOOL;
+    {attribute 'pytmc' := '
+    pv: bRetractEnable;
+    io: i;
+    field: ZNAM FALSE
+    field: ONAM TRUE
+    field: DESC True if the actuator had permission to be inserted
+    '}
+    bRetractOK    :    BOOL;
+
+    (* Commands *)
+    // Used from Epics to comand the actuator to  move
+    {attribute 'pytmc' := '
+    pv: CMD:IN;
+    io: io;
+    field: DESC Used by EPICS and internally to request Insert motion
+    '}
+    bInsert_SW        :    BOOL;
+    {attribute 'pytmc' := '
+    pv: CMD:OUT;
+    io: io;
+    field: DESC Used by EPICS and internally to request retract motion
+    '}
+    bRetract_SW    :    BOOL;
+
+    (*Returns*)
+     // TRUE if in the middle of a command
+    {attribute 'pytmc' := '
+     pv: bBusy
+     io: i
+     field: ONAM FALSE
+     field: ZNAM TRUE
+     field: DESC TRUE if in the middle of a command
+    '}
+    bBusy: BOOL;
+    // TRUE if we've done a command and it has finished
+    {attribute 'pytmc' := '
+     pv: bDone
+     io: i
+     field: ONAM FALSE
+     field: ZNAM TRUE
+      field: DESC TRUE if command finished successfully
+    '}
+    bDone: BOOL;
+     {attribute 'pytmc' := '
+        pv: bReset
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Used internally to reset errors
+    '}
+    bReset: BOOL;
+    // TRUE if we're in an error state
+    {attribute 'pytmc' := '
+     pv: PLC:bError
+     io: i
+     field: ONAM FALSE
+     field: ZNAM TRUE
+     field: DESC TRUE if we're in an error state
+    '}
+    bError: BOOL;
+
+     // Error code if nonzero
+    {attribute 'pytmc' := '
+     pv: PLC:nErrorId
+     io: i
+     field: DESC Error code if nonzero
+    '}
+    nErrorId: UDINT;
+    // Message to identify the error state
+    {attribute 'pytmc' := '
+     pv: PLC:sErrorMessage
+     io: i
+     field: DESC Message to identify the error state
+    '}
+    sErrorMessage: STRING;
+    {attribute 'pytmc' := '
+    pv: nPositionState ;
+    type: mbbi ;
+    field: ZRST RETRACTED ;
+    field: ONST INSERTED ;
+    field: TWST MOVING ;
+    field: THST INVALID ;
+    io: i
+    field: DESC Pneumatic actuator position
+    '}
+
+    eState    :    ENUM_PnuematicActuatorPositionState := ENUM_PnuematicActuatorPositionState.INVALID;
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
