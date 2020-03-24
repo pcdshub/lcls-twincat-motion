@@ -22,7 +22,7 @@ VAR_OUTPUT
     {attribute 'pytmc' := '
     pv:
     '}
-    stPeumaticActuator    :    DUT_MotionPneumaticActuator;
+    stPneumaticActuator    :    DUT_MotionPneumaticActuator;
     {attribute 'pytmc' := '
      pv: MPS_OK
      field: ZNAM FALSE
@@ -75,81 +75,81 @@ END_VAR
 (*Initialize*)
 fbFSInit( CLK := TRUE, Q => xFirstPass);
 IF xFirstPass THEN
-    stPeumaticActuator.eState := ENUM_PnuematicActuatorPositionState.INVALID;
-    stPeumaticActuator.bRetract_SW := FALSE;
-    stPeumaticActuator.bInsert_SW := FALSE;
+    stPneumaticActuator.eState := ENUM_PnuematicActuatorPositionState.INVALID;
+    stPneumaticActuator.bRetract_SW := FALSE;
+    stPneumaticActuator.bInsert_SW := FALSE;
 END_IF
 
 (*Soft IO Mapping to EPICS PVs*)
 ACT_IO();
 
 (* Manage States*)
-IF stPeumaticActuator.i_bInLimitSwitch AND  stPeumaticActuator.i_bOutLimitSwitch THEN
-    stPeumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INVALID;
-ELSIF NOT stPeumaticActuator.i_bInLimitSwitch AND stPeumaticActuator.i_bOutLimitSwitch THEN
-    stPeumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.RETRACTED;
-ELSIF stPeumaticActuator.i_bInLimitSwitch AND NOT stPeumaticActuator.i_bOutLimitSwitch THEN
-    stPeumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INSERTED;
-ELSIF NOT stPeumaticActuator.i_bInLimitSwitch AND NOT stPeumaticActuator.i_bOutLimitSwitch THEN
-    stPeumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.MOVING;
+IF stPneumaticActuator.i_bInLimitSwitch AND  stPneumaticActuator.i_bOutLimitSwitch THEN
+    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INVALID;
+ELSIF NOT stPneumaticActuator.i_bInLimitSwitch AND stPneumaticActuator.i_bOutLimitSwitch THEN
+    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.RETRACTED;
+ELSIF stPneumaticActuator.i_bInLimitSwitch AND NOT stPneumaticActuator.i_bOutLimitSwitch THEN
+    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INSERTED;
+ELSIF NOT stPneumaticActuator.i_bInLimitSwitch AND NOT stPneumaticActuator.i_bOutLimitSwitch THEN
+    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.MOVING;
 ELSE
-    stPeumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INVALID ;
+    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INVALID ;
 END_IF
 
 (*Set the Done/Busy signal*)
-stPeumaticActuator.bDone := (stPeumaticActuator.bRetract_SW AND stPeumaticActuator.eState=ENUM_PnuematicActuatorPositionState.RETRACTED)
-                            OR (stPeumaticActuator.bInsert_SW AND stPeumaticActuator.eState=ENUM_PnuematicActuatorPositionState.INSERTED);
-stPeumaticActuator.bBusy := (stPeumaticActuator.bRetract_SW AND stPeumaticActuator.eState<>ENUM_PnuematicActuatorPositionState.RETRACTED)
-                            OR (stPeumaticActuator.bInsert_SW AND stPeumaticActuator.eState<>ENUM_PnuematicActuatorPositionState.INSERTED);
+stPneumaticActuator.bDone := (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.RETRACTED)
+                            OR (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.INSERTED);
+stPneumaticActuator.bBusy := (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.eState<>ENUM_PnuematicActuatorPositionState.RETRACTED)
+                            OR (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.eState<>ENUM_PnuematicActuatorPositionState.INSERTED);
 (*MPS FAULT*)
 (* MPS Faults when the actuator is in motion*)
-xMPS_OK := (stPeumaticActuator.eState=ENUM_PnuematicActuatorPositionState.RETRACTED) OR (stPeumaticActuator.eState=ENUM_PnuematicActuatorPositionState.INSERTED);
+xMPS_OK := (stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.RETRACTED) OR (stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.INSERTED);
 (*PMPS PERMISSION*)
 // yet to be implemented
 
 (* Can't have bRetract_SW and  bInsert_SW both be true*)
-If (stPeumaticActuator.bRetract_SW) AND (stPeumaticActuator.bInsert_SW) THEN
-    stPeumaticActuator.bRetract_SW := FALSE;
-    stPeumaticActuator.bInsert_SW := FALSE;
+If (stPneumaticActuator.bRetract_SW) AND (stPneumaticActuator.bInsert_SW) THEN
+    stPneumaticActuator.bRetract_SW := FALSE;
+    stPneumaticActuator.bInsert_SW := FALSE;
 END_IF
 //Redundant??
 (*Check if both digital outputs active at the same time, and clear all*)
-IF stPeumaticActuator.q_bInsert THEN
-    stPeumaticActuator.q_bRetract := FALSE;
-    stPeumaticActuator.bRetract_SW:= FALSE;
+IF stPneumaticActuator.q_bInsert THEN
+    stPneumaticActuator.q_bRetract := FALSE;
+    stPneumaticActuator.bRetract_SW:= FALSE;
 END_IF;
-IF stPeumaticActuator.q_bRetract THEN
-    stPeumaticActuator.q_bInsert := FALSE;
-    stPeumaticActuator.bInsert_SW:= FALSE;
+IF stPneumaticActuator.q_bRetract THEN
+    stPneumaticActuator.q_bInsert := FALSE;
+    stPneumaticActuator.bInsert_SW:= FALSE;
 END_IF;
 
 (*Actuate the device*)
-stPeumaticActuator.q_bRetract := stPeumaticActuator.bRetractOK AND stPeumaticActuator.bRetract_SW AND NOT stPeumaticActuator.bInsert_SW ;
-stPeumaticActuator.q_bInsert := stPeumaticActuator.bInsertOK AND stPeumaticActuator.bInsert_SW AND NOT stPeumaticActuator.bRetract_SW ;
+stPneumaticActuator.q_bRetract := stPneumaticActuator.bRetractOK AND stPneumaticActuator.bRetract_SW AND NOT stPneumaticActuator.bInsert_SW ;
+stPneumaticActuator.q_bInsert := stPneumaticActuator.bInsertOK AND stPneumaticActuator.bInsert_SW AND NOT stPneumaticActuator.bRetract_SW ;
 
 (*Reset the Control signal when command has been executed and give time to ensure the actuator is fully seated in either direction*)
 IF (NOT ibSingleCntrl AND NOT ibCntrlHold) THEN
-   IF (stPeumaticActuator.bRetract_SW AND stPeumaticActuator.i_bOutLimitSwitch AND tRetractLimitSwitch.Q ) THEN stPeumaticActuator.q_bRetract := FALSE; END_IF
-   IF (stPeumaticActuator.bInsert_SW AND stPeumaticActuator.i_bInLimitSwitch AND tInsertLimitSwitch.Q) THEN stPeumaticActuator.q_bInsert := FALSE; END_IF
+   IF (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.i_bOutLimitSwitch AND tRetractLimitSwitch.Q ) THEN stPneumaticActuator.q_bRetract := FALSE; END_IF
+   IF (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.i_bInLimitSwitch AND tInsertLimitSwitch.Q) THEN stPneumaticActuator.q_bInsert := FALSE; END_IF
 END_IF
 
 (*Timers*)
-tInserttimeout(IN:= stPeumaticActuator.q_bInsert, PT := tTimeOutDuration );
-tRetracttimeout(IN:= stPeumaticActuator.q_bRetract, PT := tTimeOutDuration);
-tInsertLimitSwitch(IN:= stPeumaticActuator.i_bInLimitSwitch, PT := tLimitSwitchLatchDuration);
-tRetractLimitSwitch(IN:= stPeumaticActuator.i_bOutLimitSwitch, PT := tLimitSwitchLatchDuration);
+tInserttimeout(IN:= stPneumaticActuator.q_bInsert, PT := tTimeOutDuration );
+tRetracttimeout(IN:= stPneumaticActuator.q_bRetract, PT := tTimeOutDuration);
+tInsertLimitSwitch(IN:= stPneumaticActuator.i_bInLimitSwitch, PT := tLimitSwitchLatchDuration);
+tRetractLimitSwitch(IN:= stPneumaticActuator.i_bOutLimitSwitch, PT := tLimitSwitchLatchDuration);
 
 
 ///Check moving postion timout
-IF NOT stPeumaticActuator.i_bInLimitSwitch AND tInserttimeout.Q THEN
-    stPeumaticActuator.bError := TRUE;
-    stPeumaticActuator.sErrorMessage:= 'Actuator insert timeout';
-ELSIF NOT stPeumaticActuator.i_bOutLimitSwitch AND tRetracttimeout.Q THEN
-    stPeumaticActuator.bError := TRUE;
-    stPeumaticActuator.sErrorMessage:= 'Actuator retract timeout';
+IF NOT stPneumaticActuator.i_bInLimitSwitch AND tInserttimeout.Q THEN
+    stPneumaticActuator.bError := TRUE;
+    stPneumaticActuator.sErrorMessage:= 'Actuator insert timeout';
+ELSIF NOT stPneumaticActuator.i_bOutLimitSwitch AND tRetracttimeout.Q THEN
+    stPneumaticActuator.bError := TRUE;
+    stPneumaticActuator.sErrorMessage:= 'Actuator retract timeout';
 END_IF
 // Reset error
-stPeumaticActuator.bError R= stPeumaticActuator.bReset;
+stPneumaticActuator.bError R= stPneumaticActuator.bReset;
 
 (*FAST FAULT*)
 fbFF(i_xOK := xMPS_OK,
@@ -162,35 +162,35 @@ ACT_IO();]]></ST>
     <Action Name="ACT_IO" Id="{090f58e5-b160-4478-a84f-328a90ba6204}">
       <Implementation>
         <ST><![CDATA[(*Inputs*)
-stPeumaticActuator.i_bInLimitSwitch :=  i_xInsertedLS;
-stPeumaticActuator.i_bOutLimitSwitch := i_xRetractedLS;
+stPneumaticActuator.i_bInLimitSwitch :=  i_xInsertedLS;
+stPneumaticActuator.i_bOutLimitSwitch := i_xRetractedLS;
 
 (*outputs*)
-q_xInsert_DO:=stPeumaticActuator.q_bInsert;
-q_xRetract_DO:=stPeumaticActuator.q_bRetract;
+q_xInsert_DO:=stPneumaticActuator.q_bInsert;
+q_xRetract_DO:=stPneumaticActuator.q_bRetract;
 
 (*EPICS*)
-stPeumaticActuator.bRetractOK := ibRetractOK;
-stPeumaticActuator.bInsertOK := ibInsertOK;]]></ST>
+stPneumaticActuator.bRetractOK := ibRetractOK;
+stPneumaticActuator.bInsertOK := ibInsertOK;]]></ST>
       </Implementation>
     </Action>
     <Action Name="ACT_Logger" Id="{9640fc94-0c07-4d2d-854f-09768bff8197}">
       <Implementation>
         <ST><![CDATA[// Log Valve timeouts
-IF (tInserttimeout.Q OR tRetracttimeout.Q) THEN fbLogger(sMsg:=stPeumaticActuator.sErrorMessage, eSevr:=TcEventSeverity.Warning); END_IF
+IF (tInserttimeout.Q OR tRetracttimeout.Q) THEN fbLogger(sMsg:=stPneumaticActuator.sErrorMessage, eSevr:=TcEventSeverity.Warning); END_IF
 
 // Log Actuator commands
 // Log valve open
-tAction(CLK:= (stPeumaticActuator.q_bRetract OR stPeumaticActuator.q_bInsert));
+tAction(CLK:= (stPneumaticActuator.q_bRetract OR stPneumaticActuator.q_bInsert));
 IF tAction.Q THEN
-   IF(stPeumaticActuator.q_bRetract) THEN fbLogger(sMsg:='Actuator commanded retract', eSevr:=TcEventSeverity.Info); END_IF
-   IF(stPeumaticActuator.q_bInsert) THEN fbLogger(sMsg:='Actuator commanded insert', eSevr:=TcEventSeverity.Info); END_IF
+   IF(stPneumaticActuator.q_bRetract) THEN fbLogger(sMsg:='Actuator commanded retract', eSevr:=TcEventSeverity.Info); END_IF
+   IF(stPneumaticActuator.q_bInsert) THEN fbLogger(sMsg:='Actuator commanded insert', eSevr:=TcEventSeverity.Info); END_IF
 END_IF
 
 
 // State Logging
-IF ePrevState <> stPeumaticActuator.eState THEN
-      CASE stPeumaticActuator.eState OF
+IF ePrevState <> stPneumaticActuator.eState THEN
+      CASE stPneumaticActuator.eState OF
         ENUM_PnuematicActuatorPositionState.INVALID:
             fbLogger(sMsg:='Actuator invalid position.', eSevr:=TcEventSeverity.Critical);
           ENUM_PnuematicActuatorPositionState.MOVING:
@@ -200,7 +200,7 @@ IF ePrevState <> stPeumaticActuator.eState THEN
         ENUM_PnuematicActuatorPositionState.INSERTED:
             fbLogger(sMsg:='Actuator Inserted.', eSevr:=TcEventSeverity.Info);
       END_CASE
-      ePrevState := stPeumaticActuator.eState;
+      ePrevState := stPneumaticActuator.eState;
   END_IF
 ]]></ST>
       </Implementation>
