@@ -4,90 +4,90 @@
     <Declaration><![CDATA[{attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE DUT_MotionPneumaticActuator :
-	// Defines the EPICS interface to actuating a pneumatic stage
+    // Defines the EPICS interface to actuating a pneumatic stage
 STRUCT
-	 (* Hardware *)
-	//Readbacks
-	//Limit Switch
-	{attribute 'pytmc' := '
+     (* Hardware *)
+    //Readbacks
+    //Limit Switch
+    {attribute 'pytmc' := '
      pv: PLC:bInLimitSwitch
      io: i
      field: ZNAM FALSE
      field: ONAM TRUE
      field: DESC TRUE if IN limit is reached
     '}
-	i_bInLimitSwitch	:	BOOL;
-	{attribute 'pytmc' := '
+    i_bInLimitSwitch    :    BOOL;
+    {attribute 'pytmc' := '
      pv: PLC:bOutLimitSwitch
      io: i
      field: ZNAM FALSE
      field: ONAM TRUE
      field: DESC TRUE if OUT limit is reached
     '}
-	i_bOutLimitSwitch	:	BOOL;
-	//Controls
-	//Digital outputs
-	{attribute 'pytmc' := '
+    i_bOutLimitSwitch    :    BOOL;
+    //Controls
+    //Digital outputs
+    {attribute 'pytmc' := '
     pv: bRetractDigitalOutput;
-	io: i;
-	field: ONAM FALSE
+    io: i;
+    field: ONAM FALSE
     field: ZNAM TRUE
     field: DESC TRUE if Retract digital output is active
     '}
-	q_bRetract	:	BOOL;
-	{attribute 'pytmc' := '
+    q_bRetract    :    BOOL;
+    {attribute 'pytmc' := '
     pv: bInsetDigitalOutput;
-	io: i;
-	field: ONAM FALSE
+    io: i;
+    field: ONAM FALSE
     field: ZNAM TRUE
     field: DESC TRUE if Insert digital output is active
     '}
-	q_bInsert	:	BOOL;
-	
-	
-	//Logic and supervisory
-	{attribute 'pytmc' := '
+    q_bInsert    :    BOOL;
+
+
+    //Logic and supervisory
+    {attribute 'pytmc' := '
     pv: bInterlockOK;
-	io: i;
-	field: ZNAM FALSE
+    io: i;
+    field: ZNAM FALSE
     field: ONAM TRUE
     field: DESC True if the actuator has permission to move in either direction
     '}
-	bILK_OK: BOOL;
-	{attribute 'pytmc' := '
+    bILK_OK: BOOL;
+    {attribute 'pytmc' := '
     pv: bInsertEnable;
-	io: i;
-	field: ZNAM FALSE
+    io: i;
+    field: ZNAM FALSE
     field: ONAM TRUE
     field: DESC True if the actuator had permission to be retracted
     '}
-	bInsertOK	:	BOOL;
-	{attribute 'pytmc' := '
+    bInsertOK    :    BOOL;
+    {attribute 'pytmc' := '
     pv: bRetractEnable;
-	io: i;
-	field: ZNAM FALSE
+    io: i;
+    field: ZNAM FALSE
     field: ONAM TRUE
     field: DESC True if the actuator had permission to be inserted
     '}
-	bRetractOK	:	BOOL;
-	
-	(* Commands *)
-	// Used from Epics to comand the actuator to  move
-	{attribute 'pytmc' := '
+    bRetractOK    :    BOOL;
+
+    (* Commands *)
+    // Used from Epics to comand the actuator to  move
+    {attribute 'pytmc' := '
     pv: IN_CMD;
-	io: io;
-	DESC Used by EPICS and internally to request Insert motion
+    io: io;
+    DESC Used by EPICS and internally to request Insert motion
     '}
-	bInsert_SW		:	BOOL;
-	{attribute 'pytmc' := '
+    bInsert_SW        :    BOOL;
+    {attribute 'pytmc' := '
     pv: OUT_CMD;
-	io: io;
-	DESC Used by EPICS and internally to request retract motion
+    io: io;
+    DESC Used by EPICS and internally to request retract motion
     '}
-	bRetract_SW	:	BOOL;
-	
-	(*Returns*)
-	 // TRUE if in the middle of a command
+    bRetract_SW    :    BOOL;
+
+    (*Returns*)
+     // TRUE if in the middle of a command
     {attribute 'pytmc' := '
      pv: bBusy
      io: i
@@ -105,7 +105,7 @@ STRUCT
       field: DESC TRUE if command finished successfully
     '}
     bDone: BOOL;
-	 {attribute 'pytmc' := '
+     {attribute 'pytmc' := '
         pv: bReset
         io: io
         field: ZNAM FALSE
@@ -122,8 +122,8 @@ STRUCT
      field: DESC TRUE if we're in an error state
     '}
     bError: BOOL;
-	
-	 // Error code if nonzero
+
+     // Error code if nonzero
     {attribute 'pytmc' := '
      pv: PLC:nErrorId
      io: i
@@ -137,19 +137,19 @@ STRUCT
      field: DESC Message to identify the error state
     '}
     sErrorMessage: STRING;
-	{attribute 'pytmc' := '
-	pv: nPositionState ;
-	type: mbbi ;
-	field: ZRST RETRACTED ;
-	field: ONST INSERTED ;
-	field: TWST MOVING ;
-	field: THST INVALID ;
-	io: i
-	field: DESC Pneumatic actuator position 
-	'}
-		
-	eState	:	ENUM_PnuematicActuatorPositionState := INVALID;
-	
+    {attribute 'pytmc' := '
+    pv: nPositionState ;
+    type: mbbi ;
+    field: ZRST RETRACTED ;
+    field: ONST INSERTED ;
+    field: TWST MOVING ;
+    field: THST INVALID ;
+    io: i
+    field: DESC Pneumatic actuator position
+    '}
+
+    eState    :    ENUM_PnuematicActuatorPositionState := INVALID;
+
 END_STRUCT
 END_TYPE
 ]]></Declaration>
