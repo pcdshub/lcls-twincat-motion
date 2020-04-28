@@ -4,8 +4,8 @@ PLC Project (1): Library
     Project root: /home/travis/build/pcdshub/lcls-twincat-motion/lcls-twincat-motion
     Project path: Library/Library.plcproj
     TMC path:     Library/Library.tmc
-    AMS ID:       172.21.148.148.1.1
-    IP Address:   172.21.148.148 (* based on AMS ID)
+    AMS ID:       
+    IP Address:    (* based on AMS ID)
     Port:         851
 
     Source files:
@@ -1076,9 +1076,9 @@ File: Library/Version/Global_Version.TcGVL
 {attribute 'TcGenerated'}
 // This function has been automatically generated from the project information.
 VAR_GLOBAL CONSTANT
-	{attribute 'const_non_replaced'}
-	{attribute 'linkalways'}
-	stLibVersion_lcls_twincat_motion : ST_LibVersion := (iMajor := 0, iMinor := 0, iBuild := 0, iRevision := 0, sVersion := '0.0.0');
+    {attribute 'const_non_replaced'}
+    {attribute 'linkalways'}
+    stLibVersion_lcls_twincat_motion : ST_LibVersion := (iMajor := 0, iMinor := 0, iBuild := 0, iRevision := 0, sVersion := '0.0.0');
 END_VAR
 ```
 
@@ -6832,372 +6832,11 @@ Symbols
     TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask : OTCID (4717824 32)
     TwinCAT_SystemInfoVarList.__PlcTask : _Implicit_Task_Info (4717888 704)
 
-PLC Project (2): Example
-========================
-
-    Project root: /home/travis/build/pcdshub/lcls-twincat-motion/lcls-twincat-motion
-    Project path: Example/Example.plcproj
-    TMC path:     Example/Example.tmc
-    AMS ID:       172.21.148.148.1.1
-    IP Address:   172.21.148.148 (* based on AMS ID)
-    Port:         852
-
-    Source files:
-        1.) Example/PlcTask.TcTTO
-        2.) Example/POUs/Main.TcPOU
-
-    POUs:
-        1.) Main
-
-POU: Main
----------
-
-File: Example/POUs/Main.TcPOU
-
-```vhdl
-PROGRAM Main
-VAR
-    // Simulated motor that is always allowed to move
-    {attribute 'pytmc' := '
-        pv: PLC:TST:MOT:SIM:01
-        field: DESC Simulated Working Motor
-    '}
-    M1: DUT_MotionStage;
-    fbMotion1: FB_MotionStageSim;
-
-    // Simulated motor that is never allowed to move
-    {attribute 'pytmc' := '
-        pv: PLC:TST:MOT:SIM:02
-        field: DESC Simulated Broken Motor
-    '}
-    M2: DUT_MotionStage;
-    fbMotion2: FB_MotionStage;
-
-    // Simulated motor with limits at 0 and 100
-    {attribute 'pytmc' := '
-        pv: PLC:TST:MOT:SIM:03
-        field: DESC Simulated Working Motor With Limits
-    '}
-    M3: DUT_MotionStage;
-    fbMotion3: FB_MotionStage;
-END_VAR
-fbMotion1(stMotionStage := M1);
-fbMotion2(stMotionStage := M2);
-fbMotion3(stMotionStage := M3);
-M3.bHardwareEnable := TRUE;
-M3.bPowerSelf := TRUE;
-M3.bLimitForwardEnable := M3.Axis.NcToPlc.ActPos < 99.7;
-M3.bLimitBackwardEnable := M3.Axis.NcToPlc.ActPos > 0.2;
-
-END_PROGRAM
-```
-
-
-Symbols
--------
-
-    Constants.CompilerVersion : VERSION (4816736 64)
-    Constants.CompilerVersionNumeric : DWORD (4816832 32)
-    Constants.RuntimeVersion : VERSION (4816672 64)
-    Constants.RuntimeVersionNumeric : DWORD (4816800 32)
-    Constants.bFPUSupport : BOOL (4310768 8)
-    Constants.bLittleEndian : BOOL (4301040 8)
-    Constants.bSimulationMode : BOOL (4301048 8)
-    Constants.nPackMode : UINT (4310752 16)
-    Constants.nRegisterSize : WORD (4302736 16)
-    Global_Variables.ADSIGRP_DEVICE_DATA : UDINT (4097664 32)
-    Global_Variables.ADSIGRP_IOIMAGE_CLEARI : UDINT (4097568 32)
-    Global_Variables.ADSIGRP_IOIMAGE_CLEARO : UDINT (4097600 32)
-    Global_Variables.ADSIGRP_IOIMAGE_RISIZE : UDINT (4097440 32)
-    Global_Variables.ADSIGRP_IOIMAGE_ROSIZE : UDINT (4097536 32)
-    Global_Variables.ADSIGRP_IOIMAGE_RWIB : UDINT (4097376 32)
-    Global_Variables.ADSIGRP_IOIMAGE_RWIOB : UDINT (4097632 32)
-    Global_Variables.ADSIGRP_IOIMAGE_RWIX : UDINT (4097408 32)
-    Global_Variables.ADSIGRP_IOIMAGE_RWOB : UDINT (4097472 32)
-    Global_Variables.ADSIGRP_IOIMAGE_RWOX : UDINT (4097504 32)
-    Global_Variables.ADSIGRP_SYMNAME : UDINT (4096960 32)
-    Global_Variables.ADSIGRP_SYMNOTE : UDINT (4097344 32)
-    Global_Variables.ADSIGRP_SYMTAB : UDINT (4096928 32)
-    Global_Variables.ADSIGRP_SYMVAL : UDINT (4096992 32)
-    Global_Variables.ADSIGRP_SYM_DOWNLOAD : UDINT (4097248 32)
-    Global_Variables.ADSIGRP_SYM_HNDBYNAME : UDINT (4097024 32)
-    Global_Variables.ADSIGRP_SYM_INFOBYNAME : UDINT (4097152 32)
-    Global_Variables.ADSIGRP_SYM_INFOBYNAMEEX : UDINT (4097216 32)
-    Global_Variables.ADSIGRP_SYM_RELEASEHND : UDINT (4097120 32)
-    Global_Variables.ADSIGRP_SYM_UPLOAD : UDINT (4097280 32)
-    Global_Variables.ADSIGRP_SYM_UPLOADINFO : UDINT (4097312 32)
-    Global_Variables.ADSIGRP_SYM_VALBYHND : UDINT (4097088 32)
-    Global_Variables.ADSIGRP_SYM_VALBYNAME : UDINT (4097056 32)
-    Global_Variables.ADSIGRP_SYM_VERSION : UDINT (4097184 32)
-    Global_Variables.ADSIOFFS_DEVDATA_ADSSTATE : UDINT (4097696 32)
-    Global_Variables.ADSIOFFS_DEVDATA_DEVSTATE : UDINT (4097728 32)
-    Global_Variables.ADSLOG_MSGTYPE_ERROR : DWORD (4098784 32)
-    Global_Variables.ADSLOG_MSGTYPE_HINT : DWORD (4098720 32)
-    Global_Variables.ADSLOG_MSGTYPE_LOG : DWORD (4098816 32)
-    Global_Variables.ADSLOG_MSGTYPE_MSGBOX : DWORD (4098848 32)
-    Global_Variables.ADSLOG_MSGTYPE_RESOURCE : DWORD (4098880 32)
-    Global_Variables.ADSLOG_MSGTYPE_STRING : DWORD (4098912 32)
-    Global_Variables.ADSLOG_MSGTYPE_WARN : DWORD (4098752 32)
-    Global_Variables.ADSSTATE_CONFIG : UINT (4096832 16)
-    Global_Variables.ADSSTATE_ERROR : UINT (4096768 16)
-    Global_Variables.ADSSTATE_EXCEPTION : UINT (4096896 16)
-    Global_Variables.ADSSTATE_IDLE : UINT (4096608 16)
-    Global_Variables.ADSSTATE_INCOMPATIBLE : UINT (4096880 16)
-    Global_Variables.ADSSTATE_INIT : UINT (4096640 16)
-    Global_Variables.ADSSTATE_INVALID : UINT (4096592 16)
-    Global_Variables.ADSSTATE_LOADCFG : UINT (4096720 16)
-    Global_Variables.ADSSTATE_MAXSTATES : UINT (4096912 16)
-    Global_Variables.ADSSTATE_POWERFAILURE : UINT (4096736 16)
-    Global_Variables.ADSSTATE_POWERGOOD : UINT (4096752 16)
-    Global_Variables.ADSSTATE_RECONFIG : UINT (4096848 16)
-    Global_Variables.ADSSTATE_RESET : UINT (4096624 16)
-    Global_Variables.ADSSTATE_RESUME : UINT (4096816 16)
-    Global_Variables.ADSSTATE_RUN : UINT (4096672 16)
-    Global_Variables.ADSSTATE_SAVECFG : UINT (4096704 16)
-    Global_Variables.ADSSTATE_SHUTDOWN : UINT (4096784 16)
-    Global_Variables.ADSSTATE_START : UINT (4096656 16)
-    Global_Variables.ADSSTATE_STOP : UINT (4096688 16)
-    Global_Variables.ADSSTATE_STOPPING : UINT (4096864 16)
-    Global_Variables.ADSSTATE_SUSPEND : UINT (4096800 16)
-    Global_Variables.AMSLOGGER_IGR_GENERAL : UDINT (4164512 32)
-    Global_Variables.AMSLOGGER_IOF_MODE : UDINT (4164544 32)
-    Global_Variables.AMSPORT_AMSLOGGER : UINT (4163248 16)
-    Global_Variables.AMSPORT_EVENTLOG : UINT (4096304 16)
-    Global_Variables.AMSPORT_LOGGER : UINT (4096288 16)
-    Global_Variables.AMSPORT_R0_CAM : UINT (4096528 16)
-    Global_Variables.AMSPORT_R0_CAMTOOL : UINT (4096544 16)
-    Global_Variables.AMSPORT_R0_CNC : UINT (4096416 16)
-    Global_Variables.AMSPORT_R0_IO : UINT (4096336 16)
-    Global_Variables.AMSPORT_R0_ISG : UINT (4096400 16)
-    Global_Variables.AMSPORT_R0_LINE : UINT (4096432 16)
-    Global_Variables.AMSPORT_R0_NC : UINT (4096352 16)
-    Global_Variables.AMSPORT_R0_NCSAF : UINT (4096368 16)
-    Global_Variables.AMSPORT_R0_NCSVB : UINT (4096384 16)
-    Global_Variables.AMSPORT_R0_PLC : UINT (4096448 16)
-    Global_Variables.AMSPORT_R0_PLC_RTS1 : UINT (4096464 16)
-    Global_Variables.AMSPORT_R0_PLC_RTS2 : UINT (4096480 16)
-    Global_Variables.AMSPORT_R0_PLC_RTS3 : UINT (4096496 16)
-    Global_Variables.AMSPORT_R0_PLC_RTS4 : UINT (4096512 16)
-    Global_Variables.AMSPORT_R0_RTIME : UINT (4096320 16)
-    Global_Variables.AMSPORT_R3_SCOPESERVER : UINT (4096576 16)
-    Global_Variables.AMSPORT_R3_SYSSERV : UINT (4096560 16)
-    Global_Variables.BOOTDATAFLAGS_PERSISTENT_INVALID : BYTE (4098976 8)
-    Global_Variables.BOOTDATAFLAGS_PERSISTENT_LOADED : BYTE (4098968 8)
-    Global_Variables.BOOTDATAFLAGS_RETAIN_INVALID : BYTE (4098952 8)
-    Global_Variables.BOOTDATAFLAGS_RETAIN_LOADED : BYTE (4098944 8)
-    Global_Variables.BOOTDATAFLAGS_RETAIN_REQUESTED : BYTE (4098960 8)
-    Global_Variables.DATE_AND_TIME_SECPERDAY : DWORD (4177472 32)
-    Global_Variables.DATE_AND_TIME_SECPERWEEK : DWORD (4177504 32)
-    Global_Variables.DBG_OUTPUT_FILE : DWORD (4183776 32)
-    Global_Variables.DBG_OUTPUT_LOG : DWORD (4183744 32)
-    Global_Variables.DBG_OUTPUT_NONE : DWORD (4183712 32)
-    Global_Variables.DBG_OUTPUT_VISU : DWORD (4183808 32)
-    Global_Variables.DEFAULT_ADS_TIMEOUT : TIME (4099712 32)
-    Global_Variables.DEFAULT_BACKLASHVALUE : LREAL (4310848 64)
-    Global_Variables.DEFAULT_CSV_FIELD_DOUBLE_QUOTE : BYTE (4300976 8)
-    Global_Variables.DEFAULT_CSV_FIELD_SEP : BYTE (4101240 8)
-    Global_Variables.DEFAULT_CSV_RECORD_SEP_CR : BYTE (4300984 8)
-    Global_Variables.DEFAULT_CSV_RECORD_SEP_LF : BYTE (4300992 8)
-    Global_Variables.DEFAULT_HOME_POSITION : LREAL (4310784 64)
-    Global_Variables.EMPTY_ARG_VALUE : lcls_twincat_motion.Tc2_Utilities.T_Arg (4165120 96)
-    Global_Variables.EMPTY_GUID_REGSTRING : STRING(38) (4303176 312)
-    Global_Variables.EMPTY_GUID_STRING : STRING(36) (4302880 296)
-    Global_Variables.EMPTY_GUID_STRUCT : GUID (4302752 128)
-    Global_Variables.EMPTY_ROUTE_ENTRY : lcls_twincat_motion.Tc2_Utilities.ST_AmsRouteEntry (4163264 1184)
-    Global_Variables.FLOATREC_EXP_IS_INF : INT (4164608 16)
-    Global_Variables.FLOATREC_EXP_IS_NAN : INT (4164592 16)
-    Global_Variables.FLOATREC_MAX_DIGITS : INT (4164624 16)
-    Global_Variables.FLOATREC_MAX_PRECISION : INT (4164640 16)
-    Global_Variables.FLOATREC_MIN_PRECISION : INT (4164656 16)
-    Global_Variables.FMTERR_ARGTYPEINVALID : DWORD (4164960 32)
-    Global_Variables.FMTERR_ASTERISKPOSITION : DWORD (4164736 32)
-    Global_Variables.FMTERR_DESTBUFFOVERFLOW : DWORD (4165056 32)
-    Global_Variables.FMTERR_FLAGPOSITION : DWORD (4164832 32)
-    Global_Variables.FMTERR_INSUFFICIENTARGS : DWORD (4165024 32)
-    Global_Variables.FMTERR_INVALIDPOINTERINPUT : DWORD (4165088 32)
-    Global_Variables.FMTERR_NOERROR : DWORD (4164672 32)
-    Global_Variables.FMTERR_PERCENTSIGNPOSITION : DWORD (4164704 32)
-    Global_Variables.FMTERR_PRECISIONDOTPOSITION : DWORD (4164896 32)
-    Global_Variables.FMTERR_PRECISIONVALUE : DWORD (4164800 32)
-    Global_Variables.FMTERR_TYPEFIELDVALUE : DWORD (4164928 32)
-    Global_Variables.FMTERR_UNACCEPTEDPARAMETER : DWORD (4164992 32)
-    Global_Variables.FMTERR_WIDTHPRECISIONVALPOS : DWORD (4164864 32)
-    Global_Variables.FMTERR_WIDTHVALUE : DWORD (4164768 32)
-    Global_Variables.FOPEN_MODEAPPEND : DWORD (4099072 32)
-    Global_Variables.FOPEN_MODEBINARY : DWORD (4099136 32)
-    Global_Variables.FOPEN_MODEPLUS : DWORD (4099104 32)
-    Global_Variables.FOPEN_MODEREAD : DWORD (4099008 32)
-    Global_Variables.FOPEN_MODETEXT : DWORD (4099168 32)
-    Global_Variables.FOPEN_MODEWRITE : DWORD (4099040 32)
-    Global_Variables.FORMAT_DECASC_CODES : ARRAY[0..9] OF BYTE (4165472 80)
-    Global_Variables.FORMAT_HEXASC_CODES : ARRAY[0..1] OF BYTE (4165216 256)
-    Global_Variables.FORMAT_MAX_ARGS : INT (4164576 16)
-    Global_Variables.GLOBAL_DCF77_PULSE_SPLIT : TIME (4101248 32)
-    Global_Variables.GLOBAL_DCF77_SEQUENCE_CHECK : BOOL (4101232 8)
-    Global_Variables.GLOBAL_FORMAT_HASH_PREFIX_TYPE : lcls_twincat_motion.Tc2_Utilities.E_HashPrefixTypes (4101200 16)
-    Global_Variables.GLOBAL_SBCS_TABLE : lcls_twincat_motion.Tc2_Utilities.E_SBCSType (4101216 16)
-    Global_Variables.HKEY_MAX_BINARY_DATA_SIZE : UDINT (4164480 32)
-    Global_Variables.IPHELPERAPI_ADAPTERSINFO : UDINT (4162912 32)
-    Global_Variables.IPHELPERAPI_IPADDRBYHOSTNAME : UDINT (4162944 32)
-    Global_Variables.MAX_ADAPTER_ADDRESS_LENGTH : UDINT (4162816 32)
-    Global_Variables.MAX_ADAPTER_DESCRIPTION_LENGTH : UDINT (4162784 32)
-    Global_Variables.MAX_ADAPTER_NAME_LENGTH : UDINT (4162752 32)
-    Global_Variables.MAX_AVERAGE_MEASURES : INT (4101184 16)
-    Global_Variables.MAX_LOCAL_ADAPTERS : UDINT (4162976 32)
-    Global_Variables.MAX_REMOTE_PCS : INT (4163104 16)
-    Global_Variables.MAX_ROUTE_ADDR_LEN : BYTE (4163128 8)
-    Global_Variables.MAX_ROUTE_NAME_LEN : BYTE (4163120 8)
-    Global_Variables.MAX_ROUTE_TRANSPORT : BYTE (4163240 8)
-    Global_Variables.MAX_STRING_LENGTH : UDINT (4099744 32)
-    Global_Variables.MIN_ROUTE_TRANSPORT : BYTE (4163232 8)
-    Global_Variables.PI : LREAL (4099648 64)
-    Global_Variables.ROUTE_FLAG_DYNAMIC : DWORD (4163168 32)
-    Global_Variables.ROUTE_FLAG_NOOVERRIDE : DWORD (4163200 32)
-    Global_Variables.ROUTE_FLAG_TEMPORARY : DWORD (4163136 32)
-    Global_Variables.SYSTEMSERVICE_ADDREMOTE : UDINT (4163008 32)
-    Global_Variables.SYSTEMSERVICE_CHANGENETID : UDINT (4098528 32)
-    Global_Variables.SYSTEMSERVICE_CLOSEHANDLE : UDINT (4097888 32)
-    Global_Variables.SYSTEMSERVICE_CREATEFILE : UDINT (4097856 32)
-    Global_Variables.SYSTEMSERVICE_DELREMOTE : UDINT (4163040 32)
-    Global_Variables.SYSTEMSERVICE_ENUMREMOTE : UDINT (4163072 32)
-    Global_Variables.SYSTEMSERVICE_FCLOSE : UDINT (4097952 32)
-    Global_Variables.SYSTEMSERVICE_FDELETE : UDINT (4098272 32)
-    Global_Variables.SYSTEMSERVICE_FEOF : UDINT (4098240 32)
-    Global_Variables.SYSTEMSERVICE_FFILEFIND : UDINT (4164448 32)
-    Global_Variables.SYSTEMSERVICE_FGETS : UDINT (4098112 32)
-    Global_Variables.SYSTEMSERVICE_FOPEN : UDINT (4097920 32)
-    Global_Variables.SYSTEMSERVICE_FPRINTF : UDINT (4098208 32)
-    Global_Variables.SYSTEMSERVICE_FPUTS : UDINT (4098144 32)
-    Global_Variables.SYSTEMSERVICE_FREAD : UDINT (4097984 32)
-    Global_Variables.SYSTEMSERVICE_FRENAME : UDINT (4098304 32)
-    Global_Variables.SYSTEMSERVICE_FSCANF : UDINT (4098176 32)
-    Global_Variables.SYSTEMSERVICE_FSEEK : UDINT (4098048 32)
-    Global_Variables.SYSTEMSERVICE_FTELL : UDINT (4098080 32)
-    Global_Variables.SYSTEMSERVICE_FWRITE : UDINT (4098016 32)
-    Global_Variables.SYSTEMSERVICE_IPHELPERAPI : UDINT (4162848 32)
-    Global_Variables.SYSTEMSERVICE_IPHOSTNAME : UDINT (4162880 32)
-    Global_Variables.SYSTEMSERVICE_MKDIR : UDINT (4098336 32)
-    Global_Variables.SYSTEMSERVICE_OPENCREATE : UDINT (4097760 32)
-    Global_Variables.SYSTEMSERVICE_OPENREAD : UDINT (4097792 32)
-    Global_Variables.SYSTEMSERVICE_OPENWRITE : UDINT (4097824 32)
-    Global_Variables.SYSTEMSERVICE_REG_HKEYLOCALMACHINE : UDINT (4098400 32)
-    Global_Variables.SYSTEMSERVICE_RMDIR : UDINT (4098368 32)
-    Global_Variables.SYSTEMSERVICE_SENDEMAIL : UDINT (4098432 32)
-    Global_Variables.SYSTEMSERVICE_STARTPROCESS : UDINT (4098496 32)
-    Global_Variables.SYSTEMSERVICE_TIMESERVICES : UDINT (4098464 32)
-    Global_Variables.SYSTEMSTATEFLAGS_BSOD : BYTE (4098984 8)
-    Global_Variables.SYSTEMSTATEFLAGS_RTVIOLATION : BYTE (4098992 8)
-    Global_Variables.SYSTEMTIME_DATEDELTA_OFFSET : DWORD (4171808 32)
-    Global_Variables.SYSTEMTIME_DATE_AND_TIME_MAX : lcls_twincat_motion.Tc2_Utilities.T_ULARGE_INTEGER (4172096 64)
-    Global_Variables.SYSTEMTIME_DATE_AND_TIME_MAX64 : ULINT (4172416 64)
-    Global_Variables.SYSTEMTIME_DATE_AND_TIME_MIN : lcls_twincat_motion.Tc2_Utilities.T_ULARGE_INTEGER (4172032 64)
-    Global_Variables.SYSTEMTIME_DATE_AND_TIME_MIN64 : ULINT (4172352 64)
-    Global_Variables.SYSTEMTIME_MAX_MONTHDAYS : ARRAY[0..1] OF WORD (4170960 384)
-    Global_Variables.SYSTEMTIME_MAX_YEARSDAY : ARRAY[0..1] OF WORD (4171344 448)
-    Global_Variables.SYSTEMTIME_TICKSPERDAY : lcls_twincat_motion.Tc2_Utilities.T_ULARGE_INTEGER (4171968 64)
-    Global_Variables.SYSTEMTIME_TICKSPERDAY64 : ULINT (4172288 64)
-    Global_Variables.SYSTEMTIME_TICKSPERMSEC : lcls_twincat_motion.Tc2_Utilities.T_ULARGE_INTEGER (4171840 64)
-    Global_Variables.SYSTEMTIME_TICKSPERMSEC64 : ULINT (4172160 64)
-    Global_Variables.SYSTEMTIME_TICKSPERSEC : lcls_twincat_motion.Tc2_Utilities.T_ULARGE_INTEGER (4171904 64)
-    Global_Variables.SYSTEMTIME_TICKSPERSEC64 : ULINT (4172224 64)
-    Global_Variables.TCEVENTFLAG_AUTOFMTALL : WORD (4099504 16)
-    Global_Variables.TCEVENTFLAG_FMTSELF : WORD (4099440 16)
-    Global_Variables.TCEVENTFLAG_LOG : WORD (4099456 16)
-    Global_Variables.TCEVENTFLAG_MSGBOX : WORD (4099472 16)
-    Global_Variables.TCEVENTFLAG_PRIOCLASS : WORD (4099424 16)
-    Global_Variables.TCEVENTFLAG_SRCID : WORD (4099488 16)
-    Global_Variables.TCEVENTSTATE_CONFIRMED : WORD (4099568 16)
-    Global_Variables.TCEVENTSTATE_INVALID : WORD (4099520 16)
-    Global_Variables.TCEVENTSTATE_RESET : WORD (4099552 16)
-    Global_Variables.TCEVENTSTATE_RESETCON : WORD (4099584 16)
-    Global_Variables.TCEVENTSTATE_SIGNALED : WORD (4099536 16)
-    Global_Variables.TCEVENT_FMTPRGSIZE : INT (4099616 16)
-    Global_Variables.TCEVENT_SRCNAMESIZE : INT (4099600 16)
-    Global_Variables.TIMESERVICE_ADJUSTTIMETORTC : UDINT (4098656 32)
-    Global_Variables.TIMESERVICE_DATEANDTIME : UDINT (4098560 32)
-    Global_Variables.TIMESERVICE_RTCTIMEDIFF : UDINT (4098624 32)
-    Global_Variables.TIMESERVICE_SYSTEMTIMES : UDINT (4098592 32)
-    Global_Variables.TIMESERVICE_TIMEZONINFORMATION : UDINT (4098688 32)
-    Global_Variables.TcMcGlobal : lcls_twincat_motion.Tc2_MC2._TCMCGLOBAL (4303776 6976)
-    Global_Variables.WEST_EUROPE_TZI : lcls_twincat_motion.Tc2_Utilities.ST_TimeZoneInformation (4172480 864)
-    Global_Variables.eWatchdogConfig : Tc2_System.E_WATCHDOG_TIME_CONFIG (4099632 16)
-    Global_Variables.nWatchdogTime : BYTE (4099000 8)
-    Global_Version.stLibVersion_Tc2_MC2 : ST_LibVersion (4303488 288)
-    Global_Version.stLibVersion_Tc2_Math : ST_LibVersion (4310912 288)
-    Global_Version.stLibVersion_Tc2_System : ST_LibVersion (4096000 288)
-    Global_Version.stLibVersion_Tc2_Utilities : ST_LibVersion (4100896 288)
-    Global_Version.stLibVersion_Tc3_Module : ST_LibVersion (4100288 288)
-    Main.M1 : lcls_twincat_motion.DUT_MotionStage (4322560 11264)
-    Main.M1.Axis.NcToPlc : NCTOPLC_AXIS_REF (4323648 2048)
-    Main.M1.Axis.PlcToNc : PLCTONC_AXIS_REF (4322624 1024)
-    Main.M1.bBrakeRelease : BOOL (4331608 8)
-    Main.M1.bHardwareEnable : BOOL (4331616 8)
-    Main.M1.bHome : BOOL (4331600 8)
-    Main.M1.bLimitBackwardEnable : BOOL (4331592 8)
-    Main.M1.bLimitForwardEnable : BOOL (4331584 8)
-    Main.M2 : lcls_twincat_motion.DUT_MotionStage (4486528 11264)
-    Main.M2.Axis.NcToPlc : NCTOPLC_AXIS_REF (4487616 2048)
-    Main.M2.Axis.PlcToNc : PLCTONC_AXIS_REF (4486592 1024)
-    Main.M2.bBrakeRelease : BOOL (4495576 8)
-    Main.M2.bHardwareEnable : BOOL (4495584 8)
-    Main.M2.bHome : BOOL (4495568 8)
-    Main.M2.bLimitBackwardEnable : BOOL (4495560 8)
-    Main.M2.bLimitForwardEnable : BOOL (4495552 8)
-    Main.M3 : lcls_twincat_motion.DUT_MotionStage (4650368 11264)
-    Main.M3.Axis.NcToPlc : NCTOPLC_AXIS_REF (4651456 2048)
-    Main.M3.Axis.PlcToNc : PLCTONC_AXIS_REF (4650432 1024)
-    Main.M3.bBrakeRelease : BOOL (4659416 8)
-    Main.M3.bHardwareEnable : BOOL (4659424 8)
-    Main.M3.bHome : BOOL (4659408 8)
-    Main.M3.bLimitBackwardEnable : BOOL (4659400 8)
-    Main.M3.bLimitForwardEnable : BOOL (4659392 8)
-    Main.fbMotion1 : lcls_twincat_motion.FB_MotionStageSim (4333824 152704)
-    Main.fbMotion1.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (4336384 2048)
-    Main.fbMotion1.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (4335360 1024)
-    Main.fbMotion2 : lcls_twincat_motion.FB_MotionStage (4497792 152576)
-    Main.fbMotion2.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (4500288 2048)
-    Main.fbMotion2.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (4499264 1024)
-    Main.fbMotion3 : lcls_twincat_motion.FB_MotionStage (4661632 152576)
-    Main.fbMotion3.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (4664128 2048)
-    Main.fbMotion3.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (4663104 1024)
-    TwinCAT_SystemInfoVarList._AppInfo : PlcAppSystemInfo (4816864 2048)
-    TwinCAT_SystemInfoVarList._TaskInfo : ARRAY[1..1] OF PlcTaskSystemInfo (4818944 1024)
-    TwinCAT_SystemInfoVarList._TaskOid_PlcTask : OTCID (4819968 32)
-    TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask : OTCID (4818912 32)
-    TwinCAT_SystemInfoVarList.__PlcTask : _Implicit_Task_Info (4820000 704)
-
 Boxes
 -----
 
 NC axes
 -------
-
-    1.) 'Example 1 Simulated Working':
-        Id = 1
-        CreateSymbols = 'true'
-        AxisType = 1
-        AxisFolder = 'Example Axes'
-        OtherSettings:AllowMotionCmdToSlave = 'true'
-        Enc:EncType = 1
-
-    2.) 'Example 2 Simulated Broken':
-        Id = 2
-        CreateSymbols = 'true'
-        AxisType = 1
-        AxisFolder = 'Example Axes'
-        OtherSettings:AllowMotionCmdToSlave = 'true'
-        Enc:EncType = 1
-
-    3.) 'Example 3 Simulated Limits':
-        Id = 3
-        CreateSymbols = 'true'
-        AxisType = 1
-        AxisFolder = 'Example Axes'
-        OtherSettings:AllowMotionCmdToSlave = 'true'
-        Enc:EncType = 1
-        Enc:SoftEndMinControl:Enable = 'true'
-        Enc:SoftEndMaxControl:Enable = 'true'
-        Enc:SoftEndMaxControl:Range = 100
 
     4.) 'Library 1':
         Id = 4
@@ -7226,23 +6865,11 @@ Links
           B ('TINC^NC-Task 1 SAF^Axes^Library 2', 'Outputs^ToPlc')
     4.) A ('Library Instance', 'PlcTask Outputs^BasicTests.Motor.Axis.PlcToNc')
           B ('TINC^NC-Task 1 SAF^Axes^Library 2', 'Inputs^FromPlc')
-    5.) A ('Example Instance', 'PlcTask Inputs^Main.M1.Axis.NcToPlc')
-          B ('TINC^NC-Task 1 SAF^Axes^Example 1 Simulated Working', 'Outputs^ToPlc')
-    6.) A ('Example Instance', 'PlcTask Outputs^Main.M1.Axis.PlcToNc')
-          B ('TINC^NC-Task 1 SAF^Axes^Example 1 Simulated Working', 'Inputs^FromPlc')
-    7.) A ('Example Instance', 'PlcTask Inputs^Main.M2.Axis.NcToPlc')
-          B ('TINC^NC-Task 1 SAF^Axes^Example 2 Simulated Broken', 'Outputs^ToPlc')
-    8.) A ('Example Instance', 'PlcTask Outputs^Main.M2.Axis.PlcToNc')
-          B ('TINC^NC-Task 1 SAF^Axes^Example 2 Simulated Broken', 'Inputs^FromPlc')
-    9.) A ('Example Instance', 'PlcTask Inputs^Main.M3.Axis.NcToPlc')
-          B ('TINC^NC-Task 1 SAF^Axes^Example 3 Simulated Limits', 'Outputs^ToPlc')
-    10.) A ('Example Instance', 'PlcTask Outputs^Main.M3.Axis.PlcToNc')
-          B ('TINC^NC-Task 1 SAF^Axes^Example 3 Simulated Limits', 'Inputs^FromPlc')
 
 Pragma lint results
 -------------------
 ```
-INFO:pytmc.bin.pragmalint:Total pragmas found: 111 Total linter errors: 0
+INFO:pytmc.bin.pragmalint:Total pragmas found: 108 Total linter errors: 0
 PLC Project (1): Library
 ========================
 
@@ -7359,14 +6986,5 @@ Version/Global_Version.TcGVL (TcPlcObject)
 ------------------------------------------
 
     - Global_Version: Declaration - 3 pragmas
-
-PLC Project (2): Example
-========================
-
-
-POUs/Main.TcPOU (TcPlcObject)
------------------------------
-
-    - Main: Declaration - 3 pragmas
 
 ```
