@@ -1,13 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.0.36">
-  <POU Name="MAIN" Id="{1f314313-d09b-4c20-80db-7ead9994caa1}">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="MAIN" Id="{1f314313-d09b-4c20-80db-7ead9994caa1}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
-END_VAR
-]]>
-    </Declaration>
+    // Top-level Motion Folder
+    fbMotionPneumaticActuator_Test: FB_MotionPneumaticActuator_Test;
+    fbMotionRequest_Test: FB_MotionRequest_Test;
+    fbMotionStage_Test: FB_MotionStage_Test;
+    fbMotionStageSim_Test: FB_MotionStageSim_Test;
+
+    // Gantry Folder
+    fbGantryAutoCoupling_Test: FB_GantryAutoCoupling_Test;
+    fbGantryDiffVirtualLimitSwitch_Test: FB_GantryDiffVirtualLimitSwitch_Test;
+
+    // States Folder
+    fbAtPositionState_Test: FB_AtPositionState_Test;
+    fbEpicsInOut_Test: FB_EpicsInOut_Test;
+    fbPositionStateLock_Test: FB_PositionStateLock_Test;
+    fbPositionStateManager_Test: FB_PositionStateManager_Test;
+    fbPositionStateMove_Test: FB_PositionStateMove_Test;
+
+    // Utils Folder
+    fbMotionErrorCodeLookup_Test: FB_MotionErrorCodeLookup_Test;
+    fbSetEnables_Test: FB_SetEnables_Test;
+END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[TcUnit.RUN();]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
