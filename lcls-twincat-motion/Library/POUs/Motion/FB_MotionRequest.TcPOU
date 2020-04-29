@@ -48,6 +48,7 @@ VAR
     nState: UINT := 0;
     bMyMove: BOOL;
     bCausedError: BOOL;
+    bInit: BOOL;
 END_VAR
 // Define local constants for our state machine states
 VAR CONSTANT
@@ -64,7 +65,7 @@ VAR CONSTANT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[rtExec(CLK:=bExecute);
+      <ST><![CDATA[rtExec(CLK:=bExecute AND bInit);
 ftExec(CLK:=bExecute);
 rtReset(CLK:=bReset);
 
@@ -82,6 +83,7 @@ END_IF
 CASE nState OF
     // Start by setting everything to a known value
     INIT:
+        bInit := TRUE;
         nState := WAIT_EXEC;
         bError := FALSE;
         sErrorMessage := '';
