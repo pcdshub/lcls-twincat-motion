@@ -2,17 +2,70 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_MotionRequest_Test" Id="{772b26f2-3407-4284-a097-21e311181370}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionRequest_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Verify that FB_MotionRequest works and is a suitable
+    test proxy for FB_MotionStage
+*)
 VAR
-    Expected: BOOL := True;
-    Actual: BOOL;
+    fbMotionSettings: FB_MotionStageSim_Settings;
+    fbMotionReset: FB_MotionStage_Reset;
+    fbMotionRequest: FB_MotionRequest;
+    tonTimeout: TON;
+    fGoal: LREAL := 50;
+    nStep: INT := SETUP;
 END_VAR
-]]></Declaration>
+VAR CONSTANT
+    SETUP: INT := 0;
+    RUN: INT := 1;
+    CHECK: INT := 2;
+END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[TEST('FB_MotionRequest_Test Dummy Test');
-AssertEquals(Expected := Expected,
-             Actual := Actual,
-             Message := 'Error Message');
-TEST_FINISHED();]]></ST>
+      <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Basic Motion');
+        fbMotionSettings(stMotionStage:=SIM.stBasicMotor);
+        fbMotionReset(
+            stMotionStage:=SIM.stBasicMotor,
+            bExecute:=TRUE);
+        IF fbMotionReset.bDone THEN
+            AssertFalse(
+                Condition:=SIM.stBasicMotor.bError,
+                Message:='DUT_MotionStage had an error before we started!');
+            fGoal := SIM.stBasicMotor.stAxisStatus.fActPosition + fGoal;
+            nStep := RUN;
+        END_IF
+    RUN:
+        fbMotionRequest(
+            stMotionStage:=SIM.stBasicMotor,
+            bExecute:=TRUE,
+            fPos:=fGoal,
+            fVel:=1000);
+
+        tonTimeout(
+            IN:=TRUE,
+            PT:=T#1s);
+
+        IF fbMotionRequest.bDone THEN
+            nStep := CHECK;
+        ELSIF tonTimeout.Q THEN
+            AssertTrue(
+                Condition:=FALSE,
+                Message:='Timeout during basic motion test!');
+            nStep := CHECK;
+        END_IF
+    CHECK:
+        AssertEquals(
+            Expected:=fGoal,
+            Actual:=SIM.stBasicMotor.stAxisStatus.fActPosition,
+            Message:='Failed to reach destination during basic motion test');
+        AssertFalse(
+            Condition:=fbMotionRequest.bError,
+            Message:='FB_MotionRequest had an error during basic motion test');
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.bError,
+            Message:='DUT_MotionStage had an error during basic motion test');
+        TEST_FINISHED();
+END_CASE]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
