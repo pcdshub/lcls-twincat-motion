@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MotionStage_Reset" Id="{1e5b6349-c87e-49e4-9cef-f77198780650}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStage_Reset
+(*
+    Reset a DUT_MotionStage and the associated NC
+    Axis to a "ready to move" state
+
+    This will stop the motor and clear all errors
+    This will not return the motor to a known position
+    This requires that an instance of FB_MotionStage is running
+*)
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+    // Reset on rising edge
+    bExecute: BOOL;
+END_VAR
+VAR_OUTPUT
+    // TRUE if we finished resetting
+    bDone: BOOL;
+    // TRUE if currently resetting
+    bBusy: BOOL;
+END_VAR
+VAR
+    rtExec: R_TRIG;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtExec(CLK:=bExecute);
+IF rtExec.Q THEN
+    stMotionStage.bReset := TRUE;
+    bBusy := TRUE;
+ELSIF bBusy THEN
+    bBusy := stMotionStage.bBusy;
+    bDone := NOT bBusy;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
