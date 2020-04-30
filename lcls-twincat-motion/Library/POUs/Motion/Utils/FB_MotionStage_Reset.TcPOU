@@ -28,6 +28,9 @@ VAR
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[rtExec(CLK:=bExecute);
+IF NOT bExecute THEN
+    bDone := FALSE;
+END_IF
 IF rtExec.Q THEN
     stMotionStage.bReset := TRUE;
     bBusy := TRUE;
