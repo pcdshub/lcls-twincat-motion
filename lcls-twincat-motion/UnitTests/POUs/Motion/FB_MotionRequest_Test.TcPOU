@@ -11,36 +11,70 @@ VAR
     fbMotionReset: FB_MotionStage_Reset;
     fbMotionRequest: FB_MotionRequest;
     tonTimeout: TON;
-    fGoal: LREAL := 50;
+    fGoal: LREAL;
     nStep: INT := SETUP;
+    nTest: INT := 1;
 END_VAR
 VAR CONSTANT
     SETUP: INT := 0;
     RUN: INT := 1;
     CHECK: INT := 2;
+    END: INT := 3;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[CASE nStep OF
-    SETUP:
-        TEST('FB_MotionRequest Basic Motion');
-        fbMotionSettings(stMotionStage:=SIM.stBasicMotor);
+      <ST><![CDATA[// Move on to the next test in the suite
+// This comes first because TEST_FINISHED with no new TEST in the same cycle ends the test suite
+IF nStep = END THEN
+    TEST_FINISHED();
+    nStep := SETUP;
+    nTest := nTest + 1;
+END_IF
+
+// Common setup/reset for all tests in suite
+IF nStep = SETUP THEN
+    fbMotionSettings(stMotionStage:=SIM.stBasicMotor);
+    // Reset always takes at least 2 cycles, so there is time for the specific test to set up too
+    fbMotionReset(
+        stMotionStage:=SIM.stBasicMotor,
+        bExecute:=TRUE);
+    // Also reset the timer
+    tonTimeout(IN:=FALSE);
+    IF fbMotionReset.bDone THEN
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.bError,
+            Message:='DUT_MotionStage had an error before we started!');
+        // Reset the reset
         fbMotionReset(
             stMotionStage:=SIM.stBasicMotor,
-            bExecute:=TRUE);
-        IF fbMotionReset.bDone THEN
-            AssertFalse(
-                Condition:=SIM.stBasicMotor.bError,
-                Message:='DUT_MotionStage had an error before we started!');
-            fGoal := SIM.stBasicMotor.stAxisStatus.fActPosition + fGoal;
-            nStep := RUN;
-        END_IF
+            bExecute:=FALSE);
+        // Move to arbitrary position that definitely is not the current position
+        fGoal := SIM.stBasicMotor.stAxisStatus.fActPosition + 50;
+        nStep := RUN;
+    END_IF
+END_IF
+
+// Do test-specific stuff
+CASE nTest OF
+    1:
+        ACT_TestBasic();
+    2:
+        ACT_TestError();
+END_CASE]]></ST>
+    </Implementation>
+    <Action Name="ACT_TestBasic" Id="{ebd83c9d-1899-42ff-a763-ed6f4336803e}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Basic Motion');
     RUN:
+        // Ask for a normal move
         fbMotionRequest(
             stMotionStage:=SIM.stBasicMotor,
             bExecute:=TRUE,
             fPos:=fGoal,
             fVel:=1000);
 
+        // Timer in case test stalls out
         tonTimeout(
             IN:=TRUE,
             PT:=T#1s);
@@ -48,24 +82,95 @@ END_VAR]]></Declaration>
         IF fbMotionRequest.bDone THEN
             nStep := CHECK;
         ELSIF tonTimeout.Q THEN
+
+            // Make sure a timeout is a fail
             AssertTrue(
                 Condition:=FALSE,
                 Message:='Timeout during basic motion test!');
+
             nStep := CHECK;
         END_IF
     CHECK:
+        // Did we get there?
         AssertEquals(
             Expected:=fGoal,
             Actual:=SIM.stBasicMotor.stAxisStatus.fActPosition,
             Message:='Failed to reach destination during basic motion test');
+
+        // Does the FB have an error?
         AssertFalse(
             Condition:=fbMotionRequest.bError,
             Message:='FB_MotionRequest had an error during basic motion test');
+
+        // Does the underlying DUT have an error?
         AssertFalse(
             Condition:=SIM.stBasicMotor.bError,
             Message:='DUT_MotionStage had an error during basic motion test');
-        TEST_FINISHED();
+
+        nStep := END;
 END_CASE]]></ST>
-    </Implementation>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_TestError" Id="{b4e84a89-403f-4bc7-8d65-46dd66e5f6c2}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Error Handling');
+    RUN:
+        // Ask for a very slow move
+        fbMotionRequest(
+            stMotionStage:=SIM.stBasicMotor,
+            bExecute:=TRUE,
+            fPos:=fGoal,
+            fVel:=0.01);
+
+        // Prepare to interrupt early
+        tonTimeout(
+            IN:=fbMotionRequest.bBusy,
+            PT:=T#100ms);
+
+        // Interrupt the move with an error
+        IF NOT SIM.stBasicMotor.bError THEN
+            IF tonTimeout.Q THEN
+                tonTimeout(IN:=FALSE);
+                SIM.stBasicMotor.bError := TRUE;
+                SIM.stBasicMotor.nErrorId := 16#4550;
+            END_IF
+        // Reuse the timer to wait for error propagation
+        ELSIF tonTimeout.Q THEN
+            tonTimeout(IN:=FALSE);
+            AssertTrue(
+                Condition:=fbMotionRequest.bError,
+                Message:='Error boolean did not propagate up');
+            AssertTrue(
+                Condition:=fbMotionRequest.nErrorId=16#4450,
+                Message:='Error code did not propagate up');
+            nStep := CHECK;
+        END_IF
+    CHECK:
+        // Does error reset propagate back downward?
+        fbMotionRequest(
+            stMotionStage:=SIM.stBasicMotor,
+            bReset:=TRUE);
+
+        // Don't run forever if the condition is never met
+        tonTimeout(
+            IN:=fbMotionRequest.bBusy,
+            PT:=T#1s);
+
+        IF NOT fbMotionRequest.bError THEN
+            AssertFalse(
+                Condition:=SIM.stBasicMotor.bError,
+                Message:='Error reset did not propagate down');
+            nStep := END;
+        ELSIF tonTimeout.Q THEN
+            AssertTrue(
+                Condition:=FALSE,
+                Message:='Timeout during error reset');
+            nStep := END;
+        END_IF
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
   </POU>
 </TcPlcObject>
