@@ -25,6 +25,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="GVLs" />
     <Folder Include="POUs\Motion\Utils" />
     <Folder Include="POUs\Motion\States" />
     <Folder Include="POUs\ImplicitChecks" />
@@ -49,6 +50,7 @@
     <Folder Include="tc_mca_std_lib\POUs\Hardware\Other" />
     <Folder Include="tc_mca_std_lib\POUs\Motion" />
     <Folder Include="tc_mca_std_lib\POUs\Motion\Homing" />
+    <Folder Include="UnitTests\Motion" />
     <Folder Include="Version" />
     <Folder Include="tc_mca_std_lib\DUTs" />
     <Folder Include="tc_mca_std_lib\POUs" />
@@ -91,6 +93,13 @@
     <Compile Include="DUTs\ST_RenishawAbsEnc.TcDUT">
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="GVLs\SIM.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Deprecated\FB_StatePTPMove.TcPOU">
       <SubType>Code</SubType>
@@ -309,6 +318,12 @@
     <Compile Include="UnitTests\Interactive.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="UnitTests\MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UnitTests\Motion\FB_MotionRequest_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Version\Global_Version.TcGVL">
       <SubType>Code</SubType>
     </Compile>
@@ -346,11 +361,21 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
+    <PlaceholderReference Include="TcUnit">
+      <DefaultResolution>TcUnit, * (www.tcunit.org)</DefaultResolution>
+      <Namespace>TcUnit</Namespace>
+      <Optional>true</Optional>
+    </PlaceholderReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Library.tmc">
       <SubType>Content</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderResolution Include="TcUnit">
+      <Resolution>TcUnit, * (www.tcunit.org)</Resolution>
+    </PlaceholderResolution>
   </ItemGroup>
   <ProjectExtensions>
     <PlcProjectOptions>
