@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{14B733B4-AD7B-F231-EB83-580AF23D93F8}" GeneratedBy="TwinCAT XAE Plc">
+<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{B2E75AE2-B684-1213-4A66-C3EE89B96251}" GeneratedBy="TwinCAT XAE Plc">
   <DataTypes>
     <DataType>
       <Name GUID="{18071995-0000-0000-0000-000000000041}" TcBaseType="true" HideSubItems="true" CName="AmsNetId">AMSNETID</Name>
@@ -22168,6 +22168,241 @@ External Setpoint Generation:
       </Properties>
     </DataType>
     <DataType>
+      <Name Namespace="Tc2_MC2">MC_ReadDriveAddress</Name>
+      <BitSize>3136</BitSize>
+      <SubItem>
+        <Name>Axis</Name>
+        <Type Namespace="Tc2_MC2" ReferenceTo="true">AXIS_REF</Type>
+        <Comment>Reference to an axis</Comment>
+        <BitSize>64</BitSize>
+        <BitOffs>64</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>Execute</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>128</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>Done</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>136</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>Busy</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>144</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>Error</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>152</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>ErrorID</Name>
+        <Type>UDINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>160</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>displaymode</Name>
+            <Value>hex</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>DriveAddress</Name>
+        <Type Namespace="Tc2_MC2">ST_DriveAddress</Type>
+        <BitSize>640</BitSize>
+        <BitOffs>192</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>state</Name>
+        <Type Namespace="Tc2_MC2">_E_TcMC_STATES</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>832</BitOffs>
+        <Default>
+          <Value>100</Value>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>TriggerExecute</Name>
+        <Type Namespace="Tc2_Standard">R_TRIG</Type>
+        <BitSize>96</BitSize>
+        <BitOffs>896</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbAdsRead</Name>
+        <Type Namespace="Tc2_System">ADSREAD</Type>
+        <BitSize>1408</BitSize>
+        <BitOffs>1024</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>readBuffer</Name>
+        <Type>BYTE</Type>
+        <ArrayInfo>
+          <LBound>0</LBound>
+          <Elements>64</Elements>
+        </ArrayInfo>
+        <BitSize>512</BitSize>
+        <BitOffs>2432</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>i</Name>
+        <Type>INT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>2944</BitOffs>
+        <Properties>
+          <Property>
+            <Name>conditionalshow</Name>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>LastAxisId</Name>
+        <Type>UDINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>3072</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>LastControlLoopIndex</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>3104</BitOffs>
+      </SubItem>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
+      <Name>FB_CauseNCError</Name>
+      <BitSize>4992</BitSize>
+      <SubItem>
+        <Name>Axis</Name>
+        <Type Namespace="Tc2_MC2" ReferenceTo="true">AXIS_REF</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>64</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bExecute</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>128</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nErrorCode</Name>
+        <Type>UDINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>160</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bBusy</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>192</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>rtExec</Name>
+        <Type Namespace="Tc2_Standard">R_TRIG</Type>
+        <BitSize>96</BitSize>
+        <BitOffs>256</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>rtDriveAddr</Name>
+        <Type Namespace="Tc2_Standard">R_TRIG</Type>
+        <BitSize>96</BitSize>
+        <BitOffs>384</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>adsWrite</Name>
+        <Type Namespace="Tc2_System">ADSWRITE</Type>
+        <BitSize>1344</BitSize>
+        <BitOffs>512</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>mcReadDriveAddress</Name>
+        <Type Namespace="Tc2_MC2">MC_ReadDriveAddress</Type>
+        <BitSize>3136</BitSize>
+        <BitOffs>1856</BitOffs>
+      </SubItem>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
       <Name>VERSION</Name>
       <BitSize>64</BitSize>
       <SubItem>
@@ -28354,6 +28589,12 @@ External Setpoint Generation:
             <BitOffs>8698240</BitOffs>
           </Symbol>
           <Symbol>
+            <Name>MAIN.fbCauseError</Name>
+            <BitSize>4992</BitSize>
+            <BaseType>FB_CauseNCError</BaseType>
+            <BitOffs>9007616</BitOffs>
+          </Symbol>
+          <Symbol>
             <Name>Global_Version.stLibVersion_lcls_twincat_motion</Name>
             <BitSize>288</BitSize>
             <BaseType GUID="{6F5942ED-BFA1-497D-8225-23C6DAAD0A09}">ST_LibVersion</BaseType>
@@ -28855,15 +29096,15 @@ External Setpoint Generation:
         </Property>
         <Property>
           <Name>ChangeDate</Name>
-          <Value>2020-04-30T13:49:25</Value>
+          <Value>2020-04-30T17:08:20</Value>
         </Property>
         <Property>
           <Name>GeneratedCodeSize</Name>
-          <Value>581632</Value>
+          <Value>585728</Value>
         </Property>
         <Property>
           <Name>GlobalDataSize</Name>
-          <Value>2248704</Value>
+          <Value>2252800</Value>
         </Property>
       </Properties>
     </Module>

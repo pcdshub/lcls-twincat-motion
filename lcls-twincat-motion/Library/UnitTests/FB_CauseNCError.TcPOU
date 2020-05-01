@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_CauseNCError" Id="{e3bbaf77-4a8b-41ac-91d3-26573b2f18e7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CauseNCError
+VAR_IN_OUT
+    Axis: AXIS_REF;
+END_VAR
+VAR_INPUT
+    bExecute: BOOL;
+    nErrorCode: UDINT;
+END_VAR
+VAR_OUTPUT
+    bBusy: BOOL;
+END_VAR
+VAR
+    rtExec: R_TRIG;
+    rtDriveAddr: R_TRIG;
+    adsWrite: ADSWRITE;
+    mcReadDriveAddress: MC_ReadDriveAddress;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtExec(CLK:=bExecute);
+rtDriveAddr(CLK:=mcReadDriveAddress.Done);
+IF rtExec.Q THEN
+    bBusy := TRUE;
+END_IF
+IF bBusy AND NOT mcReadDriveAddress.Done THEN
+    mcReadDriveAddress(
+        Axis:=Axis,
+        Execute:=TRUE,
+        DriveAddress=>Axis.DriveAddress);
+END_IF
+IF bBusy AND mcReadDriveAddress.Done THEN
+    bBusy := TRUE;
+    adsWrite(
+        //NETID:=Axis.DriveAddress.NetID,
+        PORT:=501,
+        IDXGRP:=16#4200 + Axis.DriveAddress.NcDriveId,
+        IDXOFFS:=16#0019,
+        LEN:=SIZEOF(nErrorCode),
+        SRCADDR:=ADR(nErrorCode),
+        WRITE:=TRUE,
+        BUSY=>bBusy);
+END_IF
+IF NOT bBusy THEN
+    adsWrite(WRITE:=FALSE);
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
