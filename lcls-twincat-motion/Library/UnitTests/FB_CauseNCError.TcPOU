@@ -11,16 +11,18 @@ VAR_INPUT
 END_VAR
 VAR_OUTPUT
     bBusy: BOOL;
+    bDone: BOOL;
 END_VAR
 VAR
     rtExec: R_TRIG;
-    rtDriveAddr: R_TRIG;
     adsWrite: ADSWRITE;
     mcReadDriveAddress: MC_ReadDriveAddress;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[rtExec(CLK:=bExecute);
-rtDriveAddr(CLK:=mcReadDriveAddress.Done);
+IF NOT bExecute THEN
+    bDone := FALSE;
+END_IF
 IF rtExec.Q THEN
     bBusy := TRUE;
 END_IF
@@ -40,9 +42,10 @@ IF bBusy AND mcReadDriveAddress.Done THEN
         SRCADDR:=ADR(nErrorCode),
         WRITE:=TRUE,
         BUSY=>bBusy);
-END_IF
-IF NOT bBusy THEN
-    adsWrite(WRITE:=FALSE);
+    IF NOT bBusy THEN
+        bDone := TRUE;
+        adsWrite(WRITE:=FALSE);
+    END_IF
 END_IF]]></ST>
     </Implementation>
   </POU>
