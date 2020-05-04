@@ -83,12 +83,15 @@ END_IF
 CASE nState OF
     // Start by setting everything to a known value
     INIT:
-        bInit := TRUE;
-        nState := WAIT_EXEC;
         bError := FALSE;
+        nErrorId := 0;
         sErrorMessage := '';
+        bBusy := FALSE;
         bDone := FALSE;
+        nState := WAIT_EXEC;
+        bMyMove := FALSE;
         bCausedError := FALSE;
+        bInit := TRUE;
     // Normal "waiting for move command" state
     WAIT_EXEC:
         bMyMove := FALSE;
