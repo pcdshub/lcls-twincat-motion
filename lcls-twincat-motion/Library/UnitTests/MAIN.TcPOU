@@ -2,6 +2,15 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="MAIN" Id="{636bfd8e-921f-4c53-bed2-b15c143b567a}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
+(*
+    Testing Suite for lcls-twincat-motion using TcUnit
+
+    Each test needs to be run over multiple cycles, contributing to the specialized structure here
+    Goals of the test design:
+    - 1:1 mapping between library FBs and test FBs
+    - Do as little as possible on each cycle to keep the logic dead simple
+    - Use TwinCAT actions to compartmentalize tests in a suite
+*)
 VAR
     // Standard function block that needs to run for all tests.
     fbMotion: FB_MotionStage;

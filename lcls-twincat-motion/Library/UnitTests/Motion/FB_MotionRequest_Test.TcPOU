@@ -15,27 +15,15 @@ VAR
     nStep: INT := SETUP;
     nTest: INT := 1;
     fGoal: LREAL;
+    fPos: LREAL;
     nError: UDINT;
 END_VAR
 VAR CONSTANT
     SETUP: INT := 0;
-    STEP_1: INT := 1;
-    STEP_2: INT := 2;
-    STEP_3: INT := 3;
-    STEP_4: INT := 4;
-    STEP_5: INT := 5;
-    END: INT := 100;
+    END: INT := -1;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Move on to the next test in the suite
-// This comes first instead of last because TEST_FINISHED with no new TEST in the same cycle ends the test suite
-IF nStep = END THEN
-    TEST_FINISHED();
-    nStep := SETUP;
-    nTest := nTest + 1;
-END_IF
-
-// Common setup/reset for all tests in suite
+      <ST><![CDATA[// Common setup/reset for all tests in suite
 ACT_Setup();
 
 // Do test-specific stuff
@@ -44,11 +32,150 @@ CASE nTest OF
         ACT_TestBasic();
     2:
         ACT_TestError();
+    3:
+        ACT_TestStop();
+    4:
+        ACT_TestWait();
+    5:
+        ACT_TestInterrupt();
+    6:
+        ACT_TestAbort();
+    7:
+        ACT_TestBystander();
 END_CASE]]></ST>
     </Implementation>
+    <Action Name="ACT_CheckGoal" Id="{497e19f6-5d4a-44b8-aaf0-870d6bdd45c4}">
+      <Implementation>
+        <ST><![CDATA[// Did we get there?
+AssertEquals(
+    Expected:=fGoal,
+    Actual:=SIM.stBasicMotor.stAxisStatus.fActPosition,
+    Message:='Failed to reach goal');
+
+// Does the FB have an error?
+AssertFalse(
+    Condition:=fbMotionRequest.bError,
+    Message:='FB_MotionRequest had an error during move to goal');
+
+// Does the underlying DUT have an error?
+AssertFalse(
+    Condition:=SIM.stBasicMotor.bError,
+    Message:='DUT_MotionStage had an error during move to goal');
+
+ACT_NextStep();]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_ErrorStep" Id="{fc64e0b4-65a5-489e-9ae4-ed21e500deb8}">
+      <Implementation>
+        <ST><![CDATA[fbCauseNCError(
+    Axis:=SIM.stBasicMotor.Axis,
+    bExecute:=TRUE,
+    nErrorCode:=nError);
+
+IF fbCauseNCError.bDone THEN
+    ACT_NextStep();
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_MoveExternal" Id="{4436a2a9-2e7c-4d92-a3b7-692e9d70a74d}">
+      <Implementation>
+        <ST><![CDATA[// Slow move without the MotionRequest block
+
+// Ask for a very slow move
+SIM.stBasicMotor.fPosition := fGoal;
+SIM.stBasicMotor.fVelocity := 0.01;
+SIM.stBasicMotor.bExecute := TRUE;
+
+// Prepare to interrupt early
+tonTimeout(
+    IN:=TRUE,
+    PT:=T#100ms);
+
+// Move to the next step at the interrupt timer
+IF tonTimeout.Q THEN
+    tonTimeout(IN:=FALSE);
+    ACT_NextStep();
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_MoveGoal" Id="{01dae69d-d4cf-4026-b8d3-2fd2b3954469}">
+      <Implementation>
+        <ST><![CDATA[// Fast move that is supposed to complete during a test
+
+// Ask for a normal move
+fbMotionRequest(
+    stMotionStage:=SIM.stBasicMotor,
+    bExecute:=TRUE,
+    fPos:=fGoal,
+    fVel:=1000);
+
+// Timer in case test stalls out
+tonTimeout(
+    IN:=TRUE,
+    PT:=T#1s);
+
+// Move to the next step when we're done or timed out
+IF fbMotionRequest.bDone THEN
+    ACT_NextStep();
+ELSIF tonTimeout.Q THEN
+    // Make sure a timeout is a fail
+    AssertTrue(
+        Condition:=FALSE,
+        Message:='Timeout during move!');
+    ACT_NextStep();
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_MoveSlow" Id="{b4937248-554d-40a3-8c42-c9ff26a5c528}">
+      <Implementation>
+        <ST><![CDATA[// Slow move that is supposed to be interrupted during a test
+
+// Ask for a very slow move
+fbMotionRequest(
+    stMotionStage:=SIM.stBasicMotor,
+    bExecute:=TRUE,
+    fPos:=fGoal,
+    fVel:=0.01);
+
+// Transition after a short delay
+ACT_NextStepSoon();]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_NextStep" Id="{c6c47284-f284-4cbc-b6fd-7c016bebf6cf}">
+      <Implementation>
+        <ST><![CDATA[nStep := nStep + 1;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_NextStepSoon" Id="{e04ab86a-2751-49a0-ac1b-6faa8f4ba2f6}">
+      <Implementation>
+        <ST><![CDATA[// Start short timer
+tonTimeout(
+    IN:=TRUE,
+    PT:=T#100ms);
+
+// Move to the next step at the interrupt timer
+IF tonTimeout.Q THEN
+    tonTimeout(IN:=FALSE);
+    ACT_NextStep();
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_NextTest" Id="{2efd0f83-13d9-4fd8-8653-10755530fdd7}">
+      <Implementation>
+        <ST><![CDATA[nStep := END;]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="ACT_Setup" Id="{6fae606a-2e88-4113-b37f-76c3e3bf28bb}">
       <Implementation>
-        <ST><![CDATA[IF nStep = SETUP THEN
+        <ST><![CDATA[// Move on to the next test in the suite
+// This comes first instead of last because TEST_FINISHED with no new TEST in the same cycle ends the test suite
+IF nStep = END THEN
+    TEST_FINISHED();
+    nStep := SETUP;
+    nTest := nTest + 1;
+END_IF
+
+IF nStep = SETUP THEN
     fbMotionSettings(stMotionStage:=SIM.stBasicMotor);
     // Reset always takes at least 2 cycles, so there is time for the specific test to set up too
     fbMotionReset(
@@ -83,55 +210,124 @@ END_CASE]]></ST>
 END_IF]]></ST>
       </Implementation>
     </Action>
+    <Action Name="ACT_TestAbort" Id="{cbafa359-fa04-4ea7-9c11-d711d83d12a5}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Abort Option');
+
+    1:
+        ACT_MoveExternal();
+
+    2:
+        fGoal := fGoal + 50;
+        ACT_NextStep();
+
+    3:
+        // Ask for a new move. Ours should give up, since a move is in progress.
+        fbMotionRequest.enumMotionRequest := ENUM_MotionRequest.ABORT;
+        ACT_MoveSlow();
+
+    4:
+        // Our FB should have an error and move 1 should still be going
+        AssertTrue(
+            Condition:=fbMotionRequest.bError,
+            Message:='FB_MotionRequest did not error after an aborted move');
+        AssertFalse(
+            Condition:=fbMotionRequest.bBusy,
+            Message:='FB_MotionRequest started despite being called in abort mode');
+        AssertTrue(
+            Condition:=SIM.stBasicMotor.bBusy,
+            Message:='FB_MotionRequest interrupted a move despite being in abort mode');
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.bError,
+            Message:='FB_MotionRequest errored out a move from another source');
+        ACT_NextStep();
+
+    5:
+        ACT_NextTest();
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="ACT_TestBasic" Id="{d3f31c3f-994f-47fd-befa-fe72c1f7ed02}">
       <Implementation>
         <ST><![CDATA[CASE nStep OF
     SETUP:
         TEST('FB_MotionRequest Basic Motion');
 
-    STEP_1:
-        // Ask for a normal move
+    1:
+        ACT_MoveGoal();
+
+    2:
+        ACT_CheckGoal();
+
+    3:
+        ACT_NextTest();
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_TestBystander" Id="{39079b33-a359-411f-8972-beda96675f3a}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        // This FB should not affect an external move unless bExecute goes high
+        TEST('FB_MotionRequest Bystander Test');
+
+    1:
+        ACT_MoveExternal();
+
+    2:
+        // Set some parameters
         fbMotionRequest(
             stMotionStage:=SIM.stBasicMotor,
-            bExecute:=TRUE,
-            fPos:=fGoal,
-            fVel:=1000);
+            bExecute:=FALSE,
+            fPos:=fGoal-100,
+            fVel:=10000);
+        ACT_NextStepSoon();
 
-        // Timer in case test stalls out
-        tonTimeout(
-            IN:=TRUE,
-            PT:=T#1s);
+    3:
+        // Verify no changes
+        AssertFalse(
+            Condition:=fbMotionRequest.bBusy,
+            Message:='FB_MotionRequest unexpectedly started');
+        AssertTrue(
+            Condition:=SIM.stBasicMotor.bBusy,
+            Message:='FB_MotionRequest unexpectedly stopped an unrelated move');
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.fPosition = fGoal-100,
+            Message:='FB_MotionRequest unexpectedly set position goal value');
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.fVelocity = 10000,
+            Message:='FB_MotionRequest unexpectedly set velocity value');
+        ACT_NextStep();
 
-        IF fbMotionRequest.bDone THEN
-            nStep := STEP_2;
-        ELSIF tonTimeout.Q THEN
+    4:
+        // Cause an error
+        ACT_ErrorStep();
 
-            // Make sure a timeout is a fail
-            AssertTrue(
-                Condition:=FALSE,
-                Message:='Timeout during basic motion test!');
-
-            nStep := STEP_2;
-        END_IF
-
-    STEP_2:
-        // Did we get there?
-        AssertEquals(
-            Expected:=fGoal,
-            Actual:=SIM.stBasicMotor.stAxisStatus.fActPosition,
-            Message:='Failed to reach destination during basic motion test');
-
-        // Does the FB have an error?
+    5:
+        // Verify no error seen in FB, but yes error on DUT
         AssertFalse(
             Condition:=fbMotionRequest.bError,
-            Message:='FB_MotionRequest had an error during basic motion test');
-
-        // Does the underlying DUT have an error?
-        AssertFalse(
+            Message:='FB_MotionRequest picked up error from another motion');
+        AssertTrue(
             Condition:=SIM.stBasicMotor.bError,
-            Message:='DUT_MotionStage had an error during basic motion test');
+            Message:='Test issue, motion stage did not pick up simluated error');
+        ACT_NextStep();
 
-        nStep := END;
+    6:
+        // Try to clear the error
+        fbMotionRequest(
+            stMotionStage:=SIM.stBasicMotor,
+            bReset:=TRUE);
+        ACT_NextStepSoon();
+
+    7:
+        // Verify clearing the error doesn't propagate
+        AssertTrue(
+            Condition:=SIM.stBasicMotor.bError,
+            Message:='FB_MotionRequest cleared error from another motion');
+        ACT_NextTest();
 END_CASE]]></ST>
       </Implementation>
     </Action>
@@ -142,34 +338,14 @@ END_CASE]]></ST>
         TEST('FB_MotionRequest Error Handling');
         nError := 16#4450;
 
-    STEP_1:
-        // Ask for a very slow move
-        fbMotionRequest(
-            stMotionStage:=SIM.stBasicMotor,
-            bExecute:=TRUE,
-            fPos:=fGoal,
-            fVel:=0.01);
+    1:
+        ACT_MoveSlow();
 
-        // Prepare to interrupt early
-        tonTimeout(
-            IN:=TRUE,
-            PT:=T#100ms);
-
+    2:
         // Interrupt the move with an error
-        IF tonTimeout.Q THEN
-            fbCauseNCError(
-                Axis:=SIM.stBasicMotor.Axis,
-                bExecute:=TRUE,
-                nErrorCode:=nError);
-        END_IF
+        ACT_ErrorStep();
 
-        // Reset timer and move to next step
-        IF fbCauseNCError.bDone THEN
-            tonTimeout(IN:=FALSE);
-            nStep := STEP_2;
-        END_IF
-
-    STEP_2:
+    3:
         // Check that we have Errors
         AssertTrue(
             Condition:=SIM.stBasicMotor.Axis.Status.Error,
@@ -188,9 +364,9 @@ END_CASE]]></ST>
             Expected := nError,
             Actual := fbMotionRequest.nErrorId,
             Message:='Error code did not propagate up to stMotionStage');
-        nStep := STEP_3;
+        ACT_NextStep();
 
-    STEP_3:
+    4:
         // Reset the errors
         fbMotionRequest(
             stMotionStage:=SIM.stBasicMotor,
@@ -201,28 +377,162 @@ END_CASE]]></ST>
             IN:=TRUE,
             PT:=T#100ms);
 
-        // Make sure everything cleared out
         IF tonTimeout.Q THEN
-            nError := 0;
-            AssertFalse(
-                Condition:=SIM.stBasicMotor.Axis.Status.Error,
-                Message:='Error clear did not propagate down to the NC');
-            AssertFalse(
-                Condition:=SIM.stBasicMotor.bError,
-                Message:='Error clear did not propagate down to stMotionStage');
-            AssertEquals(
-                Expected := nError,
-                Actual := SIM.stBasicMotor.nErrorId,
-                Message:='Error code clear did not propagate down to stMotionStage');
-            AssertFalse(
-                Condition:=fbMotionRequest.bError,
-                Message:='Error boolean did not reset in fbMotionRequest');
-            AssertEquals(
-                Expected := nError,
-                Actual := fbMotionRequest.nErrorId,
-                Message:='Error code did not reset in fbMotionRequest');
-            nStep := END;
+            ACT_NextStep();
         END_IF
+
+    5:
+        // Make sure everything cleared out
+        nError := 0;
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.Axis.Status.Error,
+            Message:='Error clear did not propagate down to the NC');
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.bError,
+            Message:='Error clear did not propagate down to stMotionStage');
+        AssertEquals(
+            Expected := nError,
+            Actual := SIM.stBasicMotor.nErrorId,
+            Message:='Error code clear did not propagate down to stMotionStage');
+        AssertFalse(
+            Condition:=fbMotionRequest.bError,
+            Message:='Error boolean did not reset in fbMotionRequest');
+        AssertEquals(
+            Expected := nError,
+            Actual := fbMotionRequest.nErrorId,
+            Message:='Error code did not reset in fbMotionRequest');
+        ACT_NextTest();
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_TestInterrupt" Id="{363d55c0-506c-4e19-a8c6-cc0120e898a8}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Interrupt Option');
+
+    1:
+        ACT_MoveExternal();
+
+    2:
+        fGoal := fGoal + 50;
+        ACT_NextStep();
+
+    3:
+        // Ask for a new move. Ours should interrupt the previous move.
+        fbMotionRequest.enumMotionRequest := ENUM_MotionRequest.INTERRUPT;
+        ACT_MoveGoal();
+
+    4:
+        // We won't be at the goal unless move 2 ran, since move 1 is slow
+        ACT_CheckGoal();
+
+    5:
+        ACT_NextTest();
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_TestStop" Id="{d8fbee78-742f-4415-8c98-0ea4fe7dbc83}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Stop Motion');
+
+    1:
+        ACT_MoveSlow();
+
+    2:
+        // Interrupt the move by requesting a stop
+        fbMotionRequest(
+            stMotionStage := SIM.stBasicMotor,
+            bExecute := FALSE);
+
+        // Wait for no longer busy
+        IF NOT fbMotionRequest.bBusy THEN
+            ACT_NextStep();
+        END_IF
+
+    3:
+        // Check that we stopped via busy flag
+        AssertFalse(
+            Condition:=SIM.stBasicMotor.bBusy,
+            Message:='Motor still busy after requesting stop');
+
+        // Save position on this cycle
+        fPos := SIM.stBasicMotor.stAxisStatus.fActPosition;
+        ACT_NextStep();
+
+    4:
+        // Check that we stopped via comparing positions between cycles
+        AssertEquals(
+            Expected:=fPos,
+            Actual:=SIM.stBasicMotor.stAxisStatus.fActPosition,
+            Message:='Motor position changed between cycles when it was supposed to be stopped');
+        ACT_NextStep();
+
+    5:
+        // Try to move after stopping
+        ACT_MoveGoal();
+
+    6:
+        // Check that we reached the goal
+        ACT_CheckGoal();
+
+    7:
+        ACT_NextTest();
+END_CASE]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ACT_TestWait" Id="{4fe1ef14-00bc-4f32-86c5-ace83422bc99}">
+      <Implementation>
+        <ST><![CDATA[CASE nStep OF
+    SETUP:
+        TEST('FB_MotionRequest Wait Option');
+
+    1:
+        ACT_MoveExternal();
+
+    2:
+        fGoal := fGoal + 50;
+        ACT_NextStep();
+
+    3:
+        // Ask for a new move. Ours should wait for the previous move to finish.
+        fbMotionRequest.enumMotionRequest := ENUM_MotionRequest.WAIT;
+        ACT_MoveSlow();
+
+    4:
+        // Check that we're on move 1 and not move 2
+        AssertTrue(
+            Condition:=SIM.stBasicMotor.bBusy,
+            Message:='Move did not start, or finished earlier than expected');
+        AssertFalse(
+            Condition:=fbMotionRequest.bBusy,
+            Message:='FB_MotionRequest did not wait for move to end');
+        ACT_NextStep();
+
+    5:
+        // Skip to move 2 by ending move 1 early
+        SIM.stBasicMotor.bExecute := FALSE;
+        ACT_NextStep();
+
+    6:
+        // Give time for the transition
+        ACT_NextStepSoon();
+
+    7:
+        // Check that we're on move 2
+        AssertTrue(
+            Condition:=fbMotionRequest.bBusy,
+            Message:='FB_MotionRequest did not start after waiting');
+
+        // Check that our setpoint is correct
+        AssertEquals(
+            Expected:=fGoal,
+            Actual:=SIM.stBasicMotor.fPosition,
+            Message:='FB_MotionRequest did not get the correct goal position');
+
+        ACT_NextTest();
 END_CASE]]></ST>
       </Implementation>
     </Action>
