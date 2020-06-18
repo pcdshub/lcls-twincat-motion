@@ -44,20 +44,24 @@ CASE stMotionStage.nEnableMode OF
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
                     stMotionStage.bEnable := TRUE;
-                ELSE
-                    stMotionStage.bError := TRUE;
-                    stMotionStage.nErrorId := 16#4358;
+                ELSIF NOT stMotionStage.bError THEN
+                    // Not an error, just a warning
+                    stMotionStage.sErrorMessage := 'Cannot move past positive limit.';
                 END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
                     stMotionStage.bEnable := TRUE;
-                ELSE
-                    stMotionStage.bError := TRUE;
-                    stMotionStage.nErrorId := 16#4357;
+                ELSIF NOT stMotionStage.bError THEN
+                    // Not an error, just a warning
+                    stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
                 END_IF
             END_IF
         END_IF
         bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
+        IF bExecute AND NOT stMotionStage.bError THEN
+            // Reset local warnings if things are going well
+            stMotionStage.sErrorMessage := '';
+        END_IF
 END_CASE
 
 // Automatically fill the correct nCmdData for homing
