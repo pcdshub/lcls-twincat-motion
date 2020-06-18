@@ -4,6 +4,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLC Project (1): Library &#8212; pcdshub/lcls-twincat-motion  documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -4905,20 +4906,24 @@ END_FUNCTION_BLOCK
             <span class="k">IF</span> <span class="n">bPosGoal</span> <span class="k">THEN</span>
                 <span class="k">IF</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bAllForwardEnable</span> <span class="k">THEN</span>
                     <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-                <span class="k">ELSE</span>
-                    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-                    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="mi">16#4358</span><span class="p">;</span>
+                <span class="k">ELSIF</span> <span class="k">NOT</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="k">THEN</span>
+                    <span class="o">//</span> <span class="k">Not</span> <span class="n">an</span> <span class="n">error</span><span class="p">,</span> <span class="n">just</span> <span class="n">a</span> <span class="n">warning</span>
+                    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sErrorMessage</span> <span class="o">:=</span> <span class="na">&#39;Cannot</span> <span class="n">move</span> <span class="n">past</span> <span class="kt">positive</span> <span class="n">limit</span><span class="p">.&#39;;</span>
                 <span class="n">END_IF</span>
             <span class="k">ELSIF</span> <span class="n">bNegGoal</span> <span class="k">THEN</span>
                 <span class="k">IF</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bAllBackwardEnable</span> <span class="k">THEN</span>
                     <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-                <span class="k">ELSE</span>
-                    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-                    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="mi">16#4357</span><span class="p">;</span>
+                <span class="k">ELSIF</span> <span class="k">NOT</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="k">THEN</span>
+                    <span class="o">//</span> <span class="k">Not</span> <span class="n">an</span> <span class="n">error</span><span class="p">,</span> <span class="n">just</span> <span class="n">a</span> <span class="n">warning</span>
+                    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sErrorMessage</span> <span class="o">:=</span> <span class="na">&#39;Cannot</span> <span class="n">move</span> <span class="n">past</span> <span class="n">negative</span> <span class="n">limit</span><span class="p">.&#39;;</span>
                 <span class="n">END_IF</span>
             <span class="n">END_IF</span>
         <span class="n">END_IF</span>
         <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bExecute</span> <span class="k">AND</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bEnableDone</span><span class="p">;</span>
+        <span class="k">IF</span> <span class="n">bExecute</span> <span class="k">AND</span> <span class="k">NOT</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="k">THEN</span>
+            <span class="o">//</span> <span class="n">Reset</span> <span class="n">local</span> <span class="n">warnings</span> <span class="k">if</span> <span class="n">things</span> <span class="n">are</span> <span class="n">going</span> <span class="n">well</span>
+            <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sErrorMessage</span> <span class="o">:=</span> <span class="p">&#39;&#39;;</span>
+        <span class="n">END_IF</span>
 <span class="n">END_CASE</span>
 
 <span class="o">//</span> <span class="n">Automatically</span> <span class="n">fill</span> <span class="n">the</span> <span class="n">correct</span> <span class="n">nCmdData</span> <span class="k">for</span> <span class="n">homing</span>
@@ -6924,7 +6929,7 @@ END_PROGRAM
       &copy;2019, SLAC National Accelerator Laboratory.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
