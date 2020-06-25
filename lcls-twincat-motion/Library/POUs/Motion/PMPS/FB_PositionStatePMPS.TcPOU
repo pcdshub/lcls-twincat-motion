@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPS" Id="{7e0e3094-8a3d-4636-a390-eb10e10412f0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS
+(*
+    Hooks up a position state to an arbiter and an FFO
+        Use BeamParameterTransitionManager to manage transition requests between states
+        Hook up to the inputs/outputs of the state function block
+        Add FB_LinearGoverner -> handles MC_Power and double-checks us. Does not make specific requests.
+*)
+VAR_IN_OUT
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+    stMotionStage: DUT_MotionStage;
+    arrStates: ARRAY[1..15] OF DUT_PositionState;
+END_VAR
+VAR_INPUT
+    bRequestTransition: BOOL;
+    setState: INT;
+    getState: INT;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+END_VAR
+VAR_OUTPUT
+    bTransitionAuthorized: BOOL;
+END_VAR
+VAR
+    bInit: BOOL := TRUE;
+    bptm: BeamParameterTransitionManager;
+    fbLinGov: FB_LinearGovernor;
+    rtTrans: R_TRIG;
+    stBeamReq: ST_BeamParams;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Initialize to the current state value
+IF bInit THEN
+    bInit := FALSE;
+    stBeamReq := GetBeamFromState(getState);
+END_IF
+
+// Request transition on rising edge
+rtTrans(CLK:=bRequestTransition);
+IF rtTrans.Q THEN
+    stBeamReq := GetBeamFromState(setState);
+END_IF
+
+// Handles getting the request to the arbiter and back
+bptm(fbArbiter:=fbArbiter,
+     i_TransitionAssertionID:=0,
+     i_stTransitionAssertion:=stTransitionBeam,
+     i_nRequestedAssertionID:=0,
+     i_stRequestedAssertion:=stBeamReq,
+     i_xMoving:=stMotionStage.bBusy,
+     i_xDoneMoving:=stMotionStage.bDone,
+     stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+     q_xTransitionAuthorized=>bTransitionAuthorized);]]></ST>
+    </Implementation>
+    <Method Name="GetBeamFromState" Id="{a185cbc2-82ed-4f25-b340-b07b2aad8ae9}">
+      <Declaration><![CDATA[METHOD GetBeamFromState : ST_BeamParams;
+VAR_INPUT
+    nState: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nState = 0 THEN
+    GetBeamFromState := stTransitionBeam;
+ELSIF nState <= 15 THEN
+    GetBeamFromState := arrStates[nState].stBeamParams;
+ELSE
+    GetBeamFromState := PMPS_GVL.cstSafeBeam;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
