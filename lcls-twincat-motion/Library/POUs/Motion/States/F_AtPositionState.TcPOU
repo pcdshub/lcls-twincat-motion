@@ -11,14 +11,10 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[F_AtPositionState := FALSE;
-// We can never be at invalid states. We are also not at a state if a move has been requested, we are instead transitioning.
-IF stPositionState.bValid AND NOT stMotionStage.bExecute THEN
-    IF stMotionStage.stAxisStatus.fActPosition < stPositionState.fPosition + ABS(stPositionState.fDelta) AND
-       stMotionStage.stAxisStatus.fActPosition > stPositionState.fPosition - ABS(stPositionState.fDelta) THEN
-       F_AtPositionState := TRUE;
-    END_IF
-END_IF]]></ST>
+      <ST><![CDATA[// If state is defined, we are within the delta, and we are either not moving or our destination is within the delta, we are at the state
+F_AtPositionState := stPositionState.bValid
+                     AND F_PosWithinDelta(stMotionStage.stAxisStatus.fActPosition, stPositionState)
+                     AND ((NOT stMotionStage.bExecute) OR F_PosWithinDelta(stMotionStage.fPosition, stPositionState));]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

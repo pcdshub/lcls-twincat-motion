@@ -18,10 +18,13 @@ VAR_INPUT
     bRequestTransition: BOOL;
     setState: INT;
     getState: INT;
+    fStateBoundaryDeadband: LREAL := 0.1;
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
+    bForwardAuthorized: BOOL;
+    bBackwardAuthorized: BOOL;
 END_VAR
 VAR
     bInit: BOOL := TRUE;
@@ -29,18 +32,29 @@ VAR
     fbLinGov: FB_LinearGovernor;
     rtTrans: R_TRIG;
     stBeamReq: ST_BeamParams;
+    mcPower: MC_POWER;
+    fUpperBound: LREAL;
+    fLowerBound: LREAL;
+    nStartState: INT;
+    nGoalState: INT;
+    stStartState: DUT_PositionState;
+    stGoalState: DUT_PositionState;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Initialize to the current state value
 IF bInit THEN
     bInit := FALSE;
+    nStartState := getState;
+    nGoalState := getState;
     stBeamReq := GetBeamFromState(getState);
 END_IF
 
 // Request transition on rising edge
 rtTrans(CLK:=bRequestTransition);
 IF rtTrans.Q THEN
+    nStartState := getState;
+    nGoalState := setState;
     stBeamReq := GetBeamFromState(setState);
 END_IF
 
@@ -53,22 +67,69 @@ bptm(fbArbiter:=fbArbiter,
      i_xMoving:=stMotionStage.bBusy,
      i_xDoneMoving:=stMotionStage.bDone,
      stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-     q_xTransitionAuthorized=>bTransitionAuthorized);]]></ST>
+     q_xTransitionAuthorized=>bTransitionAuthorized);
+
+// Set up MPS virtual limit for moves at and between states
+stStartState := GetStateStruct(nStartState);
+stGoalState := GetStateStruct(nGoalState);
+IF getState = nGoalState THEN
+    // We are at a state, so set bounds based on current position.
+    // State logic will flag us as Unknown if we stray beyond this, which is a fault.
+    bForwardAuthorized := F_PosUnderUpperBound(stMotionStage.stAxisStatus.fActPosition + ABS(fStateBoundaryDeadband), stStartState);
+    bBackwardAuthorized := F_PosOverLowerBound(stMotionStage.stAxisStatus.fActPosition - ABS(fStateBoundaryDeadband), stStartState);
+ELSE
+    // We are moving between states, so same as before but allow current state to be in the transition region
+END_IF
+
+// Only let us move if the transition is allowed, or if we are moving within a state's bounds
+mcPower(Axis:=stMotionStage.Axis,
+        Enable:=stMotionStage.bAllEnable,
+        Enable_Positive:=stMotionStage.bAllForwardEnable AND bTransitionAuthorized,
+        Enable_Negative:=stMotionStage.bAllBackwardEnable AND bTransitionAuthorized);
+
+]]></ST>
     </Implementation>
     <Method Name="GetBeamFromState" Id="{a185cbc2-82ed-4f25-b340-b07b2aad8ae9}">
       <Declaration><![CDATA[METHOD GetBeamFromState : ST_BeamParams;
 VAR_INPUT
     nState: INT;
 END_VAR
+VAR
+    stState: DUT_PositionState;
+END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF nState = 0 THEN
-    GetBeamFromState := stTransitionBeam;
-ELSIF nState <= 15 THEN
-    GetBeamFromState := arrStates[nState].stBeamParams;
+        <ST><![CDATA[stState := GetStateStruct(nState);
+GetBeamFromState := stState.stBeamParams;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetStateCode" Id="{e9ee76af-319d-43d8-a97d-e9b3b732aa13}">
+      <Declaration><![CDATA[METHOD GetStateCode : INT
+VAR_INPUT
+    nState: INT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nState < 0 OR nState > 15 THEN
+    GetStateCode := -1;
 ELSE
-    GetBeamFromState := PMPS_GVL.cstSafeBeam;
+    GetStateCode := nState;
 END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetStateStruct" Id="{f08067cd-8d7a-4e05-91e1-2465ba8e5e08}">
+      <Declaration><![CDATA[METHOD GetStateStruct : DUT_PositionState
+VAR_INPUT
+    nState: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE GetStateCode(nState) OF
+    -1: GetStateStruct := MOTION_GVL.stInvalidState;
+    0: GetStateStruct := MOTION_GVL.stUnknownState;
+    ELSE
+        GetStateStruct := arrStates[nState];
+END_CASE]]></ST>
       </Implementation>
     </Method>
   </POU>
