@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_EpicsInOutPMPS" Id="{aa945542-c9b2-4cf9-a365-9f97c65083b0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EpicsInOutPMPS EXTENDS FB_EpicsInOut
+VAR_IN_OUT
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    nTransitionAssertionID: UDINT;
+END_VAR
+VAR
+    fbStatePMPS: FB_PositionStatePMPS;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[SUPER^(stMotionStage:=stMotionStage,
+       stOut:=stOut,
+       stIn:=stIn,
+       bEnable:=bEnable,
+       enumSet:=enumSet,
+       bError=>bError,
+       nErrorId=>nErrorId,
+       sErrorMessage=>sErrorMessage,
+       bBusy=>bBusy,
+       bDone=>bDone,
+       enumGet=>enumGet);
+
+fbStatePMPS(fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stMotionStage:=stMotionStage,
+            arrStates:=arrStates,
+            bRequestTransition:=bBusy,
+            setState:=enumSet,
+            getState:=enumGet,
+            nTransitionAssertionID:=nTransitionAssertionID);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

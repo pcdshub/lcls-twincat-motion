@@ -106,7 +106,9 @@ IF NOT stMotionStage.bError THEN
 END_IF
 
 // Set the error message if we have one
-stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+IF stMotionStage.bError THEN
+    stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+END_IF
 
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);
