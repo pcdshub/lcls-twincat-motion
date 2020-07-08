@@ -21,7 +21,6 @@ VAR_INPUT
     fStateBoundaryDeadband: LREAL := 0.1;
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
     nTransitionAssertionID: UDINT;
-    nRequestedAssertionID: UDINT;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -34,7 +33,7 @@ VAR
     fbLinGov: FB_LinearGovernor;
     rtTransReq: R_TRIG;
     ftTransAuth: F_TRIG;
-    stBeamReq: ST_BeamParams;
+    stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
     fUpperBound: LREAL;
     fLowerBound: LREAL;
@@ -45,6 +44,8 @@ VAR
     nActPos: LREAL;
     nReqPos: LREAL;
     bInTransition: BOOL;
+    stBeamNeeded: ST_BeamParams;
+    ffBeamParamsOk: FB_FastFault;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -57,7 +58,7 @@ IF bInit THEN
     bInit := FALSE;
     nStartState := getState;
     nGoalState := getState;
-    stBeamReq := GetBeamFromState(getState);
+    stStateReq := GetStateStruct(getState);
     bInTransition := FALSE;
 END_IF
 
@@ -66,7 +67,7 @@ rtTransReq(CLK:=bRequestTransition);
 IF rtTransReq.Q THEN
     nStartState := getState;
     nGoalState := setState;
-    stBeamReq := GetBeamFromState(setState);
+    stStateReq := GetStateStruct(setState);
     bInTransition := TRUE;
 END_IF
 
@@ -74,10 +75,10 @@ END_IF
 bptm(fbArbiter:=fbArbiter,
      i_TransitionAssertionID:=nTransitionAssertionID,
      i_stTransitionAssertion:=stTransitionBeam,
-     i_nRequestedAssertionID:=nRequestedAssertionID,
-     i_stRequestedAssertion:=stBeamReq,
+     i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
+     i_stRequestedAssertion:=stStateReq.stBeamParams,
      i_xMoving:=stMotionStage.bBusy,
-     i_xDoneMoving:=stMotionStage.bDone,
+     i_xDoneMoving:=NOT stMotionStage.bBusy,
      stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
      q_xTransitionAuthorized=>bTransitionAuthorized);
 
@@ -124,7 +125,13 @@ mcPower(Axis:=stMotionStage.Axis,
         Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
         Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
 
-]]></ST>
+// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
+// Get state will point to Unknown/No beam if we are out of state bounds or in motion
+// Otherwise we'll have the current state's beam parameters
+stBeamNeeded := GetBeamFromState(getState);
+ffBeamParamsOk(
+    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded),
+    io_fbFFHWO:=fbFFHWO);]]></ST>
     </Implementation>
     <Method Name="GetBeamFromState" Id="{a185cbc2-82ed-4f25-b340-b07b2aad8ae9}">
       <Declaration><![CDATA[METHOD GetBeamFromState : ST_BeamParams;
@@ -143,7 +150,7 @@ GetBeamFromState := stState.stBeamParams;]]></ST>
     <Method Name="GetStateCode" Id="{e9ee76af-319d-43d8-a97d-e9b3b732aa13}">
       <Declaration><![CDATA[METHOD GetStateCode : INT
 VAR_INPUT
-    nState: INT
+    nState: INT;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -161,12 +168,19 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[CASE GetStateCode(nState) OF
+        <ST><![CDATA[{warning disable C0371}
+// Implicit VAR_IN_OUT reference inside a method needs special handling
+IF NOT __ISVALIDREF(arrStates) THEN
+    GetStateStruct := MOTION_GVL.stInvalidState;
+    RETURN;
+END_IF
+CASE GetStateCode(nState) OF
     -1: GetStateStruct := MOTION_GVL.stInvalidState;
     0: GetStateStruct := MOTION_GVL.stUnknownState;
     ELSE
         GetStateStruct := arrStates[nState];
-END_CASE]]></ST>
+END_CASE
+{warning restore C0371}]]></ST>
       </Implementation>
     </Method>
   </POU>

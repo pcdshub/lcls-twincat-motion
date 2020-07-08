@@ -22,6 +22,8 @@ VAR
     fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
     bNegGoal: BOOL;
+    fbEncoderValue: FB_EncoderValue;
+    fbNCParams: FB_MotionStageNCParams;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -198,7 +200,13 @@ END_IF
 // e.g. for pre-calibrated absolute encoders
 IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
     stMotionStage.stAxisStatus.bHomed := TRUE;
-END_IF]]></ST>
+END_IF
+
+fbEncoderValue(stMotionStage:=stMotionStage);
+fbNCParams(
+    stMotionStage:=stMotionStage,
+    bEnable:=TRUE,
+    tRefreshDelay:=T#1s);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

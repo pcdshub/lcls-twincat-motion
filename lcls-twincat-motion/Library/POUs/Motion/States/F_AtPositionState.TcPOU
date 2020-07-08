@@ -7,12 +7,10 @@ VAR_INPUT
     stMotionStage: DUT_MotionStage;
     stPositionState: DUT_PositionState;
 END_VAR
-VAR
-END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// If state is defined, we are within the delta, and we are either not moving or our destination is within the delta, we are at the state
-F_AtPositionState := stPositionState.bValid
+F_AtPositionState := stPositionState.bValid AND stPositionState.bUpdated
                      AND F_PosWithinDelta(stMotionStage.stAxisStatus.fActPosition, stPositionState)
                      AND ((NOT stMotionStage.bExecute) OR F_PosWithinDelta(stMotionStage.fPosition, stPositionState));]]></ST>
     </Implementation>

@@ -54,6 +54,13 @@ STRUCT
     '}
     bHardwareEnable AT %I*: BOOL;
 
+    // Raw encoder IO for ULINT (Biss-C)
+    nRawEncoderULINT AT %I*: ULINT;
+    // Raw encoder IO for UINT (Relative Encoders)
+    nRawEncoderUINT AT %I*: UINT;
+    // Raw encoder IO for INT (LVDT)
+    nRawEncoderINT AT %I*: INT;
+
     (* Psuedo-hardware *)
 
     // Forward enable EPS summary
@@ -101,6 +108,12 @@ STRUCT
         field: DESC TRUE if gantry ok to move backward
     '}
     bGantryBackwardEnable: BOOL:=FALSE;
+    // Encoder count summary, if linked above
+    {attribute 'pytmc' := '
+        pv: PLC:nEncoderCount
+        io: i
+    '}
+    nEncoderCount: UDINT;
 
     (* Settings *)
     // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
@@ -289,6 +302,10 @@ STRUCT
         field: DESC Message to identify the error state
     '}
     sErrorMessage: STRING;
+    // MC_ReadParameterSet Output
+    stAxisParameters: ST_AxisParameterSet;
+    // True if we've updated stAxisParameters at least once
+    bAxisParamsInit: BOOL;
     // Misc axis status information for the IOC
     stAxisStatus: DUT_AxisStatus_v0_01;
 END_STRUCT

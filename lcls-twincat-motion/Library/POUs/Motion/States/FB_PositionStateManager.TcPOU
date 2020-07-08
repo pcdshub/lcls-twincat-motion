@@ -82,6 +82,7 @@ VAR
     stUnknown: DUT_PositionState;
     stGoal: DUT_PositionState;
     fbStateMove: FB_PositionStateMove;
+    fbStateInternal: ARRAY[1..15] OF FB_PositionStateInternal;
     nIndex: INT;
     bNewGoal: BOOL;
     bInnerExec: BOOL;
@@ -108,6 +109,15 @@ IF NOT bInit THEN
     setState := 0;
     goalState := 0;
 END_IF
+
+// All state internal handlers
+FOR nIndex := 1 TO 15 DO
+    IF arrStates[nIndex].bValid THEN
+        fbStateInternal[nIndex](
+            stMotionStage:=stMotionStage,
+            stPositionState:=arrStates[nIndex]);
+    END_IF
+END_FOR
 
 // Check where we are by going through all possible states.
 // Note this favors the highest-number state that we're at, it's up to you to make your states mutually exclusive.

@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_RawCountConverter" Id="{6c81e7a1-f014-4b94-98e4-ea682be9540b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_RawCountConverter
+(*
+    Utility function block for converting raw counts to EGU and back
+*)
+VAR_INPUT
+    // Parameters to check against
+    stParameters: ST_AxisParameterSet;
+    // Optional count to convert to a real position
+    nCountCheck: UDINT;
+    // Optional position to convert to encoder counts
+    fPosCheck: LREAL;
+END_VAR
+VAR_OUTPUT
+    // If converting position, the number of counts
+    nCountGet: UDINT;
+    // If converting counts, the position
+    fPosGet: LREAL;
+    // True during a parameter get/calc
+    bBusy: BOOL;
+    // True after a successful get/calc
+    bDone: BOOL;
+    // True if the calculation errored
+    bError: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stParameters.fEncScaleFactorInternal <> 0 THEN
+    nCountGet := LREAL_TO_UDINT((fPosCheck - stParameters.fEncOffset) / stParameters.fEncScaleFactorInternal);
+    fPosGet := nCountCheck * stParameters.fEncScaleFactorInternal + stParameters.fEncOffset;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
