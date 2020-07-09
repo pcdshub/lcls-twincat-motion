@@ -36,14 +36,14 @@ END_VAR
 VAR_INPUT
     // Reset the fault
     bReset: BOOL;
+    // Auto-reset the fault
+    bAutoReset: BOOL;
     // The lowest error code that will trip the FFO
     nLowErrorId: UDINT := 16#4000;
     // The highest error code that will trip the FFO
     nHighErrorId: UDINT := 16#4FFF;
-    // DEVICE:PVNAME:FOR:PMPS
-    sName: STRING;
     // A description of the fault
-    sDesc: STRING := 'Fault occurs when NC axis throws an error.';
+    sDesc: STRING := 'Motor error';
 END_VAR
 VAR_OUTPUT
     // Quick way for nearby code to check if this block has tripped the FFO.
@@ -61,9 +61,9 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF bInit THEN
-    fbFF.i_DevName := sName;
+    fbFF.i_DevName := stMotionStage.sName;
     fbFF.i_Desc := sDesc;
-    IF LEN(sName) > 0 THEN
+    IF LEN(stMotionStage.sName) > 0 THEN
         bInit := FALSE;
     END_IF
 ELSE
@@ -75,6 +75,7 @@ ELSE
     END_IF
     fbFF(i_xOK := bTripped,
          i_xReset := bReset,
+         i_xAutoReset := bAutoReset,
          i_TypeCode:= nErrorTypeCode,
          io_fbFFHWO := fbFFHWO);
 END_IF]]></ST>

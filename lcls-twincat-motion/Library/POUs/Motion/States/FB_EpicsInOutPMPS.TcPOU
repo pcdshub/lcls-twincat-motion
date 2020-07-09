@@ -7,10 +7,12 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
     nTransitionAssertionID: UDINT;
 END_VAR
 VAR
     fbStatePMPS: FB_PositionStatePMPS;
+    fbEncErrFFO: FB_EncErrorFFO;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -33,7 +35,12 @@ fbStatePMPS(fbArbiter:=fbArbiter,
             bRequestTransition:=bBusy,
             setState:=enumSet,
             getState:=enumGet,
-            nTransitionAssertionID:=nTransitionAssertionID);]]></ST>
+            nTransitionAssertionID:=nTransitionAssertionID);
+
+fbEncErrFFO(
+    stMotionStage:=stMotionStage,
+    fbFFHWO:=fbFFHWO,
+    bAutoReset:=TRUE);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

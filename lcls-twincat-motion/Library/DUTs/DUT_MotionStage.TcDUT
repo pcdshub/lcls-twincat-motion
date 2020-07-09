@@ -112,10 +112,18 @@ STRUCT
     {attribute 'pytmc' := '
         pv: PLC:nEncoderCount
         io: i
+        field: DESC Count from encoder hardware
     '}
     nEncoderCount: UDINT;
 
     (* Settings *)
+    // Name to use for log messages, fast faults, etc.
+    {attribute 'pytmc' := '
+        pv: PLC:sName
+        io: i
+        field: DESC PLC program name
+    '}
+    sName: STRING;
     // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
     {attribute 'pytmc' := '
         pv: PLC:bPowerSelf

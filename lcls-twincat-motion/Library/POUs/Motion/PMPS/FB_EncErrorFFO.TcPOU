@@ -14,8 +14,8 @@ END_VAR
 VAR_INPUT
     // Reset the fault
     bReset: BOOL;
-    // DEVICE:PVNAME:FOR:PMPS
-    sName: STRING;
+    // Auto reset the fault
+    bAutoReset: BOOL;
 END_VAR
 VAR_OUTPUT
     // Quick way for nearby code to check if this block has tripped the FFO.
@@ -25,7 +25,7 @@ VAR
     fbNCErrorFFO: FB_NCErrorFFO := (
         nLowErrorId := 16#4400,
         nHighErrorId := 16#44FF,
-        sDesc := 'Fault occurs when NC axis throws an encoder error.');
+        sDesc := 'Encoder error');
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -33,7 +33,7 @@ END_VAR
     stMotionStage := stMotionStage,
     fbFFHWO := fbFFHWO,
     bReset := bReset,
-    sName := sName,
+    bAutoReset := bAutoReset,
     bTripped => bTripped);]]></ST>
     </Implementation>
   </POU>
