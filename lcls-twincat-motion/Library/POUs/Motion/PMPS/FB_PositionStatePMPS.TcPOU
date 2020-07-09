@@ -114,16 +114,11 @@ ELSE
 END_IF
 
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
-// Note that the implementation here relies on the axis being in enable mode DURING_MOTION
-// Axes that are in enable mode ALWAYS will find themselves getting disabled when a transition is requested and re-enabled once it is confirmed
-// This may create unpleasant results
-// This came about because logic in FB_MotionStage is based around checking if the axis is in an enabled state before executing the move
-// This FB could also be made to work with enable mode ALWAYS if FB_MotionStage had a way to check the limit enabled states before executing
-// Considering extending DUT_MotionStage to include flags from this FB for direct communication
 mcPower(Axis:=stMotionStage.Axis,
-        Enable:=stMotionStage.bAllEnable AND (bTransitionAuthorized OR NOT bInTransition),
+        Enable:=stMotionStage.bAllEnable,
         Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
         Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+stMotionStage.bMoveOk := bForwardAuthorized OR bBackwardAuthorized;
 
 // If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
 // Get state will point to Unknown/No beam if we are out of state bounds or in motion

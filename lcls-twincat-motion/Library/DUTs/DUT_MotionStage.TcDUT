@@ -287,6 +287,15 @@ STRUCT
         field: DESC TRUE if command finished successfully
     '}
     bDone: BOOL;
+    // TRUE if we have safety permission to move
+    {attribute 'pytmc' := '
+        pv: PLC:bMoveOk
+        io: i
+        field: ONAM FALSE
+        field: ZNAM TRUE
+        field: DESC TRUE if safe to start a move
+    '}
+    bMoveOk: BOOL;
     // TRUE if we're in an error state
     {attribute 'pytmc' := '
         pv: PLC:bError
@@ -310,10 +319,13 @@ STRUCT
         field: DESC Message to identify the error state
     '}
     sErrorMessage: STRING;
+    // Internal hook for custom error messages
+    sCustomErrorMessage: STRING;
     // MC_ReadParameterSet Output
     stAxisParameters: ST_AxisParameterSet;
     // True if we've updated stAxisParameters at least once
     bAxisParamsInit: BOOL;
+
     // Misc axis status information for the IOC
     stAxisStatus: DUT_AxisStatus_v0_01;
 END_STRUCT

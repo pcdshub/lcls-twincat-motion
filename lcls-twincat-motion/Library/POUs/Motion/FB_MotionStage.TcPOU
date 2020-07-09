@@ -24,6 +24,7 @@ VAR
     bNegGoal: BOOL;
     fbEncoderValue: FB_EncoderValue;
     fbNCParams: FB_MotionStageNCParams;
+    bNewMoveReq: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -31,40 +32,48 @@ END_VAR
 stMotionStage.Axis.ReadStatus();
 
 rtUserExec(CLK := stMotionStage.bExecute);
+bNewMoveReq S= rtUserExec.Q;
+bNewMoveReq R= stMotionStage.bExecute;
 bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
+
+// Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
+stMotionStage.bMoveOk S= stMotionStage.bPowerSelf;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
     ENUM_StageEnableMode.ALWAYS:
         stMotionStage.bEnable := TRUE;
-        bExecute := stMotionStage.bExecute;
-    ENUM_StageEnableMode.NEVER:
-        bExecute := stMotionStage.bExecute;
     ENUM_StageEnableMode.DURING_MOTION:
-        IF rtUserExec.Q THEN
+        IF bNewMoveReq THEN
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
-                    stMotionStage.bEnable := TRUE;
+                    stMotionStage.bEnable := stMotionStage.bMoveOk;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past positive limit.';
                 END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
-                    stMotionStage.bEnable := TRUE;
+                    stMotionStage.bEnable := stMotionStage.bMoveOk;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
                 END_IF
             END_IF
-        END_IF
-        bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
-        IF bExecute AND NOT stMotionStage.bError THEN
-            // Reset local warnings if things are going well
-            stMotionStage.sErrorMessage := '';
+            IF stMotionStage.bEnable OR stMotionStage.bError THEN
+                bNewMoveReq := FALSE;
+            END_IF
         END_IF
 END_CASE
+
+// Do not start the move until we have power and the safety system says it is OK
+bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bMoveOk;
+
+IF bExecute AND NOT stMotionStage.bError THEN
+    // Reset local warnings if things are going well
+    stMotionStage.sErrorMessage := '';
+END_IF
 
 // Automatically fill the correct nCmdData for homing
 IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
@@ -109,7 +118,12 @@ END_IF
 
 // Set the error message if we have one
 IF stMotionStage.bError THEN
-    stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+    // Hook if other code wants to inject a non-NC error
+    IF stMotionStage.sCustomErrorMessage <> '' THEN
+        stMotionStage.sErrorMessage := stMotionSTage.sCustomErrorMessage;
+    ELSE
+        stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+    END_IF
 END_IF
 
 // When we start, set the busy/done appropriately
@@ -193,6 +207,7 @@ IF stMotionStage.bReset THEN
     stMotionStage.bError := FALSE;
     stMotionStage.nErrorId := 0;
     stMotionStage.sErrorMessage := '';
+    stMotionStage.sCustomErrorMessage := '';
     bExecute := FALSE;
 END_IF
 
