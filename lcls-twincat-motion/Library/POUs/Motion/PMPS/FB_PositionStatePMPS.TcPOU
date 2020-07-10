@@ -1,78 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_PositionStatePMPS" Id="{7e0e3094-8a3d-4636-a390-eb10e10412f0}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS EXTENDS FB_PositionStatePMPS_Base
 (*
     Hooks up a position state to an arbiter and an FFO
         Use BeamParameterTransitionManager to manage transition requests between states
         Hook up to the inputs/outputs of the state function block
-        Add FB_LinearGoverner -> handles MC_Power and double-checks us. Does not make specific requests.
+        Raises FFO if beam parameters are worse than required for current state
 *)
 VAR_IN_OUT
     fbArbiter: FB_Arbiter;
     fbFFHWO: FB_HardwareFFOutput;
-    stMotionStage: DUT_MotionStage;
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
-END_VAR
-VAR_INPUT
-    bRequestTransition: BOOL;
-    setState: INT;
-    getState: INT;
-    fStateBoundaryDeadband: LREAL := 0.1;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
-    nTransitionAssertionID: UDINT;
-END_VAR
-VAR_OUTPUT
-    bTransitionAuthorized: BOOL;
-    bForwardAuthorized: BOOL;
-    bBackwardAuthorized: BOOL;
 END_VAR
 VAR
-    bInit: BOOL := TRUE;
     bptm: BeamParameterTransitionManager;
-    fbLinGov: FB_LinearGovernor;
-    rtTransReq: R_TRIG;
-    ftTransAuth: F_TRIG;
-    stStateReq: DUT_PositionState;
-    mcPower: MC_POWER;
-    fUpperBound: LREAL;
-    fLowerBound: LREAL;
-    nStartState: INT;
-    nGoalState: INT;
-    stStartState: DUT_PositionState;
-    stGoalState: DUT_PositionState;
-    nActPos: LREAL;
-    nReqPos: LREAL;
-    bInTransition: BOOL;
-    stBeamNeeded: ST_BeamParams;
     ffBeamParamsOk: FB_FastFault;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Initialize or reinitialize to the current state value
-ftTransAuth(CLK:=bptm.q_xTransitionAuthorized);
-IF ftTransAuth.Q THEN
-    bInit := TRUE;
-END_IF
-IF bInit THEN
-    bInit := FALSE;
-    nStartState := getState;
-    nGoalState := getState;
-    stStateReq := GetStateStruct(getState);
-    bInTransition := FALSE;
-END_IF
-
-// Request transition on rising edge
-rtTransReq(CLK:=bRequestTransition);
-IF rtTransReq.Q THEN
-    nStartState := getState;
-    nGoalState := setState;
-    stStateReq := GetStateStruct(setState);
-    bInTransition := TRUE;
-END_IF
-
-// Handles getting the request to the arbiter and back
-bptm(fbArbiter:=fbArbiter,
+      <ST><![CDATA[Exec();]]></ST>
+    </Implementation>
+    <Action Name="HandleBPTM" Id="{15e95ede-ce74-498f-962a-8707e856078c}">
+      <Implementation>
+        <ST><![CDATA[bptm(fbArbiter:=fbArbiter,
      i_TransitionAssertionID:=nTransitionAssertionID,
      i_stTransitionAssertion:=stTransitionBeam,
      i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
@@ -80,105 +30,17 @@ bptm(fbArbiter:=fbArbiter,
      i_xMoving:=stMotionStage.bBusy,
      i_xDoneMoving:=NOT stMotionStage.bBusy,
      stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-     q_xTransitionAuthorized=>bTransitionAuthorized);
-
-// Set up MPS virtual limit for moves at and between states
-stStartState := GetStateStruct(nStartState);
-stGoalState := GetStateStruct(nGoalState);
-nActPos := stMotionStage.stAxisStatus.fActPosition;
-IF stMotionStage.bExecute THEN
-    nReqPos := stMotionStage.fPosition;
-ELSE
-    nReqPos := nActPos;
-END_IF
-
-IF getState = nGoalState THEN
-    // We are at a state, so set bounds based on current state.
-    // State logic will flag us as Unknown if we stray beyond this, which is a fault.
-    bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stStartState);
-    bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stStartState);
-ELSE
-    // We are moving between states, so allow goal state to be in the transition region
-    IF stGoalState.fPosition > stStartState.fPosition THEN
-        // We are moving forward
-        bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
-        bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stStartState);
-    ELSE
-        // We are moving reverse
-        bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stStartState);
-        bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
-    END_IF
-    // Wait for permission to transition
-    bForwardAuthorized := bForwardAuthorized AND bTransitionAuthorized;
-    bBackwardAuthorized := bBackwardAuthorized AND bTransitionAuthorized;
-END_IF
-
-// Only let us move if the transition is allowed, or if we are moving within a state's bounds
-mcPower(Axis:=stMotionStage.Axis,
-        Enable:=stMotionStage.bAllEnable,
-        Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
-        Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
-stMotionStage.bMoveOk := bForwardAuthorized OR bBackwardAuthorized;
-
-// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
-// Get state will point to Unknown/No beam if we are out of state bounds or in motion
-// Otherwise we'll have the current state's beam parameters
-stBeamNeeded := GetBeamFromState(getState);
-ffBeamParamsOk(
+     q_xTransitionAuthorized=>bTransitionAuthorized);]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleFFO" Id="{6b3afb71-b9c2-4718-aacf-85bf75e65e9c}">
+      <Implementation>
+        <ST><![CDATA[ffBeamParamsOk(
     i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded),
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
     io_fbFFHWO:=fbFFHWO);]]></ST>
-    </Implementation>
-    <Method Name="GetBeamFromState" Id="{a185cbc2-82ed-4f25-b340-b07b2aad8ae9}">
-      <Declaration><![CDATA[METHOD GetBeamFromState : ST_BeamParams;
-VAR_INPUT
-    nState: INT;
-END_VAR
-VAR
-    stState: DUT_PositionState;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[stState := GetStateStruct(nState);
-GetBeamFromState := stState.stBeamParams;]]></ST>
       </Implementation>
-    </Method>
-    <Method Name="GetStateCode" Id="{e9ee76af-319d-43d8-a97d-e9b3b732aa13}">
-      <Declaration><![CDATA[METHOD GetStateCode : INT
-VAR_INPUT
-    nState: INT;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[IF nState < 0 OR nState > 15 THEN
-    GetStateCode := -1;
-ELSE
-    GetStateCode := nState;
-END_IF]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="GetStateStruct" Id="{f08067cd-8d7a-4e05-91e1-2465ba8e5e08}">
-      <Declaration><![CDATA[METHOD GetStateStruct : DUT_PositionState
-VAR_INPUT
-    nState: INT;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[{warning disable C0371}
-// Implicit VAR_IN_OUT reference inside a method needs special handling
-IF NOT __ISVALIDREF(arrStates) THEN
-    GetStateStruct := MOTION_GVL.stInvalidState;
-    RETURN;
-END_IF
-CASE GetStateCode(nState) OF
-    -1: GetStateStruct := MOTION_GVL.stInvalidState;
-    0: GetStateStruct := MOTION_GVL.stUnknownState;
-    ELSE
-        GetStateStruct := arrStates[nState];
-END_CASE
-{warning restore C0371}]]></ST>
-      </Implementation>
-    </Method>
+    </Action>
   </POU>
 </TcPlcObject>

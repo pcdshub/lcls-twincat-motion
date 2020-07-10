@@ -33,7 +33,7 @@ stMotionStage.Axis.ReadStatus();
 
 rtUserExec(CLK := stMotionStage.bExecute);
 bNewMoveReq S= rtUserExec.Q;
-bNewMoveReq R= stMotionStage.bExecute;
+bNewMoveReq R= NOT stMotionStage.bExecute;
 bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 

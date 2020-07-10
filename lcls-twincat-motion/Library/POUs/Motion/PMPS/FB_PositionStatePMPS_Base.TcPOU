@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPS_Base" Id="{e35067d1-2ee7-46f4-a240-48505f8439a4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS_Base
+(*
+    FB_PositionStatePMPS without Arbiter, BPTM, FFO
+
+    This allows me to test most of the code without an arbiter plc setup
+*)
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+    arrStates: ARRAY[1..15] OF DUT_PositionState;
+END_VAR
+VAR_INPUT
+    bRequestTransition: BOOL;
+    setState: INT;
+    getState: INT;
+    fStateBoundaryDeadband: LREAL := 0.1;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    nTransitionAssertionID: UDINT;
+END_VAR
+VAR_OUTPUT
+    bTransitionAuthorized: BOOL;
+    bForwardAuthorized: BOOL;
+    bBackwardAuthorized: BOOL;
+END_VAR
+VAR
+    bInit: BOOL := TRUE;
+    fbLinGov: FB_LinearGovernor;
+    rtTransReq: R_TRIG;
+    ftTransAuth: F_TRIG;
+    stStateReq: DUT_PositionState;
+    mcPower: MC_POWER;
+    fUpperBound: LREAL;
+    fLowerBound: LREAL;
+    nStartState: INT;
+    nGoalState: INT;
+    stStartState: DUT_PositionState;
+    stGoalState: DUT_PositionState;
+    nActPos: LREAL;
+    nReqPos: LREAL;
+    bInTransition: BOOL;
+    stBeamNeeded: ST_BeamParams;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// This is meant to be subclassed. The parent class body is in the Exec action.]]></ST>
+    </Implementation>
+    <Action Name="Exec" Id="{5b04393f-c32f-49f1-a610-cb4c89f50675}">
+      <Implementation>
+        <ST><![CDATA[// Initialize or reinitialize to the current state value
+ftTransAuth(CLK:=bTransitionAuthorized);
+IF ftTransAuth.Q THEN
+    bInit := TRUE;
+END_IF
+IF bInit THEN
+    bInit := FALSE;
+    nStartState := getState;
+    nGoalState := getState;
+    stStateReq := GetStateStruct(getState);
+    bInTransition := FALSE;
+END_IF
+
+// Request transition on rising edge
+rtTransReq(CLK:=bRequestTransition);
+IF rtTransReq.Q THEN
+    nStartState := getState;
+    nGoalState := setState;
+    stStateReq := GetStateStruct(setState);
+    bInTransition := TRUE;
+END_IF
+
+// Handles getting the request to the arbiter and back
+HandleBPTM();
+
+// Set up MPS virtual limit for moves at and between states
+stStartState := GetStateStruct(nStartState);
+stGoalState := GetStateStruct(nGoalState);
+nActPos := stMotionStage.stAxisStatus.fActPosition;
+IF stMotionStage.bExecute THEN
+    nReqPos := stMotionStage.fPosition;
+ELSE
+    nReqPos := nActPos;
+END_IF
+
+IF getState = nGoalState THEN
+    // We are at a state, so set bounds based on current state.
+    // State logic will flag us as Unknown if we stray beyond this, which is a fault.
+    bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stStartState);
+    bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stStartState);
+ELSE
+    // We are moving between states, so allow goal state to be in the transition region
+    IF stGoalState.fPosition > stStartState.fPosition THEN
+        // We are moving forward
+        bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
+        bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stStartState);
+    ELSE
+        // We are moving reverse
+        bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stStartState);
+        bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+    END_IF
+    // Wait for permission to transition
+    bForwardAuthorized := bForwardAuthorized AND bTransitionAuthorized;
+    bBackwardAuthorized := bBackwardAuthorized AND bTransitionAuthorized;
+END_IF
+
+// Only let us move if the transition is allowed, or if we are moving within a state's bounds
+mcPower(Axis:=stMotionStage.Axis,
+        Enable:=stMotionStage.bAllEnable,
+        Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
+        Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+stMotionStage.bMoveOk := bForwardAuthorized OR bBackwardAuthorized;
+
+// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
+// Get state will point to Unknown/No beam if we are out of state bounds or in motion
+// Otherwise we'll have the current state's beam parameters
+stBeamNeeded := GetBeamFromState(getState);
+HandleFFO();]]></ST>
+      </Implementation>
+    </Action>
+    <Method Name="GetBeamFromState" Id="{ace20d49-ae59-4162-85f5-ab83a2a0552b}">
+      <Declaration><![CDATA[METHOD GetBeamFromState : ST_BeamParams;
+VAR_INPUT
+    nState: INT;
+END_VAR
+VAR
+    stState: DUT_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stState := GetStateStruct(nState);
+GetBeamFromState := stState.stBeamParams;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetStateCode" Id="{30e413cd-5f48-49b3-b46d-6cd3e4359ded}">
+      <Declaration><![CDATA[METHOD GetStateCode : INT
+VAR_INPUT
+    nState: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nState < 0 OR nState > 15 THEN
+    GetStateCode := -1;
+ELSE
+    GetStateCode := nState;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetStateStruct" Id="{fd5be017-4792-4f22-a98a-6c401c8e2c66}">
+      <Declaration><![CDATA[METHOD GetStateStruct : DUT_PositionState
+VAR_INPUT
+    nState: INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[{warning disable C0371}
+// Implicit VAR_IN_OUT reference inside a method needs special handling
+IF NOT __ISVALIDREF(arrStates) THEN
+    GetStateStruct := MOTION_GVL.stInvalidState;
+    RETURN;
+END_IF
+CASE GetStateCode(nState) OF
+    -1: GetStateStruct := MOTION_GVL.stInvalidState;
+    0: GetStateStruct := MOTION_GVL.stUnknownState;
+    ELSE
+        GetStateStruct := arrStates[nState];
+END_CASE
+{warning restore C0371}]]></ST>
+      </Implementation>
+    </Method>
+    <Action Name="HandleBPTM" Id="{b4dce640-f1d3-4191-98dd-b7fe08e15f67}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleFFO" Id="{4a6d3817-8b4c-48a0-a34b-e22189bbf6e2}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>
