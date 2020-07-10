@@ -35,7 +35,10 @@ END_VAR
     </Action>
     <Action Name="HandleFFO" Id="{6b3afb71-b9c2-4718-aacf-85bf75e65e9c}">
       <Implementation>
-        <ST><![CDATA[ffBeamParamsOk(
+        <ST><![CDATA[// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
+// Get state will point to Unknown/No beam if we are out of state bounds or in motion
+// Otherwise we'll have the current state's beam parameters
+ffBeamParamsOk(
     i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded),
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',

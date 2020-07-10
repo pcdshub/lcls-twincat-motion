@@ -37,8 +37,8 @@ VAR
     nGoalState: INT;
     stStartState: DUT_PositionState;
     stGoalState: DUT_PositionState;
-    nActPos: LREAL;
-    nReqPos: LREAL;
+    fActPos: LREAL;
+    fReqPos: LREAL;
     bInTransition: BOOL;
     stBeamNeeded: ST_BeamParams;
 END_VAR]]></Declaration>
@@ -53,7 +53,7 @@ IF ftTransAuth.Q THEN
     bInit := TRUE;
 END_IF
 IF bInit THEN
-    bInit := FALSE;
+    bInit R= stMotionStage.bAxisParamsInit;
     nStartState := getState;
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);
@@ -75,32 +75,49 @@ HandleBPTM();
 // Set up MPS virtual limit for moves at and between states
 stStartState := GetStateStruct(nStartState);
 stGoalState := GetStateStruct(nGoalState);
-nActPos := stMotionStage.stAxisStatus.fActPosition;
+fActPos := stMotionStage.stAxisStatus.fActPosition;
 IF stMotionStage.bExecute THEN
-    nReqPos := stMotionStage.fPosition;
+    fReqPos := stMotionStage.fPosition;
 ELSE
-    nReqPos := nActPos;
+    fReqPos := fActPos;
 END_IF
 
-IF getState = nGoalState THEN
-    // We are at a state, so set bounds based on current state.
-    // State logic will flag us as Unknown if we stray beyond this, which is a fault.
-    bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stStartState);
-    bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stStartState);
-ELSE
-    // We are moving between states, so allow goal state to be in the transition region
-    IF stGoalState.fPosition > stStartState.fPosition THEN
-        // We are moving forward
-        bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
-        bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stStartState);
-    ELSE
-        // We are moving reverse
-        bForwardAuthorized := F_PosUnderUpperBound(MAX(nActPos, nReqPos) + ABS(fStateBoundaryDeadband), stStartState);
-        bBackwardAuthorized := F_PosOverLowerBound(MIN(nActPos, nReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+IF stMotionStage.bExecute THEN
+    IF NOT stStartState.bValid THEN
+        // We are in a bad state already! Require us to move to a good state!
+        // TODO
+    ELSIF stGoalState.fPosition > stStartState.fPosition THEN
+        // We are moving forward to a new state
+        bForwardAuthorized := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
+        bBackwardAuthorized := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stStartState);
+    ELSIF stGoalState.fPosition < stStartState.fPosition THEN
+        // We are moving backward to a new state
+        bForwardAuthorized := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stStartState);
+        bBackwardAuthorized := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
     END_IF
-    // Wait for permission to transition
-    bForwardAuthorized := bForwardAuthorized AND bTransitionAuthorized;
-    bBackwardAuthorized := bBackwardAuthorized AND bTransitionAuthorized;
+    IF stGoalState.fPosition = stStartState.fPosition THEN
+        // We are not changing states
+        bForwardAuthorized := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
+        bBackwardAuthorized := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+        stMotionStage.bSafetyReady := TRUE;
+        // Set an error message override in case this causes an error
+        IF stMotionStage.bError AND fReqPos > fActPos AND NOT bForwardAuthorized THEN
+            stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
+        ELSIF stMotionStage.bError AND fReqPos < fActPos AND NOT bBackwardAuthorized THEN
+            stMotionStage.sCustomErrorMessage := 'Unsafe tweak backward blocked by PMPS';
+        END_IF
+    ELSE
+        // We are changing states
+        // Wait for permission to transition
+        bForwardAuthorized := bForwardAuthorized AND bTransitionAuthorized;
+        bBackwardAuthorized := bBackwardAuthorized AND bTransitionAuthorized;
+        stMotionStage.bSafetyReady S= bTransitionAuthorized;
+    END_IF
+ELSE
+    // Start with no authorization, until the user tries to move
+    bForwardAuthorized := FALSE;
+    bBackwardAuthorized := FALSE;
+    stMotionStage.bSafetyReady := FALSE;
 END_IF
 
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
@@ -108,11 +125,8 @@ mcPower(Axis:=stMotionStage.Axis,
         Enable:=stMotionStage.bAllEnable,
         Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
         Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
-stMotionStage.bMoveOk := bForwardAuthorized OR bBackwardAuthorized;
 
-// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
-// Get state will point to Unknown/No beam if we are out of state bounds or in motion
-// Otherwise we'll have the current state's beam parameters
+// Raise fast faults as needed
 stBeamNeeded := GetBeamFromState(getState);
 HandleFFO();]]></ST>
       </Implementation>

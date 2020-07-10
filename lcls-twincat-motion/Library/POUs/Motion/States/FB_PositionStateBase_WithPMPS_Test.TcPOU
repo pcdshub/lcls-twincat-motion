@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateBase_WithPMPS_Test" Id="{e8770d3e-d120-4022-9494-184782095d7b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateBase_WithPMPS_Test EXTENDS FB_PositionStateBase
+(*
+    Handles EPICS moves between multiple states for a single axis with fake PMPS.
+    Should be subclassed for a specific enumSet and enumGet.
+    See body comment  or FB_PositionStateInOut_WithPMPS_Test for an implementation example.
+*)
+VAR_INPUT
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    nTransitionAssertionID: UDINT;
+END_VAR
+VAR
+    fbStatePMPS: FB_PositionStatePMPS_Test;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+    Subclass me, define enums to translate setState and getState, call Exec
+
+    Example:
+
+    <something to fill arrStates>
+    setState := enumSet;
+    Exec();
+    enumGet := getState;
+    enumSet := setState;
+*)]]></ST>
+    </Implementation>
+    <Action Name="Exec" Id="{728eaac9-6061-4f76-bbe0-688e7ec11078}">
+      <Implementation>
+        <ST><![CDATA[StateHandler();
+PMPSHandler();]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="PMPSHandler" Id="{0fb241e5-91dc-4ff0-8a2d-329b6cc9a0ad}">
+      <Implementation>
+        <ST><![CDATA[fbStatePMPS(
+    stMotionStage:=stMotionStage,
+    arrStates:=arrStates,
+    bRequestTransition:=bBusy,
+    setState:=setState,
+    getState:=getState,
+    stTransitionBeam:=stTransitionBeam,
+    nTransitionAssertionID:=nTransitionAssertionID);]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

@@ -38,7 +38,7 @@ bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
 // Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
-stMotionStage.bMoveOk S= stMotionStage.bPowerSelf;
+stMotionStage.bSafetyReady S= stMotionStage.bPowerSelf;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
@@ -48,14 +48,14 @@ CASE stMotionStage.nEnableMode OF
         IF bNewMoveReq THEN
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
-                    stMotionStage.bEnable := stMotionStage.bMoveOk;
+                    stMotionStage.bEnable := stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past positive limit.';
                 END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
-                    stMotionStage.bEnable := stMotionStage.bMoveOk;
+                    stMotionStage.bEnable := stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
@@ -68,7 +68,7 @@ CASE stMotionStage.nEnableMode OF
 END_CASE
 
 // Do not start the move until we have power and the safety system says it is OK
-bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bMoveOk;
+bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
 
 IF bExecute AND NOT stMotionStage.bError THEN
     // Reset local warnings if things are going well
