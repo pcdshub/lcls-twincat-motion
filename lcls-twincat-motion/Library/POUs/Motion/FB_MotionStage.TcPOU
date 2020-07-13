@@ -52,6 +52,7 @@ CASE stMotionStage.nEnableMode OF
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past positive limit.';
+                    stMotionStage.bExecute := FALSE;
                 END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
@@ -59,6 +60,7 @@ CASE stMotionStage.nEnableMode OF
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
+                    stMotionStage.bExecute := FALSE;
                 END_IF
             END_IF
             IF stMotionStage.bEnable OR stMotionStage.bError THEN
