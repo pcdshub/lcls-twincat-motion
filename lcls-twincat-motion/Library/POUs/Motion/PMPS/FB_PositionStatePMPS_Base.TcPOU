@@ -13,6 +13,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     bRequestTransition: BOOL;
+    bDoingTransition: BOOL;
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
@@ -50,7 +51,7 @@ ftTransAuth(CLK:=bTransitionAuthorized);
 IF ftTransAuth.Q THEN
     bInit := TRUE;
 END_IF
-IF bInit THEN
+IF bInit OR nGoalState = 0 THEN
     bInit R= stMotionStage.bAxisParamsInit;
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);

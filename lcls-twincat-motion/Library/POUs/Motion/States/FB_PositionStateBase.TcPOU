@@ -113,11 +113,13 @@ END_VAR]]></Declaration>
 rtReset(CLK:=bReset);
 IF rtReset.Q THEN
     bInit := FALSE;
+    bReset := FALSE;
 END_IF
 
 // First-cycle init
 IF NOT bInit THEN
     bError := FALSE;
+    nErrorID := 0;
     sErrorMessage := '';
     bBusy := FALSE;
     bDone := FALSE;
@@ -190,8 +192,10 @@ END_IF
 // Pick up any new errors, but don't override uncleared existing errors
 IF NOT bError THEN
     bError := fbStateMove.bError;
-    nErrorId := fbStateMove.nErrorId;
-    sErrorMessage := fbStateMove.sErrorMessage;
+    IF bError THEN
+        nErrorId := fbStateMove.nErrorId;
+        sErrorMessage := fbStateMove.sErrorMessage;
+    END_IF
 END_IF
 
 // Reset the setpoint and goal to 0 if we're not doing anything

@@ -19,6 +19,7 @@ VAR
     mcReadParams: MC_ReadParameterSet;
     timer: TON;
     bExecute: BOOL := TRUE;
+    nLatchErrId: UDINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -31,7 +32,10 @@ mcReadParams(
     Axis:=stMotionStage.Axis,
     Execute:=bEnable AND bExecute,
     Error=>bError);
-bExecute R= mcReadParams.Done;
+IF mcReadParams.ErrorID <> 0 THEN
+    nLatchErrId := 0;
+END_IF
+bExecute R= mcReadParams.Done OR mcReadParams.Error;
 stMotionStage.bAxisParamsInit S= mcReadParams.Done;]]></ST>
     </Implementation>
   </POU>

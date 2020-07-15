@@ -164,7 +164,7 @@ IF rtTarget.Q OR ftExec.Q THEN
 END_IF
 
 // Handle auto-disable timing
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT stMotionStage.bExecute THEN
+IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q THEN
     IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
         stMotionStage.bEnable := FALSE;
     END_IF
