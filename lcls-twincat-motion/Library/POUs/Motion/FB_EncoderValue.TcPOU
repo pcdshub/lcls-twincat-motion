@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_EncoderValue" Id="{6f91fce8-e990-4671-acc4-8247a4581cff}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EncoderValue
+(*
+    Process the encoder value for DUT_MotionStage
+
+    A few different problems this is trying to solve:
+        1. Different encoders show as different types in the IO,
+           but we want a consistent type for checks and for PVs
+        2. Some inverted encoders display as very high numbers
+           as they count down from max int instead of up from 0
+        3. Some encoders have raw signed values, others unsigned.
+
+    To this end, we figure out which encoder is linked and process
+    the value appropriately.
+*)
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stMotionStage.nRawEncoderULINT <> 0 THEN
+    IF stMotionStage.nRawEncoderULINT < 4294967296 THEN
+        stMotionStage.nEncoderCount := ULINT_TO_UDINT(stMotionStage.nRawEncoderULINT);
+    ELSE
+        stMotionStage.nEncoderCount := ULINT_TO_UDINT(18446744073709551615 - stMotionStage.nRawEncoderULINT);
+    END_IF
+ELSIF stMotionStage.nRawEncoderUINT <> 0 THEN
+    stMotionStage.nEncoderCount := UINT_TO_UDINT(stMotionStage.nRawEncoderUINT);
+ELSIF stMotionStage.nRawEncoderINT <> 0 THEN
+    stMotionStage.nEncoderCount := INT_TO_UDINT(stMotionStage.nRawEncoderINT);
+ELSE
+    stMotionStage.nEncoderCount := 0;
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="F_PosOverLowerBound" Id="{0f84a03e-89d5-4ac7-905a-0b4508a08a18}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_PosOverLowerBound : BOOL
+VAR_INPUT
+    fPosition: LREAL;
+    stPositionState: DUT_PositionState;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_PosOverLowerBound := fPosition > (stPositionState.fPosition - ABS(stPositionState.fDelta));]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

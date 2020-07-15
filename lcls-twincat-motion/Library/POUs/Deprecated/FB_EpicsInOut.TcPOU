@@ -49,8 +49,6 @@ VAR
         io: io
     '}
     fbStateManager: FB_PositionStateManager; // NOTE: Please copy this pragma exactly to pick up the standard PVs
-    fbLockOut: FB_PositionStateLock;
-    fbLockIn: FB_PositionStateLock;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -60,10 +58,6 @@ IF NOT bInit THEN
     stIn.sName := 'IN';
     bInit := TRUE;
 END_IF
-
-// If either of these have bLocked = TRUE, do not allow user to change them
-fbLockOut(stPositionState:=stOut);
-fbLockIn(stPositionState:=stIn);
 
 // Stuff first two values of the 15 element array for the manager
 arrStates[1] := stOut;

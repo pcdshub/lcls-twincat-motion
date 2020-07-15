@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="F_AtPositionState" Id="{058abbc4-740d-4ed6-b83c-7fdc99dbdef5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_AtPositionState : BOOL
+    // Check if the motor is within the state bounds
+VAR_INPUT
+    stMotionStage: DUT_MotionStage;
+    stPositionState: DUT_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// If state is defined, we are within the delta, and we are either not moving or our destination is within the delta, we are at the state
+F_AtPositionState := stPositionState.bValid AND stPositionState.bUpdated
+                     AND F_PosWithinDelta(stMotionStage.stAxisStatus.fActPosition, stPositionState)
+                     AND ((NOT stMotionStage.bExecute) OR F_PosWithinDelta(stMotionStage.fPosition, stPositionState));]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -22,6 +22,9 @@ VAR
     fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
     bNegGoal: BOOL;
+    fbEncoderValue: FB_EncoderValue;
+    fbNCParams: FB_MotionStageNCParams;
+    bNewMoveReq: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -29,40 +32,50 @@ END_VAR
 stMotionStage.Axis.ReadStatus();
 
 rtUserExec(CLK := stMotionStage.bExecute);
+bNewMoveReq S= rtUserExec.Q;
+bNewMoveReq R= NOT stMotionStage.bExecute;
 bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
+
+// Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
+stMotionStage.bSafetyReady S= stMotionStage.bPowerSelf;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
     ENUM_StageEnableMode.ALWAYS:
         stMotionStage.bEnable := TRUE;
-        bExecute := stMotionStage.bExecute;
-    ENUM_StageEnableMode.NEVER:
-        bExecute := stMotionStage.bExecute;
     ENUM_StageEnableMode.DURING_MOTION:
-        IF rtUserExec.Q THEN
+        IF bNewMoveReq THEN
             IF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
-                    stMotionStage.bEnable := TRUE;
+                    stMotionStage.bEnable := stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past positive limit.';
+                    stMotionStage.bExecute := FALSE;
                 END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
-                    stMotionStage.bEnable := TRUE;
+                    stMotionStage.bEnable := stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
+                    stMotionStage.bExecute := FALSE;
                 END_IF
             END_IF
-        END_IF
-        bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone;
-        IF bExecute AND NOT stMotionStage.bError THEN
-            // Reset local warnings if things are going well
-            stMotionStage.sErrorMessage := '';
+            IF stMotionStage.bEnable OR stMotionStage.bError THEN
+                bNewMoveReq := FALSE;
+            END_IF
         END_IF
 END_CASE
+
+// Do not start the move until we have power and the safety system says it is OK
+bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+
+IF bExecute AND NOT stMotionStage.bError THEN
+    // Reset local warnings if things are going well
+    stMotionStage.sErrorMessage := '';
+END_IF
 
 // Automatically fill the correct nCmdData for homing
 IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
@@ -106,7 +119,14 @@ IF NOT stMotionStage.bError THEN
 END_IF
 
 // Set the error message if we have one
-stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+IF stMotionStage.bError THEN
+    // Hook if other code wants to inject a non-NC error
+    IF stMotionStage.sCustomErrorMessage <> '' THEN
+        stMotionStage.sErrorMessage := stMotionSTage.sCustomErrorMessage;
+    ELSE
+        stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+    END_IF
+END_IF
 
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);
@@ -144,7 +164,7 @@ IF rtTarget.Q OR ftExec.Q THEN
 END_IF
 
 // Handle auto-disable timing
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND NOT stMotionStage.bExecute THEN
+IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q THEN
     IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
         stMotionStage.bEnable := FALSE;
     END_IF
@@ -189,6 +209,7 @@ IF stMotionStage.bReset THEN
     stMotionStage.bError := FALSE;
     stMotionStage.nErrorId := 0;
     stMotionStage.sErrorMessage := '';
+    stMotionStage.sCustomErrorMessage := '';
     bExecute := FALSE;
 END_IF
 
@@ -196,7 +217,13 @@ END_IF
 // e.g. for pre-calibrated absolute encoders
 IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
     stMotionStage.stAxisStatus.bHomed := TRUE;
-END_IF]]></ST>
+END_IF
+
+fbEncoderValue(stMotionStage:=stMotionStage);
+fbNCParams(
+    stMotionStage:=stMotionStage,
+    bEnable:=TRUE,
+    tRefreshDelay:=T#1s);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

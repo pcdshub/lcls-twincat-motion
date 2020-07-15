@@ -25,6 +25,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="GVLs" />
+    <Folder Include="POUs\Motion\PMPS" />
+    <Folder Include="POUs\Motion\States\Examples" />
+    <Folder Include="POUs\Motion\States\Helpers" />
+    <Folder Include="POUs\Motion\States\Internals" />
     <Folder Include="POUs\Motion\Utils" />
     <Folder Include="POUs\Motion\States" />
     <Folder Include="POUs\ImplicitChecks" />
@@ -92,7 +97,17 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
+    <Compile Include="GVLs\MOTION_GVL.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
     <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_EpicsInOut.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateManager.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Deprecated\FB_StatePTPMove.TcPOU">
@@ -113,10 +128,16 @@
     <Compile Include="POUs\ImplicitChecks\CheckDivReal.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Motion\FB_EncoderValue.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Motion\FB_MotionRequest.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\FB_MotionStage.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\FB_MotionStageNCParams.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\FB_MotionStageSim.TcPOU">
@@ -132,19 +153,61 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
-    <Compile Include="POUs\Motion\States\FB_EpicsInOut.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_EncErrorFFO.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\FB_PositionStateLock.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\FB_PositionStateManager.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_NCErrorFFO.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS_Base.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionStateInOut.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionStateInOut_WithPMPS.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionStateInOut_WithPMPS_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateBase.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateBase_WithPMPS.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateBase_WithPMPS_Test.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\States\FB_PositionStateMove.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\F_AtPositionState.TcPOU">
+    <Compile Include="POUs\Motion\States\Helpers\FB_RawCountConverter.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Helpers\F_AtPositionState.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Helpers\F_PosOverLowerBound.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Helpers\F_PosUnderUpperBound.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Helpers\F_PosWithinDelta.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Internals\FB_PositionStateInternal.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Internals\FB_PositionStateLock.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\Utils\FB_SetEnables.TcPOU">
@@ -343,6 +406,11 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderResolution Include="PMPS">
+      <Resolution>PMPS, 0.5.0 (SLAC - LCLS)</Resolution>
+    </PlaceholderResolution>
   </ItemGroup>
   <ItemGroup>
     <None Include="Library.tmc">

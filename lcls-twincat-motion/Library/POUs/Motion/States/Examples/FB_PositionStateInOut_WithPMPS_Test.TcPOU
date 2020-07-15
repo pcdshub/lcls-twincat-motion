@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateInOut_WithPMPS_Test" Id="{5033cde0-7ed9-4a18-af28-d954337efdeb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateInOut_WithPMPS_Test EXTENDS FB_PositionStateBase_WithPMPS_Test
+(*
+    Example usage of FB_PositionStateBase_WithPMPS_Test for a simple IN/OUT axis. See NOTE: comments.
+    Also usable as a drop-in for these cases (no need to roll your own in/out)
+
+    This is the PMPS version. Note that the only difference is that we extend the _WithPMPS_Test FB.
+*)
+VAR_INPUT
+    // The enum position to move to
+    {attribute 'pytmc' := '
+        pv: SET
+        io: io
+    '}
+    enumSet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumSet
+
+    // Information about the OUT position
+    stOut: DUT_PositionState; // NOTE: Do not pragma these, let it happen in the manager.
+    // Information about the IN position
+    stIn: DUT_PositionState;
+END_VAR
+VAR_OUTPUT
+    // The enum state readback
+    {attribute 'pytmc' := '
+        pv: GET
+        io: i
+    '}
+    enumGet: ENUM_EpicsInOut; // NOTE: Please copy this pragma exactly on your enumGet
+END_VAR
+VAR
+    bInOutInit: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT bInOutInit THEN
+    bInOutInit := TRUE;
+    arrStates[1] := stOut;
+    arrStates[2] := stIn;
+END_IF
+setState := enumSet;
+Exec();
+enumGet := getState;
+enumSet := setState;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -20,6 +20,13 @@ STRUCT
     '}
     fPosition: LREAL;
 
+    {attribute 'pytmc' := '
+        pv: ENCODER
+        io: i
+        field: DESC Encoder count associated with this state
+    '}
+    nEncoderCount: UDINT;
+
     // Maximum allowable deviation from fPosition while at the state
     {attribute 'pytmc' := '
         pv: DELTA
@@ -82,6 +89,18 @@ STRUCT
         field: DESC TRUE if this is a real state
     '}
     bValid: BOOL;
+
+    // Set this to TRUE when you want to use the raw encoder counts to define the state
+    bUseRawCounts: BOOL;
+
+    // Is set to TRUE by FB_PositionStateInternal when called
+    bUpdated: BOOL;
+
+    // Beam parameters associated with this state
+    stBeamParams: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+
+    // Transition ID associated with this state
+    nRequestAssertionID: UDINT;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>

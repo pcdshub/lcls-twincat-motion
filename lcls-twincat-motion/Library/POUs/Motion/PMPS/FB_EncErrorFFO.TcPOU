@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_EncErrorFFO" Id="{a91d9283-56e2-4ee3-a9ad-c1d01374f94c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EncErrorFFO
+(*
+    Example usage of FB_NCErrorFFO that only counts encoder errors as faults.
+*)
+VAR_IN_OUT
+    // Motion stage to monitor
+    stMotionStage: DUT_MotionStage;
+    // FFO to trip
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // Reset the fault
+    bReset: BOOL;
+    // Auto reset the fault
+    bAutoReset: BOOL;
+END_VAR
+VAR_OUTPUT
+    // Quick way for nearby code to check if this block has tripped the FFO.
+    bTripped: BOOL;
+END_VAR
+VAR
+    fbNCErrorFFO: FB_NCErrorFFO := (
+        nLowErrorId := 16#4400,
+        nHighErrorId := 16#44FF,
+        sDesc := 'Encoder error');
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbNCErrorFFO(
+    stMotionStage := stMotionStage,
+    fbFFHWO := fbFFHWO,
+    bReset := bReset,
+    bAutoReset := bAutoReset,
+    bTripped => bTripped);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

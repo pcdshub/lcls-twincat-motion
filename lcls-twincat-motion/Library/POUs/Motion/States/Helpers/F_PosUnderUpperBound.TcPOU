@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="F_PosUnderUpperBound" Id="{b5ee37fa-13c6-40f2-a7c7-9ac80833d78f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION F_PosUnderUpperBound : BOOL
+VAR_INPUT
+    fPosition: LREAL;
+    stPositionState: DUT_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_PosUnderUpperBound := fPosition < (stPositionState.fPosition + ABS(stPositionState.fDelta));]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

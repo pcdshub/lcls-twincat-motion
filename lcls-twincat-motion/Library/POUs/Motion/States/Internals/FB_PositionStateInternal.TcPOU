@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateInternal" Id="{a4177056-7990-0c0e-2a8a-8d9ac89a1e5e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateInternal
+(*
+    Routines that must be called on all DUT_PositionState
+*)
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+    stPositionState: DUT_PositionState;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    fbEncConverter: FB_RawCountConverter;
+    fbLock: FB_PositionStateLock;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Mark that we've been here
+stPositionState.bUpdated := TRUE;
+
+// Update pos state's count or egu position as appropriate
+IF stMotionStage.bAxisParamsInit THEN
+    fbEncConverter(
+        stParameters:=stMotionStage.stAxisParameters,
+        nCountCheck:=stPositionState.nEncoderCount,
+        fPosCheck:=stPositionState.fPosition);
+    IF stPositionState.bUseRawCounts THEN
+        stPositionState.fPosition := fbEncConverter.fPosGet;
+    ELSE
+        stPositionState.nEncoderCount := fbEncConverter.nCountGet;
+    END_IF
+END_IF
+
+// Handle state parameter locking
+fbLock(
+    stPositionState:=stPositionState,
+    bEnable:=stMotionStage.bAxisParamsInit);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPS" Id="{7e0e3094-8a3d-4636-a390-eb10e10412f0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS EXTENDS FB_PositionStatePMPS_Base
+(*
+    Hooks up a position state to an arbiter and an FFO
+        Use BeamParameterTransitionManager to manage transition requests between states
+        Hook up to the inputs/outputs of the state function block
+        Raises FFO if beam parameters are worse than required for current state
+*)
+VAR_IN_OUT
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR
+    bptm: BeamParameterTransitionManager;
+    ffBeamParamsOk: FB_FastFault;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Exec();]]></ST>
+    </Implementation>
+    <Action Name="HandleBPTM" Id="{15e95ede-ce74-498f-962a-8707e856078c}">
+      <Implementation>
+        <ST><![CDATA[bptm(fbArbiter:=fbArbiter,
+     i_TransitionAssertionID:=nTransitionAssertionID,
+     i_stTransitionAssertion:=stTransitionBeam,
+     i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
+     i_stRequestedAssertion:=stStateReq.stBeamParams,
+     i_xMoving:=bDoingTransition,
+     i_xDoneMoving:=NOT bDoingTransition,
+     stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+     q_xTransitionAuthorized=>bTransitionAuthorized);]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleFFO" Id="{6b3afb71-b9c2-4718-aacf-85bf75e65e9c}">
+      <Implementation>
+        <ST><![CDATA[// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
+// Get state will point to Unknown/No beam if we are out of state bounds or in motion
+// Otherwise we'll have the current state's beam parameters
+ffBeamParamsOk(
+    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded),
+    i_DevName:=stMotionStage.sName,
+    i_Desc:='Beam parameter mismatch',
+    io_fbFFHWO:=fbFFHWO);]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

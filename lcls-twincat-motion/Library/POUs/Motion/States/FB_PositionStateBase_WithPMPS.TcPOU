@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateBase_WithPMPS" Id="{b19911a0-9c0b-43b8-8cb3-dd3526519e98}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateBase_WithPMPS EXTENDS FB_PositionStateBase
+(*
+    Handles EPICS moves between multiple states for a single axis with PMPS.
+    Should be subclassed for a specific enumSet and enumGet.
+    See body comment  or FB_PositionStateInOut_WithPMPS for an implementation example.
+*)
+VAR_IN_OUT
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    nTransitionAssertionID: UDINT;
+END_VAR
+VAR
+    fbStatePMPS: FB_PositionStatePMPS;
+    fbEncErrFFO: FB_EncErrorFFO;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+    Subclass me, define enums to translate setState and getState, call Exec
+
+    Example:
+
+    <something to fill arrStates>
+    setState := enumSet;
+    Exec();
+    enumGet := getState;
+    enumSet := setState;
+*)]]></ST>
+    </Implementation>
+    <Action Name="Exec" Id="{70fa5ddc-d7df-4f92-a75a-307938fa5e37}">
+      <Implementation>
+        <ST><![CDATA[StateHandler();
+PMPSHandler();]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="PMPSHandler" Id="{71f52474-b96e-45d5-8d7a-c1880d7070ba}">
+      <Implementation>
+        <ST><![CDATA[fbStatePMPS(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stMotionStage:=stMotionStage,
+    arrStates:=arrStates,
+    bRequestTransition:=bBusy,
+    bDoingTransition:=bBusy,
+    setState:=setState,
+    getState:=getState,
+    stTransitionBeam:=stTransitionBeam,
+    nTransitionAssertionID:=nTransitionAssertionID);
+
+fbEncErrFFO(
+    stMotionStage:=stMotionStage,
+    fbFFHWO:=fbFFHWO,
+    bAutoReset:=TRUE);]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

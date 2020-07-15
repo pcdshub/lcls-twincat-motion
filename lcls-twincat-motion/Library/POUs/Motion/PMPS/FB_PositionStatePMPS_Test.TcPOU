@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPS_Test" Id="{116f57d8-27d2-44f6-a73e-8c9b24b1bd3d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS_Test EXTENDS FB_PositionStatePMPS_Base
+(*
+    Implement position state pmps with no FFO and auto-accept transition after 3s
+    Use for offline testing of everything except the explicit interface
+*)
+VAR
+    tonReq: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Exec();]]></ST>
+    </Implementation>
+    <Action Name="HandleBPTM" Id="{a1c65ced-35d8-47df-ada1-08298070502e}">
+      <Implementation>
+        <ST><![CDATA[// Send the fake BPTM our assertion request by changing stStateReq.stBeamParams
+// We expect to recieve bTransitionAuthorized TRUE after some delta T
+// We expect bTransitionAuthorized to go FALSE after stMotionStage.bBusy goes FALSE
+tonReq(
+    IN:=bInTransition,
+    PT:=T#3s);
+bTransitionAuthorized := tonReq.Q AND stMotionStage.bExecute;]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleFFO" Id="{bbf94cf3-04b5-4757-809d-723da17dcc32}">
+      <Implementation>
+        <ST><![CDATA[// Skip implementing this for offline testing
+// We won't be able to tell if it worked anyway]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

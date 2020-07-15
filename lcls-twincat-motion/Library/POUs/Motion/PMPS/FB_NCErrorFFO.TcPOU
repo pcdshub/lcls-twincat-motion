@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_NCErrorFFO" Id="{37479e14-c03d-4022-bd1f-ea03fb5fd29c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_NCErrorFFO
+(*
+    Configure a DUT_MotionStage to trigger an FFO when we have an error.
+
+    This can be configured to only apply to specific error ranges,
+    though the default is the normal 16#4XXX NC error range. The error
+    ranges are:
+    16#40XX General Errors
+    16#41XX Channel Errors
+    16#42XX Group Errors
+    16#43XX Axis Errors
+    16#44XX Encoder Errors
+    16#45XX Controller Errors
+    16#46XX Drive Errors
+    16#4AXX Table Errors
+    16#4BXX NC PLC Errors
+    16#4CXX Kinematic Transformation
+
+    There is also a new extended NC error range, but it is sparsely populated.
+    This range is 16#8XXX:
+    16#8100 - 16#811F: Bode plot (diagnosis)
+    16#8120 - 16#8FFF: Further errors
+
+    To configure multiple ranges, simply use multiple instances of this
+    function block.
+*)
+VAR_IN_OUT
+    // Motion stage to monitor
+    stMotionStage: DUT_MotionStage;
+    // FFO to trip
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // Reset the fault
+    bReset: BOOL;
+    // Auto-reset the fault
+    bAutoReset: BOOL;
+    // The lowest error code that will trip the FFO
+    nLowErrorId: UDINT := 16#4000;
+    // The highest error code that will trip the FFO
+    nHighErrorId: UDINT := 16#4FFF;
+    // A description of the fault
+    sDesc: STRING := 'Motor error';
+END_VAR
+VAR_OUTPUT
+    // Quick way for nearby code to check if this block has tripped the FFO.
+    bTripped: BOOL;
+    // Error code sent to PMPS. Is always 16#20XX, where XX is the first two hex in the NC error.
+    nErrorTypeCode: UINT;
+END_VAR
+VAR
+    bInit: BOOL := TRUE;
+    bNCError: BOOL;
+    stBeamParams: ST_BeamParams;
+    fbFF: FB_FastFault;
+    rtTrip: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bInit THEN
+    fbFF.i_DevName := stMotionStage.sName;
+    fbFF.i_Desc := sDesc;
+    IF LEN(stMotionStage.sName) > 0 THEN
+        bInit := FALSE;
+    END_IF
+ELSE
+    bNCError := stMotionStage.bError AND stMotionStage.nErrorId >= nLowErrorId AND stMotionStage.nErrorId <= nHighErrorId;
+    bTripped := bNCError AND PMPS_GVL.stCurrentBeamParameters.nRate > 0;
+    rtTrip(CLK:=bTripped);
+    IF rtTrip.Q THEN
+        nErrorTypeCode := 16#2000 + UDINT_TO_UINT(SHR(stMotionStage.nErrorId, 8));
+    END_IF
+    fbFF(i_xOK := NOT bTripped,
+         i_xReset := bReset,
+         i_xAutoReset := bAutoReset,
+         i_TypeCode:= nErrorTypeCode,
+         io_fbFFHWO := fbFFHWO);
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
