@@ -19,6 +19,7 @@ VAR_INPUT
     fStateBoundaryDeadband: LREAL := 0;
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
     nTransitionAssertionID: UDINT;
+    bDisabled: BOOL := TRUE;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -51,7 +52,7 @@ ftTransAuth(CLK:=bTransitionAuthorized);
 IF ftTransAuth.Q THEN
     bInit := TRUE;
 END_IF
-IF bInit OR nGoalState = 0 THEN
+IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     bInit R= stMotionStage.bAxisParamsInit;
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);
@@ -66,8 +67,10 @@ IF rtTransReq.Q THEN
     bInTransition := TRUE;
 END_IF
 
+IF NOT bDisabled THEN
 // Handles getting the request to the arbiter and back
-HandleBPTM();
+    HandleBPTM();
+END_IF
 
 // Set up MPS virtual limit for moves at and between states
 stGoalState := GetStateStruct(nGoalState);
@@ -105,11 +108,19 @@ ELSE
     END_IF
 END_IF
 
+IF bDisabled THEN
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable);    
+    stMotionStage.bSafetyReady := TRUE;
+ELSE
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
-mcPower(Axis:=stMotionStage.Axis,
-        Enable:=stMotionStage.bAllEnable,
-        Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
-        Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+END_IF
 
 // Raise fast faults as needed
 stBeamNeeded := GetBeamFromState(getState);
