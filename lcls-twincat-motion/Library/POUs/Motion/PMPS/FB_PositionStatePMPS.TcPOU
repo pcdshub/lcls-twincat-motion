@@ -15,6 +15,7 @@ END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
+    bFFOxOk: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -38,8 +39,13 @@ END_VAR
         <ST><![CDATA[// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
 // Get state will point to Unknown/No beam if we are out of state bounds or in motion
 // Otherwise we'll have the current state's beam parameters
+IF stBeamNeeded.nRate <= 0 THEN
+    bFFOxOk := FALSE;
+ELSE
+    bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
+END_IF
 ffBeamParamsOk(
-    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded),
+    i_xOK:=bFFOxOk,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
     io_fbFFHWO:=fbFFHWO);]]></ST>
