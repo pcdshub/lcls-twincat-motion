@@ -1156,6 +1156,10 @@ VAR_GLOBAL
     stUnknownState: DUT_PositionState := (sName := &#39;Unknown&#39;);
     stInvalidState: DUT_PositionState;
 END_VAR
+VAR_GLOBAL CONSTANT
+    // Allocated space for 5 states besides Unknown (16 including Unknown is the max for an EPICS MBBI)
+    MAX_STATES: INT := 5;
+END_VAR
 </pre></div>
 </div>
 </div>
@@ -5066,6 +5070,7 @@ VAR
     fbEncoderValue: FB_EncoderValue;
     fbNCParams: FB_MotionStageNCParams;
     bNewMoveReq: BOOL;
+    bPrepareDisable: BOOL;
 END_VAR
 // Start with an accurate status
 stMotionStage.Axis.ReadStatus();
@@ -5073,6 +5078,8 @@ stMotionStage.Axis.ReadStatus();
 rtUserExec(CLK := stMotionStage.bExecute);
 bNewMoveReq S= rtUserExec.Q;
 bNewMoveReq R= NOT stMotionStage.bExecute;
+bPrepareDisable R= bNewMoveReq;
+
 bPosGoal := stMotionStage.stAxisStatus.fActPosition &lt; stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition &gt; stMotionStage.fPosition;
 
@@ -5203,10 +5210,11 @@ IF rtTarget.Q OR ftExec.Q THEN
 END_IF
 
 // Handle auto-disable timing
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q THEN
-    IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
-        stMotionStage.bEnable := FALSE;
-    END_IF
+bPrepareDisable S= stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q;
+// Delay the disable until we reach standstill, else brake issues or other race conditions
+IF bPrepareDisable AND stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+    bPrepareDisable := FALSE;
+    stMotionStage.bEnable := FALSE;
 END_IF
 
 // Get a definitive bEnabled reading
@@ -5321,6 +5329,9 @@ END_FUNCTION_BLOCK
 <span class="n">VAR_IN_OUT</span>
     <span class="n">stMotionStage</span><span class="o">:</span> <span class="n">DUT_MotionStage</span><span class="p">;</span>
 <span class="n">END_VAR</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nEnableMode</span><span class="o">:</span> <span class="n">ENUM_StageEnableMode</span> <span class="o">:=</span> <span class="n">ENUM_StageEnableMode</span><span class="p">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+<span class="n">END_VAR</span>
 <span class="n">VAR</span>
     <span class="n">fbMotionStage</span><span class="o">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
     <span class="n">bInit</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -5336,7 +5347,7 @@ END_FUNCTION_BLOCK
     <span class="o">//</span> <span class="n">Stand</span><span class="o">-</span><span class="k">in</span> <span class="k">for</span> <span class="n">no</span> <span class="n">PMPS</span> <span class="n">governer</span>
     <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bPowerSelf</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Always</span> <span class="n">keep</span> <span class="n">it</span> <span class="n">enabled</span> <span class="k">for</span> <span class="n">testing</span> <span class="n">ease</span>
-    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">ENUM_StageEnableMode</span><span class="p">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">nEnableMode</span><span class="p">;</span>
 <span class="n">END_IF</span>
 <span class="o">//</span> <span class="n">Call</span> <span class="n">FB_MotionStage</span> <span class="k">to</span> <span class="n">do</span> <span class="n">the</span> <span class="n">thing</span>
 <span class="n">fbMotionStage</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">);</span>
@@ -5542,13 +5553,13 @@ VAR_OUTPUT
     bDone: BOOL;
 END_VAR
 VAR
-    // Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
+    // Pre-allocated array of states
     {attribute &#39;pytmc&#39; := &#39;
         pv:
         io: io
         expand: %.2d
     &#39;}
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
+    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 
     // Corresponding arrStates index to move to, or 0 if no move selected
     setState: INT;
@@ -5561,7 +5572,7 @@ VAR
     stUnknown: DUT_PositionState;
     stGoal: DUT_PositionState;
     fbStateMove: FB_PositionStateMove;
-    fbStateInternal: ARRAY[1..15] OF FB_PositionStateInternal;
+    fbStateInternal: ARRAY[1..MOTION_GVL.MAX_STATES] OF FB_PositionStateInternal;
     nIndex: INT;
     bNewGoal: BOOL;
     bInnerExec: BOOL;
@@ -5608,7 +5619,7 @@ IF NOT bInit THEN
 END_IF
 
 // All state internal handlers
-FOR nIndex := 1 TO 15 DO
+FOR nIndex := 1 TO MOTION_GVL.MAX_STATES DO
     IF arrStates[nIndex].bValid THEN
         fbStateInternal[nIndex](
             stMotionStage:=stMotionStage,
@@ -5619,7 +5630,7 @@ END_FOR
 // Check where we are by going through all possible states.
 // Note this favors the highest-number state that we&#39;re at, it&#39;s up to you to make your states mutually exclusive.
 getState := 0;
-FOR nIndex := 1 TO 15 DO
+FOR nIndex := 1 TO MOTION_GVL.MAX_STATES DO
     IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
         getState := nIndex;
     END_IF
@@ -5696,59 +5707,69 @@ END_ACTION
 <div class="section" id="pou-fb-positionstatebase-withpmps">
 <h2>POU: FB_PositionStateBase_WithPMPS<a class="headerlink" href="#pou-fb-positionstatebase-withpmps" title="Permalink to this headline">¶</a></h2>
 <p>File: Library/POUs/Motion/States/FB_PositionStateBase_WithPMPS.TcPOU</p>
-<div class="highlight-vhdl notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_PositionStateBase_WithPMPS</span> <span class="n">EXTENDS</span> <span class="n">FB_PositionStateBase</span>
-<span class="p">(</span><span class="o">*</span>
-    <span class="n">Handles</span> <span class="n">EPICS</span> <span class="n">moves</span> <span class="n">between</span> <span class="n">multiple</span> <span class="n">states</span> <span class="k">for</span> <span class="n">a</span> <span class="n">single</span> <span class="n">axis</span> <span class="k">with</span> <span class="n">PMPS</span><span class="p">.</span>
-    <span class="n">Should</span> <span class="n">be</span> <span class="n">subclassed</span> <span class="k">for</span> <span class="n">a</span> <span class="n">specific</span> <span class="n">enumSet</span> <span class="k">and</span> <span class="n">enumGet</span><span class="p">.</span>
-    <span class="n">See</span> <span class="k">body</span> <span class="n">comment</span>  <span class="k">or</span> <span class="n">FB_PositionStateInOut_WithPMPS</span> <span class="k">for</span> <span class="n">an</span> <span class="n">implementation</span> <span class="n">example</span><span class="p">.</span>
-<span class="o">*</span><span class="p">)</span>
-<span class="n">VAR_IN_OUT</span>
-    <span class="n">fbArbiter</span><span class="o">:</span> <span class="n">FB_Arbiter</span><span class="p">;</span>
-    <span class="n">fbFFHWO</span><span class="o">:</span> <span class="n">FB_HardwareFFOutput</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="n">VAR_INPUT</span>
-    <span class="n">stTransitionBeam</span><span class="o">:</span> <span class="n">ST_BeamParams</span> <span class="o">:=</span> <span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cstSafeBeam</span><span class="p">;</span>
-    <span class="n">nTransitionAssertionID</span><span class="o">:</span> <span class="n">UDINT</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="n">VAR</span>
-    <span class="n">fbStatePMPS</span><span class="o">:</span> <span class="n">FB_PositionStatePMPS</span><span class="p">;</span>
-    <span class="n">fbEncErrFFO</span><span class="o">:</span> <span class="n">FB_EncErrorFFO</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="p">(</span><span class="o">*</span>
-    <span class="n">Subclass</span> <span class="n">me</span><span class="p">,</span> <span class="n">define</span> <span class="n">enums</span> <span class="k">to</span> <span class="n">translate</span> <span class="n">setState</span> <span class="k">and</span> <span class="n">getState</span><span class="p">,</span> <span class="n">call</span> <span class="n">Exec</span>
+<div class="highlight-vhdl notranslate"><div class="highlight"><pre><span></span>FUNCTION_BLOCK FB_PositionStateBase_WithPMPS EXTENDS FB_PositionStateBase
+(*
+    Handles EPICS moves between multiple states for a single axis with PMPS.
+    Should be subclassed for a specific enumSet and enumGet.
+    See body comment  or FB_PositionStateInOut_WithPMPS for an implementation example.
+*)
+VAR_IN_OUT
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    nTransitionAssertionID: UDINT;
+    nUnknownAssertionID: UDINT;
+    bArbiterEnabled: BOOL := TRUE;
+    tArbiterTimeout: TIME := T#1s;
+    bMoveOnArbiterTimeout: BOOL := TRUE;
+    fStateBoundaryDeadband: LREAL := 0;
+END_VAR
+VAR
+    fbStatePMPS: FB_PositionStatePMPS;
+    fbEncErrFFO: FB_EncErrorFFO;
+END_VAR
+(*
+    Subclass me, define enums to translate setState and getState, call Exec
 
-    <span class="n">Example</span><span class="o">:</span>
+    Example:
 
-    <span class="o">&lt;</span><span class="n">something</span> <span class="k">to</span> <span class="n">fill</span> <span class="n">arrStates</span><span class="o">&gt;</span>
-    <span class="n">setState</span> <span class="o">:=</span> <span class="n">enumSet</span><span class="p">;</span>
-    <span class="n">Exec</span><span class="p">();</span>
-    <span class="n">enumGet</span> <span class="o">:=</span> <span class="n">getState</span><span class="p">;</span>
-    <span class="n">enumSet</span> <span class="o">:=</span> <span class="n">setState</span><span class="p">;</span>
-<span class="o">*</span><span class="p">)</span>
+    &lt;something to fill arrStates&gt;
+    setState := enumSet;
+    Exec();
+    enumGet := getState;
+    enumSet := setState;
+*)
 
-<span class="n">END_FUNCTION_BLOCK</span>
-<span class="n">ACTION</span> <span class="n">Exec</span><span class="o">:</span>
-<span class="n">StateHandler</span><span class="p">();</span>
-<span class="n">PMPSHandler</span><span class="p">();</span>
-<span class="n">END_ACTION</span>
-<span class="n">ACTION</span> <span class="n">PMPSHandler</span><span class="o">:</span>
-<span class="n">fbStatePMPS</span><span class="p">(</span>
-    <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter</span><span class="p">,</span>
-    <span class="n">fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
-    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
-    <span class="n">arrStates</span><span class="o">:=</span><span class="n">arrStates</span><span class="p">,</span>
-    <span class="n">bRequestTransition</span><span class="o">:=</span><span class="n">bBusy</span><span class="p">,</span>
-    <span class="n">bDoingTransition</span><span class="o">:=</span><span class="n">bBusy</span><span class="p">,</span>
-    <span class="n">setState</span><span class="o">:=</span><span class="n">setState</span><span class="p">,</span>
-    <span class="n">getState</span><span class="o">:=</span><span class="n">getState</span><span class="p">,</span>
-    <span class="n">stTransitionBeam</span><span class="o">:=</span><span class="n">stTransitionBeam</span><span class="p">,</span>
-    <span class="n">nTransitionAssertionID</span><span class="o">:=</span><span class="n">nTransitionAssertionID</span><span class="p">);</span>
+END_FUNCTION_BLOCK
+ACTION Exec:
+StateHandler();
+PMPSHandler();
+END_ACTION
+ACTION PMPSHandler:
+fbStatePMPS(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stMotionStage:=stMotionStage,
+    arrStates:=arrStates,
+    bRequestTransition:=bBusy,
+    bDoingTransition:=bBusy,
+    setState:=setState,
+    getState:=getState,
+    stTransitionBeam:=stTransitionBeam,
+    nTransitionAssertionID:=nTransitionAssertionID,
+    nUnknownAssertionID:=nUnknownAssertionID,
+    bArbiterEnabled:=bArbiterEnabled,
+    tArbiterTimeout:=tArbiterTimeout,
+    bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
+    fStateBoundaryDeadband:=fStateBoundaryDeadband);
 
-<span class="n">fbEncErrFFO</span><span class="p">(</span>
-    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
-    <span class="n">fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
-    <span class="n">bAutoReset</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">);</span>
-<span class="n">END_ACTION</span>
+fbEncErrFFO(
+    stMotionStage:=stMotionStage,
+    fbFFHWO:=fbFFHWO,
+    bAutoReset:=TRUE);
+END_ACTION
 </pre></div>
 </div>
 </div>
@@ -6371,10 +6392,25 @@ END_FUNCTION_BLOCK
 <span class="n">VAR</span>
     <span class="n">bptm</span><span class="o">:</span> <span class="n">BeamParameterTransitionManager</span><span class="p">;</span>
     <span class="n">ffBeamParamsOk</span><span class="o">:</span> <span class="n">FB_FastFault</span><span class="p">;</span>
+    <span class="n">bFFOxOk</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bAtSafeState</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nIter</span><span class="o">:</span> <span class="n">INT</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">Exec</span><span class="p">();</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
+<span class="n">ACTION</span> <span class="n">AssertHere</span><span class="o">:</span>
+<span class="n">fbArbiter</span><span class="p">.</span><span class="n">AddRequest</span><span class="p">(</span>
+    <span class="n">nReqID</span> <span class="o">:=</span> <span class="n">stStateReq</span><span class="p">.</span><span class="n">nRequestAssertionID</span><span class="p">,</span>
+    <span class="n">stReqBP</span> <span class="o">:=</span> <span class="n">stStateReq</span><span class="p">.</span><span class="n">stBeamParams</span><span class="p">);</span>
+<span class="n">END_ACTION</span>
+<span class="n">ACTION</span> <span class="n">ClearAsserts</span><span class="o">:</span>
+<span class="n">fbArbiter</span><span class="p">.</span><span class="n">RemoveRequest</span><span class="p">(</span><span class="n">nTransitionAssertionID</span><span class="p">);</span>
+<span class="n">fbArbiter</span><span class="p">.</span><span class="n">RemoveRequest</span><span class="p">(</span><span class="n">nUnknownAssertionID</span><span class="p">);</span>
+<span class="k">FOR</span> <span class="n">nIter</span> <span class="o">:=</span> <span class="mi">1</span> <span class="k">TO</span> <span class="n">MOTION_GVL</span><span class="p">.</span><span class="n">MAX_STATES</span> <span class="n">DO</span>
+    <span class="n">fbArbiter</span><span class="p">.</span><span class="n">RemoveRequest</span><span class="p">(</span><span class="n">arrStates</span><span class="p">[</span><span class="n">nIter</span><span class="p">].</span><span class="n">nRequestAssertionID</span><span class="p">);</span>
+<span class="n">END_FOR</span>
+<span class="n">END_ACTION</span>
 <span class="n">ACTION</span> <span class="n">HandleBPTM</span><span class="o">:</span>
 <span class="n">bptm</span><span class="p">(</span><span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter</span><span class="p">,</span>
      <span class="n">i_TransitionAssertionID</span><span class="o">:=</span><span class="n">nTransitionAssertionID</span><span class="p">,</span>
@@ -6390,10 +6426,28 @@ END_FUNCTION_BLOCK
 <span class="o">//</span> <span class="k">If</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">parameters</span> <span class="n">are</span> <span class="n">wrong</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span> <span class="n">a</span> <span class="n">fault</span><span class="o">!</span> <span class="n">This</span> <span class="n">encompasses</span> <span class="k">all</span> <span class="n">arbiter</span><span class="o">-</span><span class="n">related</span> <span class="n">errors</span><span class="p">.</span>
 <span class="o">//</span> <span class="n">Get</span> <span class="n">state</span> <span class="n">will</span> <span class="n">point</span> <span class="k">to</span> <span class="n">Unknown</span><span class="o">/</span><span class="n">No</span> <span class="n">beam</span> <span class="k">if</span> <span class="n">we</span> <span class="n">are</span> <span class="k">out</span> <span class="k">of</span> <span class="n">state</span> <span class="n">bounds</span> <span class="k">or</span> <span class="k">in</span> <span class="n">motion</span>
 <span class="o">//</span> <span class="n">Otherwise</span> <span class="n">we</span><span class="na">&#39;ll</span> <span class="n">have</span> <span class="n">the</span> <span class="n">current</span> <span class="n">state</span><span class="na">&#39;s</span> <span class="n">beam</span> <span class="n">parameters</span>
+
+<span class="k">IF</span> <span class="n">stBeamNeeded</span><span class="p">.</span><span class="n">nRate</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">THEN</span>
+    <span class="o">//</span> <span class="k">If</span> <span class="n">nRate</span> <span class="k">is</span> <span class="n">zero</span><span class="p">,</span> <span class="n">trip</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">just</span> <span class="k">to</span> <span class="n">be</span> <span class="n">sure</span><span class="p">.</span>
+    <span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="k">ELSIF</span> <span class="n">bArbiterTimeout</span> <span class="k">AND</span> <span class="n">bMoveOnArbiterTimeout</span> <span class="k">THEN</span>
+    <span class="o">//</span> <span class="k">If</span> <span class="n">the</span> <span class="n">arbiter</span> <span class="n">times</span> <span class="k">out</span><span class="p">,</span> <span class="n">trip</span> <span class="n">so</span> <span class="n">we</span> <span class="n">can</span> <span class="n">get</span> <span class="n">moving</span><span class="p">.</span>
+    <span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="k">ELSE</span>
+    <span class="o">//</span> <span class="n">Otherwise</span><span class="p">,</span> <span class="n">trip</span> <span class="k">if</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">conditions</span> <span class="n">are</span> <span class="n">bad</span>
+    <span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">stCurrentBeamParameters</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">);</span>
+<span class="n">END_IF</span>
+
+<span class="o">//</span> <span class="n">It</span> <span class="k">is</span> <span class="n">safe</span> <span class="k">to</span> <span class="n">reset</span> <span class="n">automatically</span> <span class="k">if</span> <span class="n">our</span> <span class="n">current</span> <span class="n">state</span> <span class="n">can</span> <span class="n">take</span> <span class="n">full</span> <span class="n">beam</span><span class="p">.</span>
+<span class="o">//</span> <span class="n">Otherwise</span> <span class="n">we</span><span class="na">&#39;ll</span> <span class="n">have</span> <span class="k">to</span> <span class="n">ask</span> <span class="k">for</span> <span class="n">a</span> <span class="n">user</span> <span class="n">acknowledgement</span> <span class="k">to</span> <span class="n">clear</span><span class="p">.</span>
+<span class="n">bAtSafeState</span> <span class="o">:=</span> <span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cstFullBeam</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">);</span>
+
 <span class="n">ffBeamParamsOk</span><span class="p">(</span>
-    <span class="n">i_xOK</span><span class="o">:=</span><span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">stCurrentBeamParameters</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">),</span>
+    <span class="n">i_xOK</span><span class="o">:=</span><span class="n">bFFOxOk</span><span class="p">,</span>
+    <span class="n">i_xReset</span><span class="o">:=</span><span class="n">bFFOxOk</span> <span class="k">AND</span> <span class="n">bAtSafeState</span><span class="p">,</span>
     <span class="n">i_DevName</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">.</span><span class="n">sName</span><span class="p">,</span>
     <span class="n">i_Desc</span><span class="o">:=</span><span class="na">&#39;Beam</span> <span class="n">parameter</span> <span class="n">mismatch</span><span class="p">&#39;,</span>
+    <span class="n">i_TypeCode</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">io_fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">);</span>
 <span class="n">END_ACTION</span>
 </pre></div>
@@ -6402,125 +6456,176 @@ END_FUNCTION_BLOCK
 <div class="section" id="pou-fb-positionstatepmps-base">
 <h2>POU: FB_PositionStatePMPS_Base<a class="headerlink" href="#pou-fb-positionstatepmps-base" title="Permalink to this headline">¶</a></h2>
 <p>File: Library/POUs/Motion/PMPS/FB_PositionStatePMPS_Base.TcPOU</p>
-<div class="highlight-vhdl notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_PositionStatePMPS_Base</span>
-<span class="p">(</span><span class="o">*</span>
-    <span class="n">FB_PositionStatePMPS</span> <span class="n">without</span> <span class="n">Arbiter</span><span class="p">,</span> <span class="n">BPTM</span><span class="p">,</span> <span class="n">FFO</span>
+<div class="highlight-vhdl notranslate"><div class="highlight"><pre><span></span>FUNCTION_BLOCK FB_PositionStatePMPS_Base
+(*
+    FB_PositionStatePMPS without Arbiter, BPTM, FFO
 
-    <span class="n">This</span> <span class="n">allows</span> <span class="n">me</span> <span class="k">to</span> <span class="n">test</span> <span class="n">most</span> <span class="k">of</span> <span class="n">the</span> <span class="n">code</span> <span class="n">without</span> <span class="n">an</span> <span class="n">arbiter</span> <span class="n">plc</span> <span class="n">setup</span>
-<span class="o">*</span><span class="p">)</span>
-<span class="n">VAR_IN_OUT</span>
-    <span class="n">stMotionStage</span><span class="o">:</span> <span class="n">DUT_MotionStage</span><span class="p">;</span>
-    <span class="n">arrStates</span><span class="o">:</span> <span class="k">ARRAY</span><span class="p">[</span><span class="mi">1</span><span class="p">..</span><span class="mi">15</span><span class="p">]</span> <span class="k">OF</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="n">VAR_INPUT</span>
-    <span class="n">bRequestTransition</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">bDoingTransition</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">setState</span><span class="o">:</span> <span class="n">INT</span><span class="p">;</span>
-    <span class="n">getState</span><span class="o">:</span> <span class="n">INT</span><span class="p">;</span>
-    <span class="n">fStateBoundaryDeadband</span><span class="o">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
-    <span class="n">stTransitionBeam</span><span class="o">:</span> <span class="n">ST_BeamParams</span> <span class="o">:=</span> <span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cstSafeBeam</span><span class="p">;</span>
-    <span class="n">nTransitionAssertionID</span><span class="o">:</span> <span class="n">UDINT</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="n">VAR_OUTPUT</span>
-    <span class="n">bTransitionAuthorized</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">bForwardAuthorized</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">bBackwardAuthorized</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="n">VAR</span>
-    <span class="n">bInit</span><span class="o">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-    <span class="n">fbLinGov</span><span class="o">:</span> <span class="n">FB_LinearGovernor</span><span class="p">;</span>
-    <span class="n">rtTransReq</span><span class="o">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
-    <span class="n">ftTransAuth</span><span class="o">:</span> <span class="n">F_TRIG</span><span class="p">;</span>
-    <span class="n">stStateReq</span><span class="o">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
-    <span class="n">mcPower</span><span class="o">:</span> <span class="n">MC_POWER</span><span class="p">;</span>
-    <span class="n">fUpperBound</span><span class="o">:</span> <span class="n">LREAL</span><span class="p">;</span>
-    <span class="n">fLowerBound</span><span class="o">:</span> <span class="n">LREAL</span><span class="p">;</span>
-    <span class="n">nGoalState</span><span class="o">:</span> <span class="n">INT</span><span class="p">;</span>
-    <span class="n">stGoalState</span><span class="o">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
-    <span class="n">fActPos</span><span class="o">:</span> <span class="n">LREAL</span><span class="p">;</span>
-    <span class="n">fReqPos</span><span class="o">:</span> <span class="n">LREAL</span><span class="p">;</span>
-    <span class="n">bInTransition</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">stBeamNeeded</span><span class="o">:</span> <span class="n">ST_BeamParams</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="o">//</span> <span class="n">This</span> <span class="k">is</span> <span class="n">meant</span> <span class="k">to</span> <span class="n">be</span> <span class="n">subclassed</span><span class="p">.</span> <span class="n">The</span> <span class="n">parent</span> <span class="n">class</span> <span class="k">body</span> <span class="k">is</span> <span class="k">in</span> <span class="n">the</span> <span class="n">Exec</span> <span class="n">action</span><span class="p">.</span>
+    This allows me to test most of the code without an arbiter plc setup
+*)
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
+END_VAR
+VAR_INPUT
+    bArbiterEnabled: BOOL := TRUE;
+    bRequestTransition: BOOL;
+    bDoingTransition: BOOL;
+    setState: INT;
+    getState: INT;
+    fStateBoundaryDeadband: LREAL := 0;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    nTransitionAssertionID: UDINT;
+    nUnknownAssertionID: UDINT;
+    tArbiterTimeout: TIME := T#1s;
+    bMoveOnArbiterTimeout: BOOL := TRUE;
+END_VAR
+VAR_OUTPUT
+    bTransitionAuthorized: BOOL;
+    bForwardAuthorized: BOOL;
+    bBackwardAuthorized: BOOL;
+    bArbiterTimeout: BOOL;
+END_VAR
+VAR
+    bInit: BOOL := TRUE;
+    rtTransReq: R_TRIG;
+    ftTransAuth: F_TRIG;
+    ftMotorExec: F_TRIG;
+    stStateReq: DUT_PositionState;
+    mcPower: MC_POWER;
+    fUpperBound: LREAL;
+    fLowerBound: LREAL;
+    nGoalState: INT;
+    stGoalState: DUT_PositionState;
+    fActPos: LREAL;
+    fReqPos: LREAL;
+    bInTransition: BOOL;
+    stBeamNeeded: ST_BeamParams;
+    bFwdOk: BOOL;
+    bBwdOk: BOOL;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
+    tonArbiter: TON;
+END_VAR
+// This is meant to be subclassed. The parent class body is in the Exec action.
 
-<span class="n">END_FUNCTION_BLOCK</span>
-<span class="n">ACTION</span> <span class="n">Exec</span><span class="o">:</span>
-<span class="o">//</span> <span class="n">Initialize</span> <span class="k">or</span> <span class="n">reinitialize</span> <span class="k">to</span> <span class="n">the</span> <span class="n">current</span> <span class="n">state</span> <span class="n">value</span>
-<span class="n">ftTransAuth</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bTransitionAuthorized</span><span class="p">);</span>
-<span class="k">IF</span> <span class="n">ftTransAuth</span><span class="p">.</span><span class="n">Q</span> <span class="k">THEN</span>
-    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-<span class="n">END_IF</span>
-<span class="k">IF</span> <span class="n">bInit</span> <span class="k">OR</span> <span class="n">nGoalState</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">THEN</span>
-    <span class="n">bInit</span> <span class="n">R</span><span class="o">=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bAxisParamsInit</span><span class="p">;</span>
-    <span class="n">nGoalState</span> <span class="o">:=</span> <span class="n">getState</span><span class="p">;</span>
-    <span class="n">stStateReq</span> <span class="o">:=</span> <span class="n">GetStateStruct</span><span class="p">(</span><span class="n">getState</span><span class="p">);</span>
-    <span class="n">bInTransition</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-<span class="n">END_IF</span>
+END_FUNCTION_BLOCK
+ACTION AssertHere:
 
-<span class="o">//</span> <span class="n">Request</span> <span class="n">transition</span> <span class="k">on</span> <span class="n">rising</span> <span class="n">edge</span>
-<span class="n">rtTransReq</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bRequestTransition</span><span class="p">);</span>
-<span class="k">IF</span> <span class="n">rtTransReq</span><span class="p">.</span><span class="n">Q</span> <span class="k">THEN</span>
-    <span class="n">nGoalState</span> <span class="o">:=</span> <span class="n">setState</span><span class="p">;</span>
-    <span class="n">stStateReq</span> <span class="o">:=</span> <span class="n">GetStateStruct</span><span class="p">(</span><span class="n">setState</span><span class="p">);</span>
-    <span class="n">bInTransition</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-<span class="n">END_IF</span>
+END_ACTION
+ACTION ClearAsserts:
 
-<span class="o">//</span> <span class="n">Handles</span> <span class="n">getting</span> <span class="n">the</span> <span class="n">request</span> <span class="k">to</span> <span class="n">the</span> <span class="n">arbiter</span> <span class="k">and</span> <span class="n">back</span>
-<span class="n">HandleBPTM</span><span class="p">();</span>
+END_ACTION
+ACTION Exec:
+// Initialize or reinitialize to the current state value
+ftTransAuth(CLK:=bTransitionAuthorized);
+ftMotorExec(CLK:=stMotionStage.bExecute);
+IF ftTransAuth.Q OR ftMotorExec.Q THEN
+    bInit := TRUE;
+END_IF
+IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
+    bInit R= stMotionStage.bAxisParamsInit;
+    nGoalState := getState;
+    stStateReq := GetStateStruct(getState);
+    bInTransition := FALSE;
+    stInvalidState.nRequestAssertionID := nUnknownAssertionID;
+    stUnknownState.nRequestAssertionID := nUnknownAssertionID;
+END_IF
 
-<span class="o">//</span> <span class="n">Set</span> <span class="n">up</span> <span class="n">MPS</span> <span class="n">virtual</span> <span class="n">limit</span> <span class="k">for</span> <span class="n">moves</span> <span class="n">at</span> <span class="k">and</span> <span class="n">between</span> <span class="n">states</span>
-<span class="n">stGoalState</span> <span class="o">:=</span> <span class="n">GetStateStruct</span><span class="p">(</span><span class="n">nGoalState</span><span class="p">);</span>
-<span class="n">fActPos</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">stAxisStatus</span><span class="p">.</span><span class="n">fActPosition</span><span class="p">;</span>
-<span class="k">IF</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bExecute</span> <span class="k">THEN</span>
-    <span class="n">fReqPos</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">fPosition</span><span class="p">;</span>
-<span class="k">ELSE</span>
-    <span class="n">fReqPos</span> <span class="o">:=</span> <span class="n">fActPos</span><span class="p">;</span>
-<span class="n">END_IF</span>
+// Request transition on rising edge
+rtTransReq(CLK:=bRequestTransition);
+IF rtTransReq.Q THEN
+    nGoalState := setState;
+    stStateReq := GetStateStruct(setState);
+    bInTransition := TRUE;
+END_IF
 
-<span class="o">//</span> <span class="n">Start</span> <span class="k">with</span> <span class="n">no</span> <span class="n">move</span> <span class="n">authority</span>
-<span class="n">bForwardAuthorized</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-<span class="n">bBackwardAuthorized</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+IF bArbiterEnabled THEN
+    // Handles getting the request to the arbiter and back
+    HandleBPTM();
+    // Handle arbiter timeouts
+    IF tArbiterTimeout &gt; T#0s THEN
+        tonArbiter(
+            IN:=bInTransition AND NOT bTransitionAuthorized,
+            PT:=tArbiterTimeout,
+            Q=&gt;bArbiterTimeout);
+    ELSE
+        bArbiterTimeout := FALSE;
+    END_IF
+    bTransitionAuthorized S= bArbiterTimeout AND bMoveOnArbiterTimeout;
+ELSE
+    // Clear all of our assertions if we decide to disable the arbiter
+    ClearAsserts();
+    // Do some dummy request handling
+    bTransitionAuthorized := stMotionStage.bExecute;
+    bArbiterTimeout := stMotionStage.bExecute;
+END_IF
 
-<span class="o">//</span> <span class="n">Grant</span> <span class="n">auth</span> <span class="n">during</span> <span class="n">moves</span> <span class="n">based</span> <span class="k">on</span> <span class="n">goal</span> <span class="n">state</span><span class="p">,</span> <span class="n">current</span> <span class="n">position</span><span class="p">,</span> <span class="k">and</span> <span class="n">goal</span> <span class="n">position</span>
-<span class="k">IF</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bExecute</span> <span class="k">AND</span> <span class="n">stGoalState</span><span class="p">.</span><span class="n">bValid</span> <span class="k">THEN</span>
-    <span class="n">bForwardAuthorized</span> <span class="o">:=</span> <span class="n">F_PosUnderUpperBound</span><span class="p">(</span><span class="n">MAX</span><span class="p">(</span><span class="n">fActPos</span><span class="p">,</span> <span class="n">fReqPos</span><span class="p">)</span> <span class="o">+</span> <span class="k">ABS</span><span class="p">(</span><span class="n">fStateBoundaryDeadband</span><span class="p">),</span> <span class="n">stGoalState</span><span class="p">);</span>
-    <span class="n">bBackwardAuthorized</span> <span class="o">:=</span> <span class="n">F_PosOverLowerBound</span><span class="p">(</span><span class="n">MIN</span><span class="p">(</span><span class="n">fActPos</span><span class="p">,</span> <span class="n">fReqPos</span><span class="p">)</span> <span class="o">-</span> <span class="k">ABS</span><span class="p">(</span><span class="n">fStateBoundaryDeadband</span><span class="p">),</span> <span class="n">stGoalState</span><span class="p">);</span>
-<span class="n">END_IF</span>
+// Set up MPS virtual limit for moves at and between states
+stGoalState := GetStateStruct(nGoalState);
+fActPos := stMotionStage.stAxisStatus.fActPosition;
+IF stMotionStage.bExecute THEN
+    fReqPos := stMotionStage.fPosition;
+ELSE
+    fReqPos := fActPos;
+END_IF
 
-<span class="k">IF</span> <span class="n">bInTransition</span> <span class="k">THEN</span>
-    <span class="o">//</span> <span class="n">Deny</span> <span class="n">auth</span> <span class="n">during</span> <span class="n">a</span> <span class="n">transition</span> <span class="n">request</span> <span class="k">until</span> <span class="n">transition</span> <span class="k">is</span> <span class="n">authorized</span>
-    <span class="n">bForwardAuthorized</span> <span class="n">R</span><span class="o">=</span> <span class="k">NOT</span> <span class="n">bTransitionAuthorized</span><span class="p">;</span>
-    <span class="n">bBackwardAuthorized</span> <span class="n">R</span><span class="o">=</span> <span class="k">NOT</span> <span class="n">bTransitionAuthorized</span><span class="p">;</span>
-    <span class="o">//</span> <span class="n">Have</span> <span class="n">the</span> <span class="n">motor</span> <span class="k">wait</span> <span class="k">for</span> <span class="n">permission</span> <span class="k">to</span> <span class="n">start</span> <span class="n">move</span> <span class="n">instead</span> <span class="k">of</span> <span class="n">immediately</span> <span class="n">erroring</span>
-    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bSafetyReady</span> <span class="o">:=</span> <span class="n">bTransitionAuthorized</span><span class="p">;</span>
-<span class="k">ELSE</span>
-    <span class="o">//</span> <span class="k">If</span> <span class="k">not</span> <span class="n">transitioning</span><span class="p">,</span> <span class="n">no</span> <span class="n">need</span> <span class="k">to</span> <span class="k">wait</span> <span class="k">for</span> <span class="n">safety</span><span class="o">:</span> <span class="n">immediately</span> <span class="n">try</span> <span class="k">to</span> <span class="n">move</span> <span class="k">and</span> <span class="n">error</span> <span class="k">if</span> <span class="n">no</span> <span class="n">auth</span>
-    <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bSafetyReady</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-    <span class="o">//</span> <span class="n">Set</span> <span class="n">an</span> <span class="n">error</span> <span class="n">message</span> <span class="n">override</span> <span class="k">in</span> <span class="k">case</span> <span class="n">this</span> <span class="n">causes</span> <span class="n">an</span> <span class="n">error</span>
-    <span class="k">IF</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="k">AND</span> <span class="n">fReqPos</span> <span class="o">&gt;</span> <span class="n">fActPos</span> <span class="k">AND</span> <span class="k">NOT</span> <span class="n">bForwardAuthorized</span> <span class="k">THEN</span>
-        <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="na">&#39;Unsafe</span> <span class="n">tweak</span> <span class="n">forward</span> <span class="n">blocked</span> <span class="n">by</span> <span class="n">PMPS</span><span class="p">&#39;;</span>
-    <span class="k">ELSIF</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">bError</span> <span class="k">AND</span> <span class="n">fReqPos</span> <span class="o">&lt;</span> <span class="n">fActPos</span> <span class="k">AND</span> <span class="k">NOT</span> <span class="n">bBackwardAuthorized</span> <span class="k">THEN</span>
-        <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="na">&#39;Unsafe</span> <span class="n">tweak</span> <span class="n">backward</span> <span class="n">blocked</span> <span class="n">by</span> <span class="n">PMPS</span><span class="p">&#39;;</span>
-    <span class="n">END_IF</span>
-<span class="n">END_IF</span>
+// Start with no move authority
+bForwardAuthorized := FALSE;
+bBackwardAuthorized := FALSE;
 
-<span class="o">//</span> <span class="n">Only</span> <span class="n">let</span> <span class="n">us</span> <span class="n">move</span> <span class="k">if</span> <span class="n">the</span> <span class="n">transition</span> <span class="k">is</span> <span class="n">allowed</span><span class="p">,</span> <span class="k">or</span> <span class="k">if</span> <span class="n">we</span> <span class="n">are</span> <span class="n">moving</span> <span class="n">within</span> <span class="n">a</span> <span class="n">state</span><span class="na">&#39;s</span> <span class="n">bounds</span>
-<span class="n">mcPower</span><span class="p">(</span><span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">.</span><span class="n">Axis</span><span class="p">,</span>
-        <span class="n">Enable</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">.</span><span class="n">bAllEnable</span><span class="p">,</span>
-        <span class="n">Enable_Positive</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">.</span><span class="n">bAllForwardEnable</span> <span class="k">AND</span> <span class="n">bForwardAuthorized</span><span class="p">,</span>
-        <span class="n">Enable_Negative</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">.</span><span class="n">bAllBackwardEnable</span> <span class="k">AND</span> <span class="n">bBackwardAuthorized</span><span class="p">);</span>
+// Check if it would be OK to move without granting auth
+bFwdOk := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
+bBwdOk := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
 
-<span class="o">//</span> <span class="n">Raise</span> <span class="n">fast</span> <span class="n">faults</span> <span class="n">as</span> <span class="n">needed</span>
-<span class="n">stBeamNeeded</span> <span class="o">:=</span> <span class="n">GetBeamFromState</span><span class="p">(</span><span class="n">getState</span><span class="p">);</span>
-<span class="n">HandleFFO</span><span class="p">();</span>
-<span class="n">END_ACTION</span>
-<span class="n">ACTION</span> <span class="n">HandleBPTM</span><span class="o">:</span>
+// Grant auth during moves based on goal state, current position, and goal position
+IF stMotionStage.bExecute AND stGoalState.bValid THEN
+    bForwardAuthorized := bFwdOk;
+    bBackwardAuthorized := bBwdOk;
+END_IF
 
-<span class="n">END_ACTION</span>
-<span class="n">ACTION</span> <span class="n">HandleFFO</span><span class="o">:</span>
+IF bInTransition THEN
+    // Deny auth during a transition request until transition is authorized
+    bForwardAuthorized R= NOT bTransitionAuthorized;
+    bBackwardAuthorized R= NOT bTransitionAuthorized;
+    // Have the motor wait for permission to start move instead of immediately erroring
+    stMotionStage.bSafetyReady := bTransitionAuthorized;
+ELSE
+    // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
+    stMotionStage.bSafetyReady := TRUE;
+    // Set an error message override in case this causes an error
+    IF stMotionStage.bError AND bArbiterEnabled THEN
+        IF fReqPos &gt; fActPos AND NOT bFwdOk THEN
+            stMotionStage.sCustomErrorMessage := &#39;Unsafe tweak forward blocked by PMPS&#39;;
+        ELSIF fReqPos &lt; fActPos AND NOT bBwdOk THEN
+            stMotionStage.sCustomErrorMessage := &#39;Unsafe tweak backward blocked by PMPS&#39;;
+        END_IF
+    END_IF
+END_IF
 
-<span class="n">END_ACTION</span>
+IF bArbiterEnabled THEN
+// Only let us move if the transition is allowed, or if we are moving within a state&#39;s bounds
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+ELSE
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable);
+    stMotionStage.bSafetyReady := TRUE;
+END_IF
+
+// Raise fast faults as needed
+stBeamNeeded := GetBeamFromState(getState);
+HandleFFO();
+END_ACTION
+ACTION HandleBPTM:
+
+END_ACTION
+ACTION HandleFFO:
+
+END_ACTION
 </pre></div>
 </div>
 </div>
@@ -7361,139 +7466,113 @@ END_FUNCTION_BLOCK
 <div class="section" id="pou-interactive">
 <h2>POU: Interactive<a class="headerlink" href="#pou-interactive" title="Permalink to this headline">¶</a></h2>
 <p>File: Library/UnitTests/Interactive.TcPOU</p>
-<div class="highlight-vhdl notranslate"><div class="highlight"><pre><span></span>PROGRAM Interactive
-VAR
-    bInit: BOOL := FALSE;
+<div class="highlight-vhdl notranslate"><div class="highlight"><pre><span></span><span class="n">PROGRAM</span> <span class="n">Interactive</span>
+<span class="n">VAR</span>
+    <span class="n">bInit</span><span class="o">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 
-    M1: DUT_MotionStage;
-    fbMotionStageSim: FB_MotionStageSim;
-    nCounter: UINT;
+    <span class="n">M1</span><span class="o">:</span> <span class="n">DUT_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStageSim</span><span class="o">:</span> <span class="n">FB_MotionStageSim</span><span class="p">;</span>
+    <span class="n">nCounter</span><span class="o">:</span> <span class="n">UINT</span><span class="p">;</span>
 
-    stOut: DUT_PositionState;
-    fbGoOut: FB_PositionStateMove;
-    bOut: BOOL;
-    bGoOut: BOOL;
-    stIn: DUT_PositionState;
-    fbGoIn: FB_PositionStateMove;
-    bIn: BOOL;
-    bGoIn: BOOL;
-    stUnsafe: DUT_PositionState;
-    fbGoBad: FB_PositionStateMove;
-    bHCF: BOOL;
-    bGoHCF: BOOL;
+    <span class="n">stOut</span><span class="o">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
+    <span class="n">fbGoOut</span><span class="o">:</span> <span class="n">FB_PositionStateMove</span><span class="p">;</span>
+    <span class="n">bOut</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bGoOut</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">stIn</span><span class="o">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
+    <span class="n">fbGoIn</span><span class="o">:</span> <span class="n">FB_PositionStateMove</span><span class="p">;</span>
+    <span class="n">bIn</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bGoIn</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">stUnsafe</span><span class="o">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
+    <span class="n">fbGoBad</span><span class="o">:</span> <span class="n">FB_PositionStateMove</span><span class="p">;</span>
+    <span class="n">bHCF</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bGoHCF</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">BasicTests</span><span class="p">();</span>
 
-    {attribute &#39;pytmc&#39; := &#39;
-        pv: TST:STATE
-        io: io
-    &#39;}
-    fbEpicsInOut: FB_EpicsInOut;
+<span class="n">fbMotionStageSim</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">M1</span><span class="p">,</span>
+                 <span class="n">nEnableMode</span><span class="o">:=</span><span class="n">ENUM_StageEnableMode</span><span class="p">.</span><span class="n">DURING_MOTION</span><span class="p">);</span>
+<span class="n">nCounter</span> <span class="o">:=</span> <span class="n">nCounter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
 
-    fbStateManager: FB_PositionStateManager;
-    setState: INT;
-    arrStates: ARRAY [1..15] OF DUT_PositionState;
-END_VAR
-BasicTests();
+<span class="k">IF</span> <span class="k">NOT</span> <span class="n">bInit</span> <span class="k">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 
-fbMotionStageSim(stMotionStage:=M1);
-nCounter := nCounter + 1;
+    <span class="n">stOut</span><span class="p">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="na">&#39;Out</span><span class="p">&#39;;</span>
+    <span class="n">stOut</span><span class="p">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mi">100</span><span class="p">;</span>
+    <span class="n">stOut</span><span class="p">.</span><span class="n">fDelta</span> <span class="o">:=</span> <span class="mi">20</span><span class="p">;</span>
+    <span class="n">stOut</span><span class="p">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mi">10</span><span class="p">;</span>
+    <span class="n">stOut</span><span class="p">.</span><span class="n">bValid</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stOut</span><span class="p">.</span><span class="n">bMoveOk</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 
-IF NOT bInit THEN
-    bInit := TRUE;
+    <span class="n">stIn</span><span class="p">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="na">&#39;In</span><span class="p">&#39;;</span>
+    <span class="n">stIn</span><span class="p">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">stIn</span><span class="p">.</span><span class="n">fDelta</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">;</span>
+    <span class="n">stIn</span><span class="p">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mi">5</span><span class="p">;</span>
+    <span class="n">stIn</span><span class="p">.</span><span class="n">bValid</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stIn</span><span class="p">.</span><span class="n">bMoveOk</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 
-    stOut.sName := &#39;Out&#39;;
-    stOut.fPosition := 100;
-    stOut.fDelta := 20;
-    stOut.fVelocity := 10;
-    stOut.bValid := TRUE;
-    stOut.bMoveOk := TRUE;
+    <span class="n">stUnsafe</span><span class="p">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="na">&#39;HCF</span><span class="p">&#39;;</span>
+    <span class="n">stUnsafe</span><span class="p">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="o">-</span><span class="mi">999</span><span class="p">;</span>
+    <span class="n">stUnsafe</span><span class="p">.</span><span class="n">fDelta</span> <span class="o">:=</span> <span class="mi">6</span><span class="p">;</span>
+    <span class="n">stUnsafe</span><span class="p">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mi">42</span><span class="p">;</span>
+    <span class="n">stUnsafe</span><span class="p">.</span><span class="n">bValid</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stUnsafe</span><span class="p">.</span><span class="n">bMoveOk</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">END_IF</span>
 
-    stIn.sName := &#39;In&#39;;
-    stIn.fPosition := 0;
-    stIn.fDelta := 0.1;
-    stIn.fVelocity := 5;
-    stIn.bValid := TRUE;
-    stIn.bMoveOk := TRUE;
+<span class="n">fbGoOut</span><span class="p">(</span>
+    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bGoOut</span><span class="p">,</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">M1</span><span class="p">,</span>
+    <span class="n">stPositionState</span><span class="o">:=</span><span class="n">stOut</span><span class="p">,</span>
+    <span class="n">bAtState</span><span class="o">=&gt;</span><span class="n">bOut</span><span class="p">);</span>
+<span class="n">fbGoIn</span><span class="p">(</span>
+    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bGoIn</span><span class="p">,</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">M1</span><span class="p">,</span>
+    <span class="n">stPositionState</span><span class="o">:=</span><span class="n">stIn</span><span class="p">,</span>
+    <span class="n">bAtState</span><span class="o">=&gt;</span><span class="n">bIn</span><span class="p">);</span>
+<span class="n">fbGoBad</span><span class="p">(</span>
+    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bGoHCF</span><span class="p">,</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">M1</span><span class="p">,</span>
+    <span class="n">stPositionState</span><span class="o">:=</span><span class="n">stUnsafe</span><span class="p">,</span>
+    <span class="n">bAtState</span><span class="o">=&gt;</span><span class="n">bHCF</span><span class="p">);</span>
 
-    stUnsafe.sName := &#39;HCF&#39;;
-    stUnsafe.fPosition := -999;
-    stUnsafe.fDelta := 6;
-    stUnsafe.fVelocity := 42;
-    stUnsafe.bValid := TRUE;
-    stUnsafe.bMoveOk := FALSE;
-
-    fbEpicsInOut.bEnable := TRUE;
-    fbStateManager.bEnable := TRUE;
-END_IF
-
-fbGoOut(
-    bExecute:=bGoOut,
-    stMotionStage:=M1,
-    stPositionState:=stOut,
-    bAtState=&gt;bOut);
-fbGoIn(
-    bExecute:=bGoIn,
-    stMotionStage:=M1,
-    stPositionState:=stIn,
-    bAtState=&gt;bIn);
-fbGoBad(
-    bExecute:=bGoHCF,
-    stMotionStage:=M1,
-    stPositionState:=stUnsafe,
-    bAtState=&gt;bHCF);
-
-arrStates[1] := stOut;
-arrStates[2] := stIn;
-arrStates[3] := stUnsafe;
-
-fbEpicsInOut(
-    stMotionStage := M1,
-    stOut := stOut,
-    stIn := stIn);
-
-fbStateManager(
-    stMotionStage := M1,
-    arrStates := arrStates,
-    setState := setState);
-
-END_PROGRAM
+<span class="n">END_PROGRAM</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="symbols">
 <h2>Symbols<a class="headerlink" href="#symbols" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">.</span><span class="n">TCPADS_MAXUDP_BUFFSIZE</span> <span class="p">:</span> <span class="n">UDINT</span> <span class="p">(</span><span class="mi">4436672</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span> <span class="p">:</span> <span class="n">DUT_MotionStage</span> <span class="p">(</span><span class="mi">9447552</span> <span class="mi">21056</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">9448640</span> <span class="mi">2048</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">9447616</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bBrakeRelease</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456600</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bHardwareEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456608</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bHome</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456592</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bLimitBackwardEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456584</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bLimitForwardEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456576</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">nRawEncoderINT</span> <span class="p">:</span> <span class="n">INT</span> <span class="p">(</span><span class="mi">9456720</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">nRawEncoderUINT</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">9456704</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">nRawEncoderULINT</span> <span class="p">:</span> <span class="n">ULINT</span> <span class="p">(</span><span class="mi">9456640</span> <span class="mi">64</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">bError</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9011616</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">errState</span> <span class="p">:</span> <span class="n">Tc2_MC2</span><span class="o">.</span><span class="n">MC_AxisStates</span> <span class="p">(</span><span class="mi">9011632</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbMotion</span> <span class="p">:</span> <span class="n">FB_MotionStageSim</span> <span class="p">(</span><span class="mi">9468608</span> <span class="mi">171264</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbMotion</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">9471360</span> <span class="mi">2048</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbMotion</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">9470336</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbRequest</span> <span class="p">:</span> <span class="n">FB_MotionRequest</span> <span class="p">(</span><span class="mi">9639872</span> <span class="mi">1920</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">9648096</span> <span class="mi">64</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">9648256</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">9648032</span> <span class="mi">64</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">9648224</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">bFPUSupport</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9648192</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">bLittleEndian</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9648016</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">bSimulationMode</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9648024</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">nPackMode</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">9648176</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">Constants</span><span class="o">.</span><span class="n">nRegisterSize</span> <span class="p">:</span> <span class="n">WORD</span> <span class="p">(</span><span class="mi">9648160</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span> <span class="p">:</span> <span class="n">DUT_MotionStage</span> <span class="p">(</span><span class="mi">9447616</span> <span class="mi">21056</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">9448704</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">9447680</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bBrakeRelease</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456664</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bHardwareEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456672</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bHome</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456656</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bLimitBackwardEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456648</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">bLimitForwardEnable</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9456640</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">nRawEncoderINT</span> <span class="p">:</span> <span class="n">INT</span> <span class="p">(</span><span class="mi">9456784</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">nRawEncoderUINT</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">9456768</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">Motor</span><span class="o">.</span><span class="n">nRawEncoderULINT</span> <span class="p">:</span> <span class="n">ULINT</span> <span class="p">(</span><span class="mi">9456704</span> <span class="mi">64</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">bError</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9011680</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">errState</span> <span class="p">:</span> <span class="n">Tc2_MC2</span><span class="o">.</span><span class="n">MC_AxisStates</span> <span class="p">(</span><span class="mi">9011696</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbMotion</span> <span class="p">:</span> <span class="n">FB_MotionStageSim</span> <span class="p">(</span><span class="mi">15132352</span> <span class="mi">171328</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbMotion</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">15135168</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbMotion</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">15134144</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">BasicTests</span><span class="o">.</span><span class="n">fbRequest</span> <span class="p">:</span> <span class="n">FB_MotionRequest</span> <span class="p">(</span><span class="mi">9640000</span> <span class="mi">1920</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">9648224</span> <span class="mi">64</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">CompilerVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">9648384</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersion</span> <span class="p">:</span> <span class="n">VERSION</span> <span class="p">(</span><span class="mi">9648160</span> <span class="mi">64</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">RuntimeVersionNumeric</span> <span class="p">:</span> <span class="n">DWORD</span> <span class="p">(</span><span class="mi">9648352</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">bFPUSupport</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9648320</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">bLittleEndian</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9648144</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">bSimulationMode</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9648152</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">nPackMode</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">9648304</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">Constants</span><span class="o">.</span><span class="n">nRegisterSize</span> <span class="p">:</span> <span class="n">WORD</span> <span class="p">(</span><span class="mi">9648288</span> <span class="mi">16</span><span class="p">)</span>
 <span class="n">DefaultGlobals</span><span class="o">.</span><span class="n">fTimeStamp</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="p">(</span><span class="mi">4096128</span> <span class="mi">64</span><span class="p">)</span>
 <span class="n">DefaultGlobals</span><span class="o">.</span><span class="n">stSys</span> <span class="p">:</span> <span class="n">LCLS_General</span><span class="o">.</span><span class="n">ST_System</span> <span class="p">(</span><span class="mi">4096000</span> <span class="mi">88</span><span class="p">)</span>
-<span class="n">GVL</span><span class="o">.</span><span class="n">nHomingError</span> <span class="p">:</span> <span class="n">UDINT</span> <span class="p">(</span><span class="mi">9647968</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">GVL</span><span class="o">.</span><span class="n">nHomingError</span> <span class="p">:</span> <span class="n">UDINT</span> <span class="p">(</span><span class="mi">9648096</span> <span class="mi">32</span><span class="p">)</span>
 <span class="n">GVL</span><span class="o">.</span><span class="n">nLangId_OnlineMonitoring</span> <span class="p">:</span> <span class="n">DINT</span> <span class="p">(</span><span class="mi">4437056</span> <span class="mi">32</span><span class="p">)</span>
 <span class="n">GVL_CUSTOM_CONSTANTS</span><span class="o">.</span><span class="n">MAX_FAST_FAULTS</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">4435920</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">GVL_ErrorSystem</span><span class="o">.</span><span class="n">cSizeOfErrorData</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">9648000</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">GVL_ErrorSystem</span><span class="o">.</span><span class="n">cSizeOfErrorData</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">9648128</span> <span class="mi">16</span><span class="p">)</span>
 <span class="n">GVL_INTERNAL</span><span class="o">.</span><span class="n">UNINITIALIZED_CLASS_GUID</span> <span class="p">:</span> <span class="n">GUID</span> <span class="p">(</span><span class="mi">4437408</span> <span class="mi">128</span><span class="p">)</span>
 <span class="n">GVL_Logger</span><span class="o">.</span><span class="n">TCPADS_MAXUDP_BUFFSIZE</span> <span class="p">:</span> <span class="n">UDINT</span> <span class="p">(</span><span class="mi">4097024</span> <span class="mi">32</span><span class="p">)</span>
 <span class="n">GVL_Logger</span><span class="o">.</span><span class="n">cLogHost</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span> <span class="p">(</span><span class="mi">4096192</span> <span class="mi">128</span><span class="p">)</span>
@@ -7741,7 +7820,7 @@ END_PROGRAM
 <span class="n">Global_Version</span><span class="o">.</span><span class="n">stLibVersion_Tc3_JsonXml</span> <span class="p">:</span> <span class="n">ST_LibVersion</span> <span class="p">(</span><span class="mi">4437536</span> <span class="mi">288</span><span class="p">)</span>
 <span class="n">Global_Version</span><span class="o">.</span><span class="n">stLibVersion_Tc3_Module</span> <span class="p">:</span> <span class="n">ST_LibVersion</span> <span class="p">(</span><span class="mi">4230816</span> <span class="mi">288</span><span class="p">)</span>
 <span class="n">Global_Version</span><span class="o">.</span><span class="n">stLibVersion_TcUnit</span> <span class="p">:</span> <span class="n">ST_LibVersion</span> <span class="p">(</span><span class="mi">8737920</span> <span class="mi">288</span><span class="p">)</span>
-<span class="n">Global_Version</span><span class="o">.</span><span class="n">stLibVersion_lcls_twincat_motion</span> <span class="p">:</span> <span class="n">ST_LibVersion</span> <span class="p">(</span><span class="mi">9647680</span> <span class="mi">288</span><span class="p">)</span>
+<span class="n">Global_Version</span><span class="o">.</span><span class="n">stLibVersion_lcls_twincat_motion</span> <span class="p">:</span> <span class="n">ST_LibVersion</span> <span class="p">(</span><span class="mi">9647808</span> <span class="mi">288</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">M1</span> <span class="p">:</span> <span class="n">DUT_MotionStage</span> <span class="p">(</span><span class="mi">8803136</span> <span class="mi">21056</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">M1</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">8804224</span> <span class="mi">2048</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">M1</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">8803200</span> <span class="mi">1024</span><span class="p">)</span>
@@ -7753,30 +7832,30 @@ END_PROGRAM
 <span class="n">Interactive</span><span class="o">.</span><span class="n">M1</span><span class="o">.</span><span class="n">nRawEncoderINT</span> <span class="p">:</span> <span class="n">INT</span> <span class="p">(</span><span class="mi">8812304</span> <span class="mi">16</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">M1</span><span class="o">.</span><span class="n">nRawEncoderUINT</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">8812288</span> <span class="mi">16</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">M1</span><span class="o">.</span><span class="n">nRawEncoderULINT</span> <span class="p">:</span> <span class="n">ULINT</span> <span class="p">(</span><span class="mi">8812224</span> <span class="mi">64</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">arrStates</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">15</span><span class="p">]</span> <span class="n">OF</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9411072</span> <span class="mi">36480</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">bGoHCF</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9011592</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">arrStates</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">15</span><span class="p">]</span> <span class="n">OF</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9411136</span> <span class="mi">36480</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">bGoHCF</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9011656</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">bGoIn</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">8745656</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">bGoOut</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">8745640</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">bHCF</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9011584</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">bHCF</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">9011648</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">bIn</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">8745648</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">8745608</span> <span class="mi">8</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">bOut</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="p">(</span><span class="mi">8745632</span> <span class="mi">8</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbEpicsInOut</span> <span class="p">:</span> <span class="n">FB_EpicsInOut</span> <span class="p">(</span><span class="mi">9011648</span> <span class="mi">218496</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbGoBad</span> <span class="p">:</span> <span class="n">FB_PositionStateMove</span> <span class="p">(</span><span class="mi">9008640</span> <span class="mi">2944</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbGoIn</span> <span class="p">:</span> <span class="n">FB_PositionStateMove</span> <span class="p">(</span><span class="mi">9003264</span> <span class="mi">2944</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbGoOut</span> <span class="p">:</span> <span class="n">FB_PositionStateMove</span> <span class="p">(</span><span class="mi">8997888</span> <span class="mi">2944</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbMotionStageSim</span> <span class="p">:</span> <span class="n">FB_MotionStageSim</span> <span class="p">(</span><span class="mi">8824192</span> <span class="mi">171264</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbMotionStageSim</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">8826944</span> <span class="mi">2048</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbMotionStageSim</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">8825920</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">fbStateManager</span> <span class="p">:</span> <span class="n">FB_PositionStateManager</span> <span class="p">(</span><span class="mi">9230144</span> <span class="mi">180928</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbEpicsInOut</span> <span class="p">:</span> <span class="n">FB_EpicsInOut</span> <span class="p">(</span><span class="mi">9011712</span> <span class="mi">218496</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbGoBad</span> <span class="p">:</span> <span class="n">FB_PositionStateMove</span> <span class="p">(</span><span class="mi">9008704</span> <span class="mi">2944</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbGoIn</span> <span class="p">:</span> <span class="n">FB_PositionStateMove</span> <span class="p">(</span><span class="mi">9003328</span> <span class="mi">2944</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbGoOut</span> <span class="p">:</span> <span class="n">FB_PositionStateMove</span> <span class="p">(</span><span class="mi">8997952</span> <span class="mi">2944</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbMotionStageSim</span> <span class="p">:</span> <span class="n">FB_MotionStageSim</span> <span class="p">(</span><span class="mi">14769152</span> <span class="mi">171328</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbMotionStageSim</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">NcToPlc</span> <span class="p">:</span> <span class="n">NCTOPLC_AXIS_REF</span> <span class="p">(</span><span class="mi">14771968</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbMotionStageSim</span><span class="o">.</span><span class="n">fbMotionStage</span><span class="o">.</span><span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">MasterAxis</span><span class="o">.</span><span class="n">PlcToNc</span> <span class="p">:</span> <span class="n">PLCTONC_AXIS_REF</span> <span class="p">(</span><span class="mi">14770944</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">fbStateManager</span> <span class="p">:</span> <span class="n">FB_PositionStateManager</span> <span class="p">(</span><span class="mi">9230208</span> <span class="mi">180928</span><span class="p">)</span>
 <span class="n">Interactive</span><span class="o">.</span><span class="n">nCounter</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">8745616</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">setState</span> <span class="p">:</span> <span class="n">INT</span> <span class="p">(</span><span class="mi">9011600</span> <span class="mi">16</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">stIn</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9000832</span> <span class="mi">2432</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">stOut</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">8995456</span> <span class="mi">2432</span><span class="p">)</span>
-<span class="n">Interactive</span><span class="o">.</span><span class="n">stUnsafe</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9006208</span> <span class="mi">2432</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">setState</span> <span class="p">:</span> <span class="n">INT</span> <span class="p">(</span><span class="mi">9011664</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">stIn</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9000896</span> <span class="mi">2432</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">stOut</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">8995520</span> <span class="mi">2432</span><span class="p">)</span>
+<span class="n">Interactive</span><span class="o">.</span><span class="n">stUnsafe</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9006272</span> <span class="mi">2432</span><span class="p">)</span>
 <span class="n">LCLS_General</span><span class="o">.</span><span class="n">DefaultGlobals</span><span class="o">.</span><span class="n">stSys</span><span class="o">.</span><span class="n">I_EcatMaster1</span> <span class="p">:</span> <span class="n">AMSNETID</span> <span class="p">(</span><span class="mi">4096040</span> <span class="mi">48</span><span class="p">)</span>
-<span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">stInvalidState</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9645248</span> <span class="mi">2432</span><span class="p">)</span>
-<span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">stUnknownState</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9642816</span> <span class="mi">2432</span><span class="p">)</span>
+<span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">stInvalidState</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9645376</span> <span class="mi">2432</span><span class="p">)</span>
+<span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">stUnknownState</span> <span class="p">:</span> <span class="n">DUT_PositionState</span> <span class="p">(</span><span class="mi">9642944</span> <span class="mi">2432</span><span class="p">)</span>
 <span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">AUX_ATTENUATORS</span> <span class="p">:</span> <span class="n">UINT</span> <span class="p">(</span><span class="mi">4572384</span> <span class="mi">16</span><span class="p">)</span>
 <span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">AccumulatedFF</span> <span class="p">:</span> <span class="n">UDINT</span> <span class="p">(</span><span class="mi">3072032</span> <span class="mi">32</span><span class="p">)</span>
 <span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">DUMMY_AUX_ATT_ARRAY</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">16</span><span class="p">]</span> <span class="n">OF</span> <span class="n">PMPS</span><span class="o">.</span><span class="n">ST_PMPS_Attenuator</span> <span class="p">(</span><span class="mi">4572416</span> <span class="mi">512</span><span class="p">)</span>
@@ -7798,13 +7877,13 @@ END_PROGRAM
 <span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">stCurrentBeamParameters</span> <span class="p">:</span> <span class="n">PMPS</span><span class="o">.</span><span class="n">ST_BeamParams</span> <span class="p">(</span><span class="mi">4439040</span> <span class="mi">1216</span><span class="p">)</span>
 <span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">stRequestedBeamParameters</span> <span class="p">:</span> <span class="n">PMPS</span><span class="o">.</span><span class="n">ST_BeamParams</span> <span class="p">(</span><span class="mi">4437824</span> <span class="mi">1216</span><span class="p">)</span>
 <span class="n">ParameterList</span><span class="o">.</span><span class="n">cSourceNameSize</span> <span class="p">:</span> <span class="n">UDINT</span> <span class="p">(</span><span class="mi">4437088</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">TC_EVENTS</span><span class="o">.</span><span class="n">LCLSGeneralEventClass</span> <span class="p">:</span> <span class="n">ST_LCLSGeneralEventClass</span> <span class="p">(</span><span class="mi">10021952</span> <span class="mi">960</span><span class="p">)</span>
-<span class="n">TwinCAT_LicenseInfoVarList</span><span class="o">.</span><span class="n">_LicenseInfo</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span> <span class="n">OF</span> <span class="n">PlcLicenseInfo</span> <span class="p">(</span><span class="mi">9648288</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_AppInfo</span> <span class="p">:</span> <span class="n">PlcAppSystemInfo</span> <span class="p">(</span><span class="mi">9649344</span> <span class="mi">2048</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskInfo</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span> <span class="n">OF</span> <span class="n">PlcTaskSystemInfo</span> <span class="p">(</span><span class="mi">9651392</span> <span class="mi">1024</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">9652416</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskPouOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">9649312</span> <span class="mi">32</span><span class="p">)</span>
-<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">__PlcTask</span> <span class="p">:</span> <span class="n">_Implicit_Task_Info</span> <span class="p">(</span><span class="mi">9652480</span> <span class="mi">896</span><span class="p">)</span>
+<span class="n">TC_EVENTS</span><span class="o">.</span><span class="n">LCLSGeneralEventClass</span> <span class="p">:</span> <span class="n">ST_LCLSGeneralEventClass</span> <span class="p">(</span><span class="mi">10022080</span> <span class="mi">960</span><span class="p">)</span>
+<span class="n">TwinCAT_LicenseInfoVarList</span><span class="o">.</span><span class="n">_LicenseInfo</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span> <span class="n">OF</span> <span class="n">PlcLicenseInfo</span> <span class="p">(</span><span class="mi">9648416</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_AppInfo</span> <span class="p">:</span> <span class="n">PlcAppSystemInfo</span> <span class="p">(</span><span class="mi">9649472</span> <span class="mi">2048</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskInfo</span> <span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="mi">1</span><span class="p">]</span> <span class="n">OF</span> <span class="n">PlcTaskSystemInfo</span> <span class="p">(</span><span class="mi">9651520</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">9652544</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">_TaskPouOid_PlcTask</span> <span class="p">:</span> <span class="n">OTCID</span> <span class="p">(</span><span class="mi">9649440</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">TwinCAT_SystemInfoVarList</span><span class="o">.</span><span class="n">__PlcTask</span> <span class="p">:</span> <span class="n">_Implicit_Task_Info</span> <span class="p">(</span><span class="mi">9652608</span> <span class="mi">896</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7846,7 +7925,7 @@ END_PROGRAM
 </div>
 <div class="section" id="pragma-lint-results">
 <h2>Pragma lint results<a class="headerlink" href="#pragma-lint-results" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INFO</span><span class="p">:</span><span class="n">pytmc</span><span class="o">.</span><span class="n">bin</span><span class="o">.</span><span class="n">pragmalint</span><span class="p">:</span><span class="n">Total</span> <span class="n">pragmas</span> <span class="n">found</span><span class="p">:</span> <span class="mi">126</span> <span class="n">Total</span> <span class="n">linter</span> <span class="n">errors</span><span class="p">:</span> <span class="mi">0</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">INFO</span><span class="p">:</span><span class="n">pytmc</span><span class="o">.</span><span class="n">bin</span><span class="o">.</span><span class="n">pragmalint</span><span class="p">:</span><span class="n">Total</span> <span class="n">pragmas</span> <span class="n">found</span><span class="p">:</span> <span class="mi">125</span> <span class="n">Total</span> <span class="n">linter</span> <span class="n">errors</span><span class="p">:</span> <span class="mi">0</span>
 <span class="n">PLC</span> <span class="n">Project</span> <span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="n">Library</span>
 <span class="o">========================</span>
 
@@ -7981,12 +8060,6 @@ END_PROGRAM
 <span class="o">---------------------------------------------------------------------</span>
 
     <span class="o">-</span> <span class="n">GVL_ErrorSystem</span><span class="p">:</span> <span class="n">Declaration</span> <span class="o">-</span> <span class="mi">1</span> <span class="n">pragmas</span>
-
-
-<span class="n">UnitTests</span><span class="o">/</span><span class="n">Interactive</span><span class="o">.</span><span class="n">TcPOU</span> <span class="p">(</span><span class="n">TcPlcObject</span><span class="p">)</span>
-<span class="o">-----------------------------------------</span>
-
-    <span class="o">-</span> <span class="n">Interactive</span><span class="p">:</span> <span class="n">Declaration</span> <span class="o">-</span> <span class="mi">1</span> <span class="n">pragmas</span>
 
 
 <span class="n">Version</span><span class="o">/</span><span class="n">Global_Version</span><span class="o">.</span><span class="n">TcGVL</span> <span class="p">(</span><span class="n">TcPlcObject</span><span class="p">)</span>

@@ -1188,6 +1188,10 @@ VAR_GLOBAL
     stUnknownState: DUT_PositionState := (sName := 'Unknown');
     stInvalidState: DUT_PositionState;
 END_VAR
+VAR_GLOBAL CONSTANT
+    // Allocated space for 5 states besides Unknown (16 including Unknown is the max for an EPICS MBBI)
+    MAX_STATES: INT := 5;
+END_VAR
 ```
 
 
@@ -5245,6 +5249,7 @@ VAR
     fbEncoderValue: FB_EncoderValue;
     fbNCParams: FB_MotionStageNCParams;
     bNewMoveReq: BOOL;
+    bPrepareDisable: BOOL;
 END_VAR
 // Start with an accurate status
 stMotionStage.Axis.ReadStatus();
@@ -5252,6 +5257,8 @@ stMotionStage.Axis.ReadStatus();
 rtUserExec(CLK := stMotionStage.bExecute);
 bNewMoveReq S= rtUserExec.Q;
 bNewMoveReq R= NOT stMotionStage.bExecute;
+bPrepareDisable R= bNewMoveReq;
+
 bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
@@ -5382,10 +5389,11 @@ IF rtTarget.Q OR ftExec.Q THEN
 END_IF
 
 // Handle auto-disable timing
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q THEN
-    IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
-        stMotionStage.bEnable := FALSE;
-    END_IF
+bPrepareDisable S= stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q;
+// Delay the disable until we reach standstill, else brake issues or other race conditions
+IF bPrepareDisable AND stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+    bPrepareDisable := FALSE;
+    stMotionStage.bEnable := FALSE;
 END_IF
 
 // Get a definitive bEnabled reading
@@ -5506,6 +5514,9 @@ FUNCTION_BLOCK FB_MotionStageSim
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
 END_VAR
+VAR_INPUT
+    nEnableMode: ENUM_StageEnableMode := ENUM_StageEnableMode.ALWAYS;
+END_VAR
 VAR
     fbMotionStage: FB_MotionStage;
     bInit: BOOL;
@@ -5521,7 +5532,7 @@ IF NOT bInit THEN
     // Stand-in for no PMPS governer
     stMotionStage.bPowerSelf := TRUE;
     // Always keep it enabled for testing ease
-    stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    stMotionStage.nEnableMode := nEnableMode;
 END_IF
 // Call FB_MotionStage to do the thing
 fbMotionStage(stMotionStage := stMotionStage);
@@ -5736,13 +5747,13 @@ VAR_OUTPUT
     bDone: BOOL;
 END_VAR
 VAR
-    // Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
+    // Pre-allocated array of states
     {attribute 'pytmc' := '
         pv:
         io: io
         expand: %.2d
     '}
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
+    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 
     // Corresponding arrStates index to move to, or 0 if no move selected
     setState: INT;
@@ -5755,7 +5766,7 @@ VAR
     stUnknown: DUT_PositionState;
     stGoal: DUT_PositionState;
     fbStateMove: FB_PositionStateMove;
-    fbStateInternal: ARRAY[1..15] OF FB_PositionStateInternal;
+    fbStateInternal: ARRAY[1..MOTION_GVL.MAX_STATES] OF FB_PositionStateInternal;
     nIndex: INT;
     bNewGoal: BOOL;
     bInnerExec: BOOL;
@@ -5802,7 +5813,7 @@ IF NOT bInit THEN
 END_IF
 
 // All state internal handlers
-FOR nIndex := 1 TO 15 DO
+FOR nIndex := 1 TO MOTION_GVL.MAX_STATES DO
     IF arrStates[nIndex].bValid THEN
         fbStateInternal[nIndex](
             stMotionStage:=stMotionStage,
@@ -5813,7 +5824,7 @@ END_FOR
 // Check where we are by going through all possible states.
 // Note this favors the highest-number state that we're at, it's up to you to make your states mutually exclusive.
 getState := 0;
-FOR nIndex := 1 TO 15 DO
+FOR nIndex := 1 TO MOTION_GVL.MAX_STATES DO
     IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
         getState := nIndex;
     END_IF
@@ -5906,6 +5917,11 @@ END_VAR
 VAR_INPUT
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
     nTransitionAssertionID: UDINT;
+    nUnknownAssertionID: UDINT;
+    bArbiterEnabled: BOOL := TRUE;
+    tArbiterTimeout: TIME := T#1s;
+    bMoveOnArbiterTimeout: BOOL := TRUE;
+    fStateBoundaryDeadband: LREAL := 0;
 END_VAR
 VAR
     fbStatePMPS: FB_PositionStatePMPS;
@@ -5939,7 +5955,12 @@ fbStatePMPS(
     setState:=setState,
     getState:=getState,
     stTransitionBeam:=stTransitionBeam,
-    nTransitionAssertionID:=nTransitionAssertionID);
+    nTransitionAssertionID:=nTransitionAssertionID,
+    nUnknownAssertionID:=nUnknownAssertionID,
+    bArbiterEnabled:=bArbiterEnabled,
+    tArbiterTimeout:=tArbiterTimeout,
+    bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
+    fStateBoundaryDeadband:=fStateBoundaryDeadband);
 
 fbEncErrFFO(
     stMotionStage:=stMotionStage,
@@ -6595,10 +6616,25 @@ END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
+    bFFOxOk: BOOL;
+    bAtSafeState: BOOL;
+    nIter: INT;
 END_VAR
 Exec();
 
 END_FUNCTION_BLOCK
+ACTION AssertHere:
+fbArbiter.AddRequest(
+    nReqID := stStateReq.nRequestAssertionID,
+    stReqBP := stStateReq.stBeamParams);
+END_ACTION
+ACTION ClearAsserts:
+fbArbiter.RemoveRequest(nTransitionAssertionID);
+fbArbiter.RemoveRequest(nUnknownAssertionID);
+FOR nIter := 1 TO MOTION_GVL.MAX_STATES DO
+    fbArbiter.RemoveRequest(arrStates[nIter].nRequestAssertionID);
+END_FOR
+END_ACTION
 ACTION HandleBPTM:
 bptm(fbArbiter:=fbArbiter,
      i_TransitionAssertionID:=nTransitionAssertionID,
@@ -6614,10 +6650,28 @@ ACTION HandleFFO:
 // If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
 // Get state will point to Unknown/No beam if we are out of state bounds or in motion
 // Otherwise we'll have the current state's beam parameters
+
+IF stBeamNeeded.nRate <= 0 THEN
+    // If nRate is zero, trip the beam just to be sure.
+    bFFOxOk := FALSE;
+ELSIF bArbiterTimeout AND bMoveOnArbiterTimeout THEN
+    // If the arbiter times out, trip so we can get moving.
+    bFFOxOk := FALSE;
+ELSE
+    // Otherwise, trip if the beam conditions are bad
+    bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
+END_IF
+
+// It is safe to reset automatically if our current state can take full beam.
+// Otherwise we'll have to ask for a user acknowledgement to clear.
+bAtSafeState := F_SafeBPCompare(PMPS_GVL.cstFullBeam, stBeamNeeded);
+
 ffBeamParamsOk(
-    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded),
+    i_xOK:=bFFOxOk,
+    i_xReset:=bFFOxOk AND bAtSafeState,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
+    i_TypeCode:=1,
     io_fbFFHWO:=fbFFHWO);
 END_ACTION
 ```
@@ -6637,9 +6691,10 @@ FUNCTION_BLOCK FB_PositionStatePMPS_Base
 *)
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
+    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
+    bArbiterEnabled: BOOL := TRUE;
     bRequestTransition: BOOL;
     bDoingTransition: BOOL;
     setState: INT;
@@ -6647,17 +6702,21 @@ VAR_INPUT
     fStateBoundaryDeadband: LREAL := 0;
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
     nTransitionAssertionID: UDINT;
+    nUnknownAssertionID: UDINT;
+    tArbiterTimeout: TIME := T#1s;
+    bMoveOnArbiterTimeout: BOOL := TRUE;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
     bForwardAuthorized: BOOL;
     bBackwardAuthorized: BOOL;
+    bArbiterTimeout: BOOL;
 END_VAR
 VAR
     bInit: BOOL := TRUE;
-    fbLinGov: FB_LinearGovernor;
     rtTransReq: R_TRIG;
     ftTransAuth: F_TRIG;
+    ftMotorExec: F_TRIG;
     stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
     fUpperBound: LREAL;
@@ -6668,21 +6727,35 @@ VAR
     fReqPos: LREAL;
     bInTransition: BOOL;
     stBeamNeeded: ST_BeamParams;
+    bFwdOk: BOOL;
+    bBwdOk: BOOL;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
+    tonArbiter: TON;
 END_VAR
 // This is meant to be subclassed. The parent class body is in the Exec action.
 
 END_FUNCTION_BLOCK
+ACTION AssertHere:
+
+END_ACTION
+ACTION ClearAsserts:
+
+END_ACTION
 ACTION Exec:
 // Initialize or reinitialize to the current state value
 ftTransAuth(CLK:=bTransitionAuthorized);
-IF ftTransAuth.Q THEN
+ftMotorExec(CLK:=stMotionStage.bExecute);
+IF ftTransAuth.Q OR ftMotorExec.Q THEN
     bInit := TRUE;
 END_IF
-IF bInit OR nGoalState = 0 THEN
+IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     bInit R= stMotionStage.bAxisParamsInit;
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);
     bInTransition := FALSE;
+    stInvalidState.nRequestAssertionID := nUnknownAssertionID;
+    stUnknownState.nRequestAssertionID := nUnknownAssertionID;
 END_IF
 
 // Request transition on rising edge
@@ -6693,8 +6766,26 @@ IF rtTransReq.Q THEN
     bInTransition := TRUE;
 END_IF
 
-// Handles getting the request to the arbiter and back
-HandleBPTM();
+IF bArbiterEnabled THEN
+    // Handles getting the request to the arbiter and back
+    HandleBPTM();
+    // Handle arbiter timeouts
+    IF tArbiterTimeout > T#0s THEN
+        tonArbiter(
+            IN:=bInTransition AND NOT bTransitionAuthorized,
+            PT:=tArbiterTimeout,
+            Q=>bArbiterTimeout);
+    ELSE
+        bArbiterTimeout := FALSE;
+    END_IF
+    bTransitionAuthorized S= bArbiterTimeout AND bMoveOnArbiterTimeout;
+ELSE
+    // Clear all of our assertions if we decide to disable the arbiter
+    ClearAsserts();
+    // Do some dummy request handling
+    bTransitionAuthorized := stMotionStage.bExecute;
+    bArbiterTimeout := stMotionStage.bExecute;
+END_IF
 
 // Set up MPS virtual limit for moves at and between states
 stGoalState := GetStateStruct(nGoalState);
@@ -6709,10 +6800,14 @@ END_IF
 bForwardAuthorized := FALSE;
 bBackwardAuthorized := FALSE;
 
+// Check if it would be OK to move without granting auth
+bFwdOk := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
+bBwdOk := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+
 // Grant auth during moves based on goal state, current position, and goal position
 IF stMotionStage.bExecute AND stGoalState.bValid THEN
-    bForwardAuthorized := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
-    bBackwardAuthorized := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+    bForwardAuthorized := bFwdOk;
+    bBackwardAuthorized := bBwdOk;
 END_IF
 
 IF bInTransition THEN
@@ -6725,18 +6820,28 @@ ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
     stMotionStage.bSafetyReady := TRUE;
     // Set an error message override in case this causes an error
-    IF stMotionStage.bError AND fReqPos > fActPos AND NOT bForwardAuthorized THEN
-        stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
-    ELSIF stMotionStage.bError AND fReqPos < fActPos AND NOT bBackwardAuthorized THEN
-        stMotionStage.sCustomErrorMessage := 'Unsafe tweak backward blocked by PMPS';
+    IF stMotionStage.bError AND bArbiterEnabled THEN
+        IF fReqPos > fActPos AND NOT bFwdOk THEN
+            stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
+        ELSIF fReqPos < fActPos AND NOT bBwdOk THEN
+            stMotionStage.sCustomErrorMessage := 'Unsafe tweak backward blocked by PMPS';
+        END_IF
     END_IF
 END_IF
 
+IF bArbiterEnabled THEN
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
-mcPower(Axis:=stMotionStage.Axis,
-        Enable:=stMotionStage.bAllEnable,
-        Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
-        Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+ELSE
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable);
+    stMotionStage.bSafetyReady := TRUE;
+END_IF
 
 // Raise fast faults as needed
 stBeamNeeded := GetBeamFromState(getState);
@@ -7653,20 +7758,11 @@ VAR
     fbGoBad: FB_PositionStateMove;
     bHCF: BOOL;
     bGoHCF: BOOL;
-
-    {attribute 'pytmc' := '
-        pv: TST:STATE
-        io: io
-    '}
-    fbEpicsInOut: FB_EpicsInOut;
-
-    fbStateManager: FB_PositionStateManager;
-    setState: INT;
-    arrStates: ARRAY [1..15] OF DUT_PositionState;
 END_VAR
 BasicTests();
 
-fbMotionStageSim(stMotionStage:=M1);
+fbMotionStageSim(stMotionStage:=M1,
+                 nEnableMode:=ENUM_StageEnableMode.DURING_MOTION);
 nCounter := nCounter + 1;
 
 IF NOT bInit THEN
@@ -7692,9 +7788,6 @@ IF NOT bInit THEN
     stUnsafe.fVelocity := 42;
     stUnsafe.bValid := TRUE;
     stUnsafe.bMoveOk := FALSE;
-
-    fbEpicsInOut.bEnable := TRUE;
-    fbStateManager.bEnable := TRUE;
 END_IF
 
 fbGoOut(
@@ -7713,20 +7806,6 @@ fbGoBad(
     stPositionState:=stUnsafe,
     bAtState=>bHCF);
 
-arrStates[1] := stOut;
-arrStates[2] := stIn;
-arrStates[3] := stUnsafe;
-
-fbEpicsInOut(
-    stMotionStage := M1,
-    stOut := stOut,
-    stIn := stIn);
-
-fbStateManager(
-    stMotionStage := M1,
-    arrStates := arrStates,
-    setState := setState);
-
 END_PROGRAM
 ```
 
@@ -7735,38 +7814,38 @@ Symbols
 -------
 
     .TCPADS_MAXUDP_BUFFSIZE : UDINT (4436672 32)
-    BasicTests.Motor : DUT_MotionStage (9447552 21056)
-    BasicTests.Motor.Axis.NcToPlc : NCTOPLC_AXIS_REF (9448640 2048)
-    BasicTests.Motor.Axis.PlcToNc : PLCTONC_AXIS_REF (9447616 1024)
-    BasicTests.Motor.bBrakeRelease : BOOL (9456600 8)
-    BasicTests.Motor.bHardwareEnable : BOOL (9456608 8)
-    BasicTests.Motor.bHome : BOOL (9456592 8)
-    BasicTests.Motor.bLimitBackwardEnable : BOOL (9456584 8)
-    BasicTests.Motor.bLimitForwardEnable : BOOL (9456576 8)
-    BasicTests.Motor.nRawEncoderINT : INT (9456720 16)
-    BasicTests.Motor.nRawEncoderUINT : UINT (9456704 16)
-    BasicTests.Motor.nRawEncoderULINT : ULINT (9456640 64)
-    BasicTests.bError : BOOL (9011616 8)
-    BasicTests.errState : Tc2_MC2.MC_AxisStates (9011632 16)
-    BasicTests.fbMotion : FB_MotionStageSim (9468608 171264)
-    BasicTests.fbMotion.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (9471360 2048)
-    BasicTests.fbMotion.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (9470336 1024)
-    BasicTests.fbRequest : FB_MotionRequest (9639872 1920)
-    Constants.CompilerVersion : VERSION (9648096 64)
-    Constants.CompilerVersionNumeric : DWORD (9648256 32)
-    Constants.RuntimeVersion : VERSION (9648032 64)
-    Constants.RuntimeVersionNumeric : DWORD (9648224 32)
-    Constants.bFPUSupport : BOOL (9648192 8)
-    Constants.bLittleEndian : BOOL (9648016 8)
-    Constants.bSimulationMode : BOOL (9648024 8)
-    Constants.nPackMode : UINT (9648176 16)
-    Constants.nRegisterSize : WORD (9648160 16)
+    BasicTests.Motor : DUT_MotionStage (9447616 21056)
+    BasicTests.Motor.Axis.NcToPlc : NCTOPLC_AXIS_REF (9448704 2048)
+    BasicTests.Motor.Axis.PlcToNc : PLCTONC_AXIS_REF (9447680 1024)
+    BasicTests.Motor.bBrakeRelease : BOOL (9456664 8)
+    BasicTests.Motor.bHardwareEnable : BOOL (9456672 8)
+    BasicTests.Motor.bHome : BOOL (9456656 8)
+    BasicTests.Motor.bLimitBackwardEnable : BOOL (9456648 8)
+    BasicTests.Motor.bLimitForwardEnable : BOOL (9456640 8)
+    BasicTests.Motor.nRawEncoderINT : INT (9456784 16)
+    BasicTests.Motor.nRawEncoderUINT : UINT (9456768 16)
+    BasicTests.Motor.nRawEncoderULINT : ULINT (9456704 64)
+    BasicTests.bError : BOOL (9011680 8)
+    BasicTests.errState : Tc2_MC2.MC_AxisStates (9011696 16)
+    BasicTests.fbMotion : FB_MotionStageSim (15132352 171328)
+    BasicTests.fbMotion.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (15135168 2048)
+    BasicTests.fbMotion.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (15134144 1024)
+    BasicTests.fbRequest : FB_MotionRequest (9640000 1920)
+    Constants.CompilerVersion : VERSION (9648224 64)
+    Constants.CompilerVersionNumeric : DWORD (9648384 32)
+    Constants.RuntimeVersion : VERSION (9648160 64)
+    Constants.RuntimeVersionNumeric : DWORD (9648352 32)
+    Constants.bFPUSupport : BOOL (9648320 8)
+    Constants.bLittleEndian : BOOL (9648144 8)
+    Constants.bSimulationMode : BOOL (9648152 8)
+    Constants.nPackMode : UINT (9648304 16)
+    Constants.nRegisterSize : WORD (9648288 16)
     DefaultGlobals.fTimeStamp : LREAL (4096128 64)
     DefaultGlobals.stSys : LCLS_General.ST_System (4096000 88)
-    GVL.nHomingError : UDINT (9647968 32)
+    GVL.nHomingError : UDINT (9648096 32)
     GVL.nLangId_OnlineMonitoring : DINT (4437056 32)
     GVL_CUSTOM_CONSTANTS.MAX_FAST_FAULTS : UINT (4435920 16)
-    GVL_ErrorSystem.cSizeOfErrorData : UINT (9648000 16)
+    GVL_ErrorSystem.cSizeOfErrorData : UINT (9648128 16)
     GVL_INTERNAL.UNINITIALIZED_CLASS_GUID : GUID (4437408 128)
     GVL_Logger.TCPADS_MAXUDP_BUFFSIZE : UDINT (4097024 32)
     GVL_Logger.cLogHost : STRING(15) (4096192 128)
@@ -8014,7 +8093,7 @@ Symbols
     Global_Version.stLibVersion_Tc3_JsonXml : ST_LibVersion (4437536 288)
     Global_Version.stLibVersion_Tc3_Module : ST_LibVersion (4230816 288)
     Global_Version.stLibVersion_TcUnit : ST_LibVersion (8737920 288)
-    Global_Version.stLibVersion_lcls_twincat_motion : ST_LibVersion (9647680 288)
+    Global_Version.stLibVersion_lcls_twincat_motion : ST_LibVersion (9647808 288)
     Interactive.M1 : DUT_MotionStage (8803136 21056)
     Interactive.M1.Axis.NcToPlc : NCTOPLC_AXIS_REF (8804224 2048)
     Interactive.M1.Axis.PlcToNc : PLCTONC_AXIS_REF (8803200 1024)
@@ -8026,30 +8105,30 @@ Symbols
     Interactive.M1.nRawEncoderINT : INT (8812304 16)
     Interactive.M1.nRawEncoderUINT : UINT (8812288 16)
     Interactive.M1.nRawEncoderULINT : ULINT (8812224 64)
-    Interactive.arrStates : ARRAY[1..15] OF DUT_PositionState (9411072 36480)
-    Interactive.bGoHCF : BOOL (9011592 8)
+    Interactive.arrStates : ARRAY[1..15] OF DUT_PositionState (9411136 36480)
+    Interactive.bGoHCF : BOOL (9011656 8)
     Interactive.bGoIn : BOOL (8745656 8)
     Interactive.bGoOut : BOOL (8745640 8)
-    Interactive.bHCF : BOOL (9011584 8)
+    Interactive.bHCF : BOOL (9011648 8)
     Interactive.bIn : BOOL (8745648 8)
     Interactive.bInit : BOOL (8745608 8)
     Interactive.bOut : BOOL (8745632 8)
-    Interactive.fbEpicsInOut : FB_EpicsInOut (9011648 218496)
-    Interactive.fbGoBad : FB_PositionStateMove (9008640 2944)
-    Interactive.fbGoIn : FB_PositionStateMove (9003264 2944)
-    Interactive.fbGoOut : FB_PositionStateMove (8997888 2944)
-    Interactive.fbMotionStageSim : FB_MotionStageSim (8824192 171264)
-    Interactive.fbMotionStageSim.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (8826944 2048)
-    Interactive.fbMotionStageSim.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (8825920 1024)
-    Interactive.fbStateManager : FB_PositionStateManager (9230144 180928)
+    Interactive.fbEpicsInOut : FB_EpicsInOut (9011712 218496)
+    Interactive.fbGoBad : FB_PositionStateMove (9008704 2944)
+    Interactive.fbGoIn : FB_PositionStateMove (9003328 2944)
+    Interactive.fbGoOut : FB_PositionStateMove (8997952 2944)
+    Interactive.fbMotionStageSim : FB_MotionStageSim (14769152 171328)
+    Interactive.fbMotionStageSim.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc : NCTOPLC_AXIS_REF (14771968 2048)
+    Interactive.fbMotionStageSim.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc : PLCTONC_AXIS_REF (14770944 1024)
+    Interactive.fbStateManager : FB_PositionStateManager (9230208 180928)
     Interactive.nCounter : UINT (8745616 16)
-    Interactive.setState : INT (9011600 16)
-    Interactive.stIn : DUT_PositionState (9000832 2432)
-    Interactive.stOut : DUT_PositionState (8995456 2432)
-    Interactive.stUnsafe : DUT_PositionState (9006208 2432)
+    Interactive.setState : INT (9011664 16)
+    Interactive.stIn : DUT_PositionState (9000896 2432)
+    Interactive.stOut : DUT_PositionState (8995520 2432)
+    Interactive.stUnsafe : DUT_PositionState (9006272 2432)
     LCLS_General.DefaultGlobals.stSys.I_EcatMaster1 : AMSNETID (4096040 48)
-    MOTION_GVL.stInvalidState : DUT_PositionState (9645248 2432)
-    MOTION_GVL.stUnknownState : DUT_PositionState (9642816 2432)
+    MOTION_GVL.stInvalidState : DUT_PositionState (9645376 2432)
+    MOTION_GVL.stUnknownState : DUT_PositionState (9642944 2432)
     PMPS_GVL.AUX_ATTENUATORS : UINT (4572384 16)
     PMPS_GVL.AccumulatedFF : UDINT (3072032 32)
     PMPS_GVL.DUMMY_AUX_ATT_ARRAY : ARRAY[1..16] OF PMPS.ST_PMPS_Attenuator (4572416 512)
@@ -8071,13 +8150,13 @@ Symbols
     PMPS_GVL.stCurrentBeamParameters : PMPS.ST_BeamParams (4439040 1216)
     PMPS_GVL.stRequestedBeamParameters : PMPS.ST_BeamParams (4437824 1216)
     ParameterList.cSourceNameSize : UDINT (4437088 32)
-    TC_EVENTS.LCLSGeneralEventClass : ST_LCLSGeneralEventClass (10021952 960)
-    TwinCAT_LicenseInfoVarList._LicenseInfo : ARRAY[1..1] OF PlcLicenseInfo (9648288 1024)
-    TwinCAT_SystemInfoVarList._AppInfo : PlcAppSystemInfo (9649344 2048)
-    TwinCAT_SystemInfoVarList._TaskInfo : ARRAY[1..1] OF PlcTaskSystemInfo (9651392 1024)
-    TwinCAT_SystemInfoVarList._TaskOid_PlcTask : OTCID (9652416 32)
-    TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask : OTCID (9649312 32)
-    TwinCAT_SystemInfoVarList.__PlcTask : _Implicit_Task_Info (9652480 896)
+    TC_EVENTS.LCLSGeneralEventClass : ST_LCLSGeneralEventClass (10022080 960)
+    TwinCAT_LicenseInfoVarList._LicenseInfo : ARRAY[1..1] OF PlcLicenseInfo (9648416 1024)
+    TwinCAT_SystemInfoVarList._AppInfo : PlcAppSystemInfo (9649472 2048)
+    TwinCAT_SystemInfoVarList._TaskInfo : ARRAY[1..1] OF PlcTaskSystemInfo (9651520 1024)
+    TwinCAT_SystemInfoVarList._TaskOid_PlcTask : OTCID (9652544 32)
+    TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask : OTCID (9649440 32)
+    TwinCAT_SystemInfoVarList.__PlcTask : _Implicit_Task_Info (9652608 896)
 
 Boxes
 -----
@@ -8116,7 +8195,7 @@ Links
 Pragma lint results
 -------------------
 ```
-INFO:pytmc.bin.pragmalint:Total pragmas found: 126 Total linter errors: 0
+INFO:pytmc.bin.pragmalint:Total pragmas found: 125 Total linter errors: 0
 PLC Project (1): Library
 ========================
 
@@ -8251,12 +8330,6 @@ tc_mca_std_lib/POUs/ErrorHandling/GVL_ErrorSystem.TcGVL (TcPlcObject)
 ---------------------------------------------------------------------
 
     - GVL_ErrorSystem: Declaration - 1 pragmas
-
-
-UnitTests/Interactive.TcPOU (TcPlcObject)
------------------------------------------
-
-    - Interactive: Declaration - 1 pragmas
 
 
 Version/Global_Version.TcGVL (TcPlcObject)
