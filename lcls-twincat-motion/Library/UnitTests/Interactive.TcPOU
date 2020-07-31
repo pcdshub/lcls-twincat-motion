@@ -21,23 +21,14 @@ VAR
     fbGoBad: FB_PositionStateMove;
     bHCF: BOOL;
     bGoHCF: BOOL;
-
-    {attribute 'pytmc' := '
-        pv: TST:STATE
-        io: io
-    '}
-    fbEpicsInOut: FB_EpicsInOut;
-
-    fbStateManager: FB_PositionStateManager;
-    setState: INT;
-    arrStates: ARRAY [1..15] OF DUT_PositionState;
 END_VAR
 
     ]]></Declaration>
     <Implementation>
       <ST><![CDATA[BasicTests();
 
-fbMotionStageSim(stMotionStage:=M1);
+fbMotionStageSim(stMotionStage:=M1,
+                 nEnableMode:=ENUM_StageEnableMode.DURING_MOTION);
 nCounter := nCounter + 1;
 
 IF NOT bInit THEN
@@ -63,9 +54,6 @@ IF NOT bInit THEN
     stUnsafe.fVelocity := 42;
     stUnsafe.bValid := TRUE;
     stUnsafe.bMoveOk := FALSE;
-
-    fbEpicsInOut.bEnable := TRUE;
-    fbStateManager.bEnable := TRUE;
 END_IF
 
 fbGoOut(
@@ -82,21 +70,7 @@ fbGoBad(
     bExecute:=bGoHCF,
     stMotionStage:=M1,
     stPositionState:=stUnsafe,
-    bAtState=>bHCF);
-
-arrStates[1] := stOut;
-arrStates[2] := stIn;
-arrStates[3] := stUnsafe;
-
-fbEpicsInOut(
-    stMotionStage := M1,
-    stOut := stOut,
-    stIn := stIn);
-
-fbStateManager(
-    stMotionStage := M1,
-    arrStates := arrStates,
-    setState := setState);]]></ST>
+    bAtState=>bHCF);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

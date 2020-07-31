@@ -25,6 +25,7 @@ VAR
     fbEncoderValue: FB_EncoderValue;
     fbNCParams: FB_MotionStageNCParams;
     bNewMoveReq: BOOL;
+    bPrepareDisable: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -34,6 +35,8 @@ stMotionStage.Axis.ReadStatus();
 rtUserExec(CLK := stMotionStage.bExecute);
 bNewMoveReq S= rtUserExec.Q;
 bNewMoveReq R= NOT stMotionStage.bExecute;
+bPrepareDisable R= bNewMoveReq;
+
 bPosGoal := stMotionStage.stAxisStatus.fActPosition < stMotionStage.fPosition;
 bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 
@@ -164,10 +167,11 @@ IF rtTarget.Q OR ftExec.Q THEN
 END_IF
 
 // Handle auto-disable timing
-IF stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q THEN
-    IF stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
-        stMotionStage.bEnable := FALSE;
-    END_IF
+bPrepareDisable S= stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q;
+// Delay the disable until we reach standstill, else brake issues or other race conditions
+IF bPrepareDisable AND stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
+    bPrepareDisable := FALSE;
+    stMotionStage.bEnable := FALSE;
 END_IF
 
 // Get a definitive bEnabled reading

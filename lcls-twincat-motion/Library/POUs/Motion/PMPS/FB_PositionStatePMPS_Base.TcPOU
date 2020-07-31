@@ -9,9 +9,10 @@
 *)
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
+    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
+    bArbiterEnabled: BOOL := TRUE;
     bRequestTransition: BOOL;
     bDoingTransition: BOOL;
     setState: INT;
@@ -19,17 +20,21 @@ VAR_INPUT
     fStateBoundaryDeadband: LREAL := 0;
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
     nTransitionAssertionID: UDINT;
+    nUnknownAssertionID: UDINT;
+    tArbiterTimeout: TIME := T#1s;
+    bMoveOnArbiterTimeout: BOOL := TRUE;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
     bForwardAuthorized: BOOL;
     bBackwardAuthorized: BOOL;
+    bArbiterTimeout: BOOL;
 END_VAR
 VAR
     bInit: BOOL := TRUE;
-    fbLinGov: FB_LinearGovernor;
     rtTransReq: R_TRIG;
     ftTransAuth: F_TRIG;
+    ftMotorExec: F_TRIG;
     stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
     fUpperBound: LREAL;
@@ -40,22 +45,40 @@ VAR
     fReqPos: LREAL;
     bInTransition: BOOL;
     stBeamNeeded: ST_BeamParams;
+    bFwdOk: BOOL;
+    bBwdOk: BOOL;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
+    tonArbiter: TON;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[// This is meant to be subclassed. The parent class body is in the Exec action.]]></ST>
     </Implementation>
+    <Action Name="AssertHere" Id="{dd496f32-140c-045e-305d-b321a567dbda}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ClearAsserts" Id="{19346cf1-a7c9-4f9d-b503-b5f20c2934f9}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="Exec" Id="{5b04393f-c32f-49f1-a610-cb4c89f50675}">
       <Implementation>
         <ST><![CDATA[// Initialize or reinitialize to the current state value
 ftTransAuth(CLK:=bTransitionAuthorized);
-IF ftTransAuth.Q THEN
+ftMotorExec(CLK:=stMotionStage.bExecute);
+IF ftTransAuth.Q OR ftMotorExec.Q THEN
     bInit := TRUE;
 END_IF
-IF bInit OR nGoalState = 0 THEN
+IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     bInit R= stMotionStage.bAxisParamsInit;
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);
     bInTransition := FALSE;
+    stInvalidState.nRequestAssertionID := nUnknownAssertionID;
+    stUnknownState.nRequestAssertionID := nUnknownAssertionID;
 END_IF
 
 // Request transition on rising edge
@@ -66,8 +89,26 @@ IF rtTransReq.Q THEN
     bInTransition := TRUE;
 END_IF
 
-// Handles getting the request to the arbiter and back
-HandleBPTM();
+IF bArbiterEnabled THEN
+    // Handles getting the request to the arbiter and back
+    HandleBPTM();
+    // Handle arbiter timeouts
+    IF tArbiterTimeout > T#0s THEN
+        tonArbiter(
+            IN:=bInTransition AND NOT bTransitionAuthorized,
+            PT:=tArbiterTimeout,
+            Q=>bArbiterTimeout);
+    ELSE
+        bArbiterTimeout := FALSE;
+    END_IF
+    bTransitionAuthorized S= bArbiterTimeout AND bMoveOnArbiterTimeout;
+ELSE
+    // Clear all of our assertions if we decide to disable the arbiter
+    ClearAsserts();
+    // Do some dummy request handling
+    bTransitionAuthorized := stMotionStage.bExecute;
+    bArbiterTimeout := stMotionStage.bExecute;
+END_IF
 
 // Set up MPS virtual limit for moves at and between states
 stGoalState := GetStateStruct(nGoalState);
@@ -82,10 +123,14 @@ END_IF
 bForwardAuthorized := FALSE;
 bBackwardAuthorized := FALSE;
 
+// Check if it would be OK to move without granting auth
+bFwdOk := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
+bBwdOk := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+
 // Grant auth during moves based on goal state, current position, and goal position
 IF stMotionStage.bExecute AND stGoalState.bValid THEN
-    bForwardAuthorized := F_PosUnderUpperBound(MAX(fActPos, fReqPos) + ABS(fStateBoundaryDeadband), stGoalState);
-    bBackwardAuthorized := F_PosOverLowerBound(MIN(fActPos, fReqPos) - ABS(fStateBoundaryDeadband), stGoalState);
+    bForwardAuthorized := bFwdOk;
+    bBackwardAuthorized := bBwdOk;
 END_IF
 
 IF bInTransition THEN
@@ -98,18 +143,28 @@ ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
     stMotionStage.bSafetyReady := TRUE;
     // Set an error message override in case this causes an error
-    IF stMotionStage.bError AND fReqPos > fActPos AND NOT bForwardAuthorized THEN
-        stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
-    ELSIF stMotionStage.bError AND fReqPos < fActPos AND NOT bBackwardAuthorized THEN
-        stMotionStage.sCustomErrorMessage := 'Unsafe tweak backward blocked by PMPS';
+    IF stMotionStage.bError AND bArbiterEnabled THEN
+        IF fReqPos > fActPos AND NOT bFwdOk THEN
+            stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
+        ELSIF fReqPos < fActPos AND NOT bBwdOk THEN
+            stMotionStage.sCustomErrorMessage := 'Unsafe tweak backward blocked by PMPS';
+        END_IF
     END_IF
 END_IF
 
+IF bArbiterEnabled THEN
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
-mcPower(Axis:=stMotionStage.Axis,
-        Enable:=stMotionStage.bAllEnable,
-        Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
-        Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable AND bForwardAuthorized,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable AND bBackwardAuthorized);
+ELSE
+    mcPower(Axis:=stMotionStage.Axis,
+            Enable:=stMotionStage.bAllEnable,
+            Enable_Positive:=stMotionStage.bAllForwardEnable,
+            Enable_Negative:=stMotionStage.bAllBackwardEnable);
+    stMotionStage.bSafetyReady := TRUE;
+END_IF
 
 // Raise fast faults as needed
 stBeamNeeded := GetBeamFromState(getState);
@@ -137,7 +192,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF nState < 0 OR nState > 15 THEN
+        <ST><![CDATA[IF nState < 0 OR nState > MOTION_GVL.MAX_STATES THEN
     GetStateCode := -1;
 ELSE
     GetStateCode := nState;
@@ -154,12 +209,12 @@ END_VAR
         <ST><![CDATA[{warning disable C0371}
 // Implicit VAR_IN_OUT reference inside a method needs special handling
 IF NOT __ISVALIDREF(arrStates) THEN
-    GetStateStruct := MOTION_GVL.stInvalidState;
+    GetStateStruct := stInvalidState;
     RETURN;
 END_IF
 CASE GetStateCode(nState) OF
-    -1: GetStateStruct := MOTION_GVL.stInvalidState;
-    0: GetStateStruct := MOTION_GVL.stUnknownState;
+    -1: GetStateStruct := stInvalidState;
+    0: GetStateStruct := stUnknownState;
     ELSE
         GetStateStruct := arrStates[nState];
 END_CASE

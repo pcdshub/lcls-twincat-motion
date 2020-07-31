@@ -9,6 +9,9 @@
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
 END_VAR
+VAR_INPUT
+    nEnableMode: ENUM_StageEnableMode := ENUM_StageEnableMode.ALWAYS;
+END_VAR
 VAR
     fbMotionStage: FB_MotionStage;
     bInit: BOOL;
@@ -26,7 +29,7 @@ END_VAR
     // Stand-in for no PMPS governer
     stMotionStage.bPowerSelf := TRUE;
     // Always keep it enabled for testing ease
-    stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    stMotionStage.nEnableMode := nEnableMode;
 END_IF
 // Call FB_MotionStage to do the thing
 fbMotionStage(stMotionStage := stMotionStage);]]></ST>
