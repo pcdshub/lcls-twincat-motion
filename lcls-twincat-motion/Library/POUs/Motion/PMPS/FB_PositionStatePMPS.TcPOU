@@ -23,11 +23,18 @@ END_VAR
     <Implementation>
       <ST><![CDATA[Exec();]]></ST>
     </Implementation>
+    <Action Name="AssertHere" Id="{7db9507d-999c-01b2-1227-c24720a7882a}">
+      <Implementation>
+        <ST><![CDATA[fbArbiter.AddRequest(
+    nReqID := stStateReq.nRequestAssertionID,
+    stReqBP := stStateReq.stBeamParams);]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="ClearAsserts" Id="{a5b537df-5b20-41f7-b1d6-59ce223e5b6e}">
       <Implementation>
         <ST><![CDATA[fbArbiter.RemoveRequest(nTransitionAssertionID);
 fbArbiter.RemoveRequest(nUnknownAssertionID);
-FOR nIter := 1 TO 15 DO
+FOR nIter := 1 TO MOTION_GVL.MAX_STATES DO
     fbArbiter.RemoveRequest(arrStates[nIter].nRequestAssertionID);
 END_FOR]]></ST>
       </Implementation>
@@ -68,7 +75,7 @@ bAtSafeState := F_SafeBPCompare(PMPS_GVL.cstFullBeam, stBeamNeeded);
 
 ffBeamParamsOk(
     i_xOK:=bFFOxOk,
-    i_xReset:=bAtSafeState,
+    i_xReset:=bFFOxOk AND bAtSafeState,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
     i_TypeCode:=1,
