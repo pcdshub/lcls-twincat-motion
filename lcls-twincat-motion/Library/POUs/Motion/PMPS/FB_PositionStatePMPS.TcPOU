@@ -12,6 +12,9 @@ VAR_IN_OUT
     fbArbiter: FB_Arbiter;
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
+VAR_INPUT
+    stFullBeam: ST_BeamParams := PMPS_GVL.cstFullBeam;
+END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
@@ -64,7 +67,9 @@ END_FOR]]></ST>
 bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
 // It is safe to reset automatically if our current state can take full beam.
 // Otherwise we'll have to ask for a user acknowledgement to clear.
-bAtSafeState := F_SafeBPCompare(PMPS_GVL.cstFullBeam, stBeamNeeded);
+// This avoids rapidly cycling the FFOs on/off
+// You can pass in a different stFullBeam as an input parameter to customize this behavior
+bAtSafeState := F_SafeBPCompare(stFullBeam, stBeamNeeded);
 
 // If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
 ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
