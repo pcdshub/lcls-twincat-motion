@@ -18,11 +18,13 @@ VAR_INPUT
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
     nUnknownAssertionID: UDINT;
     tArbiterTimeout: TIME := T#1s;
     bMoveOnArbiterTimeout: BOOL := TRUE;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -47,8 +49,6 @@ VAR
     stBeamNeeded: ST_BeamParams;
     bFwdOk: BOOL;
     bBwdOk: BOOL;
-    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
     tonArbiter: TON;
 END_VAR]]></Declaration>
     <Implementation>
