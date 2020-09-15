@@ -15,6 +15,9 @@ END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
+    ffZeroRate: FB_FastFault;
+    ffBPTMError: FB_FastFault;
+    ffBPTMTimeoutAndMove: FB_FastFault;
     bFFOxOk: BOOL;
     bAtSafeState: BOOL;
     nIter: INT;
@@ -54,32 +57,51 @@ END_FOR]]></ST>
     </Action>
     <Action Name="HandleFFO" Id="{6b3afb71-b9c2-4718-aacf-85bf75e65e9c}">
       <Implementation>
-        <ST><![CDATA[// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
-// Get state will point to Unknown/No beam if we are out of state bounds or in motion
+        <ST><![CDATA[// stBeamNeeded will point to Unknown/No beam if we are out of state bounds or in motion
 // Otherwise we'll have the current state's beam parameters
 
-IF stBeamNeeded.nRate <= 0 THEN
-    // If nRate is zero, trip the beam just to be sure.
-    bFFOxOk := FALSE;
-ELSIF bArbiterTimeout AND bMoveOnArbiterTimeout THEN
-    // If the arbiter times out, trip so we can get moving.
-    bFFOxOk := FALSE;
-ELSE
-    // Otherwise, trip if the beam conditions are bad
-    bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
-END_IF
-
+// Check for bad conditions
+bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
 // It is safe to reset automatically if our current state can take full beam.
 // Otherwise we'll have to ask for a user acknowledgement to clear.
 bAtSafeState := F_SafeBPCompare(PMPS_GVL.cstFullBeam, stBeamNeeded);
 
+// If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
+ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
 ffBeamParamsOk(
     i_xOK:=bFFOxOk,
-    i_xReset:=bFFOxOk AND bAtSafeState,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
-    i_TypeCode:=1,
-    io_fbFFHWO:=fbFFHWO);]]></ST>
+    i_TypeCode:=16#1000,
+    io_fbFFHWO:=fbFFHWO);
+
+// Trip the beam for zero-rate states. This is a PMPS training wheel and should ultimately be removed.
+// Note: I think this is already redundant
+ffZeroRate(
+    i_xOk := stBeamNeeded.nRate > 0,
+    i_xAutoReset := TRUE,
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'Device requesting zero rate',
+    i_TypeCode := 16#1001,
+    io_fbFFHWO := fbFFHWO);
+
+// Trip the beam for BPTM timeouts if we want to move
+ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState;
+ffBPTMTimeoutAndMove(
+    i_xOk := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout),
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'BPTM Timeout',
+    i_TypeCode := 16#1002,
+    io_fbFFHWO := fbFFHWO);
+
+// Trip the beam for BPTM Errors
+ffBPTMError.i_xReset S= bptm.bDone AND NOT bptm.bError;
+ffBPTMError(
+    i_xOK := NOT bptm.bError,
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'BPTM error, state transition failed',
+    i_TypeCode := 16#1003,
+    io_fbFFHWO := fbFFHWO);]]></ST>
       </Implementation>
     </Action>
   </POU>
