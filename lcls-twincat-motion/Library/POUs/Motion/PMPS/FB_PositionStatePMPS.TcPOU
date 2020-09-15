@@ -19,8 +19,9 @@ VAR
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
     ffZeroRate: FB_FastFault;
-    ffBPTMError: FB_FastFault;
     ffBPTMTimeoutAndMove: FB_FastFault;
+    ffBPTMError: FB_FastFault;
+    ffMaint: FB_FastFault;
     bFFOxOk: BOOL;
     bAtSafeState: BOOL;
     nIter: INT;
@@ -106,6 +107,15 @@ ffBPTMError(
     i_DevName := stMotionStage.sName,
     i_Desc := 'BPTM error, state transition failed',
     i_TypeCode := 16#1003,
+    io_fbFFHWO := fbFFHWO);
+
+// Trip the beam for maintenance mode
+ffMaint(
+    i_xOK := NOT bMaintMode,
+    i_xAutoReset := TRUE,
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'Device is in maintenance mode',
+    i_TypeCode := 16#1004,
     io_fbFFHWO := fbFFHWO);]]></ST>
       </Implementation>
     </Action>
