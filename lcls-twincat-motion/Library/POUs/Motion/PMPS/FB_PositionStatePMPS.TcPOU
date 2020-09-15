@@ -13,7 +13,7 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
-    stFullBeam: ST_BeamParams := PMPS_GVL.cstFullBeam;
+    stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
 END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
@@ -70,7 +70,7 @@ bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
 // Otherwise we'll have to ask for a user acknowledgement to clear.
 // This avoids rapidly cycling the FFOs on/off
 // You can pass in a different stFullBeam as an input parameter to customize this behavior
-bAtSafeState := F_SafeBPCompare(stFullBeam, stBeamNeeded);
+bAtSafeState := F_SafeBPCompare(stHighBeamThreshold, stBeamNeeded);
 
 // If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
 ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
