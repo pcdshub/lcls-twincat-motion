@@ -73,9 +73,10 @@ bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
 bAtSafeState := F_SafeBPCompare(stHighBeamThreshold, stBeamNeeded);
 
 // If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
+ffBeamParamsOk.i_xOK := bFFOxOk;
 ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
+ffBeamParamsOk.i_xReset R= NOT ffBeamParamsOk.i_xOK;
 ffBeamParamsOk(
-    i_xOK:=bFFOxOk,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
     i_TypeCode:=16#1000,
@@ -92,18 +93,20 @@ ffZeroRate(
     io_fbFFHWO := fbFFHWO);
 
 // Trip the beam for BPTM timeouts if we want to move
+ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
 ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState;
+ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
 ffBPTMTimeoutAndMove(
-    i_xOk := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout),
     i_DevName := stMotionStage.sName,
     i_Desc := 'BPTM Timeout',
     i_TypeCode := 16#1002,
     io_fbFFHWO := fbFFHWO);
 
 // Trip the beam for BPTM Errors
+ffBPTMError.i_xOK := NOT bptm.bError;
 ffBPTMError.i_xReset S= bptm.bDone AND NOT bptm.bError;
+ffBPTMError.i_xReset R= NOT ffBPTMError.i_xOK;
 ffBPTMError(
-    i_xOK := NOT bptm.bError,
     i_DevName := stMotionStage.sName,
     i_Desc := 'BPTM error, state transition failed',
     i_TypeCode := 16#1003,
