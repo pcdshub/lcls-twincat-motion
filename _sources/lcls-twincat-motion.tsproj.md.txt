@@ -856,7 +856,7 @@ STRUCT
     bUpdated: BOOL;
 
     // Beam parameters associated with this state
-    stBeamParams: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stBeamParams: ST_BeamParams := PMPS_GVL.cst0RateBeam;
 
     // Transition ID associated with this state
     nRequestAssertionID: UDINT;
@@ -5915,7 +5915,7 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
     nUnknownAssertionID: UDINT;
     bArbiterEnabled: BOOL := TRUE;
@@ -5924,6 +5924,7 @@ VAR_INPUT
     fStateBoundaryDeadband: LREAL := 0;
 END_VAR
 VAR
+    {attribute 'pytmc' := 'pv: PMPS'}
     fbStatePMPS: FB_PositionStatePMPS;
     fbEncErrFFO: FB_EncErrorFFO;
 END_VAR
@@ -5983,7 +5984,7 @@ FUNCTION_BLOCK FB_PositionStateBase_WithPMPS_Test EXTENDS FB_PositionStateBase
     See body comment  or FB_PositionStateInOut_WithPMPS_Test for an implementation example.
 *)
 VAR_INPUT
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
 END_VAR
 VAR
@@ -6613,9 +6614,16 @@ VAR_IN_OUT
     fbArbiter: FB_Arbiter;
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
+VAR_INPUT
+    stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
+END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
+    ffZeroRate: FB_FastFault;
+    ffBPTMTimeoutAndMove: FB_FastFault;
+    ffBPTMError: FB_FastFault;
+    ffMaint: FB_FastFault;
     bFFOxOk: BOOL;
     bAtSafeState: BOOL;
     nIter: INT;
@@ -6647,32 +6655,65 @@ bptm(fbArbiter:=fbArbiter,
      q_xTransitionAuthorized=>bTransitionAuthorized);
 END_ACTION
 ACTION HandleFFO:
-// If the beam parameters are wrong, it is a fault! This encompasses all arbiter-related errors.
-// Get state will point to Unknown/No beam if we are out of state bounds or in motion
+// stBeamNeeded will point to Unknown/No beam if we are out of state bounds or in motion
 // Otherwise we'll have the current state's beam parameters
 
-IF stBeamNeeded.nRate <= 0 THEN
-    // If nRate is zero, trip the beam just to be sure.
-    bFFOxOk := FALSE;
-ELSIF bArbiterTimeout AND bMoveOnArbiterTimeout THEN
-    // If the arbiter times out, trip so we can get moving.
-    bFFOxOk := FALSE;
-ELSE
-    // Otherwise, trip if the beam conditions are bad
-    bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
-END_IF
-
+// Check for bad conditions
+bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
 // It is safe to reset automatically if our current state can take full beam.
 // Otherwise we'll have to ask for a user acknowledgement to clear.
-bAtSafeState := F_SafeBPCompare(PMPS_GVL.cstFullBeam, stBeamNeeded);
+// This avoids rapidly cycling the FFOs on/off
+// You can pass in a different stHighBeamThreshold as an input parameter to customize this behavior
+bAtSafeState := F_SafeBPCompare(stHighBeamThreshold, stBeamNeeded);
 
+// If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
+ffBeamParamsOk.i_xOK := bFFOxOk;
+ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
+ffBeamParamsOk.i_xReset R= NOT ffBeamParamsOk.i_xOK;
 ffBeamParamsOk(
-    i_xOK:=bFFOxOk,
-    i_xReset:=bFFOxOk AND bAtSafeState,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Beam parameter mismatch',
-    i_TypeCode:=1,
+    i_TypeCode:=16#1000,
     io_fbFFHWO:=fbFFHWO);
+
+// Trip the beam for zero-rate states. This is a PMPS training wheel and should ultimately be removed.
+// Note: I think this is already redundant
+ffZeroRate(
+    i_xOk := stBeamNeeded.nRate > 0,
+    i_xAutoReset := TRUE,
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'Device requesting zero rate',
+    i_TypeCode := 16#1001,
+    io_fbFFHWO := fbFFHWO);
+
+// Trip the beam for BPTM timeouts if we want to move
+ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
+ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState;
+ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
+ffBPTMTimeoutAndMove(
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'BPTM Timeout',
+    i_TypeCode := 16#1002,
+    io_fbFFHWO := fbFFHWO);
+
+// Trip the beam for BPTM Errors
+ffBPTMError.i_xOK := NOT bptm.bError;
+ffBPTMError.i_xReset S= bptm.bDone AND NOT bptm.bError;
+ffBPTMError.i_xReset R= NOT ffBPTMError.i_xOK;
+ffBPTMError(
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'BPTM error, state transition failed',
+    i_TypeCode := 16#1003,
+    io_fbFFHWO := fbFFHWO);
+
+// Trip the beam for maintenance mode
+ffMaint(
+    i_xOK := NOT bMaintMode,
+    i_xAutoReset := TRUE,
+    i_DevName := stMotionStage.sName,
+    i_Desc := 'Device is in maintenance mode',
+    i_TypeCode := 16#1004,
+    io_fbFFHWO := fbFFHWO);
 END_ACTION
 ```
 
@@ -6694,17 +6735,28 @@ VAR_IN_OUT
     arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
+    {attribute 'pytmc' := '
+        pv: ARB:ENABLE
+        io: io
+    '}
     bArbiterEnabled: BOOL := TRUE;
+    {attribute 'pytmc' := '
+        pv: MAINT
+        io: io
+    '}
+    bMaintMode: BOOL;
     bRequestTransition: BOOL;
     bDoingTransition: BOOL;
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
     nUnknownAssertionID: UDINT;
     tArbiterTimeout: TIME := T#1s;
     bMoveOnArbiterTimeout: BOOL := TRUE;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -6729,8 +6781,6 @@ VAR
     stBeamNeeded: ST_BeamParams;
     bFwdOk: BOOL;
     bBwdOk: BOOL;
-    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
     tonArbiter: TON;
 END_VAR
 // This is meant to be subclassed. The parent class body is in the Exec action.
@@ -6820,7 +6870,7 @@ ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
     stMotionStage.bSafetyReady := TRUE;
     // Set an error message override in case this causes an error
-    IF stMotionStage.bError AND bArbiterEnabled THEN
+    IF stMotionStage.bError AND bArbiterEnabled AND NOT bMaintMode THEN
         IF fReqPos > fActPos AND NOT bFwdOk THEN
             stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
         ELSIF fReqPos < fActPos AND NOT bBwdOk THEN
@@ -6829,7 +6879,7 @@ ELSE
     END_IF
 END_IF
 
-IF bArbiterEnabled THEN
+IF bArbiterEnabled AND NOT bMaintMode THEN
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
     mcPower(Axis:=stMotionStage.Axis,
             Enable:=stMotionStage.bAllEnable,
@@ -8221,7 +8271,7 @@ Traceback (most recent call last):
   File "/home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/pytmc/parser.py", line 1690, in get_key
     raise ValueError(f'Hmm: {candidates}')
 ValueError: Hmm: [(<class 'pytmc.parser.Instance'>, '#x08502000', 'library.xti'), (<class 'pytmc.parser.POU'>, '{32c6d46d-3ef9-49e6-91a9-6852b4cc0f44}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{7c3a7d80-a3f3-4f33-a543-aed64d09b22f}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{98dceb98-36a8-48a4-a57d-aca70799e2ae}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{2a9a0768-801b-4379-9602-cc3f9bfe0176}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{4afc626f-14dd-4b1a-a5dd-77cfb7d31d43}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{642e0c23-2413-4ca5-8e92-8ce69fff3a96}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{98544b5d-cfdf-476a-90c0-230bdaff0ec8}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{1c776ddd-5c71-412e-8433-aacbe67877c3}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{d997c582-de09-42d6-b127-017e8c8eface}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{69dd4aab-7807-473d-affd-4949d32b31cb}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{1a348214-209a-44e9-9088-e1b46b9010e2}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{00fa0d24-98b5-49bc-bf41-0a4a34b46bc9}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{87ed0f35-77bb-4af3-abb4-bd4457e39e0b}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{1cc9bdce-6ea8-4421-a606-54f74ba031be}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{b00ba5ad-3961-4dc4-af0e-c716ff06af07}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{f53f1521-ea95-4522-96ee-49d4e6c1f88a}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{d4261a4c-8c4d-44a0-931d-aac8fef66000}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{0ef824af-3384-4b63-9d1f-7d6cf6b0bd23}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{196b856f-d8fb-491f-ab71-4ec8edd9b398}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{d69b0967-8c1a-4603-8de6-a922d8c7d18e}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{7f517c2d-3257-42d3-9c58-98a243359439}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{004c6c92-c047-49ba-9e4a-59675e5ea7dd}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{5df30a0c-1331-4fa2-acfe-28b08cfc5f04}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{01c38f04-3d56-44a9-a009-c6120f9b5fbd}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{4a3117c8-7807-46a2-8f94-5841c9d9b645}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{010a0f13-6d5c-4f48-8fc5-897e7583293a}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{a09e3dbe-a73f-4048-b43b-252510391861}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{c78cb51e-c142-4983-bbe4-9ac5ede33751}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{45901cd0-c6d2-4114-b7cf-de832171219f}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{89d3ff0e-6db9-4001-9d08-c10173794a83}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{a91d9283-56e2-4ee3-a9ad-c1d01374f94c}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{6f91fce8-e990-4671-acc4-8247a4581cff}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{13bd60fa-f200-43aa-9bf2-b14d410be016}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{978ea49f-a940-4b4e-9f45-8cdde4adcf37}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{532dfcaf-6187-4140-aaad-e20a9bbe6b43}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{ae668e37-4b4c-400f-bda9-27f8d308d0b6}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{bcba1819-aaef-4ffc-bcb6-e637240bf3e1}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{f6f53a7c-585d-4cc4-b17e-8b71b5fa8538}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{44b4f5e1-854c-4705-82a0-c1e3db13fb33}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{a78232f2-2338-46fa-908d-fbea8ac2e783}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{be900be5-0784-4633-94f1-38a4124c1620}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{9890b2a1-f87c-4e55-871a-a54ee70e279d}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{a69b16ef-d088-4494-bcb3-4c391e3a9c2d}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{db235f88-cc6a-42fd-a27f-0c03a858adf6}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{98a18836-422d-42af-a096-4f12604828b3}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{b953130d-6adb-468e-991b-b389a0e4364b}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{3965ca68-046c-4858-93f1-aaf5b6059f9e}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{f3ce72e2-b968-4260-9a64-8e0267e89e51}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{137c52b5-8983-4728-b719-31601503f20a}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{ffafdde1-c9c9-04ad-2047-9434c7439ed8}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{d9a67e97-6cca-43d0-9ed9-24a1d18bbca1}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{37479e14-c03d-4022-bd1f-ea03fb5fd29c}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{0e6f3299-5a2e-4431-8f09-1233c54c1e17}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{7f5aa6dc-e692-4722-8b21-b75cf0eef6db}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{b19911a0-9c0b-43b8-8cb3-dd3526519e98}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{e8770d3e-d120-4022-9494-184782095d7b}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{0410dcaa-d262-4dff-9ed9-0476e0f72083}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{2450f384-9eb5-48af-8d9a-0e0297370332}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{5033cde0-7ed9-4a18-af28-d954337efdeb}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{a4177056-7990-0c0e-2a8a-8d9ac89a1e5e}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{fec9bba1-f69e-45d4-9e61-8f615c0e3bb9}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{925eb9bb-c0f7-4b79-a387-ef7d0fb5ed46}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{a935a12e-6ee3-4ebb-8c29-e9b23b7cef37}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{7e0e3094-8a3d-4636-a390-eb10e10412f0}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{e35067d1-2ee7-46f4-a240-48505f8439a4}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{116f57d8-27d2-44f6-a73e-8c9b24b1bd3d}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{6c81e7a1-f014-4b94-98e4-ea682be9540b}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{22824561-5f6a-4eee-b9ab-549db6e77c17}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{d9838f56-4f56-4d09-8777-68d9dceba915}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{9028a506-3476-4ab7-9f18-be1b77c07efa}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{425806ee-2b8b-43fd-93f1-34dff217483a}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{d77c0e9f-60d8-42e2-aa7d-91cf61b54d46}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{8d98c0d3-e029-4bc1-bb0d-006a7c407e39}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{5aa08b4f-0a88-49b1-bf14-92150782485c}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{058abbc4-740d-4ed6-b83c-7fdc99dbdef5}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{71c436f2-8bc4-46b7-82a0-e1e338c02dd9}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{0f84a03e-89d5-4ac7-905a-0b4508a08a18}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{b5ee37fa-13c6-40f2-a7c7-9ac80833d78f}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{5e4b12d9-d7b3-420d-a0c0-3caa211d85b5}', 'library.xti'), (<class 'pytmc.parser.POU'>, '{9e15d54f-806f-40b6-8fcc-67cd88d24764}', 'library.xti'), (<class 'pytmc.parser.GVL'>, '{913e21aa-a47e-444c-bfce-679b16c0434b}', 'library.xti'), (<class 'pytmc.parser.GVL'>, '{7f2dfaa6-e4ea-4ad1-ac0d-e75f78e9d4ec}', 'library.xti'), (<class 'pytmc.parser.GVL'>, '{e584f020-617f-4164-a737-6e483df3aa38}', 'library.xti'), (<class 'pytmc.parser.GVL'>, '{7b3cfad1-1f36-4ed6-b576-62277c19b2b2}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{599661fb-9246-4a68-9ba7-2ef6c3f03f60}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{2803a21e-b5ef-48fc-a5fd-18043e60c6af}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{ee78164b-027c-4a52-afc0-269c58a42ceb}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{10b5775d-5646-4d55-ad77-40abc3888de3}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{85d45494-8a84-426c-8efe-9136ee5821c6}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{8f84cc80-708c-4401-8591-6bfbf208dfab}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{fe0ff67d-e11f-4b59-99eb-dd372e356d77}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{97391387-6673-4061-a135-1a0002888344}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{4d6cd2ef-f501-4a50-928e-c27d93614025}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{6aeca57a-6008-439f-9ea1-66c05e3b253c}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{0497ccec-2aee-4f07-877c-128fdd95a4b7}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{580eeee3-6c52-42e6-b317-6ce95975b196}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{36cc1de7-1431-45ad-a25e-c90656daff0a}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{1486ae25-467b-42a2-8f52-1fc72b49b60d}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{7e9a851b-2b87-4b78-9f7e-1a9f1c210ec1}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{6f5997cc-f148-4e63-9185-dfba8067f4f0}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{4f7afc95-d93a-4274-9d93-084eb736d49f}', 'library.xti'), (<class 'pytmc.parser.DUT'>, '{6445b09d-76cd-4d36-a58e-a23137c6794d}', 'library.xti'), (<class 'pytmc.parser.Name'>, '0', 'library.xti'), (<class 'pytmc.parser.Name'>, '1', 'library.xti'), (<class 'pytmc.parser.Name'>, '2', 'library.xti'), (<class 'pytmc.parser.Name'>, '3', 'library.xti'), (<class 'pytmc.parser.Name'>, '4', 'library.xti')]
-INFO:pytmc.bin.pragmalint:Total pragmas found: 125 Total linter errors: 0
+INFO:pytmc.bin.pragmalint:Total pragmas found: 128 Total linter errors: 0
 PLC Project (1): Library
 ========================
 
@@ -8316,6 +8366,12 @@ POUs/Motion/FB_MotionPneumaticActuator.TcPOU (TcPlcObject)
     - FB_MotionPneumaticActuator: Declaration - 3 pragmas
 
 
+POUs/Motion/PMPS/FB_PositionStatePMPS_Base.TcPOU (TcPlcObject)
+--------------------------------------------------------------
+
+    - FB_PositionStatePMPS_Base: Declaration - 2 pragmas
+
+
 POUs/Motion/States/Examples/FB_PositionStateInOut.TcPOU (TcPlcObject)
 ---------------------------------------------------------------------
 
@@ -8338,6 +8394,12 @@ POUs/Motion/States/FB_PositionStateBase.TcPOU (TcPlcObject)
 -----------------------------------------------------------
 
     - FB_PositionStateBase: Declaration - 7 pragmas
+
+
+POUs/Motion/States/FB_PositionStateBase_WithPMPS.TcPOU (TcPlcObject)
+--------------------------------------------------------------------
+
+    - FB_PositionStateBase_WithPMPS: Declaration - 1 pragmas
 
 
 POUs/Motion/States/FB_PositionStateMove.TcPOU (TcPlcObject)

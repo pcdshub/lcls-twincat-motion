@@ -875,7 +875,7 @@ STRUCT
     bUpdated: BOOL;
 
     // Beam parameters associated with this state
-    stBeamParams: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stBeamParams: ST_BeamParams := PMPS_GVL.cst0RateBeam;
 
     // Transition ID associated with this state
     nRequestAssertionID: UDINT;
@@ -5718,7 +5718,7 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
     nUnknownAssertionID: UDINT;
     bArbiterEnabled: BOOL := TRUE;
@@ -5727,6 +5727,7 @@ VAR_INPUT
     fStateBoundaryDeadband: LREAL := 0;
 END_VAR
 VAR
+    {attribute &#39;pytmc&#39; := &#39;pv: PMPS&#39;}
     fbStatePMPS: FB_PositionStatePMPS;
     fbEncErrFFO: FB_EncErrorFFO;
 END_VAR
@@ -5783,7 +5784,7 @@ END_ACTION
     <span class="n">See</span> <span class="k">body</span> <span class="n">comment</span>  <span class="k">or</span> <span class="n">FB_PositionStateInOut_WithPMPS_Test</span> <span class="k">for</span> <span class="n">an</span> <span class="n">implementation</span> <span class="n">example</span><span class="p">.</span>
 <span class="o">*</span><span class="p">)</span>
 <span class="n">VAR_INPUT</span>
-    <span class="n">stTransitionBeam</span><span class="o">:</span> <span class="n">ST_BeamParams</span> <span class="o">:=</span> <span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cstSafeBeam</span><span class="p">;</span>
+    <span class="n">stTransitionBeam</span><span class="o">:</span> <span class="n">ST_BeamParams</span> <span class="o">:=</span> <span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cst0RateBeam</span><span class="p">;</span>
     <span class="n">nTransitionAssertionID</span><span class="o">:</span> <span class="n">UDINT</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR</span>
@@ -6389,9 +6390,16 @@ END_FUNCTION_BLOCK
     <span class="n">fbArbiter</span><span class="o">:</span> <span class="n">FB_Arbiter</span><span class="p">;</span>
     <span class="n">fbFFHWO</span><span class="o">:</span> <span class="n">FB_HardwareFFOutput</span><span class="p">;</span>
 <span class="n">END_VAR</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">stHighBeamThreshold</span><span class="o">:</span> <span class="n">ST_BeamParams</span> <span class="o">:=</span> <span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cstFullBeam</span><span class="p">;</span>
+<span class="n">END_VAR</span>
 <span class="n">VAR</span>
     <span class="n">bptm</span><span class="o">:</span> <span class="n">BeamParameterTransitionManager</span><span class="p">;</span>
     <span class="n">ffBeamParamsOk</span><span class="o">:</span> <span class="n">FB_FastFault</span><span class="p">;</span>
+    <span class="n">ffZeroRate</span><span class="o">:</span> <span class="n">FB_FastFault</span><span class="p">;</span>
+    <span class="n">ffBPTMTimeoutAndMove</span><span class="o">:</span> <span class="n">FB_FastFault</span><span class="p">;</span>
+    <span class="n">ffBPTMError</span><span class="o">:</span> <span class="n">FB_FastFault</span><span class="p">;</span>
+    <span class="n">ffMaint</span><span class="o">:</span> <span class="n">FB_FastFault</span><span class="p">;</span>
     <span class="n">bFFOxOk</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bAtSafeState</span><span class="o">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">nIter</span><span class="o">:</span> <span class="n">INT</span><span class="p">;</span>
@@ -6423,32 +6431,65 @@ END_FUNCTION_BLOCK
      <span class="n">q_xTransitionAuthorized</span><span class="o">=&gt;</span><span class="n">bTransitionAuthorized</span><span class="p">);</span>
 <span class="n">END_ACTION</span>
 <span class="n">ACTION</span> <span class="n">HandleFFO</span><span class="o">:</span>
-<span class="o">//</span> <span class="k">If</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">parameters</span> <span class="n">are</span> <span class="n">wrong</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span> <span class="n">a</span> <span class="n">fault</span><span class="o">!</span> <span class="n">This</span> <span class="n">encompasses</span> <span class="k">all</span> <span class="n">arbiter</span><span class="o">-</span><span class="n">related</span> <span class="n">errors</span><span class="p">.</span>
-<span class="o">//</span> <span class="n">Get</span> <span class="n">state</span> <span class="n">will</span> <span class="n">point</span> <span class="k">to</span> <span class="n">Unknown</span><span class="o">/</span><span class="n">No</span> <span class="n">beam</span> <span class="k">if</span> <span class="n">we</span> <span class="n">are</span> <span class="k">out</span> <span class="k">of</span> <span class="n">state</span> <span class="n">bounds</span> <span class="k">or</span> <span class="k">in</span> <span class="n">motion</span>
+<span class="o">//</span> <span class="n">stBeamNeeded</span> <span class="n">will</span> <span class="n">point</span> <span class="k">to</span> <span class="n">Unknown</span><span class="o">/</span><span class="n">No</span> <span class="n">beam</span> <span class="k">if</span> <span class="n">we</span> <span class="n">are</span> <span class="k">out</span> <span class="k">of</span> <span class="n">state</span> <span class="n">bounds</span> <span class="k">or</span> <span class="k">in</span> <span class="n">motion</span>
 <span class="o">//</span> <span class="n">Otherwise</span> <span class="n">we</span><span class="na">&#39;ll</span> <span class="n">have</span> <span class="n">the</span> <span class="n">current</span> <span class="n">state</span><span class="na">&#39;s</span> <span class="n">beam</span> <span class="n">parameters</span>
 
-<span class="k">IF</span> <span class="n">stBeamNeeded</span><span class="p">.</span><span class="n">nRate</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="k">THEN</span>
-    <span class="o">//</span> <span class="k">If</span> <span class="n">nRate</span> <span class="k">is</span> <span class="n">zero</span><span class="p">,</span> <span class="n">trip</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">just</span> <span class="k">to</span> <span class="n">be</span> <span class="n">sure</span><span class="p">.</span>
-    <span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-<span class="k">ELSIF</span> <span class="n">bArbiterTimeout</span> <span class="k">AND</span> <span class="n">bMoveOnArbiterTimeout</span> <span class="k">THEN</span>
-    <span class="o">//</span> <span class="k">If</span> <span class="n">the</span> <span class="n">arbiter</span> <span class="n">times</span> <span class="k">out</span><span class="p">,</span> <span class="n">trip</span> <span class="n">so</span> <span class="n">we</span> <span class="n">can</span> <span class="n">get</span> <span class="n">moving</span><span class="p">.</span>
-    <span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-<span class="k">ELSE</span>
-    <span class="o">//</span> <span class="n">Otherwise</span><span class="p">,</span> <span class="n">trip</span> <span class="k">if</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">conditions</span> <span class="n">are</span> <span class="n">bad</span>
-    <span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">stCurrentBeamParameters</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">);</span>
-<span class="n">END_IF</span>
-
+<span class="o">//</span> <span class="n">Check</span> <span class="k">for</span> <span class="n">bad</span> <span class="n">conditions</span>
+<span class="n">bFFOxOk</span> <span class="o">:=</span> <span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">stCurrentBeamParameters</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">);</span>
 <span class="o">//</span> <span class="n">It</span> <span class="k">is</span> <span class="n">safe</span> <span class="k">to</span> <span class="n">reset</span> <span class="n">automatically</span> <span class="k">if</span> <span class="n">our</span> <span class="n">current</span> <span class="n">state</span> <span class="n">can</span> <span class="n">take</span> <span class="n">full</span> <span class="n">beam</span><span class="p">.</span>
 <span class="o">//</span> <span class="n">Otherwise</span> <span class="n">we</span><span class="na">&#39;ll</span> <span class="n">have</span> <span class="k">to</span> <span class="n">ask</span> <span class="k">for</span> <span class="n">a</span> <span class="n">user</span> <span class="n">acknowledgement</span> <span class="k">to</span> <span class="n">clear</span><span class="p">.</span>
-<span class="n">bAtSafeState</span> <span class="o">:=</span> <span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">cstFullBeam</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">);</span>
+<span class="o">//</span> <span class="n">This</span> <span class="n">avoids</span> <span class="n">rapidly</span> <span class="n">cycling</span> <span class="n">the</span> <span class="n">FFOs</span> <span class="k">on</span><span class="o">/</span><span class="n">off</span>
+<span class="o">//</span> <span class="n">You</span> <span class="n">can</span> <span class="n">pass</span> <span class="k">in</span> <span class="n">a</span> <span class="n">different</span> <span class="n">stHighBeamThreshold</span> <span class="n">as</span> <span class="n">an</span> <span class="n">input</span> <span class="n">parameter</span> <span class="k">to</span> <span class="n">customize</span> <span class="n">this</span> <span class="n">behavior</span>
+<span class="n">bAtSafeState</span> <span class="o">:=</span> <span class="n">F_SafeBPCompare</span><span class="p">(</span><span class="n">stHighBeamThreshold</span><span class="p">,</span> <span class="n">stBeamNeeded</span><span class="p">);</span>
 
+<span class="o">//</span> <span class="k">If</span> <span class="n">the</span> <span class="n">beam</span> <span class="n">parameters</span> <span class="n">are</span> <span class="n">wrong</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span> <span class="n">a</span> <span class="n">fault</span><span class="o">!</span> <span class="n">This</span> <span class="n">encompasses</span> <span class="k">all</span> <span class="n">unknown</span> <span class="n">arbiter</span><span class="o">-</span><span class="n">related</span> <span class="n">errors</span><span class="p">.</span>
+<span class="n">ffBeamParamsOk</span><span class="p">.</span><span class="n">i_xOK</span> <span class="o">:=</span> <span class="n">bFFOxOk</span><span class="p">;</span>
+<span class="n">ffBeamParamsOk</span><span class="p">.</span><span class="n">i_xReset</span> <span class="n">S</span><span class="o">=</span> <span class="n">bFFOxOk</span> <span class="k">AND</span> <span class="n">bAtSafeState</span><span class="p">;</span>
+<span class="n">ffBeamParamsOk</span><span class="p">.</span><span class="n">i_xReset</span> <span class="n">R</span><span class="o">=</span> <span class="k">NOT</span> <span class="n">ffBeamParamsOk</span><span class="p">.</span><span class="n">i_xOK</span><span class="p">;</span>
 <span class="n">ffBeamParamsOk</span><span class="p">(</span>
-    <span class="n">i_xOK</span><span class="o">:=</span><span class="n">bFFOxOk</span><span class="p">,</span>
-    <span class="n">i_xReset</span><span class="o">:=</span><span class="n">bFFOxOk</span> <span class="k">AND</span> <span class="n">bAtSafeState</span><span class="p">,</span>
     <span class="n">i_DevName</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">.</span><span class="n">sName</span><span class="p">,</span>
     <span class="n">i_Desc</span><span class="o">:=</span><span class="na">&#39;Beam</span> <span class="n">parameter</span> <span class="n">mismatch</span><span class="p">&#39;,</span>
-    <span class="n">i_TypeCode</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">i_TypeCode</span><span class="o">:=</span><span class="mi">16#1000</span><span class="p">,</span>
     <span class="n">io_fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Trip</span> <span class="n">the</span> <span class="n">beam</span> <span class="k">for</span> <span class="n">zero</span><span class="o">-</span><span class="n">rate</span> <span class="n">states</span><span class="p">.</span> <span class="n">This</span> <span class="k">is</span> <span class="n">a</span> <span class="n">PMPS</span> <span class="n">training</span> <span class="n">wheel</span> <span class="k">and</span> <span class="n">should</span> <span class="n">ultimately</span> <span class="n">be</span> <span class="n">removed</span><span class="p">.</span>
+<span class="o">//</span> <span class="n">Note</span><span class="o">:</span> <span class="n">I</span> <span class="n">think</span> <span class="n">this</span> <span class="k">is</span> <span class="n">already</span> <span class="n">redundant</span>
+<span class="n">ffZeroRate</span><span class="p">(</span>
+    <span class="n">i_xOk</span> <span class="o">:=</span> <span class="n">stBeamNeeded</span><span class="p">.</span><span class="n">nRate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">i_xAutoReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">i_DevName</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sName</span><span class="p">,</span>
+    <span class="n">i_Desc</span> <span class="o">:=</span> <span class="na">&#39;Device</span> <span class="n">requesting</span> <span class="n">zero</span> <span class="n">rate</span><span class="p">&#39;,</span>
+    <span class="n">i_TypeCode</span> <span class="o">:=</span> <span class="mi">16#1001</span><span class="p">,</span>
+    <span class="n">io_fbFFHWO</span> <span class="o">:=</span> <span class="n">fbFFHWO</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Trip</span> <span class="n">the</span> <span class="n">beam</span> <span class="k">for</span> <span class="n">BPTM</span> <span class="n">timeouts</span> <span class="k">if</span> <span class="n">we</span> <span class="n">want</span> <span class="k">to</span> <span class="n">move</span>
+<span class="n">ffBPTMTimeoutAndMove</span><span class="p">.</span><span class="n">i_xOK</span> <span class="o">:=</span> <span class="k">NOT</span> <span class="p">(</span><span class="n">bArbiterTimeout</span> <span class="k">AND</span> <span class="n">bMoveOnArbiterTimeout</span><span class="p">);</span>
+<span class="n">ffBPTMTimeoutAndMove</span><span class="p">.</span><span class="n">i_xReset</span> <span class="n">S</span><span class="o">=</span> <span class="n">bAtSafeState</span><span class="p">;</span>
+<span class="n">ffBPTMTimeoutAndMove</span><span class="p">.</span><span class="n">i_xReset</span> <span class="n">R</span><span class="o">=</span> <span class="k">NOT</span> <span class="n">ffBPTMTimeoutAndMove</span><span class="p">.</span><span class="n">i_xOK</span><span class="p">;</span>
+<span class="n">ffBPTMTimeoutAndMove</span><span class="p">(</span>
+    <span class="n">i_DevName</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sName</span><span class="p">,</span>
+    <span class="n">i_Desc</span> <span class="o">:=</span> <span class="na">&#39;BPTM</span> <span class="n">Timeout</span><span class="p">&#39;,</span>
+    <span class="n">i_TypeCode</span> <span class="o">:=</span> <span class="mi">16#1002</span><span class="p">,</span>
+    <span class="n">io_fbFFHWO</span> <span class="o">:=</span> <span class="n">fbFFHWO</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Trip</span> <span class="n">the</span> <span class="n">beam</span> <span class="k">for</span> <span class="n">BPTM</span> <span class="n">Errors</span>
+<span class="n">ffBPTMError</span><span class="p">.</span><span class="n">i_xOK</span> <span class="o">:=</span> <span class="k">NOT</span> <span class="n">bptm</span><span class="p">.</span><span class="n">bError</span><span class="p">;</span>
+<span class="n">ffBPTMError</span><span class="p">.</span><span class="n">i_xReset</span> <span class="n">S</span><span class="o">=</span> <span class="n">bptm</span><span class="p">.</span><span class="n">bDone</span> <span class="k">AND</span> <span class="k">NOT</span> <span class="n">bptm</span><span class="p">.</span><span class="n">bError</span><span class="p">;</span>
+<span class="n">ffBPTMError</span><span class="p">.</span><span class="n">i_xReset</span> <span class="n">R</span><span class="o">=</span> <span class="k">NOT</span> <span class="n">ffBPTMError</span><span class="p">.</span><span class="n">i_xOK</span><span class="p">;</span>
+<span class="n">ffBPTMError</span><span class="p">(</span>
+    <span class="n">i_DevName</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sName</span><span class="p">,</span>
+    <span class="n">i_Desc</span> <span class="o">:=</span> <span class="na">&#39;BPTM</span> <span class="n">error</span><span class="p">,</span> <span class="n">state</span> <span class="n">transition</span> <span class="n">failed</span><span class="p">&#39;,</span>
+    <span class="n">i_TypeCode</span> <span class="o">:=</span> <span class="mi">16#1003</span><span class="p">,</span>
+    <span class="n">io_fbFFHWO</span> <span class="o">:=</span> <span class="n">fbFFHWO</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Trip</span> <span class="n">the</span> <span class="n">beam</span> <span class="k">for</span> <span class="n">maintenance</span> <span class="n">mode</span>
+<span class="n">ffMaint</span><span class="p">(</span>
+    <span class="n">i_xOK</span> <span class="o">:=</span> <span class="k">NOT</span> <span class="n">bMaintMode</span><span class="p">,</span>
+    <span class="n">i_xAutoReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">i_DevName</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">.</span><span class="n">sName</span><span class="p">,</span>
+    <span class="n">i_Desc</span> <span class="o">:=</span> <span class="na">&#39;Device</span> <span class="k">is</span> <span class="k">in</span> <span class="n">maintenance</span> <span class="n">mode</span><span class="p">&#39;,</span>
+    <span class="n">i_TypeCode</span> <span class="o">:=</span> <span class="mi">16#1004</span><span class="p">,</span>
+    <span class="n">io_fbFFHWO</span> <span class="o">:=</span> <span class="n">fbFFHWO</span><span class="p">);</span>
 <span class="n">END_ACTION</span>
 </pre></div>
 </div>
@@ -6467,17 +6508,28 @@ VAR_IN_OUT
     arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
+    {attribute &#39;pytmc&#39; := &#39;
+        pv: ARB:ENABLE
+        io: io
+    &#39;}
     bArbiterEnabled: BOOL := TRUE;
+    {attribute &#39;pytmc&#39; := &#39;
+        pv: MAINT
+        io: io
+    &#39;}
+    bMaintMode: BOOL;
     bRequestTransition: BOOL;
     bDoingTransition: BOOL;
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
     nUnknownAssertionID: UDINT;
     tArbiterTimeout: TIME := T#1s;
     bMoveOnArbiterTimeout: BOOL := TRUE;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -6502,8 +6554,6 @@ VAR
     stBeamNeeded: ST_BeamParams;
     bFwdOk: BOOL;
     bBwdOk: BOOL;
-    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
     tonArbiter: TON;
 END_VAR
 // This is meant to be subclassed. The parent class body is in the Exec action.
@@ -6593,7 +6643,7 @@ ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
     stMotionStage.bSafetyReady := TRUE;
     // Set an error message override in case this causes an error
-    IF stMotionStage.bError AND bArbiterEnabled THEN
+    IF stMotionStage.bError AND bArbiterEnabled AND NOT bMaintMode THEN
         IF fReqPos &gt; fActPos AND NOT bFwdOk THEN
             stMotionStage.sCustomErrorMessage := &#39;Unsafe tweak forward blocked by PMPS&#39;;
         ELSIF fReqPos &lt; fActPos AND NOT bBwdOk THEN
@@ -6602,7 +6652,7 @@ ELSE
     END_IF
 END_IF
 
-IF bArbiterEnabled THEN
+IF bArbiterEnabled AND NOT bMaintMode THEN
 // Only let us move if the transition is allowed, or if we are moving within a state&#39;s bounds
     mcPower(Axis:=stMotionStage.Axis,
             Enable:=stMotionStage.bAllEnable,
@@ -7951,7 +8001,7 @@ Traceback (most recent call last):
   File &quot;/home/travis/virtualenv/python3.7.1/lib/python3.7/site-packages/pytmc/parser.py&quot;, line 1690, in get_key
     raise ValueError(f&#39;Hmm: {candidates}&#39;)
 ValueError: Hmm: [(&lt;class &#39;pytmc.parser.Instance&#39;&gt;, &#39;#x08502000&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{32c6d46d-3ef9-49e6-91a9-6852b4cc0f44}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{7c3a7d80-a3f3-4f33-a543-aed64d09b22f}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{98dceb98-36a8-48a4-a57d-aca70799e2ae}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{2a9a0768-801b-4379-9602-cc3f9bfe0176}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{4afc626f-14dd-4b1a-a5dd-77cfb7d31d43}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{642e0c23-2413-4ca5-8e92-8ce69fff3a96}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{98544b5d-cfdf-476a-90c0-230bdaff0ec8}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{1c776ddd-5c71-412e-8433-aacbe67877c3}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{d997c582-de09-42d6-b127-017e8c8eface}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{69dd4aab-7807-473d-affd-4949d32b31cb}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{1a348214-209a-44e9-9088-e1b46b9010e2}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{00fa0d24-98b5-49bc-bf41-0a4a34b46bc9}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{87ed0f35-77bb-4af3-abb4-bd4457e39e0b}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{1cc9bdce-6ea8-4421-a606-54f74ba031be}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{b00ba5ad-3961-4dc4-af0e-c716ff06af07}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{f53f1521-ea95-4522-96ee-49d4e6c1f88a}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{d4261a4c-8c4d-44a0-931d-aac8fef66000}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{0ef824af-3384-4b63-9d1f-7d6cf6b0bd23}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{196b856f-d8fb-491f-ab71-4ec8edd9b398}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{d69b0967-8c1a-4603-8de6-a922d8c7d18e}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{7f517c2d-3257-42d3-9c58-98a243359439}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{004c6c92-c047-49ba-9e4a-59675e5ea7dd}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{5df30a0c-1331-4fa2-acfe-28b08cfc5f04}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{01c38f04-3d56-44a9-a009-c6120f9b5fbd}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{4a3117c8-7807-46a2-8f94-5841c9d9b645}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{010a0f13-6d5c-4f48-8fc5-897e7583293a}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{a09e3dbe-a73f-4048-b43b-252510391861}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{c78cb51e-c142-4983-bbe4-9ac5ede33751}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{45901cd0-c6d2-4114-b7cf-de832171219f}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{89d3ff0e-6db9-4001-9d08-c10173794a83}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{a91d9283-56e2-4ee3-a9ad-c1d01374f94c}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{6f91fce8-e990-4671-acc4-8247a4581cff}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{13bd60fa-f200-43aa-9bf2-b14d410be016}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{978ea49f-a940-4b4e-9f45-8cdde4adcf37}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{532dfcaf-6187-4140-aaad-e20a9bbe6b43}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{ae668e37-4b4c-400f-bda9-27f8d308d0b6}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{bcba1819-aaef-4ffc-bcb6-e637240bf3e1}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{f6f53a7c-585d-4cc4-b17e-8b71b5fa8538}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{44b4f5e1-854c-4705-82a0-c1e3db13fb33}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{a78232f2-2338-46fa-908d-fbea8ac2e783}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{be900be5-0784-4633-94f1-38a4124c1620}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{9890b2a1-f87c-4e55-871a-a54ee70e279d}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{a69b16ef-d088-4494-bcb3-4c391e3a9c2d}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{db235f88-cc6a-42fd-a27f-0c03a858adf6}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{98a18836-422d-42af-a096-4f12604828b3}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{b953130d-6adb-468e-991b-b389a0e4364b}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{3965ca68-046c-4858-93f1-aaf5b6059f9e}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{f3ce72e2-b968-4260-9a64-8e0267e89e51}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{137c52b5-8983-4728-b719-31601503f20a}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{ffafdde1-c9c9-04ad-2047-9434c7439ed8}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{d9a67e97-6cca-43d0-9ed9-24a1d18bbca1}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{37479e14-c03d-4022-bd1f-ea03fb5fd29c}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{0e6f3299-5a2e-4431-8f09-1233c54c1e17}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{7f5aa6dc-e692-4722-8b21-b75cf0eef6db}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{b19911a0-9c0b-43b8-8cb3-dd3526519e98}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{e8770d3e-d120-4022-9494-184782095d7b}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{0410dcaa-d262-4dff-9ed9-0476e0f72083}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{2450f384-9eb5-48af-8d9a-0e0297370332}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{5033cde0-7ed9-4a18-af28-d954337efdeb}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{a4177056-7990-0c0e-2a8a-8d9ac89a1e5e}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{fec9bba1-f69e-45d4-9e61-8f615c0e3bb9}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{925eb9bb-c0f7-4b79-a387-ef7d0fb5ed46}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{a935a12e-6ee3-4ebb-8c29-e9b23b7cef37}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{7e0e3094-8a3d-4636-a390-eb10e10412f0}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{e35067d1-2ee7-46f4-a240-48505f8439a4}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{116f57d8-27d2-44f6-a73e-8c9b24b1bd3d}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{6c81e7a1-f014-4b94-98e4-ea682be9540b}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{22824561-5f6a-4eee-b9ab-549db6e77c17}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{d9838f56-4f56-4d09-8777-68d9dceba915}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{9028a506-3476-4ab7-9f18-be1b77c07efa}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{425806ee-2b8b-43fd-93f1-34dff217483a}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{d77c0e9f-60d8-42e2-aa7d-91cf61b54d46}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{8d98c0d3-e029-4bc1-bb0d-006a7c407e39}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{5aa08b4f-0a88-49b1-bf14-92150782485c}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{058abbc4-740d-4ed6-b83c-7fdc99dbdef5}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{71c436f2-8bc4-46b7-82a0-e1e338c02dd9}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{0f84a03e-89d5-4ac7-905a-0b4508a08a18}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{b5ee37fa-13c6-40f2-a7c7-9ac80833d78f}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{5e4b12d9-d7b3-420d-a0c0-3caa211d85b5}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.POU&#39;&gt;, &#39;{9e15d54f-806f-40b6-8fcc-67cd88d24764}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.GVL&#39;&gt;, &#39;{913e21aa-a47e-444c-bfce-679b16c0434b}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.GVL&#39;&gt;, &#39;{7f2dfaa6-e4ea-4ad1-ac0d-e75f78e9d4ec}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.GVL&#39;&gt;, &#39;{e584f020-617f-4164-a737-6e483df3aa38}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.GVL&#39;&gt;, &#39;{7b3cfad1-1f36-4ed6-b576-62277c19b2b2}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{599661fb-9246-4a68-9ba7-2ef6c3f03f60}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{2803a21e-b5ef-48fc-a5fd-18043e60c6af}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{ee78164b-027c-4a52-afc0-269c58a42ceb}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{10b5775d-5646-4d55-ad77-40abc3888de3}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{85d45494-8a84-426c-8efe-9136ee5821c6}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{8f84cc80-708c-4401-8591-6bfbf208dfab}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{fe0ff67d-e11f-4b59-99eb-dd372e356d77}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{97391387-6673-4061-a135-1a0002888344}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{4d6cd2ef-f501-4a50-928e-c27d93614025}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{6aeca57a-6008-439f-9ea1-66c05e3b253c}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{0497ccec-2aee-4f07-877c-128fdd95a4b7}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{580eeee3-6c52-42e6-b317-6ce95975b196}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{36cc1de7-1431-45ad-a25e-c90656daff0a}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{1486ae25-467b-42a2-8f52-1fc72b49b60d}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{7e9a851b-2b87-4b78-9f7e-1a9f1c210ec1}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{6f5997cc-f148-4e63-9185-dfba8067f4f0}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{4f7afc95-d93a-4274-9d93-084eb736d49f}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.DUT&#39;&gt;, &#39;{6445b09d-76cd-4d36-a58e-a23137c6794d}&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.Name&#39;&gt;, &#39;0&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.Name&#39;&gt;, &#39;1&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.Name&#39;&gt;, &#39;2&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.Name&#39;&gt;, &#39;3&#39;, &#39;library.xti&#39;), (&lt;class &#39;pytmc.parser.Name&#39;&gt;, &#39;4&#39;, &#39;library.xti&#39;)]
-INFO:pytmc.bin.pragmalint:Total pragmas found: 125 Total linter errors: 0
+INFO:pytmc.bin.pragmalint:Total pragmas found: 128 Total linter errors: 0
 PLC Project (1): Library
 ========================
 
@@ -8046,6 +8096,12 @@ POUs/Motion/FB_MotionPneumaticActuator.TcPOU (TcPlcObject)
     - FB_MotionPneumaticActuator: Declaration - 3 pragmas
 
 
+POUs/Motion/PMPS/FB_PositionStatePMPS_Base.TcPOU (TcPlcObject)
+--------------------------------------------------------------
+
+    - FB_PositionStatePMPS_Base: Declaration - 2 pragmas
+
+
 POUs/Motion/States/Examples/FB_PositionStateInOut.TcPOU (TcPlcObject)
 ---------------------------------------------------------------------
 
@@ -8068,6 +8124,12 @@ POUs/Motion/States/FB_PositionStateBase.TcPOU (TcPlcObject)
 -----------------------------------------------------------
 
     - FB_PositionStateBase: Declaration - 7 pragmas
+
+
+POUs/Motion/States/FB_PositionStateBase_WithPMPS.TcPOU (TcPlcObject)
+--------------------------------------------------------------------
+
+    - FB_PositionStateBase_WithPMPS: Declaration - 1 pragmas
 
 
 POUs/Motion/States/FB_PositionStateMove.TcPOU (TcPlcObject)
