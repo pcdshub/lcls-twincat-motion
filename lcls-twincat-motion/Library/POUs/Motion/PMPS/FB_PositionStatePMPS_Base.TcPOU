@@ -12,17 +12,28 @@ VAR_IN_OUT
     arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
+    {attribute 'pytmc' := '
+        pv: ARB:ENABLE
+        io: io
+    '}
     bArbiterEnabled: BOOL := TRUE;
+    {attribute 'pytmc' := '
+        pv: MAINT
+        io: io
+    '}
+    bMaintMode: BOOL;
     bRequestTransition: BOOL;
     bDoingTransition: BOOL;
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cstSafeBeam;
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
     nTransitionAssertionID: UDINT;
     nUnknownAssertionID: UDINT;
     tArbiterTimeout: TIME := T#1s;
     bMoveOnArbiterTimeout: BOOL := TRUE;
+    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
+    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -47,8 +58,6 @@ VAR
     stBeamNeeded: ST_BeamParams;
     bFwdOk: BOOL;
     bBwdOk: BOOL;
-    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
     tonArbiter: TON;
 END_VAR]]></Declaration>
     <Implementation>
@@ -143,7 +152,7 @@ ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
     stMotionStage.bSafetyReady := TRUE;
     // Set an error message override in case this causes an error
-    IF stMotionStage.bError AND bArbiterEnabled THEN
+    IF stMotionStage.bError AND bArbiterEnabled AND NOT bMaintMode THEN
         IF fReqPos > fActPos AND NOT bFwdOk THEN
             stMotionStage.sCustomErrorMessage := 'Unsafe tweak forward blocked by PMPS';
         ELSIF fReqPos < fActPos AND NOT bBwdOk THEN
@@ -152,7 +161,7 @@ ELSE
     END_IF
 END_IF
 
-IF bArbiterEnabled THEN
+IF bArbiterEnabled AND NOT bMaintMode THEN
 // Only let us move if the transition is allowed, or if we are moving within a state's bounds
     mcPower(Axis:=stMotionStage.Axis,
             Enable:=stMotionStage.bAllEnable,
