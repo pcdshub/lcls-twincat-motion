@@ -4936,9 +4936,7 @@ rtReset(CLK:=bReset);
 // Go back to INIT state on reset
 IF rtReset.Q THEN
     nState := INIT;
-    IF bError AND stMotionStage.bError AND bCausedError THEN
-        stMotionStage.bReset := TRUE;
-    END_IF
+    stMotionStage.bReset := TRUE;
 END_IF
 IF rtExec.Q OR ftExec.Q THEN
     bDone := FALSE;
@@ -5754,8 +5752,7 @@ fbStatePMPS(
     fbFFHWO:=fbFFHWO,
     stMotionStage:=stMotionStage,
     arrStates:=arrStates,
-    bRequestTransition:=bBusy,
-    bDoingTransition:=bBusy,
+    bRequestTransition:=setState &lt;&gt; 0,
     setState:=setState,
     getState:=getState,
     stTransitionBeam:=stTransitionBeam,
@@ -6425,10 +6422,10 @@ END_FUNCTION_BLOCK
      <span class="n">i_stTransitionAssertion</span><span class="o">:=</span><span class="n">stTransitionBeam</span><span class="p">,</span>
      <span class="n">i_nRequestedAssertionID</span><span class="o">:=</span><span class="n">stStateReq</span><span class="p">.</span><span class="n">nRequestAssertionID</span><span class="p">,</span>
      <span class="n">i_stRequestedAssertion</span><span class="o">:=</span><span class="n">stStateReq</span><span class="p">.</span><span class="n">stBeamParams</span><span class="p">,</span>
-     <span class="n">i_xMoving</span><span class="o">:=</span><span class="n">bDoingTransition</span><span class="p">,</span>
-     <span class="n">i_xDoneMoving</span><span class="o">:=</span><span class="k">NOT</span> <span class="n">bDoingTransition</span><span class="p">,</span>
+     <span class="n">i_xDoneMoving</span><span class="o">:=</span><span class="n">bTransDone</span><span class="p">,</span>
      <span class="n">stCurrentBeamParameters</span><span class="o">:=</span><span class="n">PMPS_GVL</span><span class="p">.</span><span class="n">stCurrentBeamParameters</span><span class="p">,</span>
-     <span class="n">q_xTransitionAuthorized</span><span class="o">=&gt;</span><span class="n">bTransitionAuthorized</span><span class="p">);</span>
+     <span class="n">q_xTransitionAuthorized</span><span class="o">=&gt;</span><span class="n">bTransitionAuthorized</span><span class="p">,</span>
+     <span class="n">bDone</span><span class="o">=&gt;</span><span class="n">bBPTMDone</span><span class="p">);</span>
 <span class="n">END_ACTION</span>
 <span class="n">ACTION</span> <span class="n">HandleFFO</span><span class="o">:</span>
 <span class="o">//</span> <span class="n">stBeamNeeded</span> <span class="n">will</span> <span class="n">point</span> <span class="k">to</span> <span class="n">Unknown</span><span class="o">/</span><span class="n">No</span> <span class="n">beam</span> <span class="k">if</span> <span class="n">we</span> <span class="n">are</span> <span class="k">out</span> <span class="k">of</span> <span class="n">state</span> <span class="n">bounds</span> <span class="k">or</span> <span class="k">in</span> <span class="n">motion</span>
@@ -6519,7 +6516,6 @@ VAR_INPUT
     &#39;}
     bMaintMode: BOOL;
     bRequestTransition: BOOL;
-    bDoingTransition: BOOL;
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
@@ -6539,8 +6535,10 @@ VAR_OUTPUT
 END_VAR
 VAR
     bInit: BOOL := TRUE;
+    bTransDone: BOOL;
     rtTransReq: R_TRIG;
-    ftTransAuth: F_TRIG;
+    bBPTMDone: BOOL;
+    rtBPTMDone: R_TRIG;
     ftMotorExec: F_TRIG;
     stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
@@ -6567,9 +6565,9 @@ ACTION ClearAsserts:
 END_ACTION
 ACTION Exec:
 // Initialize or reinitialize to the current state value
-ftTransAuth(CLK:=bTransitionAuthorized);
+rtBPTMDone(CLK:=bBPTMDone);
 ftMotorExec(CLK:=stMotionStage.bExecute);
-IF ftTransAuth.Q OR ftMotorExec.Q THEN
+IF rtBPTMDone.Q OR ftMotorExec.Q THEN
     bInit := TRUE;
 END_IF
 IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
@@ -6587,6 +6585,9 @@ IF rtTransReq.Q THEN
     nGoalState := setState;
     stStateReq := GetStateStruct(setState);
     bInTransition := TRUE;
+    bTransDone := FALSE;
+ELSE
+    bTransDone := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stStateReq) AND NOT stMotionStage.bBusy;
 END_IF
 
 IF bArbiterEnabled THEN
@@ -6641,7 +6642,7 @@ IF bInTransition THEN
     stMotionStage.bSafetyReady := bTransitionAuthorized;
 ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
-    stMotionStage.bSafetyReady := TRUE;
+    stMotionStage.bSafetyReady := stMotionStage.bExecute;
     // Set an error message override in case this causes an error
     IF stMotionStage.bError AND bArbiterEnabled AND NOT bMaintMode THEN
         IF fReqPos &gt; fActPos AND NOT bFwdOk THEN
