@@ -23,7 +23,6 @@ VAR_INPUT
     '}
     bMaintMode: BOOL;
     bRequestTransition: BOOL;
-    bDoingTransition: BOOL;
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
@@ -43,8 +42,10 @@ VAR_OUTPUT
 END_VAR
 VAR
     bInit: BOOL := TRUE;
+    bTransDone: BOOL;
     rtTransReq: R_TRIG;
-    ftTransAuth: F_TRIG;
+    bBPTMDone: BOOL;
+    rtBPTMDone: R_TRIG;
     ftMotorExec: F_TRIG;
     stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
@@ -76,9 +77,9 @@ END_VAR]]></Declaration>
     <Action Name="Exec" Id="{5b04393f-c32f-49f1-a610-cb4c89f50675}">
       <Implementation>
         <ST><![CDATA[// Initialize or reinitialize to the current state value
-ftTransAuth(CLK:=bTransitionAuthorized);
+rtBPTMDone(CLK:=bBPTMDone);
 ftMotorExec(CLK:=stMotionStage.bExecute);
-IF ftTransAuth.Q OR ftMotorExec.Q THEN
+IF rtBPTMDone.Q OR ftMotorExec.Q THEN
     bInit := TRUE;
 END_IF
 IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
@@ -96,6 +97,9 @@ IF rtTransReq.Q THEN
     nGoalState := setState;
     stStateReq := GetStateStruct(setState);
     bInTransition := TRUE;
+    bTransDone := FALSE;
+ELSE
+    bTransDone := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stStateReq) AND NOT stMotionStage.bBusy;
 END_IF
 
 IF bArbiterEnabled THEN
@@ -150,7 +154,7 @@ IF bInTransition THEN
     stMotionStage.bSafetyReady := bTransitionAuthorized;
 ELSE
     // If not transitioning, no need to wait for safety: immediately try to move and error if no auth
-    stMotionStage.bSafetyReady := TRUE;
+    stMotionStage.bSafetyReady := stMotionStage.bExecute;
     // Set an error message override in case this causes an error
     IF stMotionStage.bError AND bArbiterEnabled AND NOT bMaintMode THEN
         IF fReqPos > fActPos AND NOT bFwdOk THEN

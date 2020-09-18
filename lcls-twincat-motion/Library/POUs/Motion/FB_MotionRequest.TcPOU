@@ -71,9 +71,7 @@ rtReset(CLK:=bReset);
 // Go back to INIT state on reset
 IF rtReset.Q THEN
     nState := INIT;
-    IF bError AND stMotionStage.bError AND bCausedError THEN
-        stMotionStage.bReset := TRUE;
-    END_IF
+    stMotionStage.bReset := TRUE;
 END_IF
 IF rtExec.Q OR ftExec.Q THEN
     bDone := FALSE;
