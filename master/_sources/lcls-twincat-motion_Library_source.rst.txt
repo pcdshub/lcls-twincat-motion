@@ -5678,6 +5678,10 @@ FB_PositionStateBase_WithPMPS
         stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
         nTransitionAssertionID: UDINT;
         nUnknownAssertionID: UDINT;
+        {attribute 'pytmc' := '
+            pv: ARB:ENABLE
+            io: io
+        '}
         bArbiterEnabled: BOOL := TRUE;
         tArbiterTimeout: TIME := T#1s;
         bMoveOnArbiterTimeout: BOOL := TRUE;
@@ -6474,10 +6478,6 @@ FB_PositionStatePMPS_Base
         arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
     END_VAR
     VAR_INPUT
-        {attribute 'pytmc' := '
-            pv: ARB:ENABLE
-            io: io
-        '}
         bArbiterEnabled: BOOL := TRUE;
         {attribute 'pytmc' := '
             pv: MAINT
