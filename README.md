@@ -63,3 +63,8 @@ fbMotionStage(stMotionStage := stMotionStage);
 | `Enum_StageEnableMode` | enum | Options for axis enable/disable handling. Axis can be enabled always, never, or only during motion. |
 
 
+## Confluence links
+
+* Flight rules: https://confluence.slac.stanford.edu/display/PCDS/Beckhoff+Flight+Rules
+* Axis setup: https://confluence.slac.stanford.edu/display/PCDS/Basic+Beckhoff+Stepper+Axis+Software+Setup
+* Axis tuning: https://confluence.slac.stanford.edu/display/PCDS/Beckhoff+Stepper+Axis+Tuning
