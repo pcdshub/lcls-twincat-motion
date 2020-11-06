@@ -147,6 +147,10 @@ IF NOT stMotionStage.bError THEN
     stMotionStage.bError := fbDriveVirtual.bError;
     stMotionStage.nErrorId := fbDriveVirtual.nErrorId;
 END_IF
+IF NOT stMotionStage.bError THEN
+    stMotionStage.bError := fbMotionHome.bError;
+    stMotionStage.nErrorId := fbMotionHome.nErrorId;
+END_IF
 
 // Set the error message if we have one
 IF stMotionStage.bError THEN

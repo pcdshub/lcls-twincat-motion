@@ -11,6 +11,8 @@ END_VAR
 VAR_OUTPUT
     bBusy: BOOL;
     bDone: BOOL;
+    bError: BOOL;
+    nErrorID: UDINT;
 END_VAR
 VAR
     fbSetPos: MC_SetPosition;
@@ -74,6 +76,9 @@ CASE stMotionStage.nHomingMode OF
 END_CASE
 
 IF bMove THEN
+    IF NOT bExecute THEN
+        nHomeStateMachine := IDLE;
+	END_IF
     CASE nHomeStateMachine OF
         // Wait for a rising edge
         IDLE:
@@ -91,6 +96,8 @@ IF bMove THEN
                 nMoves := 0;
                 bDone := FALSE;
                 bBusy := TRUE;
+                bError := FALSE;
+                nErrorID := 0;
             END_IF
         // Figure out whether to move forward, move backward, or give up
         NEXT_MOVE:
@@ -182,6 +189,15 @@ IF bMove THEN
                     JogBackwards:=bFirstDirection,
                     Mode:=E_JogMode.MC_JOGMODE_CONTINOUS,
                     Velocity:=stMotionStage.stAxisParameters.fRefVeloSync);
+            ELSIF fbJog.Error THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                nErrCount := nErrCount + 1;
+                IF nErrCount >= 3 THEN
+                    nHomeStateMachine := ERROR;
+                END_IF
             ELSE
                 fbJog(
                     Axis:=stMotionStage.Axis,
@@ -200,7 +216,13 @@ IF bMove THEN
             nHomeStateMachine := IDLE;
             bDone := TRUE;
         ERROR:
-            nHomeStateMachine := IDLE;
+            bError := TRUE;
+            nErrorID := fbJog.ErrorID;
+            nHomeStateMachine := FINAL_SETPOS;
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE);
+            stMotionStage.sCustomErrorMessage := 'Homing failure';
 	END_CASE
 END_IF]]></ST>
     </Implementation>
