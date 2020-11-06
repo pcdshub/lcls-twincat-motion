@@ -61,7 +61,9 @@ CASE stMotionStage.nEnableMode OF
         stMotionStage.bEnable := TRUE;
     ENUM_StageEnableMode.DURING_MOTION:
         IF bNewMoveReq THEN
-            IF bPosGoal THEN
+            IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
+                stMotionStage.bEnable := stMotionStage.bSafetyReady;
+            ELSIF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
                     stMotionStage.bEnable := stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
