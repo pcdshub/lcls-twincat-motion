@@ -162,7 +162,7 @@ END_IF
 // Check the limits and cancel execution if appropriate. Without this block we have infinite error spam
 bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bAllForwardEnable;
 bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bAllBackwardEnable;
-IF bFwdHit OR bBwdHit THEN
+IF bFwdHit OR bBwdHit  AND NOT fbMotionHome.bBusy THEN
     stMotionStage.bExecute := FALSE;
 END_IF
 

@@ -9,6 +9,7 @@ VAR_INPUT
     bExecute: BOOL;
 END_VAR
 VAR_OUTPUT
+    bBusy: BOOL;
     bDone: BOOL;
 END_VAR
 VAR
@@ -60,10 +61,13 @@ CASE stMotionStage.nHomingMode OF
             Axis:=stMotionStage.Axis,
             Execute:=bExecute,
             Position:=stMotionStage.fHomePosition);
+        bBusy := fbSetPos.Busy;
+        bDone := fbSetPos.Done;
         bMove := FALSE;
     ENUM_EpicsHomeCmd.NONE:
         bMove := FALSE;
-        bDone := TRUE;
+        bBusy := NOT bExecute;
+        bDone := bExecute;
     ELSE
         bMove := FALSE;
 END_CASE
@@ -72,10 +76,12 @@ IF bMove THEN
     CASE nHomeStateMachine OF
         // Wait for a rising edge
         IDLE:
+            bBusy := FALSE;
             IF rtExec.Q THEN
                 nHomeStateMachine := NEXT_MOVE;
                 nMoves := 0;
                 bDone := FALSE;
+                bBusy := TRUE;
 			END_IF
         // Figure out whether to move forward, move backward, or give up
         NEXT_MOVE:
