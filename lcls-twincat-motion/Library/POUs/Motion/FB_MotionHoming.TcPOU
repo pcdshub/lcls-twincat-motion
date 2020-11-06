@@ -124,11 +124,7 @@ IF bMove THEN
                 JogBackwards:=FALSE,
                 Mode:=E_JogMode.MC_JOGMODE_CONTINOUS,
                 Velocity:=stMotionStage.stAxisParameters.fRefVeloSearch);
-            IF fbJog.Error THEN
-                nHomeStateMachine := ERROR;
-            ELSIF bATHome THEN
-                nHomeStateMachine := FINAL_MOVE;
-            ELSIF NOT fbJog.JogForward THEN
+            IF NOT fbJog.JogForward THEN
                 nHomeStateMachine := NEXT_MOVE;
 			END_IF
         // Move backward until we find the home signal or reach end of travel
@@ -143,9 +139,7 @@ IF bMove THEN
                 JogBackwards:=stMotionStage.bLimitBackwardEnable AND NOT bATHome,
                 Mode:=E_JogMode.MC_JOGMODE_CONTINOUS,
                 Velocity:=stMotionStage.stAxisParameters.fRefVeloSearch);
-            IF fbJog.Error THEN
-                nHomeStateMachine := ERROR;
-            ELSIF NOT fbJog.JogBackwards THEN
+            IF NOT fbJog.JogBackwards THEN
                 nHomeStateMachine := NEXT_MOVE;
 			END_IF
         // Set position to get within soft lims, move slowly off signal

@@ -31,14 +31,21 @@ VAR
     fbNCParams: FB_MotionStageNCParams;
     bNewMoveReq: BOOL;
     bPrepareDisable: BOOL;
+    bMoveCmd: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Start with an accurate status
 stMotionStage.Axis.ReadStatus();
 
+// Check if the command wants to cause a move
+bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.ABSOLUTE_SET;
+bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.NONE;
+bMoveCmd S= stMotionStage.nCommand <> ENUM_EpicsMotorCmd.HOME;
+
+// Handle main execs
 rtUserExec(CLK := stMotionStage.bExecute);
-bNewMoveReq S= rtUserExec.Q;
+bNewMoveReq S= rtUserExec.Q AND bMoveCmd;
 bNewMoveReq R= NOT stMotionStage.bExecute;
 bPrepareDisable R= bNewMoveReq;
 
@@ -78,7 +85,11 @@ CASE stMotionStage.nEnableMode OF
 END_CASE
 
 // Do not start the move until we have power and the safety system says it is OK
-bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+IF bMoveCmd THEN
+    bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+ELSE
+    bExecute := stMotionStage.bExecute;
+END_IF
 
 IF bExecute AND NOT stMotionStage.bError THEN
     // Reset local warnings if things are going well
