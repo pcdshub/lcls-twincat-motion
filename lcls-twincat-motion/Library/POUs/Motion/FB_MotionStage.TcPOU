@@ -250,7 +250,7 @@ IF stMotionStage.bReset THEN
 END_IF
 
 // Override homing status with our custom FB
-stMotionStage.stAxisStatus.bHomed := fbMotionHome.bDone;
+stMotionStage.stAxisStatus.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
 
 fbEncoderValue(stMotionStage:=stMotionStage);
 fbNCParams(
