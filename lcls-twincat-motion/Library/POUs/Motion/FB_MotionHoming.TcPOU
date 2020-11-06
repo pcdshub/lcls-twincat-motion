@@ -21,6 +21,7 @@ VAR
     bFirstDirection: BOOL;
     bAtHome: BOOL;
     bMove: BOOL;
+    nErrCount: INT;
 END_VAR
 VAR CONSTANT
     IDLE: INT := 0;
@@ -77,12 +78,20 @@ IF bMove THEN
         // Wait for a rising edge
         IDLE:
             bBusy := FALSE;
+            nErrCount := 0;
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE);
+            fbJog(
+                Axis:=stMotionStage.Axis,
+                JogForward:=FALSE,
+                JogBackwards:=FALSE);
             IF rtExec.Q THEN
                 nHomeStateMachine := NEXT_MOVE;
                 nMoves := 0;
                 bDone := FALSE;
                 bBusy := TRUE;
-			END_IF
+            END_IF
         // Figure out whether to move forward, move backward, or give up
         NEXT_MOVE:
             fbSetPos(
@@ -98,20 +107,20 @@ IF bMove THEN
                         nHomeStateMachine := CHECK_FWD;
                     ELSE
                         nHomeStateMachine := CHECK_BWD;
-					END_IF
+                    END_IF
                 1:
                     IF NOT bFirstDirection THEN
                         nHomeStateMachine := CHECK_FWD;
                     ELSE
                         nHomeStateMachine := CHECK_BWD;
-					END_IF
+                    END_IF
                 ELSE
                     nHomeStateMachine := ERROR;
 			END_CASE
             nMoves := nMoves + 1;
             IF bAtHome THEN
                 nHomeStateMachine := FINAL_MOVE;
-			END_IF
+            END_IF
         // Move forward until we find the home signal or reach end of travel
         CHECK_FWD:
             fbSetPos(
@@ -126,7 +135,16 @@ IF bMove THEN
                 Velocity:=stMotionStage.stAxisParameters.fRefVeloSearch);
             IF NOT fbJog.JogForward THEN
                 nHomeStateMachine := NEXT_MOVE;
-			END_IF
+            ELSIF fbJog.Error THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                nErrCount := nErrCount + 1;
+                IF nErrCount >= 3 THEN
+                    nHomeStateMachine := ERROR;
+                END_IF
+            END_IF
         // Move backward until we find the home signal or reach end of travel
         CHECK_BWD:
             fbSetPos(
@@ -141,7 +159,16 @@ IF bMove THEN
                 Velocity:=stMotionStage.stAxisParameters.fRefVeloSearch);
             IF NOT fbJog.JogBackwards THEN
                 nHomeStateMachine := NEXT_MOVE;
-			END_IF
+            ELSIF fbJog.Error THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                nErrCount := nErrCount + 1;
+                IF nErrCount >= 3 THEN
+                    nHomeStateMachine := ERROR;
+                END_IF
+            END_IF
         // Set position to get within soft lims, move slowly off signal
         FINAL_MOVE:
             fbSetPos(
