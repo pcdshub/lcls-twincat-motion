@@ -8,6 +8,9 @@ END_VAR
 VAR_INPUT
     bExecute: BOOL;
 END_VAR
+VAR_OUTPUT
+    bDone: BOOL;
+END_VAR
 VAR
     fbSetPos: MC_SetPosition;
     fbJog: MC_Jog;
@@ -58,6 +61,9 @@ CASE stMotionStage.nHomingMode OF
             Execute:=bExecute,
             Position:=stMotionStage.fHomePosition);
         bMove := FALSE;
+    ENUM_EpicsHomeCmd.NONE:
+        bMove := FALSE;
+        bDone := TRUE;
     ELSE
         bMove := FALSE;
 END_CASE
@@ -69,6 +75,7 @@ IF bMove THEN
             IF rtExec.Q THEN
                 nHomeStateMachine := NEXT_MOVE;
                 nMoves := 0;
+                bDone := FALSE;
 			END_IF
         // Figure out whether to move forward, move backward, or give up
         NEXT_MOVE:
@@ -164,6 +171,7 @@ IF bMove THEN
                 Execute:=TRUE,
                 Position:=stMotionStage.fHomePosition);
             nHomeStateMachine := IDLE;
+            bDone := TRUE;
         ERROR:
             nHomeStateMachine := IDLE;
 	END_CASE

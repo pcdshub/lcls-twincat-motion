@@ -12,13 +12,18 @@ VAR_IN_OUT
 END_VAR
 VAR
     fbDriveVirtual: FB_DriveVirtual;
+    fbMotionHome: FB_MotionHoming;
+    fbSaveRestore: FB_EncSaveRestore;
     bExecute: BOOL;
+    bExecMove: BOOL;
+    bExecHome: BOOL;
     bFwdHit: BOOL;
     bBwdHit: BOOL;
     ftExec: F_TRIG;
     rtExec: R_TRIG;
     rtUserExec: R_TRIG;
     rtTarget: R_TRIG;
+    rtHomed: R_TRIG;
     fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
     bNegGoal: BOOL;
@@ -93,11 +98,15 @@ IF stMotionStage.bError THEN
     bExecute := FALSE;
 END_IF
 
+
+bExecHome := bExecute AND stMotionStage.nCommand = 10;
+bExecMove := bExecute AND NOT bExecHome;
+
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
     bEnable:=stMotionStage.bAllEnable,
     bReset:=stMotionStage.bReset,
-    bExecute:=bExecute,
+    bExecute:=bExecMove,
     nCommand:=INT_TO_UINT(stMotionStage.nCommand),
     nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
     fVelocity:=stMotionStage.fVelocity,
@@ -111,6 +120,11 @@ fbDriveVirtual(En:=TRUE,
     bPowerSelf:=stMotionStage.bPowerSelf,
     nMotionAxisID=>stMotionStage.nMotionAxisID,
     Axis:=stMotionStage.Axis);
+
+// Some custom home handling
+fbMotionHome(
+    stMotionStage:=stMotionStage,
+    bExecute:=bExecHome);
 
 // Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
@@ -152,10 +166,11 @@ IF bFwdHit OR bBwdHit THEN
     stMotionStage.bExecute := FALSE;
 END_IF
 
-// Check done moving via fbDriveVirtual and from Target Position Monitoring. Must satisfy both conditions.
+// Check done moving via user stop, fbDriveVirtual and Target Position Monitoring, or from homing.
 ftExec(CLK:=stMotionStage.bExecute);
-rtTarget(CLK:=stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone);
-IF rtTarget.Q OR ftExec.Q THEN
+rtTarget(CLK:=(stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone AND bExecMove));
+rtHomed(CLK:=fbMotionHome.bDone AND bExecHome);
+IF ftExec.Q OR rtTarget.Q OR rtHomed.Q THEN
     IF NOT stMotionStage.bDone THEN
         stMotionStage.bDone := TRUE;
         stMotionStage.bBusy := FALSE;
@@ -217,17 +232,19 @@ IF stMotionStage.bReset THEN
     bExecute := FALSE;
 END_IF
 
-// Ignore homing if we have the setting for it
-// e.g. for pre-calibrated absolute encoders
-IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
-    stMotionStage.stAxisStatus.bHomed := TRUE;
-END_IF
+// Override homing status with our custom FB
+stMotionStage.stAxisStatus.bHomed := fbMotionHome.bDone;
 
 fbEncoderValue(stMotionStage:=stMotionStage);
 fbNCParams(
     stMotionStage:=stMotionStage,
     bEnable:=TRUE,
-    tRefreshDelay:=T#1s);]]></ST>
+    tRefreshDelay:=T#1s);
+    
+// Save and restore as long as not an absolute encoder
+fbSaveRestore(
+    stMotionStage:=stMotionStage,
+    bEnable:=stMotionStage.nHomingMode <> ENUM_EpicsHomeCmd.NONE);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
