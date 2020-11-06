@@ -45,6 +45,11 @@ fbSetPos.Options.ClearPositionLag := TRUE;
 rtExec(CLK:=bExecute);
 ftExec(CLK:=bExecute);
 
+bError R= NOT bExecute;
+IF NOT bError THEN
+    nErrorID := 0;
+END_IF
+
 CASE stMotionStage.nHomingMode OF
     ENUM_EpicsHomeCmd.LOW_LIMIT:
         bFirstDirection := FALSE;
