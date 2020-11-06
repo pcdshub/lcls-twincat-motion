@@ -18,12 +18,14 @@ VAR
     fbSetPos: MC_SetPosition;
     fbJog: MC_Jog;
     rtExec: R_TRIG;
+    ftExec: F_TRIG;
     nHomeStateMachine: INT := IDLE;
     nMoves: INT;
     bFirstDirection: BOOL;
     bAtHome: BOOL;
     bMove: BOOL;
     nErrCount: INT;
+    bInterrupted: BOOL;
 END_VAR
 VAR CONSTANT
     IDLE: INT := 0;
@@ -41,6 +43,7 @@ END_VAR]]></Declaration>
       <ST><![CDATA[
 fbSetPos.Options.ClearPositionLag := TRUE;
 rtExec(CLK:=bExecute);
+ftExec(CLK:=bExecute);
 
 CASE stMotionStage.nHomingMode OF
     ENUM_EpicsHomeCmd.LOW_LIMIT:
@@ -76,8 +79,9 @@ CASE stMotionStage.nHomingMode OF
 END_CASE
 
 IF bMove THEN
-    IF NOT bExecute THEN
-        nHomeStateMachine := IDLE;
+    IF bBusy AND ftExec.Q THEN
+        nHomeStateMachine := ERROR;
+        bInterrupted := TRUE;
 	END_IF
     CASE nHomeStateMachine OF
         // Wait for a rising edge
@@ -98,6 +102,7 @@ IF bMove THEN
                 bBusy := TRUE;
                 bError := FALSE;
                 nErrorID := 0;
+                bInterrupted := FALSE;
             END_IF
         // Figure out whether to move forward, move backward, or give up
         NEXT_MOVE:
@@ -222,7 +227,11 @@ IF bMove THEN
             fbSetPos(
                 Axis:=stMotionStage.Axis,
                 Execute:=FALSE);
-            stMotionStage.sCustomErrorMessage := 'Homing failure';
+            IF bInterrupted THEN
+                stMotionStage.sCustomErrorMessage := 'Homing interrutped';
+            ELSE
+                stMotionStage.sCustomErrorMessage := 'Homing failure';
+			END_IF
 	END_CASE
 END_IF]]></ST>
     </Implementation>
