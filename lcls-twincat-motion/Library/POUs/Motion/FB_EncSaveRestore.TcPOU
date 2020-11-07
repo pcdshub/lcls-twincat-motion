@@ -31,21 +31,21 @@ END_VAR
         bLoad S= bSaved;
         fbSetPos.Options.ClearPositionLag := TRUE;
     END_IF
-    
+
     // Set our position if bLoad is true
     fbSetPos(
         Axis:=stMotionStage.Axis,
         Execute:=bLoad,
         Position:=fPosition);
-        
+
     // Only load once, at startup
     bLoad R= fbSetPos.Done OR fbSetPos.Error;
-    
+
     // Keep the error latched, it can disappear if Execute is set to FALSE
     IF fbSetPos.Error THEN
         nLatchError := fbSetPos.ErrorID;
     END_IF
-    
+
     // Do not save if we're currently loading
     IF NOT bLoad THEN
         fPosition := stMotionStage.stAxisStatus.fActPosition;

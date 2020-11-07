@@ -35,7 +35,7 @@ VAR CONSTANT
     FINAL_MOVE: INT := 4;
     FINAL_SETPOS: INT := 5;
     ERROR: INT := 6;
-    
+
     FWD_START: LREAL := -99999999;
     BWD_START: LREAL :=  99999999;
 END_VAR]]></Declaration>
@@ -87,7 +87,7 @@ IF bMove THEN
     IF bBusy AND ftExec.Q THEN
         nHomeStateMachine := ERROR;
         bInterrupted := TRUE;
-	END_IF
+    END_IF
     CASE nHomeStateMachine OF
         // Wait for a rising edge
         IDLE:
@@ -133,7 +133,7 @@ IF bMove THEN
                     END_IF
                 ELSE
                     nHomeStateMachine := ERROR;
-			END_CASE
+            END_CASE
             nMoves := nMoves + 1;
             IF bAtHome THEN
                 nHomeStateMachine := FINAL_MOVE;
@@ -237,8 +237,8 @@ IF bMove THEN
                 stMotionStage.sCustomErrorMessage := 'Homing interrutped';
             ELSE
                 stMotionStage.sCustomErrorMessage := 'Homing failure';
-			END_IF
-	END_CASE
+            END_IF
+    END_CASE
 END_IF]]></ST>
     </Implementation>
   </POU>
