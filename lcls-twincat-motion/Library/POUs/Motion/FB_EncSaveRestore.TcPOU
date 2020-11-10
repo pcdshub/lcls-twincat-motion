@@ -17,6 +17,7 @@ VAR
     bInit: BOOL;
     bLoad: BOOL;
     nLatchError: UDINT;
+    bEncError: BOOL;
 END_VAR
 VAR PERSISTENT
     bSaved: BOOL;
@@ -51,8 +52,11 @@ END_VAR
         stMotionStage.sCustomErrorMessage := 'Error loading previously saved position.';
     END_IF
 
-    // Do not save if we're currently loading
-    IF NOT bLoad THEN
+    // Check DUT_MotionStage for an encoder error (range 0x44nn)
+    bEncError := DUT_MotionStage.bError AND DUT_MotionStage.nErrorId >= 16#4400 AND DUT_MotionStage.nErrorId <= 16#44FF;
+    
+    // Do not save if we're currently loading or if there is an encoder error
+    IF NOT bLoad AND NOT bEncError THEN
         fPosition := stMotionStage.stAxisStatus.fActPosition;
         // This persistent variable lets us check if anything was saved
         // It will be TRUE at startup if we have saved values
