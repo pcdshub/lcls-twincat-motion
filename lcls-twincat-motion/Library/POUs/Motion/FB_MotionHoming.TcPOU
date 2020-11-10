@@ -36,6 +36,14 @@ VAR CONSTANT
     FINAL_SETPOS: INT := 5;
     ERROR: INT := 6;
 
+    (*
+        This is a simpler way of disabling the soft limits that ends up being really obvious if something has gone wrong.
+        If you turn the limits off/on, not only do you need to keep track of if you had soft limits set,
+        but you need to always restore this properly or risk some issue.
+        Instead, I set position to a ridiculous value that can always move forward or backward.
+        If this gets stuck for any reason it's very clear that something has gone wrong,
+        rather than a silent failure of the soft limit marks.
+    *)
     FWD_START: LREAL := -99999999;
     BWD_START: LREAL :=  99999999;
 END_VAR]]></Declaration>
