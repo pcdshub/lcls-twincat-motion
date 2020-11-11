@@ -257,6 +257,11 @@ END_IF
 stMotionStage.stAxisStatus := fbDriveVirtual.stAxisStatus;
 stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnableDone;
 
+// Override homing status, dmov as appropriate
+stMotionStage.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
+stMotionStage.stAxisStatus.bHomed := stMotionStage.bHomed;
+stMotionStage.stAxisStatus.bExecute := bExecute;
+
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
     stMotionStage.bEnable := FALSE;
@@ -268,10 +273,6 @@ IF stMotionStage.bReset THEN
     stMotionStage.sCustomErrorMessage := '';
     bExecute := FALSE;
 END_IF
-
-// Override homing status with our custom FB
-stMotionStage.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
-stMotionStage.stAxisStatus.bHomed := stMotionStage.bHomed;
 
 fbEncoderValue(stMotionStage:=stMotionStage);
 fbNCParams(
