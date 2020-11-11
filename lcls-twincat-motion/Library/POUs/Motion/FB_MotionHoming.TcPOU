@@ -80,13 +80,13 @@ CASE stMotionStage.nHomingMode OF
             Axis:=stMotionStage.Axis,
             Execute:=bExecute,
             Position:=stMotionStage.fHomePosition);
-        bBusy := fbSetPos.Busy;
-        bDone := fbSetPos.Done;
+        bBusy := rtExec.Q;
+        bDone := NOT rtExec.Q;
         bMove := FALSE;
     ENUM_EpicsHomeCmd.NONE:
         bMove := FALSE;
-        bBusy := bExecute;
-        bDone := NOT bExecute;
+        bBusy := rtExec.Q;
+        bDone := NOT rtExec.Q;
     ELSE
         bMove := FALSE;
 END_CASE
