@@ -64,7 +64,7 @@ fbMotionStage(stMotionStage := stMotionStage);
 | `Enum_StageEnableMode` | enum | Options for axis enable/disable handling. Axis can be enabled always, never, or only during motion. |
 
 ## Homing
-To activate a homing routing, put 1 to the EPICS `.HOMF` or `.HOMR` fields. As far as the TwinCAT program is concerned, these both mean the same thing: "home using our internal configuration".
+To activate a homing routing, put 1 to the EPICS `:PLC:bHomeCmd` field. Note: the `.HOMF` and `.HOMR` fields work in some cases at the IOC, but are currently buggy.
 
 To configure a homing routine, set the `fHomePosition` variable to the position to use after homing, and set the `nHomingMode` variable to pick a strategy. These strategies are stored in `ENUM_EpicsHomeCmd` enum. All homing motion strategies move towards their destinations using the "Homing Velocity (towards plc cam)" parameter , then off of the switch using the "Homing velocity (off plc cam)" parameter. The normal options are:
 - `LOW_LIMIT`: Move to the low limit (backward) switch. Set home position at the first point we see as we leave the switch.
