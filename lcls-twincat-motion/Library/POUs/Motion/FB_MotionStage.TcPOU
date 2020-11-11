@@ -32,11 +32,34 @@ VAR
     bNewMoveReq: BOOL;
     bPrepareDisable: BOOL;
     bMoveCmd: BOOL;
+    rtMoveCmdShortcut: R_TRIG;
+    rtHomeCmdShortcut: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Start with an accurate status
 stMotionStage.Axis.ReadStatus();
+
+// Check for the plc shortcut commands
+// Used for testing or to circumvent motor record issues
+rtMoveCmdShortcut(CLK:=stMotionStage.bMoveCmd);
+rtHomeCmdShortcut(CLK:=stMotionStage.bHomeCmd);
+IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    stMotionStage.bMoveCmd := FALSE;
+    stMotionStage.bHomeCmd := FALSE;
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    stMotionStage.bMoveCmd := FALSE;
+    stMotionStage.bHomeCmd := FALSE;
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := ENUM_EpicsMotorCmd.HOME;
+END_IF
+
+// Automatically fill the correct nCmdData for homing
+IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
+    stMotionStage.nCmdData := stMotionStage.nHomingMode;
+END_IF
 
 // Check if the command wants to cause a move
 bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.ABSOLUTE_SET;
@@ -98,10 +121,7 @@ IF bExecute AND NOT stMotionStage.bError THEN
     stMotionStage.sErrorMessage := '';
 END_IF
 
-// Automatically fill the correct nCmdData for homing
-IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
-    stMotionStage.nCmdData := stMotionStage.nHomingMode;
-END_IF
+
 
 // Update all enable booleans
 fbSetEnables(stMotionStage:=stMotionStage);
@@ -250,7 +270,8 @@ IF stMotionStage.bReset THEN
 END_IF
 
 // Override homing status with our custom FB
-stMotionStage.stAxisStatus.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
+stMotionStage.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
+stMotionStage.stAxisStatus.bHomed := stMotionStage.bHomed;
 
 fbEncoderValue(stMotionStage:=stMotionStage);
 fbNCParams(
