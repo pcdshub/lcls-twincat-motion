@@ -53,7 +53,7 @@ END_VAR
 
     // Check DUT_MotionStage for an encoder error (range 0x44nn)
     bEncError := stMotionStage.bError AND stMotionStage.nErrorId >= 16#4400 AND stMotionStage.nErrorId <= 16#44FF;
-    
+
     // Do not save if we're currently loading or if there is an encoder error
     IF NOT bLoad AND NOT bEncError THEN
         fPosition := stMotionStage.stAxisStatus.fActPosition;
