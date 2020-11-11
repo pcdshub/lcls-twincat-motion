@@ -261,6 +261,7 @@ stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnableDone;
 stMotionStage.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
 stMotionStage.stAxisStatus.bHomed := stMotionStage.bHomed;
 stMotionStage.stAxisStatus.bExecute := bExecute;
+stMotionStage.stAxisStatus.nCommand := 3; // If this is not 3, the IOC stops updating positions during homing
 
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
