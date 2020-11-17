@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_EncSaveRestore" Id="{7f38772f-c9da-4f49-aee1-95cd4af3fbdf}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EncSaveRestore
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+    bEnable: BOOL;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    fbSetPos: MC_SetPosition;
+    timer: TON;
+    tSaveDelay: TIME := T#10s;
+    bInit: BOOL;
+    bLoad: BOOL;
+    nLatchError: UDINT;
+    bEncError: BOOL;
+END_VAR
+VAR PERSISTENT
+    bSaved: BOOL;
+    fPosition: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bEnable THEN
+    // Trigger a load if anything was saved at all
+    IF NOT bInit THEN
+        bInit := TRUE;
+        bLoad S= bSaved;
+        fbSetPos.Options.ClearPositionLag := TRUE;
+    END_IF
+
+    // Set our position if bLoad is true
+    fbSetPos(
+        Axis:=stMotionStage.Axis,
+        Execute:=bLoad,
+        Position:=fPosition);
+
+    // Only load once, at startup
+    bLoad R= fbSetPos.Done OR fbSetPos.Error;
+
+    IF fbSetPos.Error THEN
+        // Keep the error latched, it can disappear if Execute is set to FALSE
+        nLatchError := fbSetPos.ErrorID;
+        // Alert the user that something has gone wrong
+        stMotionStage.bError := TRUE;
+        stMotionStage.nErrorId := fbSetPos.ErrorID;
+        stMotionStage.sCustomErrorMessage := 'Error loading previously saved position.';
+    END_IF
+
+    // Check DUT_MotionStage for an encoder error (range 0x44nn)
+    bEncError := stMotionStage.bError AND stMotionStage.nErrorId >= 16#4400 AND stMotionStage.nErrorId <= 16#44FF;
+
+    // Do not save if we're currently loading or if there is an encoder error
+    IF NOT bLoad AND NOT bEncError THEN
+        fPosition := stMotionStage.stAxisStatus.fActPosition;
+        // This persistent variable lets us check if anything was saved
+        // It will be TRUE at startup if we have saved values
+        bSaved := TRUE;
+    END_IF
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

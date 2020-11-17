@@ -199,6 +199,22 @@ STRUCT
     '}
     bExecute: BOOL;
 
+    (* Shortcut Commands *)
+    // Start a move to fPosition with fVelocity
+    {attribute 'pytmc' := '
+        pv: PLC:bMoveCmd
+        io: io
+        field: DESC Start a move
+    '}
+    bMoveCmd: BOOL;
+    // Start the homing routine
+    {attribute 'pytmc' := '
+        pv: PLC:bHomeCmd
+        io: io
+        field: DESC Start the homing routine
+    '}
+    bHomeCmd: BOOL;
+
     (* Command Args *)
     // Used internally and by the IOC to pick what kind of move to do
     {attribute 'pytmc' := '
@@ -287,6 +303,13 @@ STRUCT
         field: DESC TRUE if command finished successfully
     '}
     bDone: BOOL;
+    // TRUE if the motor has been homed, or does not need to be homed
+    {attribute 'pytmc' := '
+        pv: PLC:bHomed
+        io: i
+        field: DESC TRUE if the motor has been homed
+    '}
+    bHomed: BOOL;
     // TRUE if we have safety permission to move
     {attribute 'pytmc' := '
         pv: PLC:bSafetyReady
