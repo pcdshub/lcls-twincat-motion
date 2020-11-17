@@ -163,6 +163,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#fb-el1252asm-v1-00">FB_EL1252ASM_v1_00</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-encerrorffo">FB_EncErrorFFO</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-encodervalue">FB_EncoderValue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-encsaverestore">FB_EncSaveRestore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-epicsinout">FB_EpicsInOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-errorlist">FB_ErrorList</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-gantryautocoupling">FB_GantryAutoCoupling</a></li>
@@ -177,6 +178,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#fb-homewritencvelocities">FB_HomeWriteNcVelocities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-homewritesoftlimenable">FB_HomeWriteSoftLimEnable</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-microstepcounttest">FB_MicroStepCountTest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-motionhoming">FB_MotionHoming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionpneumaticactuator">FB_MotionPneumaticActuator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionrequest">FB_MotionRequest</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionstage">FB_MotionStage</a></li>
@@ -678,6 +680,22 @@
     <span class="s1">&#39;}</span>
     <span class="n">bExecute</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
 
+    <span class="p">(</span><span class="o">*</span> <span class="n">Shortcut</span> <span class="n">Commands</span> <span class="o">*</span><span class="p">)</span>
+    <span class="o">//</span> <span class="n">Start</span> <span class="n">a</span> <span class="n">move</span> <span class="n">to</span> <span class="n">fPosition</span> <span class="k">with</span> <span class="n">fVelocity</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bMoveCmd</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Start</span> <span class="n">a</span> <span class="n">move</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bMoveCmd</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">Start</span> <span class="n">the</span> <span class="n">homing</span> <span class="n">routine</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bHomeCmd</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Start</span> <span class="n">the</span> <span class="n">homing</span> <span class="n">routine</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bHomeCmd</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+
     <span class="p">(</span><span class="o">*</span> <span class="n">Command</span> <span class="n">Args</span> <span class="o">*</span><span class="p">)</span>
     <span class="o">//</span> <span class="n">Used</span> <span class="n">internally</span> <span class="ow">and</span> <span class="n">by</span> <span class="n">the</span> <span class="n">IOC</span> <span class="n">to</span> <span class="n">pick</span> <span class="n">what</span> <span class="n">kind</span> <span class="n">of</span> <span class="n">move</span> <span class="n">to</span> <span class="n">do</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
@@ -766,6 +784,13 @@
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">command</span> <span class="n">finished</span> <span class="n">successfully</span>
     <span class="s1">&#39;}</span>
     <span class="n">bDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">the</span> <span class="n">motor</span> <span class="n">has</span> <span class="n">been</span> <span class="n">homed</span><span class="p">,</span> <span class="ow">or</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">need</span> <span class="n">to</span> <span class="n">be</span> <span class="n">homed</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bHomed</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">the</span> <span class="n">motor</span> <span class="n">has</span> <span class="n">been</span> <span class="n">homed</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bHomed</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">we</span> <span class="n">have</span> <span class="n">safety</span> <span class="n">permission</span> <span class="n">to</span> <span class="n">move</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bSafetyReady</span>
@@ -3412,6 +3437,72 @@ END_FUNCTION_BLOCK
 </pre></div>
 </div>
 </div>
+<div class="section" id="fb-encsaverestore">
+<h2>FB_EncSaveRestore<a class="headerlink" href="#fb-encsaverestore" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_EncSaveRestore</span>
+<span class="n">VAR_IN_OUT</span>
+    <span class="n">stMotionStage</span><span class="p">:</span> <span class="n">DUT_MotionStage</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">bEnable</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">fbSetPos</span><span class="p">:</span> <span class="n">MC_SetPosition</span><span class="p">;</span>
+    <span class="n">timer</span><span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+    <span class="n">tSaveDelay</span><span class="p">:</span> <span class="n">TIME</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#10s;</span>
+    <span class="n">bInit</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bLoad</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nLatchError</span><span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
+    <span class="n">bEncError</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span> <span class="n">PERSISTENT</span>
+    <span class="n">bSaved</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">fPosition</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">IF</span> <span class="n">bEnable</span> <span class="n">THEN</span>
+    <span class="o">//</span> <span class="n">Trigger</span> <span class="n">a</span> <span class="n">load</span> <span class="k">if</span> <span class="n">anything</span> <span class="n">was</span> <span class="n">saved</span> <span class="n">at</span> <span class="nb">all</span>
+    <span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+        <span class="n">bInit</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">bLoad</span> <span class="n">S</span><span class="o">=</span> <span class="n">bSaved</span><span class="p">;</span>
+        <span class="n">fbSetPos</span><span class="o">.</span><span class="n">Options</span><span class="o">.</span><span class="n">ClearPositionLag</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+
+    <span class="o">//</span> <span class="n">Set</span> <span class="n">our</span> <span class="n">position</span> <span class="k">if</span> <span class="n">bLoad</span> <span class="ow">is</span> <span class="n">true</span>
+    <span class="n">fbSetPos</span><span class="p">(</span>
+        <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+        <span class="n">Execute</span><span class="o">:=</span><span class="n">bLoad</span><span class="p">,</span>
+        <span class="n">Position</span><span class="o">:=</span><span class="n">fPosition</span><span class="p">);</span>
+
+    <span class="o">//</span> <span class="n">Only</span> <span class="n">load</span> <span class="n">once</span><span class="p">,</span> <span class="n">at</span> <span class="n">startup</span>
+    <span class="n">bLoad</span> <span class="n">R</span><span class="o">=</span> <span class="n">fbSetPos</span><span class="o">.</span><span class="n">Done</span> <span class="n">OR</span> <span class="n">fbSetPos</span><span class="o">.</span><span class="n">Error</span><span class="p">;</span>
+
+    <span class="n">IF</span> <span class="n">fbSetPos</span><span class="o">.</span><span class="n">Error</span> <span class="n">THEN</span>
+        <span class="o">//</span> <span class="n">Keep</span> <span class="n">the</span> <span class="n">error</span> <span class="n">latched</span><span class="p">,</span> <span class="n">it</span> <span class="n">can</span> <span class="n">disappear</span> <span class="k">if</span> <span class="n">Execute</span> <span class="ow">is</span> <span class="nb">set</span> <span class="n">to</span> <span class="n">FALSE</span>
+        <span class="n">nLatchError</span> <span class="o">:=</span> <span class="n">fbSetPos</span><span class="o">.</span><span class="n">ErrorID</span><span class="p">;</span>
+        <span class="o">//</span> <span class="n">Alert</span> <span class="n">the</span> <span class="n">user</span> <span class="n">that</span> <span class="n">something</span> <span class="n">has</span> <span class="n">gone</span> <span class="n">wrong</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="n">fbSetPos</span><span class="o">.</span><span class="n">ErrorID</span><span class="p">;</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Error loading previously saved position.&#39;</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+
+    <span class="o">//</span> <span class="n">Check</span> <span class="n">DUT_MotionStage</span> <span class="k">for</span> <span class="n">an</span> <span class="n">encoder</span> <span class="n">error</span> <span class="p">(</span><span class="nb">range</span> <span class="mh">0x44</span><span class="n">nn</span><span class="p">)</span>
+    <span class="n">bEncError</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">&gt;=</span> <span class="mi">16</span><span class="c1">#4400 AND stMotionStage.nErrorId &lt;= 16#44FF;</span>
+
+    <span class="o">//</span> <span class="n">Do</span> <span class="ow">not</span> <span class="n">save</span> <span class="k">if</span> <span class="n">we</span><span class="s1">&#39;re currently loading or if there is an encoder error</span>
+    <span class="n">IF</span> <span class="n">NOT</span> <span class="n">bLoad</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bEncError</span> <span class="n">THEN</span>
+        <span class="n">fPosition</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">fActPosition</span><span class="p">;</span>
+        <span class="o">//</span> <span class="n">This</span> <span class="n">persistent</span> <span class="n">variable</span> <span class="n">lets</span> <span class="n">us</span> <span class="n">check</span> <span class="k">if</span> <span class="n">anything</span> <span class="n">was</span> <span class="n">saved</span>
+        <span class="o">//</span> <span class="n">It</span> <span class="n">will</span> <span class="n">be</span> <span class="n">TRUE</span> <span class="n">at</span> <span class="n">startup</span> <span class="k">if</span> <span class="n">we</span> <span class="n">have</span> <span class="n">saved</span> <span class="n">values</span>
+        <span class="n">bSaved</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+<span class="n">END_IF</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="fb-epicsinout">
 <h2>FB_EpicsInOut<a class="headerlink" href="#fb-epicsinout" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_EpicsInOut</span>
@@ -4738,6 +4829,258 @@ END_FUNCTION_BLOCK
 </pre></div>
 </div>
 </div>
+<div class="section" id="fb-motionhoming">
+<h2>FB_MotionHoming<a class="headerlink" href="#fb-motionhoming" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_MotionHoming</span>
+<span class="n">VAR_IN_OUT</span>
+    <span class="n">stMotionStage</span><span class="p">:</span> <span class="n">DUT_MotionStage</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">bExecute</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+    <span class="n">bBusy</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bError</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nErrorID</span><span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">fbSetPos</span><span class="p">:</span> <span class="n">MC_SetPosition</span><span class="p">;</span>
+    <span class="n">fbJog</span><span class="p">:</span> <span class="n">MC_Jog</span><span class="p">;</span>
+    <span class="n">rtExec</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">ftExec</span><span class="p">:</span> <span class="n">F_TRIG</span><span class="p">;</span>
+    <span class="n">nHomeStateMachine</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="n">IDLE</span><span class="p">;</span>
+    <span class="n">nMoves</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
+    <span class="n">bFirstDirection</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bAtHome</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bMove</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nErrCount</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
+    <span class="n">bInterrupted</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span> <span class="n">CONSTANT</span>
+    <span class="n">IDLE</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">NEXT_MOVE</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">CHECK_FWD</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="n">CHECK_BWD</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="n">FINAL_MOVE</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">4</span><span class="p">;</span>
+    <span class="n">FINAL_SETPOS</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">5</span><span class="p">;</span>
+    <span class="n">ERROR</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">6</span><span class="p">;</span>
+
+    <span class="p">(</span><span class="o">*</span>
+        <span class="n">This</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">simpler</span> <span class="n">way</span> <span class="n">of</span> <span class="n">disabling</span> <span class="n">the</span> <span class="n">soft</span> <span class="n">limits</span> <span class="n">that</span> <span class="n">ends</span> <span class="n">up</span> <span class="n">being</span> <span class="n">really</span> <span class="n">obvious</span> <span class="k">if</span> <span class="n">something</span> <span class="n">has</span> <span class="n">gone</span> <span class="n">wrong</span><span class="o">.</span>
+        <span class="n">If</span> <span class="n">you</span> <span class="n">turn</span> <span class="n">the</span> <span class="n">limits</span> <span class="n">off</span><span class="o">/</span><span class="n">on</span><span class="p">,</span> <span class="ow">not</span> <span class="n">only</span> <span class="n">do</span> <span class="n">you</span> <span class="n">need</span> <span class="n">to</span> <span class="n">keep</span> <span class="n">track</span> <span class="n">of</span> <span class="k">if</span> <span class="n">you</span> <span class="n">had</span> <span class="n">soft</span> <span class="n">limits</span> <span class="nb">set</span><span class="p">,</span>
+        <span class="n">but</span> <span class="n">you</span> <span class="n">need</span> <span class="n">to</span> <span class="n">always</span> <span class="n">restore</span> <span class="n">this</span> <span class="n">properly</span> <span class="ow">or</span> <span class="n">risk</span> <span class="n">some</span> <span class="n">issue</span><span class="o">.</span>
+        <span class="n">Instead</span><span class="p">,</span> <span class="n">I</span> <span class="nb">set</span> <span class="n">position</span> <span class="n">to</span> <span class="n">a</span> <span class="n">ridiculous</span> <span class="n">value</span> <span class="n">that</span> <span class="n">can</span> <span class="n">always</span> <span class="n">move</span> <span class="n">forward</span> <span class="ow">or</span> <span class="n">backward</span><span class="o">.</span>
+        <span class="n">If</span> <span class="n">this</span> <span class="n">gets</span> <span class="n">stuck</span> <span class="k">for</span> <span class="nb">any</span> <span class="n">reason</span> <span class="n">it</span><span class="s1">&#39;s very clear that something has gone wrong,</span>
+        <span class="n">rather</span> <span class="n">than</span> <span class="n">a</span> <span class="n">silent</span> <span class="n">failure</span> <span class="n">of</span> <span class="n">the</span> <span class="n">soft</span> <span class="n">limit</span> <span class="n">marks</span><span class="o">.</span>
+    <span class="o">*</span><span class="p">)</span>
+    <span class="n">FWD_START</span><span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="o">-</span><span class="mi">99999999</span><span class="p">;</span>
+    <span class="n">BWD_START</span><span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span>  <span class="mi">99999999</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">fbSetPos</span><span class="o">.</span><span class="n">Options</span><span class="o">.</span><span class="n">ClearPositionLag</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">rtExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">);</span>
+<span class="n">ftExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">);</span>
+
+<span class="n">bError</span> <span class="n">R</span><span class="o">=</span> <span class="n">NOT</span> <span class="n">bExecute</span><span class="p">;</span>
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bError</span> <span class="n">THEN</span>
+    <span class="n">nErrorID</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">CASE</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nHomingMode</span> <span class="n">OF</span>
+    <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">LOW_LIMIT</span><span class="p">:</span>
+        <span class="n">bFirstDirection</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+        <span class="n">bAtHome</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bLimitBackwardEnable</span><span class="p">;</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">HIGH_LIMIT</span><span class="p">:</span>
+        <span class="n">bFirstDirection</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">bAtHome</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bLimitForwardEnable</span><span class="p">;</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">HOME_VIA_LOW</span><span class="p">:</span>
+        <span class="n">bFirstDirection</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+        <span class="n">bAtHome</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHome</span><span class="p">;</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">HOME_VIA_HIGH</span><span class="p">:</span>
+        <span class="n">bFirstDirection</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">bAtHome</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHome</span><span class="p">;</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">ABSOLUTE_SET</span><span class="p">:</span>
+        <span class="n">fbSetPos</span><span class="p">(</span>
+            <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+            <span class="n">Execute</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">,</span>
+            <span class="n">Position</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fHomePosition</span><span class="p">);</span>
+        <span class="n">bBusy</span> <span class="o">:=</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+        <span class="n">bDone</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">NONE</span><span class="p">:</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+        <span class="n">bBusy</span> <span class="o">:=</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+        <span class="n">bDone</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+    <span class="n">ELSE</span>
+        <span class="n">bMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">END_CASE</span>
+
+<span class="n">IF</span> <span class="n">bMove</span> <span class="n">THEN</span>
+    <span class="n">IF</span> <span class="n">bBusy</span> <span class="n">AND</span> <span class="n">ftExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
+        <span class="n">bInterrupted</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+    <span class="n">CASE</span> <span class="n">nHomeStateMachine</span> <span class="n">OF</span>
+        <span class="o">//</span> <span class="n">Wait</span> <span class="k">for</span> <span class="n">a</span> <span class="n">rising</span> <span class="n">edge</span>
+        <span class="n">IDLE</span><span class="p">:</span>
+            <span class="n">bBusy</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+            <span class="n">nErrCount</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+            <span class="n">fbJog</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+            <span class="n">IF</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">NEXT_MOVE</span><span class="p">;</span>
+                <span class="n">nMoves</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+                <span class="n">bDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+                <span class="n">bBusy</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+                <span class="n">bError</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+                <span class="n">nErrorID</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+                <span class="n">bInterrupted</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+            <span class="n">END_IF</span>
+        <span class="o">//</span> <span class="n">Figure</span> <span class="n">out</span> <span class="n">whether</span> <span class="n">to</span> <span class="n">move</span> <span class="n">forward</span><span class="p">,</span> <span class="n">move</span> <span class="n">backward</span><span class="p">,</span> <span class="ow">or</span> <span class="n">give</span> <span class="n">up</span>
+        <span class="n">NEXT_MOVE</span><span class="p">:</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+            <span class="n">fbJog</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+            <span class="n">CASE</span> <span class="n">nMoves</span> <span class="n">OF</span>
+                <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">IF</span> <span class="n">bFirstDirection</span> <span class="n">THEN</span>
+                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_FWD</span><span class="p">;</span>
+                    <span class="n">ELSE</span>
+                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_BWD</span><span class="p">;</span>
+                    <span class="n">END_IF</span>
+                <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">IF</span> <span class="n">NOT</span> <span class="n">bFirstDirection</span> <span class="n">THEN</span>
+                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_FWD</span><span class="p">;</span>
+                    <span class="n">ELSE</span>
+                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_BWD</span><span class="p">;</span>
+                    <span class="n">END_IF</span>
+                <span class="n">ELSE</span>
+                    <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
+            <span class="n">END_CASE</span>
+            <span class="n">nMoves</span> <span class="o">:=</span> <span class="n">nMoves</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="n">IF</span> <span class="n">bAtHome</span> <span class="n">THEN</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">FINAL_MOVE</span><span class="p">;</span>
+            <span class="n">END_IF</span>
+        <span class="o">//</span> <span class="n">Move</span> <span class="n">forward</span> <span class="n">until</span> <span class="n">we</span> <span class="n">find</span> <span class="n">the</span> <span class="n">home</span> <span class="n">signal</span> <span class="ow">or</span> <span class="n">reach</span> <span class="n">end</span> <span class="n">of</span> <span class="n">travel</span>
+        <span class="n">CHECK_FWD</span><span class="p">:</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+                <span class="n">Position</span><span class="o">:=</span><span class="n">FWD_START</span><span class="p">);</span>
+            <span class="n">fbJog</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">JogForward</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bLimitForwardEnable</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bATHome</span><span class="p">,</span>
+                <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                <span class="n">Mode</span><span class="o">:=</span><span class="n">E_JogMode</span><span class="o">.</span><span class="n">MC_JOGMODE_CONTINOUS</span><span class="p">,</span>
+                <span class="n">Velocity</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fRefVeloSearch</span><span class="p">);</span>
+            <span class="n">IF</span> <span class="n">NOT</span> <span class="n">fbJog</span><span class="o">.</span><span class="n">JogForward</span> <span class="n">THEN</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">NEXT_MOVE</span><span class="p">;</span>
+            <span class="n">ELSIF</span> <span class="n">fbJog</span><span class="o">.</span><span class="n">Error</span> <span class="n">THEN</span>
+                <span class="n">fbJog</span><span class="p">(</span>
+                    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                    <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                    <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+                <span class="n">nErrCount</span> <span class="o">:=</span> <span class="n">nErrCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+                <span class="n">IF</span> <span class="n">nErrCount</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="n">THEN</span>
+                    <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
+                <span class="n">END_IF</span>
+            <span class="n">END_IF</span>
+        <span class="o">//</span> <span class="n">Move</span> <span class="n">backward</span> <span class="n">until</span> <span class="n">we</span> <span class="n">find</span> <span class="n">the</span> <span class="n">home</span> <span class="n">signal</span> <span class="ow">or</span> <span class="n">reach</span> <span class="n">end</span> <span class="n">of</span> <span class="n">travel</span>
+        <span class="n">CHECK_BWD</span><span class="p">:</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+                <span class="n">Position</span><span class="o">:=</span><span class="n">BWD_START</span><span class="p">);</span>
+            <span class="n">fbJog</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bLimitBackwardEnable</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bATHome</span><span class="p">,</span>
+                <span class="n">Mode</span><span class="o">:=</span><span class="n">E_JogMode</span><span class="o">.</span><span class="n">MC_JOGMODE_CONTINOUS</span><span class="p">,</span>
+                <span class="n">Velocity</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fRefVeloSearch</span><span class="p">);</span>
+            <span class="n">IF</span> <span class="n">NOT</span> <span class="n">fbJog</span><span class="o">.</span><span class="n">JogBackwards</span> <span class="n">THEN</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">NEXT_MOVE</span><span class="p">;</span>
+            <span class="n">ELSIF</span> <span class="n">fbJog</span><span class="o">.</span><span class="n">Error</span> <span class="n">THEN</span>
+                <span class="n">fbJog</span><span class="p">(</span>
+                    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                    <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                    <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+                <span class="n">nErrCount</span> <span class="o">:=</span> <span class="n">nErrCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+                <span class="n">IF</span> <span class="n">nErrCount</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="n">THEN</span>
+                    <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
+                <span class="n">END_IF</span>
+            <span class="n">END_IF</span>
+        <span class="o">//</span> <span class="n">Set</span> <span class="n">position</span> <span class="n">to</span> <span class="n">get</span> <span class="n">within</span> <span class="n">soft</span> <span class="n">lims</span><span class="p">,</span> <span class="n">move</span> <span class="n">slowly</span> <span class="n">off</span> <span class="n">signal</span>
+        <span class="n">FINAL_MOVE</span><span class="p">:</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+                <span class="n">Position</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fHomePosition</span><span class="p">);</span>
+            <span class="n">IF</span> <span class="n">bAtHome</span> <span class="n">THEN</span>
+                <span class="n">fbJog</span><span class="p">(</span>
+                    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                    <span class="n">JogForward</span><span class="o">:=</span><span class="n">NOT</span> <span class="n">bFirstDirection</span><span class="p">,</span>
+                    <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">bFirstDirection</span><span class="p">,</span>
+                    <span class="n">Mode</span><span class="o">:=</span><span class="n">E_JogMode</span><span class="o">.</span><span class="n">MC_JOGMODE_CONTINOUS</span><span class="p">,</span>
+                    <span class="n">Velocity</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fRefVeloSync</span><span class="p">);</span>
+            <span class="n">ELSIF</span> <span class="n">fbJog</span><span class="o">.</span><span class="n">Error</span> <span class="n">THEN</span>
+                <span class="n">fbJog</span><span class="p">(</span>
+                    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                    <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                    <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+                <span class="n">nErrCount</span> <span class="o">:=</span> <span class="n">nErrCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+                <span class="n">IF</span> <span class="n">nErrCount</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="n">THEN</span>
+                    <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
+                <span class="n">END_IF</span>
+            <span class="n">ELSE</span>
+                <span class="n">fbJog</span><span class="p">(</span>
+                    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                    <span class="n">JogForward</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+                    <span class="n">JogBackwards</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+                <span class="n">fbSetPos</span><span class="p">(</span>
+                    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                    <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">FINAL_SETPOS</span><span class="p">;</span>
+            <span class="n">END_IF</span>
+        <span class="n">FINAL_SETPOS</span><span class="p">:</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+                <span class="n">Position</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fHomePosition</span><span class="p">);</span>
+            <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">IDLE</span><span class="p">;</span>
+            <span class="n">bBusy</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+            <span class="n">bDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">ERROR</span><span class="p">:</span>
+            <span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+            <span class="n">nErrorID</span> <span class="o">:=</span> <span class="n">fbJog</span><span class="o">.</span><span class="n">ErrorID</span><span class="p">;</span>
+            <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">FINAL_SETPOS</span><span class="p">;</span>
+            <span class="n">fbSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+            <span class="n">IF</span> <span class="n">bInterrupted</span> <span class="n">THEN</span>
+                <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Homing interrupted&#39;</span><span class="p">;</span>
+            <span class="n">ELSE</span>
+                <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Homing failure&#39;</span><span class="p">;</span>
+            <span class="n">END_IF</span>
+    <span class="n">END_CASE</span>
+<span class="n">END_IF</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="fb-motionpneumaticactuator">
 <h2>FB_MotionPneumaticActuator<a class="headerlink" href="#fb-motionpneumaticactuator" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>(*This function blcok implements a pnuematic actuator. That can be signle or double acting by setting the ibSingleCntrl accordingly*)
@@ -5126,13 +5469,18 @@ END_ACTION
 <span class="n">END_VAR</span>
 <span class="n">VAR</span>
     <span class="n">fbDriveVirtual</span><span class="p">:</span> <span class="n">FB_DriveVirtual</span><span class="p">;</span>
+    <span class="n">fbMotionHome</span><span class="p">:</span> <span class="n">FB_MotionHoming</span><span class="p">;</span>
+    <span class="n">fbSaveRestore</span><span class="p">:</span> <span class="n">FB_EncSaveRestore</span><span class="p">;</span>
     <span class="n">bExecute</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bExecMove</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bExecHome</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bFwdHit</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bBwdHit</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">ftExec</span><span class="p">:</span> <span class="n">F_TRIG</span><span class="p">;</span>
     <span class="n">rtExec</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
     <span class="n">rtUserExec</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
     <span class="n">rtTarget</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">rtHomed</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
     <span class="n">fbSetEnables</span><span class="p">:</span> <span class="n">FB_SetEnables</span><span class="p">;</span>
     <span class="n">bPosGoal</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bNegGoal</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -5140,12 +5488,42 @@ END_ACTION
     <span class="n">fbNCParams</span><span class="p">:</span> <span class="n">FB_MotionStageNCParams</span><span class="p">;</span>
     <span class="n">bNewMoveReq</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bPrepareDisable</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bMoveCmd</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdShortcut</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">rtHomeCmdShortcut</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="o">//</span> <span class="n">Start</span> <span class="k">with</span> <span class="n">an</span> <span class="n">accurate</span> <span class="n">status</span>
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">ReadStatus</span><span class="p">();</span>
 
+<span class="o">//</span> <span class="n">Check</span> <span class="k">for</span> <span class="n">the</span> <span class="n">plc</span> <span class="n">shortcut</span> <span class="n">commands</span>
+<span class="o">//</span> <span class="n">Used</span> <span class="k">for</span> <span class="n">testing</span> <span class="ow">or</span> <span class="n">to</span> <span class="n">circumvent</span> <span class="n">motor</span> <span class="n">record</span> <span class="n">issues</span>
+<span class="n">rtMoveCmdShortcut</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span><span class="p">);</span>
+<span class="n">rtHomeCmdShortcut</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span><span class="p">);</span>
+<span class="n">IF</span> <span class="n">rtMoveCmdShortcut</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">:=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">;</span>
+<span class="n">ELSIF</span> <span class="n">rtHomeCmdShortcut</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">:=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="o">//</span> <span class="n">Automatically</span> <span class="n">fill</span> <span class="n">the</span> <span class="n">correct</span> <span class="n">nCmdData</span> <span class="k">for</span> <span class="n">homing</span>
+<span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCmdData</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nHomingMode</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="o">//</span> <span class="n">Check</span> <span class="k">if</span> <span class="n">the</span> <span class="n">command</span> <span class="n">wants</span> <span class="n">to</span> <span class="n">cause</span> <span class="n">a</span> <span class="n">move</span>
+<span class="n">bMoveCmd</span> <span class="n">R</span><span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCmdData</span> <span class="o">=</span> <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">ABSOLUTE_SET</span><span class="p">;</span>
+<span class="n">bMoveCmd</span> <span class="n">R</span><span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCmdData</span> <span class="o">=</span> <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">NONE</span><span class="p">;</span>
+<span class="n">bMoveCmd</span> <span class="n">S</span><span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">&lt;&gt;</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span><span class="p">;</span>
+
+<span class="o">//</span> <span class="n">Handle</span> <span class="n">main</span> <span class="n">execs</span>
 <span class="n">rtUserExec</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">);</span>
-<span class="n">bNewMoveReq</span> <span class="n">S</span><span class="o">=</span> <span class="n">rtUserExec</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">bNewMoveReq</span> <span class="n">S</span><span class="o">=</span> <span class="n">rtUserExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">bMoveCmd</span><span class="p">;</span>
 <span class="n">bNewMoveReq</span> <span class="n">R</span><span class="o">=</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">;</span>
 <span class="n">bPrepareDisable</span> <span class="n">R</span><span class="o">=</span> <span class="n">bNewMoveReq</span><span class="p">;</span>
 
@@ -5161,7 +5539,9 @@ END_ACTION
         <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">ENUM_StageEnableMode</span><span class="o">.</span><span class="n">DURING_MOTION</span><span class="p">:</span>
         <span class="n">IF</span> <span class="n">bNewMoveReq</span> <span class="n">THEN</span>
-            <span class="n">IF</span> <span class="n">bPosGoal</span> <span class="n">THEN</span>
+            <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span> <span class="n">THEN</span>
+                <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
+            <span class="n">ELSIF</span> <span class="n">bPosGoal</span> <span class="n">THEN</span>
                 <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllForwardEnable</span> <span class="n">THEN</span>
                     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
                 <span class="n">ELSIF</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
@@ -5185,17 +5565,18 @@ END_ACTION
 <span class="n">END_CASE</span>
 
 <span class="o">//</span> <span class="n">Do</span> <span class="ow">not</span> <span class="n">start</span> <span class="n">the</span> <span class="n">move</span> <span class="n">until</span> <span class="n">we</span> <span class="n">have</span> <span class="n">power</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">safety</span> <span class="n">system</span> <span class="n">says</span> <span class="n">it</span> <span class="ow">is</span> <span class="n">OK</span>
-<span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnableDone</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
+<span class="n">IF</span> <span class="n">bMoveCmd</span> <span class="n">THEN</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnableDone</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
+<span class="n">ELSE</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">;</span>
+<span class="n">END_IF</span>
 
 <span class="n">IF</span> <span class="n">bExecute</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
     <span class="o">//</span> <span class="n">Reset</span> <span class="n">local</span> <span class="n">warnings</span> <span class="k">if</span> <span class="n">things</span> <span class="n">are</span> <span class="n">going</span> <span class="n">well</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Automatically</span> <span class="n">fill</span> <span class="n">the</span> <span class="n">correct</span> <span class="n">nCmdData</span> <span class="k">for</span> <span class="n">homing</span>
-<span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span> <span class="n">THEN</span>
-    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCmdData</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nHomingMode</span><span class="p">;</span>
-<span class="n">END_IF</span>
+
 
 <span class="o">//</span> <span class="n">Update</span> <span class="nb">all</span> <span class="n">enable</span> <span class="n">booleans</span>
 <span class="n">fbSetEnables</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">);</span>
@@ -5205,11 +5586,15 @@ END_ACTION
     <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
+
+<span class="n">bExecHome</span> <span class="o">:=</span> <span class="n">bExecute</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<span class="n">bExecMove</span> <span class="o">:=</span> <span class="n">bExecute</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bExecHome</span><span class="p">;</span>
+
 <span class="o">//</span> <span class="n">Handle</span> <span class="n">standard</span> <span class="n">commands</span> <span class="n">using</span> <span class="n">ESS</span><span class="s1">&#39;s FB</span>
 <span class="n">fbDriveVirtual</span><span class="p">(</span><span class="n">En</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
     <span class="n">bEnable</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllEnable</span><span class="p">,</span>
     <span class="n">bReset</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span><span class="p">,</span>
-    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">,</span>
+    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bExecMove</span><span class="p">,</span>
     <span class="n">nCommand</span><span class="o">:=</span><span class="n">INT_TO_UINT</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span><span class="p">),</span>
     <span class="n">nCmdData</span><span class="o">:=</span><span class="n">INT_TO_UINT</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCmdData</span><span class="p">),</span>
     <span class="n">fVelocity</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
@@ -5224,6 +5609,11 @@ END_ACTION
     <span class="n">nMotionAxisID</span><span class="o">=&gt;</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nMotionAxisID</span><span class="p">,</span>
     <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">);</span>
 
+<span class="o">//</span> <span class="n">Some</span> <span class="n">custom</span> <span class="n">home</span> <span class="n">handling</span>
+<span class="n">fbMotionHome</span><span class="p">(</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
+    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bExecHome</span><span class="p">);</span>
+
 <span class="o">//</span> <span class="n">Update</span> <span class="n">status</span> <span class="n">again</span> <span class="n">after</span> <span class="n">the</span> <span class="n">move</span> <span class="n">starts</span> <span class="ow">or</span> <span class="n">stops</span>
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">ReadStatus</span><span class="p">();</span>
 
@@ -5231,6 +5621,10 @@ END_ACTION
 <span class="n">IF</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">bError</span><span class="p">;</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">nErrorId</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">bError</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">nErrorId</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
 <span class="o">//</span> <span class="n">Set</span> <span class="n">the</span> <span class="n">error</span> <span class="n">message</span> <span class="k">if</span> <span class="n">we</span> <span class="n">have</span> <span class="n">one</span>
@@ -5260,14 +5654,15 @@ END_ACTION
 <span class="o">//</span> <span class="n">Check</span> <span class="n">the</span> <span class="n">limits</span> <span class="ow">and</span> <span class="n">cancel</span> <span class="n">execution</span> <span class="k">if</span> <span class="n">appropriate</span><span class="o">.</span> <span class="n">Without</span> <span class="n">this</span> <span class="n">block</span> <span class="n">we</span> <span class="n">have</span> <span class="n">infinite</span> <span class="n">error</span> <span class="n">spam</span>
 <span class="n">bFwdHit</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">PositiveDirection</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllForwardEnable</span><span class="p">;</span>
 <span class="n">bBwdHit</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">NegativeDirection</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllBackwardEnable</span><span class="p">;</span>
-<span class="n">IF</span> <span class="n">bFwdHit</span> <span class="n">OR</span> <span class="n">bBwdHit</span> <span class="n">THEN</span>
+<span class="n">IF</span> <span class="p">(</span><span class="n">bFwdHit</span> <span class="n">OR</span> <span class="n">bBwdHit</span><span class="p">)</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Check</span> <span class="n">done</span> <span class="n">moving</span> <span class="n">via</span> <span class="n">fbDriveVirtual</span> <span class="ow">and</span> <span class="kn">from</span> <span class="nn">Target</span> <span class="n">Position</span> <span class="n">Monitoring</span><span class="o">.</span> <span class="n">Must</span> <span class="n">satisfy</span> <span class="n">both</span> <span class="n">conditions</span><span class="o">.</span>
+<span class="o">//</span> <span class="n">Check</span> <span class="n">done</span> <span class="n">moving</span> <span class="n">via</span> <span class="n">user</span> <span class="n">stop</span><span class="p">,</span> <span class="n">fbDriveVirtual</span> <span class="ow">and</span> <span class="n">Target</span> <span class="n">Position</span> <span class="n">Monitoring</span><span class="p">,</span> <span class="ow">or</span> <span class="kn">from</span> <span class="nn">homing.</span>
 <span class="n">ftExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">);</span>
-<span class="n">rtTarget</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">InTargetPosition</span> <span class="n">AND</span> <span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">bDone</span><span class="p">);</span>
-<span class="n">IF</span> <span class="n">rtTarget</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">ftExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+<span class="n">rtTarget</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">InTargetPosition</span> <span class="n">AND</span> <span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">bDone</span> <span class="n">AND</span> <span class="n">bExecMove</span><span class="p">));</span>
+<span class="n">rtHomed</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">fbMotionHome</span><span class="o">.</span><span class="n">bDone</span> <span class="n">AND</span> <span class="n">bExecHome</span><span class="p">);</span>
+<span class="n">IF</span> <span class="n">ftExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">rtTarget</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">rtHomed</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
     <span class="n">IF</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bDone</span> <span class="n">THEN</span>
         <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
         <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bBusy</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
@@ -5317,6 +5712,12 @@ END_ACTION
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span> <span class="o">:=</span> <span class="n">fbDriveVirtual</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="p">;</span>
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bEnabled</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnableDone</span><span class="p">;</span>
 
+<span class="o">//</span> <span class="n">Override</span> <span class="n">homing</span> <span class="n">status</span><span class="p">,</span> <span class="n">dmov</span> <span class="k">as</span> <span class="n">appropriate</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomed</span> <span class="o">:=</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">bDone</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">bError</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bHomed</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomed</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">bExecute</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span> <span class="o">//</span> <span class="n">If</span> <span class="n">this</span> <span class="ow">is</span> <span class="ow">not</span> <span class="mi">3</span><span class="p">,</span> <span class="n">the</span> <span class="n">IOC</span> <span class="n">stops</span> <span class="n">updating</span> <span class="n">positions</span> <span class="n">during</span> <span class="n">homing</span>
+
 <span class="o">//</span> <span class="n">Reset</span> <span class="n">everything</span> <span class="n">when</span> <span class="n">bReset</span> <span class="ow">is</span> <span class="n">flagged</span>
 <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="n">THEN</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
@@ -5329,17 +5730,16 @@ END_ACTION
     <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Ignore</span> <span class="n">homing</span> <span class="k">if</span> <span class="n">we</span> <span class="n">have</span> <span class="n">the</span> <span class="n">setting</span> <span class="k">for</span> <span class="n">it</span>
-<span class="o">//</span> <span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span> <span class="k">for</span> <span class="n">pre</span><span class="o">-</span><span class="n">calibrated</span> <span class="n">absolute</span> <span class="n">encoders</span>
-<span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nHomingMode</span> <span class="o">=</span> <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">NONE</span> <span class="n">THEN</span>
-    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bHomed</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-<span class="n">END_IF</span>
-
 <span class="n">fbEncoderValue</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">);</span>
 <span class="n">fbNCParams</span><span class="p">(</span>
     <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
     <span class="n">bEnable</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
     <span class="n">tRefreshDelay</span><span class="o">:=</span><span class="n">T</span><span class="c1">#1s);</span>
+
+<span class="o">//</span> <span class="n">Save</span> <span class="ow">and</span> <span class="n">restore</span> <span class="k">as</span> <span class="n">long</span> <span class="k">as</span> <span class="ow">not</span> <span class="n">an</span> <span class="n">absolute</span> <span class="n">encoder</span>
+<span class="n">fbSaveRestore</span><span class="p">(</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
+    <span class="n">bEnable</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nHomingMode</span> <span class="o">&lt;&gt;</span> <span class="n">ENUM_EpicsHomeCmd</span><span class="o">.</span><span class="n">NONE</span><span class="p">);</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 </pre></div>
