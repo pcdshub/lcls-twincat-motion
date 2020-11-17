@@ -12,13 +12,18 @@ VAR_IN_OUT
 END_VAR
 VAR
     fbDriveVirtual: FB_DriveVirtual;
+    fbMotionHome: FB_MotionHoming;
+    fbSaveRestore: FB_EncSaveRestore;
     bExecute: BOOL;
+    bExecMove: BOOL;
+    bExecHome: BOOL;
     bFwdHit: BOOL;
     bBwdHit: BOOL;
     ftExec: F_TRIG;
     rtExec: R_TRIG;
     rtUserExec: R_TRIG;
     rtTarget: R_TRIG;
+    rtHomed: R_TRIG;
     fbSetEnables: FB_SetEnables;
     bPosGoal: BOOL;
     bNegGoal: BOOL;
@@ -26,14 +31,44 @@ VAR
     fbNCParams: FB_MotionStageNCParams;
     bNewMoveReq: BOOL;
     bPrepareDisable: BOOL;
+    bMoveCmd: BOOL;
+    rtMoveCmdShortcut: R_TRIG;
+    rtHomeCmdShortcut: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Start with an accurate status
 stMotionStage.Axis.ReadStatus();
 
+// Check for the plc shortcut commands
+// Used for testing or to circumvent motor record issues
+rtMoveCmdShortcut(CLK:=stMotionStage.bMoveCmd);
+rtHomeCmdShortcut(CLK:=stMotionStage.bHomeCmd);
+IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    stMotionStage.bMoveCmd := FALSE;
+    stMotionStage.bHomeCmd := FALSE;
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    stMotionStage.bMoveCmd := FALSE;
+    stMotionStage.bHomeCmd := FALSE;
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := ENUM_EpicsMotorCmd.HOME;
+END_IF
+
+// Automatically fill the correct nCmdData for homing
+IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
+    stMotionStage.nCmdData := stMotionStage.nHomingMode;
+END_IF
+
+// Check if the command wants to cause a move
+bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.ABSOLUTE_SET;
+bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.NONE;
+bMoveCmd S= stMotionStage.nCommand <> ENUM_EpicsMotorCmd.HOME;
+
+// Handle main execs
 rtUserExec(CLK := stMotionStage.bExecute);
-bNewMoveReq S= rtUserExec.Q;
+bNewMoveReq S= rtUserExec.Q AND bMoveCmd;
 bNewMoveReq R= NOT stMotionStage.bExecute;
 bPrepareDisable R= bNewMoveReq;
 
@@ -49,7 +84,9 @@ CASE stMotionStage.nEnableMode OF
         stMotionStage.bEnable := TRUE;
     ENUM_StageEnableMode.DURING_MOTION:
         IF bNewMoveReq THEN
-            IF bPosGoal THEN
+            IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
+                stMotionStage.bEnable := stMotionStage.bSafetyReady;
+            ELSIF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
                     stMotionStage.bEnable := stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
@@ -73,17 +110,18 @@ CASE stMotionStage.nEnableMode OF
 END_CASE
 
 // Do not start the move until we have power and the safety system says it is OK
-bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+IF bMoveCmd THEN
+    bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+ELSE
+    bExecute := stMotionStage.bExecute;
+END_IF
 
 IF bExecute AND NOT stMotionStage.bError THEN
     // Reset local warnings if things are going well
     stMotionStage.sErrorMessage := '';
 END_IF
 
-// Automatically fill the correct nCmdData for homing
-IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
-    stMotionStage.nCmdData := stMotionStage.nHomingMode;
-END_IF
+
 
 // Update all enable booleans
 fbSetEnables(stMotionStage:=stMotionStage);
@@ -93,11 +131,15 @@ IF stMotionStage.bError THEN
     bExecute := FALSE;
 END_IF
 
+
+bExecHome := bExecute AND stMotionStage.nCommand = 10;
+bExecMove := bExecute AND NOT bExecHome;
+
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
     bEnable:=stMotionStage.bAllEnable,
     bReset:=stMotionStage.bReset,
-    bExecute:=bExecute,
+    bExecute:=bExecMove,
     nCommand:=INT_TO_UINT(stMotionStage.nCommand),
     nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
     fVelocity:=stMotionStage.fVelocity,
@@ -112,6 +154,11 @@ fbDriveVirtual(En:=TRUE,
     nMotionAxisID=>stMotionStage.nMotionAxisID,
     Axis:=stMotionStage.Axis);
 
+// Some custom home handling
+fbMotionHome(
+    stMotionStage:=stMotionStage,
+    bExecute:=bExecHome);
+
 // Update status again after the move starts or stops
 stMotionStage.Axis.ReadStatus();
 
@@ -119,6 +166,10 @@ stMotionStage.Axis.ReadStatus();
 IF NOT stMotionStage.bError THEN
     stMotionStage.bError := fbDriveVirtual.bError;
     stMotionStage.nErrorId := fbDriveVirtual.nErrorId;
+END_IF
+IF NOT stMotionStage.bError THEN
+    stMotionStage.bError := fbMotionHome.bError;
+    stMotionStage.nErrorId := fbMotionHome.nErrorId;
 END_IF
 
 // Set the error message if we have one
@@ -148,14 +199,15 @@ END_IF
 // Check the limits and cancel execution if appropriate. Without this block we have infinite error spam
 bFwdHit := stMotionStage.Axis.Status.PositiveDirection AND NOT stMotionStage.bAllForwardEnable;
 bBwdHit := stMotionStage.Axis.Status.NegativeDirection AND NOT stMotionStage.bAllBackwardEnable;
-IF bFwdHit OR bBwdHit THEN
+IF (bFwdHit OR bBwdHit) AND NOT fbMotionHome.bBusy THEN
     stMotionStage.bExecute := FALSE;
 END_IF
 
-// Check done moving via fbDriveVirtual and from Target Position Monitoring. Must satisfy both conditions.
+// Check done moving via user stop, fbDriveVirtual and Target Position Monitoring, or from homing.
 ftExec(CLK:=stMotionStage.bExecute);
-rtTarget(CLK:=stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone);
-IF rtTarget.Q OR ftExec.Q THEN
+rtTarget(CLK:=(stMotionStage.Axis.Status.InTargetPosition AND fbDriveVirtual.bDone AND bExecMove));
+rtHomed(CLK:=fbMotionHome.bDone AND bExecHome);
+IF ftExec.Q OR rtTarget.Q OR rtHomed.Q THEN
     IF NOT stMotionStage.bDone THEN
         stMotionStage.bDone := TRUE;
         stMotionStage.bBusy := FALSE;
@@ -205,6 +257,12 @@ END_IF
 stMotionStage.stAxisStatus := fbDriveVirtual.stAxisStatus;
 stMotionStage.stAxisStatus.bEnabled := stMotionStage.bEnableDone;
 
+// Override homing status, dmov as appropriate
+stMotionStage.bHomed := fbMotionHome.bDone AND NOT fbMotionHome.bError;
+stMotionStage.stAxisStatus.bHomed := stMotionStage.bHomed;
+stMotionStage.stAxisStatus.bExecute := bExecute;
+stMotionStage.stAxisStatus.nCommand := 3; // If this is not 3, the IOC stops updating positions during homing
+
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
     stMotionStage.bEnable := FALSE;
@@ -217,17 +275,16 @@ IF stMotionStage.bReset THEN
     bExecute := FALSE;
 END_IF
 
-// Ignore homing if we have the setting for it
-// e.g. for pre-calibrated absolute encoders
-IF stMotionStage.nHomingMode = ENUM_EpicsHomeCmd.NONE THEN
-    stMotionStage.stAxisStatus.bHomed := TRUE;
-END_IF
-
 fbEncoderValue(stMotionStage:=stMotionStage);
 fbNCParams(
     stMotionStage:=stMotionStage,
     bEnable:=TRUE,
-    tRefreshDelay:=T#1s);]]></ST>
+    tRefreshDelay:=T#1s);
+
+// Save and restore as long as not an absolute encoder
+fbSaveRestore(
+    stMotionStage:=stMotionStage,
+    bEnable:=stMotionStage.nHomingMode <> ENUM_EpicsHomeCmd.NONE);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

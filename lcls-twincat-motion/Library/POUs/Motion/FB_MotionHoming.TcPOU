@@ -1,0 +1,253 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MotionHoming" Id="{89795143-e01c-4e96-8d50-67b6176895fe}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionHoming
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+    bExecute: BOOL;
+END_VAR
+VAR_OUTPUT
+    bBusy: BOOL;
+    bDone: BOOL;
+    bError: BOOL;
+    nErrorID: UDINT;
+END_VAR
+VAR
+    fbSetPos: MC_SetPosition;
+    fbJog: MC_Jog;
+    rtExec: R_TRIG;
+    ftExec: F_TRIG;
+    nHomeStateMachine: INT := IDLE;
+    nMoves: INT;
+    bFirstDirection: BOOL;
+    bAtHome: BOOL;
+    bMove: BOOL;
+    nErrCount: INT;
+    bInterrupted: BOOL;
+END_VAR
+VAR CONSTANT
+    IDLE: INT := 0;
+    NEXT_MOVE: INT := 1;
+    CHECK_FWD: INT := 2;
+    CHECK_BWD: INT := 3;
+    FINAL_MOVE: INT := 4;
+    FINAL_SETPOS: INT := 5;
+    ERROR: INT := 6;
+
+    (*
+        This is a simpler way of disabling the soft limits that ends up being really obvious if something has gone wrong.
+        If you turn the limits off/on, not only do you need to keep track of if you had soft limits set,
+        but you need to always restore this properly or risk some issue.
+        Instead, I set position to a ridiculous value that can always move forward or backward.
+        If this gets stuck for any reason it's very clear that something has gone wrong,
+        rather than a silent failure of the soft limit marks.
+    *)
+    FWD_START: LREAL := -99999999;
+    BWD_START: LREAL :=  99999999;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbSetPos.Options.ClearPositionLag := TRUE;
+rtExec(CLK:=bExecute);
+ftExec(CLK:=bExecute);
+
+bError R= NOT bExecute;
+IF NOT bError THEN
+    nErrorID := 0;
+END_IF
+
+CASE stMotionStage.nHomingMode OF
+    ENUM_EpicsHomeCmd.LOW_LIMIT:
+        bFirstDirection := FALSE;
+        bAtHome := NOT stMotionStage.bLimitBackwardEnable;
+        bMove := TRUE;
+    ENUM_EpicsHomeCmd.HIGH_LIMIT:
+        bFirstDirection := TRUE;
+        bAtHome := NOT stMotionStage.bLimitForwardEnable;
+        bMove := TRUE;
+    ENUM_EpicsHomeCmd.HOME_VIA_LOW:
+        bFirstDirection := FALSE;
+        bAtHome := stMotionStage.bHome;
+        bMove := TRUE;
+    ENUM_EpicsHomeCmd.HOME_VIA_HIGH:
+        bFirstDirection := TRUE;
+        bAtHome := stMotionStage.bHome;
+        bMove := TRUE;
+    ENUM_EpicsHomeCmd.ABSOLUTE_SET:
+        fbSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=bExecute,
+            Position:=stMotionStage.fHomePosition);
+        bBusy := rtExec.Q;
+        bDone := NOT rtExec.Q;
+        bMove := FALSE;
+    ENUM_EpicsHomeCmd.NONE:
+        bMove := FALSE;
+        bBusy := rtExec.Q;
+        bDone := NOT rtExec.Q;
+    ELSE
+        bMove := FALSE;
+END_CASE
+
+IF bMove THEN
+    IF bBusy AND ftExec.Q THEN
+        nHomeStateMachine := ERROR;
+        bInterrupted := TRUE;
+    END_IF
+    CASE nHomeStateMachine OF
+        // Wait for a rising edge
+        IDLE:
+            bBusy := FALSE;
+            nErrCount := 0;
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE);
+            fbJog(
+                Axis:=stMotionStage.Axis,
+                JogForward:=FALSE,
+                JogBackwards:=FALSE);
+            IF rtExec.Q THEN
+                nHomeStateMachine := NEXT_MOVE;
+                nMoves := 0;
+                bDone := FALSE;
+                bBusy := TRUE;
+                bError := FALSE;
+                nErrorID := 0;
+                bInterrupted := FALSE;
+            END_IF
+        // Figure out whether to move forward, move backward, or give up
+        NEXT_MOVE:
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE);
+            fbJog(
+                Axis:=stMotionStage.Axis,
+                JogForward:=FALSE,
+                JogBackwards:=FALSE);
+            CASE nMoves OF
+                0:
+                    IF bFirstDirection THEN
+                        nHomeStateMachine := CHECK_FWD;
+                    ELSE
+                        nHomeStateMachine := CHECK_BWD;
+                    END_IF
+                1:
+                    IF NOT bFirstDirection THEN
+                        nHomeStateMachine := CHECK_FWD;
+                    ELSE
+                        nHomeStateMachine := CHECK_BWD;
+                    END_IF
+                ELSE
+                    nHomeStateMachine := ERROR;
+            END_CASE
+            nMoves := nMoves + 1;
+            IF bAtHome THEN
+                nHomeStateMachine := FINAL_MOVE;
+            END_IF
+        // Move forward until we find the home signal or reach end of travel
+        CHECK_FWD:
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=TRUE,
+                Position:=FWD_START);
+            fbJog(
+                Axis:=stMotionStage.Axis,
+                JogForward:=stMotionStage.bLimitForwardEnable AND NOT bATHome,
+                JogBackwards:=FALSE,
+                Mode:=E_JogMode.MC_JOGMODE_CONTINOUS,
+                Velocity:=stMotionStage.stAxisParameters.fRefVeloSearch);
+            IF NOT fbJog.JogForward THEN
+                nHomeStateMachine := NEXT_MOVE;
+            ELSIF fbJog.Error THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                nErrCount := nErrCount + 1;
+                IF nErrCount >= 3 THEN
+                    nHomeStateMachine := ERROR;
+                END_IF
+            END_IF
+        // Move backward until we find the home signal or reach end of travel
+        CHECK_BWD:
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=TRUE,
+                Position:=BWD_START);
+            fbJog(
+                Axis:=stMotionStage.Axis,
+                JogForward:=FALSE,
+                JogBackwards:=stMotionStage.bLimitBackwardEnable AND NOT bATHome,
+                Mode:=E_JogMode.MC_JOGMODE_CONTINOUS,
+                Velocity:=stMotionStage.stAxisParameters.fRefVeloSearch);
+            IF NOT fbJog.JogBackwards THEN
+                nHomeStateMachine := NEXT_MOVE;
+            ELSIF fbJog.Error THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                nErrCount := nErrCount + 1;
+                IF nErrCount >= 3 THEN
+                    nHomeStateMachine := ERROR;
+                END_IF
+            END_IF
+        // Set position to get within soft lims, move slowly off signal
+        FINAL_MOVE:
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=TRUE,
+                Position:=stMotionStage.fHomePosition);
+            IF bAtHome THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=NOT bFirstDirection,
+                    JogBackwards:=bFirstDirection,
+                    Mode:=E_JogMode.MC_JOGMODE_CONTINOUS,
+                    Velocity:=stMotionStage.stAxisParameters.fRefVeloSync);
+            ELSIF fbJog.Error THEN
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                nErrCount := nErrCount + 1;
+                IF nErrCount >= 3 THEN
+                    nHomeStateMachine := ERROR;
+                END_IF
+            ELSE
+                fbJog(
+                    Axis:=stMotionStage.Axis,
+                    JogForward:=FALSE,
+                    JogBackwards:=FALSE);
+                fbSetPos(
+                    Axis:=stMotionStage.Axis,
+                    Execute:=FALSE);
+                nHomeStateMachine := FINAL_SETPOS;
+            END_IF
+        FINAL_SETPOS:
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=TRUE,
+                Position:=stMotionStage.fHomePosition);
+            nHomeStateMachine := IDLE;
+            bBusy := FALSE;
+            bDone := TRUE;
+        ERROR:
+            bError := TRUE;
+            nErrorID := fbJog.ErrorID;
+            nHomeStateMachine := FINAL_SETPOS;
+            fbSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE);
+            IF bInterrupted THEN
+                stMotionStage.sCustomErrorMessage := 'Homing interrupted';
+            ELSE
+                stMotionStage.sCustomErrorMessage := 'Homing failure';
+            END_IF
+    END_CASE
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
