@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>DUTs &mdash; pcdshub/lcls-twincat-motion  documentation</title>
   
@@ -16,7 +16,10 @@
 
   
   
+
   
+  
+
   
 
   
@@ -29,7 +32,6 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
         <script src="_static/doctr-versions-menu.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -51,7 +53,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> pcdshub/lcls-twincat-motion
+            <a href="index.html" class="icon icon-home"> pcdshub/lcls-twincat-motion
           
 
           
@@ -250,6 +252,8 @@
 
 
 
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -261,7 +265,7 @@
     
       <li class="wy-breadcrumbs-aside">
         
-            
+          
             <a href="_sources/lcls-twincat-motion_Library_source.rst.txt" rel="nofollow"> View page source</a>
           
         
@@ -4850,6 +4854,7 @@ END_FUNCTION_BLOCK
     <span class="n">rtExec</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
     <span class="n">ftExec</span><span class="p">:</span> <span class="n">F_TRIG</span><span class="p">;</span>
     <span class="n">nHomeStateMachine</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="n">IDLE</span><span class="p">;</span>
+    <span class="n">nStateAfterStop</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
     <span class="n">nMoves</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
     <span class="n">bFirstDirection</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bAtHome</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -4865,6 +4870,7 @@ END_FUNCTION_BLOCK
     <span class="n">FINAL_MOVE</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">4</span><span class="p">;</span>
     <span class="n">FINAL_SETPOS</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">5</span><span class="p">;</span>
     <span class="n">ERROR</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">6</span><span class="p">;</span>
+    <span class="n">WAIT_STOP</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">7</span><span class="p">;</span>
 
     <span class="p">(</span><span class="o">*</span>
         <span class="n">This</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">simpler</span> <span class="n">way</span> <span class="n">of</span> <span class="n">disabling</span> <span class="n">the</span> <span class="n">soft</span> <span class="n">limits</span> <span class="n">that</span> <span class="n">ends</span> <span class="n">up</span> <span class="n">being</span> <span class="n">really</span> <span class="n">obvious</span> <span class="k">if</span> <span class="n">something</span> <span class="n">has</span> <span class="n">gone</span> <span class="n">wrong</span><span class="o">.</span>
@@ -4957,23 +4963,24 @@ END_FUNCTION_BLOCK
             <span class="n">CASE</span> <span class="n">nMoves</span> <span class="n">OF</span>
                 <span class="mi">0</span><span class="p">:</span>
                     <span class="n">IF</span> <span class="n">bFirstDirection</span> <span class="n">THEN</span>
-                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_FWD</span><span class="p">;</span>
+                        <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">CHECK_FWD</span><span class="p">;</span>
                     <span class="n">ELSE</span>
-                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_BWD</span><span class="p">;</span>
+                        <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">CHECK_BWD</span><span class="p">;</span>
                     <span class="n">END_IF</span>
                 <span class="mi">1</span><span class="p">:</span>
                     <span class="n">IF</span> <span class="n">NOT</span> <span class="n">bFirstDirection</span> <span class="n">THEN</span>
-                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_FWD</span><span class="p">;</span>
+                        <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">CHECK_FWD</span><span class="p">;</span>
                     <span class="n">ELSE</span>
-                        <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">CHECK_BWD</span><span class="p">;</span>
+                        <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">CHECK_BWD</span><span class="p">;</span>
                     <span class="n">END_IF</span>
                 <span class="n">ELSE</span>
-                    <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
+                    <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">ERROR</span><span class="p">;</span>
             <span class="n">END_CASE</span>
             <span class="n">nMoves</span> <span class="o">:=</span> <span class="n">nMoves</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
             <span class="n">IF</span> <span class="n">bAtHome</span> <span class="n">THEN</span>
-                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">FINAL_MOVE</span><span class="p">;</span>
+                <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">FINAL_MOVE</span><span class="p">;</span>
             <span class="n">END_IF</span>
+            <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">WAIT_STOP</span><span class="p">;</span>
         <span class="o">//</span> <span class="n">Move</span> <span class="n">forward</span> <span class="n">until</span> <span class="n">we</span> <span class="n">find</span> <span class="n">the</span> <span class="n">home</span> <span class="n">signal</span> <span class="ow">or</span> <span class="n">reach</span> <span class="n">end</span> <span class="n">of</span> <span class="n">travel</span>
         <span class="n">CHECK_FWD</span><span class="p">:</span>
             <span class="n">fbSetPos</span><span class="p">(</span>
@@ -5052,7 +5059,8 @@ END_FUNCTION_BLOCK
                 <span class="n">fbSetPos</span><span class="p">(</span>
                     <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
                     <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
-                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">FINAL_SETPOS</span><span class="p">;</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">WAIT_STOP</span><span class="p">;</span>
+                <span class="n">nStateAfterStop</span> <span class="o">:=</span> <span class="n">FINAL_SETPOS</span><span class="p">;</span>
             <span class="n">END_IF</span>
         <span class="n">FINAL_SETPOS</span><span class="p">:</span>
             <span class="n">fbSetPos</span><span class="p">(</span>
@@ -5073,6 +5081,10 @@ END_FUNCTION_BLOCK
                 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Homing interrupted&#39;</span><span class="p">;</span>
             <span class="n">ELSE</span>
                 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Homing failure&#39;</span><span class="p">;</span>
+            <span class="n">END_IF</span>
+        <span class="n">WAIT_STOP</span><span class="p">:</span>
+            <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">NotMoving</span> <span class="n">THEN</span>
+                <span class="n">nHomeStateMachine</span> <span class="o">:=</span> <span class="n">nStateAfterStop</span><span class="p">;</span>
             <span class="n">END_IF</span>
     <span class="n">END_CASE</span>
 <span class="n">END_IF</span>
@@ -7942,35 +7954,28 @@ END_ACTION
            
           </div>
           <footer>
-  
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-      
-        <a href="lcls-twincat-motion_Library_epics.html" class="btn btn-neutral float-left" title="Data Types" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+        <a href="lcls-twincat-motion_Library_epics.html" class="btn btn-neutral float-left" title="Data Types" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        
-        &copy; Copyright 2020, SLAC National Accelerator Laboratory
+        &#169; Copyright 2021, SLAC National Accelerator Laboratory.
 
     </p>
   </div>
     
     
     
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
-
         </div>
       </div>
 
