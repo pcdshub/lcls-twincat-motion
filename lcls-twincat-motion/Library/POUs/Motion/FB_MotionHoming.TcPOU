@@ -20,6 +20,7 @@ VAR
     rtExec: R_TRIG;
     ftExec: F_TRIG;
     nHomeStateMachine: INT := IDLE;
+    nStateAfterStop: INT;
     nMoves: INT;
     bFirstDirection: BOOL;
     bAtHome: BOOL;
@@ -35,6 +36,7 @@ VAR CONSTANT
     FINAL_MOVE: INT := 4;
     FINAL_SETPOS: INT := 5;
     ERROR: INT := 6;
+    WAIT_STOP: INT := 7;
 
     (*
         This is a simpler way of disabling the soft limits that ends up being really obvious if something has gone wrong.
@@ -129,23 +131,24 @@ IF bMove THEN
             CASE nMoves OF
                 0:
                     IF bFirstDirection THEN
-                        nHomeStateMachine := CHECK_FWD;
+                        nStateAfterStop := CHECK_FWD;
                     ELSE
-                        nHomeStateMachine := CHECK_BWD;
+                        nStateAfterStop := CHECK_BWD;
                     END_IF
                 1:
                     IF NOT bFirstDirection THEN
-                        nHomeStateMachine := CHECK_FWD;
+                        nStateAfterStop := CHECK_FWD;
                     ELSE
-                        nHomeStateMachine := CHECK_BWD;
+                        nStateAfterStop := CHECK_BWD;
                     END_IF
                 ELSE
-                    nHomeStateMachine := ERROR;
+                    nStateAfterStop := ERROR;
             END_CASE
             nMoves := nMoves + 1;
             IF bAtHome THEN
-                nHomeStateMachine := FINAL_MOVE;
+                nStateAfterStop := FINAL_MOVE;
             END_IF
+            nHomeStateMachine := WAIT_STOP;
         // Move forward until we find the home signal or reach end of travel
         CHECK_FWD:
             fbSetPos(
@@ -224,7 +227,8 @@ IF bMove THEN
                 fbSetPos(
                     Axis:=stMotionStage.Axis,
                     Execute:=FALSE);
-                nHomeStateMachine := FINAL_SETPOS;
+                nHomeStateMachine := WAIT_STOP;
+                nStateAfterStop := FINAL_SETPOS;
             END_IF
         FINAL_SETPOS:
             fbSetPos(
@@ -245,6 +249,10 @@ IF bMove THEN
                 stMotionStage.sCustomErrorMessage := 'Homing interrupted';
             ELSE
                 stMotionStage.sCustomErrorMessage := 'Homing failure';
+            END_IF
+        WAIT_STOP:
+            IF stMotionStage.Axis.Status.NotMoving THEN
+                nHomeStateMachine := nStateAfterStop;
             END_IF
     END_CASE
 END_IF]]></ST>
