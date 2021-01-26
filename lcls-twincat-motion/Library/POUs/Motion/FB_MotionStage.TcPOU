@@ -44,16 +44,18 @@ stMotionStage.Axis.ReadStatus();
 // Used for testing or to circumvent motor record issues
 rtMoveCmdShortcut(CLK:=stMotionStage.bMoveCmd);
 rtHomeCmdShortcut(CLK:=stMotionStage.bHomeCmd);
+// Execute on rising edge
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
-    stMotionStage.bMoveCmd := FALSE;
-    stMotionStage.bHomeCmd := FALSE;
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
-    stMotionStage.bMoveCmd := FALSE;
-    stMotionStage.bHomeCmd := FALSE;
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := ENUM_EpicsMotorCmd.HOME;
+END_IF
+// Always reset, even if not rising edge, so command can be issued again
+IF stMotionStage.bMoveCmd OR stMotionStage.bHomeCmd THEN
+    stMotionStage.bMoveCmd := FALSE;
+    stMotionStage.bHomeCmd := FALSE;
 END_IF
 
 // Automatically fill the correct nCmdData for homing
