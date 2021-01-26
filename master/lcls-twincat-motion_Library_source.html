@@ -5511,16 +5511,18 @@ END_ACTION
 <span class="o">//</span> <span class="n">Used</span> <span class="k">for</span> <span class="n">testing</span> <span class="ow">or</span> <span class="n">to</span> <span class="n">circumvent</span> <span class="n">motor</span> <span class="n">record</span> <span class="n">issues</span>
 <span class="n">rtMoveCmdShortcut</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span><span class="p">);</span>
 <span class="n">rtHomeCmdShortcut</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span><span class="p">);</span>
+<span class="o">//</span> <span class="n">Execute</span> <span class="n">on</span> <span class="n">rising</span> <span class="n">edge</span>
 <span class="n">IF</span> <span class="n">rtMoveCmdShortcut</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">THEN</span>
-    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">:=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">;</span>
 <span class="n">ELSIF</span> <span class="n">rtHomeCmdShortcut</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">THEN</span>
-    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">:=</span> <span class="n">ENUM_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="o">//</span> <span class="n">Always</span> <span class="n">reset</span><span class="p">,</span> <span class="n">even</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">rising</span> <span class="n">edge</span><span class="p">,</span> <span class="n">so</span> <span class="n">command</span> <span class="n">can</span> <span class="n">be</span> <span class="n">issued</span> <span class="n">again</span>
+<span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="n">OR</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomeCmd</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
 <span class="o">//</span> <span class="n">Automatically</span> <span class="n">fill</span> <span class="n">the</span> <span class="n">correct</span> <span class="n">nCmdData</span> <span class="k">for</span> <span class="n">homing</span>
