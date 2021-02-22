@@ -86,6 +86,8 @@ IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     stInvalidState.nRequestAssertionID := nUnknownAssertionID;
     stUnknownState.nRequestAssertionID := nUnknownAssertionID;
     rtTransReq(CLK:=FALSE);
+    bTransitionAuthorized := FALSE;
+    bArbiterTimeout := FALSE;
 END_IF
 
 // Request transition on rising edge
