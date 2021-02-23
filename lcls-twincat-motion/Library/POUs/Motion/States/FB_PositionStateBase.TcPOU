@@ -157,15 +157,16 @@ END_IF
 // Special move handling for error/enable state
 IF bError OR NOT bEnable THEN
     bInnerExec := FALSE;
-// Reset inner block this cycle if we were already moving but want a new move
-ELSIF bInnerExec AND bNewGoal THEN
-    bInnerExec := FALSE;
-    bInnerReset := TRUE;
-// If we hit this branch, we're starting a new move
 ELSIF bNewGoal THEN
-    bInnerExec := TRUE;
-    bInnerReset := FALSE;
-    bNewGoal := FALSE;
+    IF fbStateMove.bBusy THEN
+        // Stop previous move if we were already moving but want a new move
+        bInnerExec := FALSE;
+    ELSE
+        // If we hit this branch, we're ready to start a new move
+        bInnerExec := TRUE;
+        bInnerReset := FALSE;
+        bNewGoal := FALSE;
+    END_IF
 END_IF
 
 // Pick the correct goal structure or Unknown
