@@ -114,9 +114,12 @@ END_CASE
 // Update all enable booleans
 fbSetEnables(stMotionStage:=stMotionStage);
 
-// Do not start the move until we have power and the safety system says it is OK
-IF bMoveCmd THEN
-    bExecute := stMotionStage.bExecute AND stMotionStage.bAllEnable AND stMotionStage.bSafetyReady AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+IF stMotionStage.stAxisStatus.bBusy AND NOT bExecute THEN
+    // Wait for the previous move to end
+    bExecute := FALSE;
+ELSIF bMoveCmd THEN
+    // Do not start the move until we have power and the safety system says it is OK
+    bExecute := stMotionStage.bExecute AND stMotionStage.bAllEnable AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
 ELSE
     bExecute := stMotionStage.bExecute;
 END_IF
