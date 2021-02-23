@@ -5460,9 +5460,15 @@ FB_MotionStage
             END_IF
     END_CASE
 
-    // Do not start the move until we have power and the safety system says it is OK
-    IF bMoveCmd THEN
-        bExecute := stMotionStage.bExecute AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
+    // Update all enable booleans
+    fbSetEnables(stMotionStage:=stMotionStage);
+
+    IF stMotionStage.stAxisStatus.bBusy AND NOT bExecute THEN
+        // Wait for the previous move to end
+        bExecute := FALSE;
+    ELSIF bMoveCmd THEN
+        // Do not start the move until we have power and the safety system says it is OK
+        bExecute := stMotionStage.bExecute AND stMotionStage.bAllEnable AND stMotionStage.bEnableDone AND stMotionStage.bSafetyReady;
     ELSE
         bExecute := stMotionStage.bExecute;
     END_IF
@@ -5471,11 +5477,6 @@ FB_MotionStage
         // Reset local warnings if things are going well
         stMotionStage.sErrorMessage := '';
     END_IF
-
-
-
-    // Update all enable booleans
-    fbSetEnables(stMotionStage:=stMotionStage);
 
     // No moves allowed in error states
     IF stMotionStage.bError THEN
@@ -6015,15 +6016,16 @@ FB_PositionStateBase
     // Special move handling for error/enable state
     IF bError OR NOT bEnable THEN
         bInnerExec := FALSE;
-    // Reset inner block this cycle if we were already moving but want a new move
-    ELSIF bInnerExec AND bNewGoal THEN
-        bInnerExec := FALSE;
-        bInnerReset := TRUE;
-    // If we hit this branch, we're starting a new move
     ELSIF bNewGoal THEN
-        bInnerExec := TRUE;
-        bInnerReset := FALSE;
-        bNewGoal := FALSE;
+        IF fbStateMove.bBusy THEN
+            // Stop previous move if we were already moving but want a new move
+            bInnerExec := FALSE;
+        ELSE
+            // If we hit this branch, we're ready to start a new move
+            bInnerExec := TRUE;
+            bInnerReset := FALSE;
+            bNewGoal := FALSE;
+        END_IF
     END_IF
 
     // Pick the correct goal structure or Unknown
@@ -6186,7 +6188,7 @@ FB_PositionStateBase_WithPMPS_Test
     fbStatePMPS(
         stMotionStage:=stMotionStage,
         arrStates:=arrStates,
-        bRequestTransition:=bBusy,
+        bRequestTransition:=setState <> 0,
         setState:=setState,
         getState:=getState,
         stTransitionBeam:=stTransitionBeam,
@@ -6960,6 +6962,9 @@ FB_PositionStatePMPS_Base
         bInTransition := FALSE;
         stInvalidState.nRequestAssertionID := nUnknownAssertionID;
         stUnknownState.nRequestAssertionID := nUnknownAssertionID;
+        rtTransReq(CLK:=FALSE);
+        bTransitionAuthorized := FALSE;
+        bArbiterTimeout := FALSE;
     END_IF
 
     // Request transition on rising edge

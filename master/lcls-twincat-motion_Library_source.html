@@ -5578,9 +5578,15 @@ END_ACTION
         <span class="n">END_IF</span>
 <span class="n">END_CASE</span>
 
-<span class="o">//</span> <span class="n">Do</span> <span class="ow">not</span> <span class="n">start</span> <span class="n">the</span> <span class="n">move</span> <span class="n">until</span> <span class="n">we</span> <span class="n">have</span> <span class="n">power</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">safety</span> <span class="n">system</span> <span class="n">says</span> <span class="n">it</span> <span class="ow">is</span> <span class="n">OK</span>
-<span class="n">IF</span> <span class="n">bMoveCmd</span> <span class="n">THEN</span>
-    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnableDone</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
+<span class="o">//</span> <span class="n">Update</span> <span class="nb">all</span> <span class="n">enable</span> <span class="n">booleans</span>
+<span class="n">fbSetEnables</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bExecute</span> <span class="n">THEN</span>
+    <span class="o">//</span> <span class="n">Wait</span> <span class="k">for</span> <span class="n">the</span> <span class="n">previous</span> <span class="n">move</span> <span class="n">to</span> <span class="n">end</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">ELSIF</span> <span class="n">bMoveCmd</span> <span class="n">THEN</span>
+    <span class="o">//</span> <span class="n">Do</span> <span class="ow">not</span> <span class="n">start</span> <span class="n">the</span> <span class="n">move</span> <span class="n">until</span> <span class="n">we</span> <span class="n">have</span> <span class="n">power</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">safety</span> <span class="n">system</span> <span class="n">says</span> <span class="n">it</span> <span class="ow">is</span> <span class="n">OK</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnableDone</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
 <span class="n">ELSE</span>
     <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">;</span>
 <span class="n">END_IF</span>
@@ -5589,11 +5595,6 @@ END_ACTION
     <span class="o">//</span> <span class="n">Reset</span> <span class="n">local</span> <span class="n">warnings</span> <span class="k">if</span> <span class="n">things</span> <span class="n">are</span> <span class="n">going</span> <span class="n">well</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
 <span class="n">END_IF</span>
-
-
-
-<span class="o">//</span> <span class="n">Update</span> <span class="nb">all</span> <span class="n">enable</span> <span class="n">booleans</span>
-<span class="n">fbSetEnables</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">);</span>
 
 <span class="o">//</span> <span class="n">No</span> <span class="n">moves</span> <span class="n">allowed</span> <span class="ow">in</span> <span class="n">error</span> <span class="n">states</span>
 <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
@@ -6123,15 +6124,16 @@ END_ACTION
 <span class="o">//</span> <span class="n">Special</span> <span class="n">move</span> <span class="n">handling</span> <span class="k">for</span> <span class="n">error</span><span class="o">/</span><span class="n">enable</span> <span class="n">state</span>
 <span class="n">IF</span> <span class="n">bError</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">bEnable</span> <span class="n">THEN</span>
     <span class="n">bInnerExec</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-<span class="o">//</span> <span class="n">Reset</span> <span class="n">inner</span> <span class="n">block</span> <span class="n">this</span> <span class="n">cycle</span> <span class="k">if</span> <span class="n">we</span> <span class="n">were</span> <span class="n">already</span> <span class="n">moving</span> <span class="n">but</span> <span class="n">want</span> <span class="n">a</span> <span class="n">new</span> <span class="n">move</span>
-<span class="n">ELSIF</span> <span class="n">bInnerExec</span> <span class="n">AND</span> <span class="n">bNewGoal</span> <span class="n">THEN</span>
-    <span class="n">bInnerExec</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-    <span class="n">bInnerReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-<span class="o">//</span> <span class="n">If</span> <span class="n">we</span> <span class="n">hit</span> <span class="n">this</span> <span class="n">branch</span><span class="p">,</span> <span class="n">we</span><span class="s1">&#39;re starting a new move</span>
 <span class="n">ELSIF</span> <span class="n">bNewGoal</span> <span class="n">THEN</span>
-    <span class="n">bInnerExec</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
-    <span class="n">bInnerReset</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-    <span class="n">bNewGoal</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">IF</span> <span class="n">fbStateMove</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+        <span class="o">//</span> <span class="n">Stop</span> <span class="n">previous</span> <span class="n">move</span> <span class="k">if</span> <span class="n">we</span> <span class="n">were</span> <span class="n">already</span> <span class="n">moving</span> <span class="n">but</span> <span class="n">want</span> <span class="n">a</span> <span class="n">new</span> <span class="n">move</span>
+        <span class="n">bInnerExec</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">ELSE</span>
+        <span class="o">//</span> <span class="n">If</span> <span class="n">we</span> <span class="n">hit</span> <span class="n">this</span> <span class="n">branch</span><span class="p">,</span> <span class="n">we</span><span class="s1">&#39;re ready to start a new move</span>
+        <span class="n">bInnerExec</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">bInnerReset</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+        <span class="n">bNewGoal</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">END_IF</span>
 <span class="n">END_IF</span>
 
 <span class="o">//</span> <span class="n">Pick</span> <span class="n">the</span> <span class="n">correct</span> <span class="n">goal</span> <span class="n">structure</span> <span class="ow">or</span> <span class="n">Unknown</span>
@@ -6290,7 +6292,7 @@ END_ACTION
 <span class="n">fbStatePMPS</span><span class="p">(</span>
     <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
     <span class="n">arrStates</span><span class="o">:=</span><span class="n">arrStates</span><span class="p">,</span>
-    <span class="n">bRequestTransition</span><span class="o">:=</span><span class="n">bBusy</span><span class="p">,</span>
+    <span class="n">bRequestTransition</span><span class="o">:=</span><span class="n">setState</span> <span class="o">&lt;&gt;</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">setState</span><span class="o">:=</span><span class="n">setState</span><span class="p">,</span>
     <span class="n">getState</span><span class="o">:=</span><span class="n">getState</span><span class="p">,</span>
     <span class="n">stTransitionBeam</span><span class="o">:=</span><span class="n">stTransitionBeam</span><span class="p">,</span>
@@ -7046,6 +7048,9 @@ END_ACTION
     <span class="n">bInTransition</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
     <span class="n">stInvalidState</span><span class="o">.</span><span class="n">nRequestAssertionID</span> <span class="o">:=</span> <span class="n">nUnknownAssertionID</span><span class="p">;</span>
     <span class="n">stUnknownState</span><span class="o">.</span><span class="n">nRequestAssertionID</span> <span class="o">:=</span> <span class="n">nUnknownAssertionID</span><span class="p">;</span>
+    <span class="n">rtTransReq</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+    <span class="n">bTransitionAuthorized</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">bArbiterTimeout</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
 <span class="o">//</span> <span class="n">Request</span> <span class="n">transition</span> <span class="n">on</span> <span class="n">rising</span> <span class="n">edge</span>
