@@ -55,7 +55,7 @@ fbMotionStage(stMotionStage := stMotionStage);
 | `FB_MotionStageSim` | function block | Shortcut to getting a simulated axis running. |
 | `FB_MotionRequest` | function block | Moves an axis handled by `FB_MotionStage` to a specific position. |
 | `FB_PositionStateMove` | function block | Moves an axis to a specific position state. |
-| `FB_PositionStateManager` | function block | Moves an axis to any one of 15 preset position states. Intended for EPICS use. |
+| `FB_PositionStateManager` | function block | Moves an axis to any one of `MOTION_GVL.MAX_STATES` (= currently 9) preset position states. Intended for EPICS use. |
 | `FB_EpicsInOut` | function block | Example usage of `FB_PositionStateManager` for a simple in/out device. |
 | `FB_PositionStateLock` | function block | Allows states to be immutable if configured as such |
 | `ENUM_EpicsHomeCmd ` | enum | Options for axis homing through the motor record |
