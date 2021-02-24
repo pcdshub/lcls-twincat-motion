@@ -90,7 +90,7 @@ CASE stMotionStage.nEnableMode OF
                 stMotionStage.bEnable := stMotionStage.bSafetyReady;
             ELSIF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
-                    stMotionStage.bEnable := stMotionStage.bSafetyReady;
+                    stMotionStage.bEnable S= stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past positive limit.';
@@ -98,7 +98,7 @@ CASE stMotionStage.nEnableMode OF
                 END_IF
             ELSIF bNegGoal THEN
                 IF stMotionStage.bAllBackwardEnable THEN
-                    stMotionStage.bEnable := stMotionStage.bSafetyReady;
+                    stMotionStage.bEnable S= stMotionStage.bSafetyReady;
                 ELSIF NOT stMotionStage.bError THEN
                     // Not an error, just a warning
                     stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
