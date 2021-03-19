@@ -48,7 +48,20 @@ END_FOR]]></ST>
     </Action>
     <Action Name="HandleBPTM" Id="{15e95ede-ce74-498f-962a-8707e856078c}">
       <Implementation>
-        <ST><![CDATA[bptm(fbArbiter:=fbArbiter,
+        <ST><![CDATA[(*
+  Handle finishing the bptm late if timed out
+  bptm needs a rising edge of bTransDone after authorizing transition
+  If we fall into this block, bTransDone would otherwise be stuck at TRUE forever
+  so the BPTM would never see a rising edge and therefore stay stuck
+  We set to FALSE here to reset the BPTM, then gets set to TRUE again if really done.
+*)
+IF bLateFinish AND NOT bHandledLateFinish AND bTransitionAuthorized THEN
+    bTransDone := FALSE;
+    bHandledLateFinish := TRUE;
+END_IF
+
+// Just normal bptm call
+bptm(fbArbiter:=fbArbiter,
      i_TransitionAssertionID:=nTransitionAssertionID,
      i_stTransitionAssertion:=stTransitionBeam,
      i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
@@ -93,8 +106,9 @@ ffZeroRate(
     io_fbFFHWO := fbFFHWO);
 
 // Trip the beam for BPTM timeouts if we want to move
+// Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
 ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
-ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState;
+ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState OR (bptm.bDone AND NOT bptm.bError);
 ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
 ffBPTMTimeoutAndMove(
     i_DevName := stMotionStage.sName,

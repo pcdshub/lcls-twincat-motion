@@ -43,6 +43,7 @@ VAR
     bBPTMDone: BOOL;
     rtBPTMDone: R_TRIG;
     ftMotorExec: F_TRIG;
+    rtTransDone: R_TRIG;
     stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
     fUpperBound: LREAL;
@@ -56,6 +57,8 @@ VAR
     bFwdOk: BOOL;
     bBwdOk: BOOL;
     tonArbiter: TON;
+    bLateFinish: BOOL;
+    bHandledLateFinish: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[// This is meant to be subclassed. The parent class body is in the Exec action.]]></ST>
@@ -88,6 +91,8 @@ IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     rtTransReq(CLK:=FALSE);
     bTransitionAuthorized := FALSE;
     bArbiterTimeout := FALSE;
+    bLateFinish := FALSE;
+    bHandledLateFinish := FALSE;
 END_IF
 
 // Request transition on rising edge
@@ -97,9 +102,16 @@ IF rtTransReq.Q THEN
     stStateReq := GetStateStruct(setState);
     bInTransition := TRUE;
     bTransDone := FALSE;
+    bLateFinish := FALSE;
+    bHandledLateFinish := FALSE;
 ELSE
     bTransDone := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stStateReq) AND NOT stMotionStage.bBusy;
 END_IF
+
+// Mark late finish if bTransDone -> true AFTER bArbiterTimeout has gone true, but BEFORE the bptm is done
+// This means that we finished the move so fast that the bptm needs to be unstuck via toggling bTransDone
+rtTransDone(CLK:=bTransDone);
+bLateFinish S= rtTransDone.Q AND bArbiterTimeout AND NOT bBPTMDone;
 
 IF bArbiterEnabled THEN
     // Handles getting the request to the arbiter and back
