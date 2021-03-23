@@ -266,6 +266,9 @@ stMotionStage.stAxisStatus.bHomed := stMotionStage.bHomed;
 stMotionStage.stAxisStatus.bExecute := bExecute;
 stMotionStage.stAxisStatus.nCommand := 3; // If this is not 3, the IOC stops updating positions during homing
 
+// Fill in auxiliary status info
+stMotionStage.fPosDiff := stMotionStage.Axis.NcToPlc.PosDiff;
+
 // Reset everything when bReset is flagged
 IF stMotionStage.bReset THEN
     stMotionStage.bEnable := FALSE;

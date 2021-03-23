@@ -360,6 +360,15 @@ STRUCT
 
     // Misc axis status information for the IOC
     stAxisStatus: DUT_AxisStatus_v0_01;
+
+    (* Other status information for users of the IOC *)
+    // Position lag difference
+    {attribute 'pytmc' := '
+        pv: PLC:fPosDiff
+        io: i
+        field: DESC Position lag difference
+    '}
+    fPosDiff: LREAL;
 END_STRUCT
 END_TYPE
 ]]></Declaration>
