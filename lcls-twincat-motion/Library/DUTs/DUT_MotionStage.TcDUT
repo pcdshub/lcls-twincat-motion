@@ -200,13 +200,13 @@ STRUCT
     bExecute: BOOL;
     // Used by the IOC to disable an axis
     {attribute 'pytmc' := '
-        pv: PLC:bDisablePower
+        pv: PLC:bUserEnable
         io: io
-        field: ZNAM ENABLE
-        field: ONAM DISABLE
+        field: ZNAM DISABLE
+        field: ONAM ENABLE
         field: DESC Used to disable power entirely for an axis
     '}
-    bDisablePower: BOOL;
+    bUserEnable: BOOL := 1;
 
     (* Shortcut Commands *)
     // Start a move to fPosition with fVelocity
