@@ -683,6 +683,15 @@
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Used</span> <span class="n">internally</span> <span class="ow">and</span> <span class="n">by</span> <span class="n">the</span> <span class="n">IOC</span> <span class="n">to</span> <span class="n">start</span> <span class="ow">or</span> <span class="n">stop</span>
     <span class="s1">&#39;}</span>
     <span class="n">bExecute</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">Used</span> <span class="n">by</span> <span class="n">the</span> <span class="n">IOC</span> <span class="n">to</span> <span class="n">disable</span> <span class="n">an</span> <span class="n">axis</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bUserEnable</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">DISABLE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">ENABLE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Used</span> <span class="n">to</span> <span class="n">disable</span> <span class="n">power</span> <span class="n">entirely</span> <span class="k">for</span> <span class="n">an</span> <span class="n">axis</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bUserEnable</span><span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
 
     <span class="p">(</span><span class="o">*</span> <span class="n">Shortcut</span> <span class="n">Commands</span> <span class="o">*</span><span class="p">)</span>
     <span class="o">//</span> <span class="n">Start</span> <span class="n">a</span> <span class="n">move</span> <span class="n">to</span> <span class="n">fPosition</span> <span class="k">with</span> <span class="n">fVelocity</span>
@@ -765,8 +774,8 @@
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bEnableDone</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">FALSE</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">TRUE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">FALSE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">TRUE</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">done</span> <span class="n">enabling</span>
     <span class="s1">&#39;}</span>
     <span class="n">bEnableDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -774,8 +783,8 @@
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bBusy</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">FALSE</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">TRUE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">FALSE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">TRUE</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">middle</span> <span class="n">of</span> <span class="n">a</span> <span class="n">command</span>
     <span class="s1">&#39;}</span>
     <span class="n">bBusy</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -783,8 +792,8 @@
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bDone</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">FALSE</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">TRUE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">FALSE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">TRUE</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">command</span> <span class="n">finished</span> <span class="n">successfully</span>
     <span class="s1">&#39;}</span>
     <span class="n">bDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -799,8 +808,8 @@
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bSafetyReady</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">FALSE</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">TRUE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">FALSE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">TRUE</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">safe</span> <span class="n">to</span> <span class="n">start</span> <span class="n">a</span> <span class="n">move</span>
     <span class="s1">&#39;}</span>
     <span class="n">bSafetyReady</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -808,8 +817,8 @@
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">bError</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">FALSE</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">TRUE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">FALSE</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">TRUE</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">we</span><span class="s1">&#39;re in an error state</span>
     <span class="s1">&#39;}</span>
     <span class="n">bError</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -836,6 +845,15 @@
 
     <span class="o">//</span> <span class="n">Misc</span> <span class="n">axis</span> <span class="n">status</span> <span class="n">information</span> <span class="k">for</span> <span class="n">the</span> <span class="n">IOC</span>
     <span class="n">stAxisStatus</span><span class="p">:</span> <span class="n">DUT_AxisStatus_v0_01</span><span class="p">;</span>
+
+    <span class="p">(</span><span class="o">*</span> <span class="n">Other</span> <span class="n">status</span> <span class="n">information</span> <span class="k">for</span> <span class="n">users</span> <span class="n">of</span> <span class="n">the</span> <span class="n">IOC</span> <span class="o">*</span><span class="p">)</span>
+    <span class="o">//</span> <span class="n">Position</span> <span class="n">lag</span> <span class="n">difference</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">fPosDiff</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Position</span> <span class="n">lag</span> <span class="n">difference</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fPosDiff</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
 <span class="n">END_STRUCT</span>
 <span class="n">END_TYPE</span>
 </pre></div>
@@ -2777,6 +2795,8 @@
     <span class="mi">16</span><span class="c1">#4357: msg:=&#39;Negative limit hit&#39;;</span>
     <span class="mi">16</span><span class="c1">#4358: msg:=&#39;Positive limit hit&#39;;</span>
     <span class="mi">16</span><span class="c1">#4550: msg:=&#39;Stall: position lag monitoring error&#39;;</span>
+    <span class="mi">16</span><span class="c1">#4650: msg:=&#39;Drive hardware not ready to operate&#39;;</span>
+    <span class="mi">16</span><span class="c1">#4655: msg:=&#39;Invalid IO data&#39;;</span>
     <span class="mi">16</span><span class="c1">#4467: msg:=&#39;Encoder error: invalid actual position data&#39;;</span>
     <span class="mi">16</span><span class="c1">#4B07: msg:=&#39;Timeout axis function block after 6 seconds&#39;;</span>
     <span class="mi">16</span><span class="c1">#4FFF: msg:=&#39;Unknown NC error (not in manual)&#39;;</span>
@@ -5641,6 +5661,11 @@ END_ACTION
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">bError</span><span class="p">;</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="n">fbMotionHome</span><span class="o">.</span><span class="n">nErrorId</span><span class="p">;</span>
 <span class="n">END_IF</span>
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bUserEnable</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Move requested, but user enable is disabled!&#39;</span><span class="p">;</span>
+<span class="n">END_IF</span>
 
 <span class="o">//</span> <span class="n">Set</span> <span class="n">the</span> <span class="n">error</span> <span class="n">message</span> <span class="k">if</span> <span class="n">we</span> <span class="n">have</span> <span class="n">one</span>
 <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
@@ -5732,6 +5757,9 @@ END_ACTION
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bHomed</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHomed</span><span class="p">;</span>
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">bExecute</span><span class="p">;</span>
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span> <span class="o">//</span> <span class="n">If</span> <span class="n">this</span> <span class="ow">is</span> <span class="ow">not</span> <span class="mi">3</span><span class="p">,</span> <span class="n">the</span> <span class="n">IOC</span> <span class="n">stops</span> <span class="n">updating</span> <span class="n">positions</span> <span class="n">during</span> <span class="n">homing</span>
+
+<span class="o">//</span> <span class="n">Fill</span> <span class="ow">in</span> <span class="n">auxiliary</span> <span class="n">status</span> <span class="n">info</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">fPosDiff</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">PosDiff</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">Reset</span> <span class="n">everything</span> <span class="n">when</span> <span class="n">bReset</span> <span class="ow">is</span> <span class="n">flagged</span>
 <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="n">THEN</span>
@@ -7402,6 +7430,7 @@ END_ACTION
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllBackwardEnable</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bLimitBackwardEnable</span> <span class="n">AND</span> <span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bGantryBackwardEnable</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bGantryAxis</span><span class="p">);</span>
 
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bHardwareEnable</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">R</span><span class="o">=</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bUserEnable</span><span class="p">;</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 </pre></div>
