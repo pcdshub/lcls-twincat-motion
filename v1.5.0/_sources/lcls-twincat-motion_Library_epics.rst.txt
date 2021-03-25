@@ -1,0 +1,1117 @@
+
+Data Types
+----------
+
+
+    
+DUT_MotionStage
+^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):PLC:bAllBackwardEnable_RBV
+      - bi
+      - Summary of axis permission to move backward
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bAllEnable_RBV
+      - bi
+      - Summary of axis permission to have power
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bAllForwardEnable_RBV
+      - bi
+      - Summary of axis permission to move forward
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bBrakeRelease_RBV
+      - bi
+      - TRUE if brake released
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bBusy_RBV
+      - bi
+      - TRUE if in the middle of a command
+      - | field: ONAM FALSE
+        | field: ZNAM TRUE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bDone_RBV
+      - bi
+      - TRUE if command finished successfully
+      - | field: ONAM FALSE
+        | field: ZNAM TRUE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bEnable
+      - bo
+      - Used internally to request enables
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bEnable_RBV
+      - bi
+      - Used internally to request enables
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bEnableDone_RBV
+      - bi
+      - TRUE if done enabling
+      - | field: ONAM FALSE
+        | field: ZNAM TRUE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bError_RBV
+      - bi
+      - TRUE if we
+      - | field: ONAM FALSE
+        | field: ZNAM TRUE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bExecute
+      - bo
+      - Used internally and by the IOC to start or stop
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bExecute_RBV
+      - bi
+      - Used internally and by the IOC to start or stop
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bGantryAxis_RBV
+      - bi
+      - TRUE if gantry EPS active
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bGantryBackwardEnable_RBV
+      - bi
+      - TRUE if gantry ok to move backward
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bGantryForwardEnable_RBV
+      - bi
+      - TRUE if gantry ok to move forward
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bHardwareEnable_RBV
+      - bi
+      - TRUE if STO not hit
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bHome_RBV
+      - bi
+      - TRUE if at homing switch
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bLimitBackwardEnable_RBV
+      - bi
+      - FALSE if reverse limit hit
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bLimitForwardEnable_RBV
+      - bi
+      - FALSE if forward limit hit
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bPowerSelf_RBV
+      - bi
+      - FALSE if axis is in PMPS
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):PLC:bReset
+      - bo
+      - Used internally to reset errors
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bReset_RBV
+      - bi
+      - Used internally to reset errors
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bSafetyReady_RBV
+      - bi
+      - TRUE if safe to start a move
+      - | field: ONAM FALSE
+        | field: ZNAM TRUE
+        | io: input
+
+
+    * - $(PREFIX):PLC:fAcceleration
+      - ao
+      - Used internally and by the IOC to set acceleration
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fAcceleration_RBV
+      - ai
+      - Used internally and by the IOC to set acceleration
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fDeceleration
+      - ao
+      - Used internally and by the IOC to set deceleration
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fDeceleration_RBV
+      - ai
+      - Used internally and by the IOC to set deceleration
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fHomePosition
+      - ao
+      - Used internally and by the IOC to pick home position
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fHomePosition_RBV
+      - ai
+      - Used internally and by the IOC to pick home position
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fPosition
+      - ao
+      - Used internally and by the IOC as the set position
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fPosition_RBV
+      - ai
+      - Used internally and by the IOC as the set position
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fVelocity
+      - ao
+      - Used internally and by the IOC to set velocity
+      - | io: output
+
+
+    * - $(PREFIX):PLC:fVelocity_RBV
+      - ai
+      - Used internally and by the IOC to set velocity
+      - | io: output
+
+
+    * - $(PREFIX):PLC:nBrakeMode_RBV
+      - mbbi
+      - Describes when the brake will be released
+      - | io: input
+
+
+    * - $(PREFIX):PLC:nCmdData
+      - longout
+      - Used internally and by the IOC to pass extra args
+      - | io: output
+
+
+    * - $(PREFIX):PLC:nCmdData_RBV
+      - longin
+      - Used internally and by the IOC to pass extra args
+      - | io: output
+
+
+    * - $(PREFIX):PLC:nCommand
+      - longout
+      - Used internally and by the IOC to pick move type
+      - | io: output
+
+
+    * - $(PREFIX):PLC:nCommand_RBV
+      - longin
+      - Used internally and by the IOC to pick move type
+      - | io: output
+
+
+    * - $(PREFIX):PLC:nEnableMode_RBV
+      - mbbi
+      - Describes when the axis will automatically get power
+      - | io: input
+
+
+    * - $(PREFIX):PLC:nEncoderCount_RBV
+      - longin
+      - Count from encoder hardware
+      - | io: input
+
+
+    * - $(PREFIX):PLC:nErrorId_RBV
+      - longin
+      - Error code if nonzero
+      - | io: input
+
+
+    * - $(PREFIX):PLC:nHomingMode_RBV
+      - mbbi
+      - Describes our homing strategy
+      - | io: input
+
+
+    * - $(PREFIX):PLC:nMotionAxisID_RBV
+      - longin
+      - Unique ID assigned to each axis in the NC
+      - | io: input
+
+
+    * - $(PREFIX):PLC:sErrorMessage_RBV
+      - waveform
+      - Message to identify the error state
+      - | io: input
+
+
+    * - $(PREFIX):PLC:sName_RBV
+      - waveform
+      - PLC program name
+      - | io: input
+
+
+ 
+DUT_PositionState
+^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):ACCL
+      - ao
+      - Acceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):ACCL_RBV
+      - ai
+      - Acceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):DCCL
+      - ao
+      - Deceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):DCCL_RBV
+      - ai
+      - Deceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):DELTA
+      - ao
+      - Max deviation from position at this state
+      - | field: DRVL 0.0
+        | io: output
+
+
+    * - $(PREFIX):DELTA_RBV
+      - ai
+      - Max deviation from position at this state
+      - | field: DRVL 0.0
+        | io: output
+
+
+    * - $(PREFIX):ENCODER_RBV
+      - longin
+      - Encoder count associated with this state
+      - | io: input
+
+
+    * - $(PREFIX):LOCKED_RBV
+      - bi
+      - TRUE if state is immutable
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):MOVE_OK_RBV
+      - bi
+      - TRUE if the move would be safe
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):NAME_RBV
+      - waveform
+      - Name of this position state
+      - | io: input
+
+
+    * - $(PREFIX):SETPOINT
+      - ao
+      - Axis position associated with this state
+      - | io: output
+
+
+    * - $(PREFIX):SETPOINT_RBV
+      - ai
+      - Axis position associated with this state
+      - | io: output
+
+
+    * - $(PREFIX):VALID_RBV
+      - bi
+      - TRUE if this is a real state
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):VELO
+      - ao
+      - Speed at which to move to this state
+      - | io: output
+
+
+    * - $(PREFIX):VELO_RBV
+      - ai
+      - Speed at which to move to this state
+      - | io: output
+
+
+                
+FB_PositionStateMove
+^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):ACCL
+      - ao
+      - Acceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):ACCL_RBV
+      - ai
+      - Acceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):AT_STATE_RBV
+      - bi
+      - $(SYMBOL).bAtState
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: input
+
+
+    * - $(PREFIX):BUSY_RBV
+      - bi
+      - $(SYMBOL).bBusy
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: input
+
+
+    * - $(PREFIX):DCCL
+      - ao
+      - Deceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):DCCL_RBV
+      - ai
+      - Deceleration to use for moves to this state
+      - | io: output
+
+
+    * - $(PREFIX):DELTA
+      - ao
+      - Max deviation from position at this state
+      - | field: DRVL 0.0
+        | io: output
+
+
+    * - $(PREFIX):DELTA_RBV
+      - ai
+      - Max deviation from position at this state
+      - | field: DRVL 0.0
+        | io: output
+
+
+    * - $(PREFIX):DONE_RBV
+      - bi
+      - $(SYMBOL).bDone
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: input
+
+
+    * - $(PREFIX):ENCODER_RBV
+      - longin
+      - Encoder count associated with this state
+      - | io: input
+
+
+    * - $(PREFIX):ERR_RBV
+      - bi
+      - $(SYMBOL).bError
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: input
+
+
+    * - $(PREFIX):ERRID_RBV
+      - longin
+      - $(SYMBOL).nErrorID
+      - | io: input
+
+
+    * - $(PREFIX):ERRMSG_RBV
+      - waveform
+      - $(SYMBOL).sErrorMessage
+      - | io: input
+
+
+    * - $(PREFIX):GO
+      - bo
+      - $(SYMBOL).bExecute
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: output
+
+
+    * - $(PREFIX):GO_RBV
+      - bi
+      - $(SYMBOL).bExecute
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: output
+
+
+    * - $(PREFIX):LOCKED_RBV
+      - bi
+      - TRUE if state is immutable
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):MOVE_OK_RBV
+      - bi
+      - TRUE if the move would be safe
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):NAME_RBV
+      - waveform
+      - Name of this position state
+      - | io: input
+
+
+    * - $(PREFIX):RESET
+      - bo
+      - $(SYMBOL).bReset
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: output
+
+
+    * - $(PREFIX):RESET_RBV
+      - bi
+      - $(SYMBOL).bReset
+      - | field: ONAM True
+        | field: ZNAM False
+        | io: output
+
+
+    * - $(PREFIX):SETPOINT
+      - ao
+      - Axis position associated with this state
+      - | io: output
+
+
+    * - $(PREFIX):SETPOINT_RBV
+      - ai
+      - Axis position associated with this state
+      - | io: output
+
+
+    * - $(PREFIX):VALID_RBV
+      - bi
+      - TRUE if this is a real state
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
+        | io: input
+
+
+    * - $(PREFIX):VELO
+      - ao
+      - Speed at which to move to this state
+      - | io: output
+
+
+    * - $(PREFIX):VELO_RBV
+      - ai
+      - Speed at which to move to this state
+      - | io: output
+
+
+       
+LCLS_General.FB_LogMessage
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):Reset
+      - bo
+      - Rising-edge reset of trip
+      - | io: output
+
+
+    * - $(PREFIX):Reset_RBV
+      - bi
+      - Rising-edge reset of trip
+      - | io: output
+
+
+    * - $(PREFIX):Tripped_RBV
+      - bi
+      - Log message FB tripped
+      - | io: input
+
+
+                                           
+PMPS.ST_BeamParams
+^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | io: input
+
+
+    * - $(PREFIX):PhotonEnergyRanges_RBV
+      - longin
+      - $(SYMBOL).neVRange
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):PulseEnergy_RBV
+      - ai
+      - This beam parameter is non-op for now.
+      - | field: EGU mJ
+        | io: input
+
+
+    * - $(PREFIX):Rate_RBV
+      - longin
+      - $(SYMBOL).nRate
+      - | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX):ST_RBV
+      - waveform
+      - $(SYMBOL).aStoppers
+      - | io: input
+
+
+    * - $(PREFIX):Transmission_RBV
+      - longin
+      - $(SYMBOL).nTran
+      - | field: EGU %
+        | io: input
+
+
+    * - $(PREFIX):Valid_RBV
+      - bi
+      - $(SYMBOL).xValid
+      - | io: input
+
+
+ 
+PMPS.ST_PMPS_Aperture
+^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):Height_RBV
+      - ai
+      - $(SYMBOL).Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):OK_RBV
+      - bi
+      - $(SYMBOL).xOK
+      - | io: input
+
+
+    * - $(PREFIX):Width_RBV
+      - ai
+      - $(SYMBOL).Width
+      - | field: EGU mm
+        | io: input
+
+
+   
+ST_PMPS_Aperture_IO
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):Height_RBV
+      - ai
+      - $(SYMBOL).Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):OK_RBV
+      - bi
+      - $(SYMBOL).xOK
+      - | io: input
+
+
+    * - $(PREFIX):Width_RBV
+      - ai
+      - $(SYMBOL).Width
+      - | field: EGU mm
+        | io: input
+
+
+                                                                      
+Database Records
+----------------
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX)AccumulatedFastFaults_RBV
+      - longin
+      - PMPS_GVL.AccumulatedFF
+      - | io: input
+
+
+    * - $(PREFIX)CurrentBP:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:PhotonEnergyRanges_RBV
+      - longin
+      - PMPS_GVL.stCurrentBeamParameters.neVRange
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:PulseEnergy_RBV
+      - ai
+      - This beam parameter is non-op for now.
+      - | archive: 1s monitor
+        | field: EGU mJ
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Rate_RBV
+      - longin
+      - PMPS_GVL.stCurrentBeamParameters.nRate
+      - | archive: 1s monitor
+        | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:ST_RBV
+      - waveform
+      - PMPS_GVL.stCurrentBeamParameters.aStoppers
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Transmission_RBV
+      - longin
+      - PMPS_GVL.stCurrentBeamParameters.nTran
+      - | archive: 1s monitor
+        | field: EGU %
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Valid_RBV
+      - bi
+      - PMPS_GVL.stCurrentBeamParameters.xValid
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)eVRangeCnst_RBV
+      - waveform
+      - Active eV Range constants
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)eVRangeHyst_RBV
+      - ai
+      - eV Range hystersis
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:PhotonEnergyRanges_RBV
+      - longin
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:PulseEnergy_RBV
+      - ai
+      - This beam parameter is non-op for now.
+      - | archive: 1s monitor
+        | field: EGU mJ
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Rate_RBV
+      - longin
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:ST_RBV
+      - waveform
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Transmission_RBV
+      - longin
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU %
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Valid_RBV
+      - bi
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)K:eVRangeCnst_RBV
+      - waveform
+      - eV Range constants
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)L:eVRangeCnst_RBV
+      - waveform
+      - eV Range constants
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)L:UND:FirstSegment_RBV
+      - longin
+      - PMPS_GVL.iLowBound_LUnd
+      - | io: input
+
+
+    * - $(PREFIX)L:UND:HiK_RBV
+      - ai
+      - PMPS_GVL.fHiK_LUnd
+      - | io: input
+
+
+    * - $(PREFIX)L:UND:LastSegment_RBV
+      - longin
+      - PMPS_GVL.iHighBound_LUnd
+      - | io: input
+
+
+    * - $(PREFIX)L:UND:LowK_RBV
+      - ai
+      - PMPS_GVL.fLowK_LUnd
+      - | io: input
+
+
+    * - $(PREFIX)LCLSGeneral:GlobalLogTrickleTrip_RBV
+      - bi
+      - Tripped by overall log count
+      - | io: input
+
+
+    * - $(PREFIX)LCLSGeneral:LogHost
+      - waveform
+      - The log host IP address
+      - | io: output
+
+
+    * - $(PREFIX)LCLSGeneral:LogHost_RBV
+      - waveform
+      - The log host IP address
+      - | io: output
+
+
+    * - $(PREFIX)LCLSGeneral:LogMessageCount_RBV
+      - longin
+      - Total log messages on the last cycle
+      - | io: input
+
+
+    * - $(PREFIX)LCLSGeneral:LogPort
+      - longout
+      - The log host UDP port
+      - | io: output
+
+
+    * - $(PREFIX)LCLSGeneral:LogPort_RBV
+      - longin
+      - The log host UDP port
+      - | io: output
+
+
+    * - $(PREFIX)RequestedBP:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:PhotonEnergyRanges_RBV
+      - longin
+      - PMPS_GVL.stRequestedBeamParameters.neVRange
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:PulseEnergy_RBV
+      - ai
+      - This beam parameter is non-op for now.
+      - | archive: 1s monitor
+        | field: EGU mJ
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Rate_RBV
+      - longin
+      - PMPS_GVL.stRequestedBeamParameters.nRate
+      - | archive: 1s monitor
+        | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:ST_RBV
+      - waveform
+      - PMPS_GVL.stRequestedBeamParameters.aStoppers
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Transmission_RBV
+      - longin
+      - PMPS_GVL.stRequestedBeamParameters.nTran
+      - | archive: 1s monitor
+        | field: EGU %
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Valid_RBV
+      - bi
+      - PMPS_GVL.stRequestedBeamParameters.xValid
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:PhotonEnergyRanges_RBV
+      - longin
+      - Safe beam constant
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:PulseEnergy_RBV
+      - ai
+      - This beam parameter is non-op for now.
+      - | archive: 1s monitor
+        | field: EGU mJ
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:Rate_RBV
+      - longin
+      - Safe beam constant
+      - | archive: 1s monitor
+        | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:ST_RBV
+      - waveform
+      - Safe beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:Transmission_RBV
+      - longin
+      - Safe beam constant
+      - | archive: 1s monitor
+        | field: EGU %
+        | io: input
+
+
+    * - $(PREFIX)SafeBeamCnst:Valid_RBV
+      - bi
+      - Safe beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)SuccessfulPreemptions_RBV
+      - longin
+      - PMPS_GVL.SuccessfulPreemption
+      - | io: input
+
+
+    * - Period_RBV
+      - ai
+      - PMPS_GVL.fPeriod_mm_LUnd
+      - | field: EGU mm
+        | io: input
+
+
+
