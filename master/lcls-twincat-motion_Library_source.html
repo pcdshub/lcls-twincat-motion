@@ -5591,6 +5591,9 @@ END_ACTION
                     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;Cannot move past negative limit.&#39;</span><span class="p">;</span>
                     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
                 <span class="n">END_IF</span>
+            <span class="n">ELSE</span>
+                <span class="o">//</span> <span class="n">Super</span> <span class="n">rare</span> <span class="n">condition</span> <span class="n">where</span> <span class="n">we</span> <span class="n">asked</span> <span class="k">for</span> <span class="n">a</span> <span class="n">move</span> <span class="n">to</span> <span class="n">exactly</span> <span class="n">the</span> <span class="n">same</span> <span class="n">floating</span> <span class="n">point</span> <span class="n">we</span><span class="s1">&#39;re already at</span>
+                <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="n">S</span><span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bSafetyReady</span><span class="p">;</span>
             <span class="n">END_IF</span>
             <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="n">OR</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
                 <span class="n">bNewMoveReq</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
@@ -6921,6 +6924,20 @@ FOR nIter := 1 TO MOTION_GVL.MAX_STATES DO
 END_FOR
 END_ACTION
 ACTION HandleBPTM:
+(*
+  Handle finishing the bptm late if timed out
+  bptm needs a rising edge of bTransDone after authorizing transition
+  If we fall into this block, bTransDone would otherwise be stuck at TRUE forever
+  so the BPTM would never see a rising edge and therefore stay stuck
+  We set to FALSE here to reset the BPTM, then gets set to TRUE again if really done.
+*)
+rtDoLateFinish(CLK:=bLateFinish AND bInternalAuth);
+IF rtDoLateFinish.Q THEN
+    bTransDone := FALSE;
+    bLateFinish := FALSE;
+END_IF
+
+// Just normal bptm call
 bptm(fbArbiter:=fbArbiter,
      i_TransitionAssertionID:=nTransitionAssertionID,
      i_stTransitionAssertion:=stTransitionBeam,
@@ -6928,7 +6945,7 @@ bptm(fbArbiter:=fbArbiter,
      i_stRequestedAssertion:=stStateReq.stBeamParams,
      i_xDoneMoving:=bTransDone,
      stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-     q_xTransitionAuthorized=&gt;bTransitionAuthorized,
+     q_xTransitionAuthorized=&gt;bInternalAuth,
      bDone=&gt;bBPTMDone);
 END_ACTION
 ACTION HandleFFO:
@@ -6964,8 +6981,9 @@ ffZeroRate(
     io_fbFFHWO := fbFFHWO);
 
 // Trip the beam for BPTM timeouts if we want to move
+// Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
 ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
-ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState;
+ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState OR (bptm.bDone AND NOT bptm.bError);
 ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
 ffBPTMTimeoutAndMove(
     i_DevName := stMotionStage.sName,
@@ -7039,6 +7057,9 @@ END_ACTION
     <span class="n">bBPTMDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">rtBPTMDone</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
     <span class="n">ftMotorExec</span><span class="p">:</span> <span class="n">F_TRIG</span><span class="p">;</span>
+    <span class="n">rtTransDone</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">rtDoLateFinish</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">tonDone</span><span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
     <span class="n">stStateReq</span><span class="p">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
     <span class="n">mcPower</span><span class="p">:</span> <span class="n">MC_POWER</span><span class="p">;</span>
     <span class="n">fUpperBound</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
@@ -7052,6 +7073,8 @@ END_ACTION
     <span class="n">bFwdOk</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bBwdOk</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">tonArbiter</span><span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+    <span class="n">bLateFinish</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bInternalAuth</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="o">//</span> <span class="n">This</span> <span class="ow">is</span> <span class="n">meant</span> <span class="n">to</span> <span class="n">be</span> <span class="n">subclassed</span><span class="o">.</span> <span class="n">The</span> <span class="n">parent</span> <span class="k">class</span> <span class="nc">body</span> <span class="ow">is</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">Exec</span> <span class="n">action</span><span class="o">.</span>
 
@@ -7066,7 +7089,11 @@ END_ACTION
 <span class="o">//</span> <span class="n">Initialize</span> <span class="ow">or</span> <span class="n">reinitialize</span> <span class="n">to</span> <span class="n">the</span> <span class="n">current</span> <span class="n">state</span> <span class="n">value</span>
 <span class="n">rtBPTMDone</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bBPTMDone</span><span class="p">);</span>
 <span class="n">ftMotorExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">);</span>
-<span class="n">IF</span> <span class="n">rtBPTMDone</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">ftMotorExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+<span class="n">tonDone</span><span class="p">(</span>
+    <span class="n">IN</span><span class="o">:=</span><span class="n">bTransDone</span><span class="p">,</span>
+    <span class="n">PT</span><span class="o">:=</span><span class="n">T</span><span class="c1">#100ms</span>
+    <span class="p">);</span>
+<span class="n">IF</span> <span class="n">rtBPTMDone</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">ftMotorExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">tonDone</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
     <span class="n">bInit</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 <span class="n">IF</span> <span class="n">bInit</span> <span class="n">OR</span> <span class="n">nGoalState</span> <span class="o">=</span> <span class="mi">0</span> <span class="n">OR</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
@@ -7092,19 +7119,24 @@ END_ACTION
     <span class="n">bTransDone</span> <span class="o">:=</span> <span class="n">F_AtPositionState</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span> <span class="n">stPositionState</span><span class="o">:=</span><span class="n">stStateReq</span><span class="p">)</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bBusy</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
+<span class="o">//</span> <span class="n">Mark</span> <span class="n">late</span> <span class="n">finish</span> <span class="k">if</span> <span class="n">bTransDone</span> <span class="o">-&gt;</span> <span class="n">true</span> <span class="n">before</span> <span class="n">the</span> <span class="n">bptm</span> <span class="ow">is</span> <span class="n">done</span>
+<span class="o">//</span> <span class="n">This</span> <span class="n">means</span> <span class="n">that</span> <span class="n">we</span> <span class="n">finished</span> <span class="n">the</span> <span class="n">move</span> <span class="n">so</span> <span class="n">fast</span> <span class="n">that</span> <span class="n">the</span> <span class="n">bptm</span> <span class="n">needs</span> <span class="n">to</span> <span class="n">be</span> <span class="n">unstuck</span> <span class="n">via</span> <span class="n">toggling</span> <span class="n">bTransDone</span>
+<span class="n">rtTransDone</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bTransDone</span><span class="p">);</span>
+<span class="n">bLateFinish</span> <span class="n">S</span><span class="o">=</span> <span class="n">rtTransDone</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bBPTMDone</span><span class="p">;</span>
+
 <span class="n">IF</span> <span class="n">bArbiterEnabled</span> <span class="n">THEN</span>
     <span class="o">//</span> <span class="n">Handles</span> <span class="n">getting</span> <span class="n">the</span> <span class="n">request</span> <span class="n">to</span> <span class="n">the</span> <span class="n">arbiter</span> <span class="ow">and</span> <span class="n">back</span>
     <span class="n">HandleBPTM</span><span class="p">();</span>
     <span class="o">//</span> <span class="n">Handle</span> <span class="n">arbiter</span> <span class="n">timeouts</span>
     <span class="n">IF</span> <span class="n">tArbiterTimeout</span> <span class="o">&gt;</span> <span class="n">T</span><span class="c1">#0s THEN</span>
         <span class="n">tonArbiter</span><span class="p">(</span>
-            <span class="n">IN</span><span class="o">:=</span><span class="n">bInTransition</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bTransitionAuthorized</span><span class="p">,</span>
+            <span class="n">IN</span><span class="o">:=</span><span class="n">bInTransition</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bInternalAuth</span><span class="p">,</span>
             <span class="n">PT</span><span class="o">:=</span><span class="n">tArbiterTimeout</span><span class="p">,</span>
             <span class="n">Q</span><span class="o">=&gt;</span><span class="n">bArbiterTimeout</span><span class="p">);</span>
     <span class="n">ELSE</span>
         <span class="n">bArbiterTimeout</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
     <span class="n">END_IF</span>
-    <span class="n">bTransitionAuthorized</span> <span class="n">S</span><span class="o">=</span> <span class="n">bArbiterTimeout</span> <span class="n">AND</span> <span class="n">bMoveOnArbiterTimeout</span><span class="p">;</span>
+    <span class="n">bTransitionAuthorized</span> <span class="n">S</span><span class="o">=</span> <span class="n">bInternalAuth</span> <span class="n">OR</span> <span class="p">(</span><span class="n">bArbiterTimeout</span> <span class="n">AND</span> <span class="n">bMoveOnArbiterTimeout</span><span class="p">);</span>
 <span class="n">ELSE</span>
     <span class="o">//</span> <span class="n">Clear</span> <span class="nb">all</span> <span class="n">of</span> <span class="n">our</span> <span class="n">assertions</span> <span class="k">if</span> <span class="n">we</span> <span class="n">decide</span> <span class="n">to</span> <span class="n">disable</span> <span class="n">the</span> <span class="n">arbiter</span>
     <span class="n">ClearAsserts</span><span class="p">();</span>

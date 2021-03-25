@@ -5473,6 +5473,9 @@ FB_MotionStage
                         stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
                         stMotionStage.bExecute := FALSE;
                     END_IF
+                ELSE
+                    // Super rare condition where we asked for a move to exactly the same floating point we're already at
+                    stMotionStage.bEnable S= stMotionStage.bSafetyReady;
                 END_IF
                 IF stMotionStage.bEnable OR stMotionStage.bError THEN
                     bNewMoveReq := FALSE;
@@ -6833,6 +6836,20 @@ FB_PositionStatePMPS
     END_FOR
     END_ACTION
     ACTION HandleBPTM:
+    (*
+      Handle finishing the bptm late if timed out
+      bptm needs a rising edge of bTransDone after authorizing transition
+      If we fall into this block, bTransDone would otherwise be stuck at TRUE forever
+      so the BPTM would never see a rising edge and therefore stay stuck
+      We set to FALSE here to reset the BPTM, then gets set to TRUE again if really done.
+    *)
+    rtDoLateFinish(CLK:=bLateFinish AND bInternalAuth);
+    IF rtDoLateFinish.Q THEN
+        bTransDone := FALSE;
+        bLateFinish := FALSE;
+    END_IF
+
+    // Just normal bptm call
     bptm(fbArbiter:=fbArbiter,
          i_TransitionAssertionID:=nTransitionAssertionID,
          i_stTransitionAssertion:=stTransitionBeam,
@@ -6840,7 +6857,7 @@ FB_PositionStatePMPS
          i_stRequestedAssertion:=stStateReq.stBeamParams,
          i_xDoneMoving:=bTransDone,
          stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-         q_xTransitionAuthorized=>bTransitionAuthorized,
+         q_xTransitionAuthorized=>bInternalAuth,
          bDone=>bBPTMDone);
     END_ACTION
     ACTION HandleFFO:
@@ -6876,8 +6893,9 @@ FB_PositionStatePMPS
         io_fbFFHWO := fbFFHWO);
 
     // Trip the beam for BPTM timeouts if we want to move
+    // Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
     ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
-    ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState;
+    ffBPTMTimeoutAndMove.i_xReset S= bAtSafeState OR (bptm.bDone AND NOT bptm.bError);
     ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
     ffBPTMTimeoutAndMove(
         i_DevName := stMotionStage.sName,
@@ -6953,6 +6971,9 @@ FB_PositionStatePMPS_Base
         bBPTMDone: BOOL;
         rtBPTMDone: R_TRIG;
         ftMotorExec: F_TRIG;
+        rtTransDone: R_TRIG;
+        rtDoLateFinish: R_TRIG;
+        tonDone: TON;
         stStateReq: DUT_PositionState;
         mcPower: MC_POWER;
         fUpperBound: LREAL;
@@ -6966,6 +6987,8 @@ FB_PositionStatePMPS_Base
         bFwdOk: BOOL;
         bBwdOk: BOOL;
         tonArbiter: TON;
+        bLateFinish: BOOL;
+        bInternalAuth: BOOL;
     END_VAR
     // This is meant to be subclassed. The parent class body is in the Exec action.
 
@@ -6980,7 +7003,11 @@ FB_PositionStatePMPS_Base
     // Initialize or reinitialize to the current state value
     rtBPTMDone(CLK:=bBPTMDone);
     ftMotorExec(CLK:=stMotionStage.bExecute);
-    IF rtBPTMDone.Q OR ftMotorExec.Q THEN
+    tonDone(
+        IN:=bTransDone,
+        PT:=T#100ms
+        );
+    IF rtBPTMDone.Q OR ftMotorExec.Q OR tonDone.Q THEN
         bInit := TRUE;
     END_IF
     IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
@@ -7006,19 +7033,24 @@ FB_PositionStatePMPS_Base
         bTransDone := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stStateReq) AND NOT stMotionStage.bBusy;
     END_IF
 
+    // Mark late finish if bTransDone -> true before the bptm is done
+    // This means that we finished the move so fast that the bptm needs to be unstuck via toggling bTransDone
+    rtTransDone(CLK:=bTransDone);
+    bLateFinish S= rtTransDone.Q AND NOT bBPTMDone;
+
     IF bArbiterEnabled THEN
         // Handles getting the request to the arbiter and back
         HandleBPTM();
         // Handle arbiter timeouts
         IF tArbiterTimeout > T#0s THEN
             tonArbiter(
-                IN:=bInTransition AND NOT bTransitionAuthorized,
+                IN:=bInTransition AND NOT bInternalAuth,
                 PT:=tArbiterTimeout,
                 Q=>bArbiterTimeout);
         ELSE
             bArbiterTimeout := FALSE;
         END_IF
-        bTransitionAuthorized S= bArbiterTimeout AND bMoveOnArbiterTimeout;
+        bTransitionAuthorized S= bInternalAuth OR (bArbiterTimeout AND bMoveOnArbiterTimeout);
     ELSE
         // Clear all of our assertions if we decide to disable the arbiter
         ClearAsserts();
