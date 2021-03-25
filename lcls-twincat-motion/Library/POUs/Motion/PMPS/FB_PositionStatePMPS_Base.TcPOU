@@ -43,6 +43,9 @@ VAR
     bBPTMDone: BOOL;
     rtBPTMDone: R_TRIG;
     ftMotorExec: F_TRIG;
+    rtTransDone: R_TRIG;
+    rtDoLateFinish: R_TRIG;
+    tonDone: TON;
     stStateReq: DUT_PositionState;
     mcPower: MC_POWER;
     fUpperBound: LREAL;
@@ -56,6 +59,8 @@ VAR
     bFwdOk: BOOL;
     bBwdOk: BOOL;
     tonArbiter: TON;
+    bLateFinish: BOOL;
+    bInternalAuth: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[// This is meant to be subclassed. The parent class body is in the Exec action.]]></ST>
@@ -75,7 +80,11 @@ END_VAR]]></Declaration>
         <ST><![CDATA[// Initialize or reinitialize to the current state value
 rtBPTMDone(CLK:=bBPTMDone);
 ftMotorExec(CLK:=stMotionStage.bExecute);
-IF rtBPTMDone.Q OR ftMotorExec.Q THEN
+tonDone(
+    IN:=bTransDone,
+    PT:=T#100ms
+    );
+IF rtBPTMDone.Q OR ftMotorExec.Q OR tonDone.Q THEN
     bInit := TRUE;
 END_IF
 IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
@@ -101,19 +110,24 @@ ELSE
     bTransDone := F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=stStateReq) AND NOT stMotionStage.bBusy;
 END_IF
 
+// Mark late finish if bTransDone -> true before the bptm is done
+// This means that we finished the move so fast that the bptm needs to be unstuck via toggling bTransDone
+rtTransDone(CLK:=bTransDone);
+bLateFinish S= rtTransDone.Q AND NOT bBPTMDone;
+
 IF bArbiterEnabled THEN
     // Handles getting the request to the arbiter and back
     HandleBPTM();
     // Handle arbiter timeouts
     IF tArbiterTimeout > T#0s THEN
         tonArbiter(
-            IN:=bInTransition AND NOT bTransitionAuthorized,
+            IN:=bInTransition AND NOT bInternalAuth,
             PT:=tArbiterTimeout,
             Q=>bArbiterTimeout);
     ELSE
         bArbiterTimeout := FALSE;
     END_IF
-    bTransitionAuthorized S= bArbiterTimeout AND bMoveOnArbiterTimeout;
+    bTransitionAuthorized S= bInternalAuth OR (bArbiterTimeout AND bMoveOnArbiterTimeout);
 ELSE
     // Clear all of our assertions if we decide to disable the arbiter
     ClearAsserts();
