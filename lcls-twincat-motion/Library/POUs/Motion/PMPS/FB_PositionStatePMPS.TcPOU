@@ -55,9 +55,10 @@ END_FOR]]></ST>
   so the BPTM would never see a rising edge and therefore stay stuck
   We set to FALSE here to reset the BPTM, then gets set to TRUE again if really done.
 *)
-IF bLateFinish AND NOT bHandledLateFinish AND bTransitionAuthorized THEN
+rtDoLateFinish(CLK:=bLateFinish AND bInternalAuth);
+IF rtDoLateFinish.Q THEN
     bTransDone := FALSE;
-    bHandledLateFinish := TRUE;
+    bLateFinish := FALSE;
 END_IF
 
 // Just normal bptm call
@@ -68,7 +69,7 @@ bptm(fbArbiter:=fbArbiter,
      i_stRequestedAssertion:=stStateReq.stBeamParams,
      i_xDoneMoving:=bTransDone,
      stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-     q_xTransitionAuthorized=>bTransitionAuthorized,
+     q_xTransitionAuthorized=>bInternalAuth,
      bDone=>bBPTMDone);]]></ST>
       </Implementation>
     </Action>

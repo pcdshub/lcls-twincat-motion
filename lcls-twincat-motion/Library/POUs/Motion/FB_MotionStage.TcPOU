@@ -104,6 +104,9 @@ CASE stMotionStage.nEnableMode OF
                     stMotionStage.sErrorMessage := 'Cannot move past negative limit.';
                     stMotionStage.bExecute := FALSE;
                 END_IF
+            ELSE
+                // Super rare condition where we asked for a move to exactly the same floating point we're already at
+                stMotionStage.bEnable S= stMotionStage.bSafetyReady;
             END_IF
             IF stMotionStage.bEnable OR stMotionStage.bError THEN
                 bNewMoveReq := FALSE;
