@@ -33,6 +33,7 @@ END_VAR
     <Action Name="AssertHere" Id="{7db9507d-999c-01b2-1227-c24720a7882a}">
       <Implementation>
         <ST><![CDATA[fbArbiter.AddRequest(
+    sDevName := stMotionStage.sName,
     nReqID := stStateReq.nRequestAssertionID,
     stReqBP := stStateReq.stBeamParams);]]></ST>
       </Implementation>
@@ -63,6 +64,7 @@ END_IF
 
 // Just normal bptm call
 bptm(fbArbiter:=fbArbiter,
+     i_sDeviceName:=stMotionStage.sName,
      i_TransitionAssertionID:=nTransitionAssertionID,
      i_stTransitionAssertion:=stTransitionBeam,
      i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
