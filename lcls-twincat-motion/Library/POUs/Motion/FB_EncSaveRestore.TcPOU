@@ -65,14 +65,14 @@ END_VAR
             bWaitRetry := TRUE;
         END_IF
     END_IF
-    
+
     tonRetry(
         IN := bWaitRetry,
         PT := tRetryDelay);
-        
+
     bLoad S= tonRetry.Q;
     bWaitRetry R= tonRetry.Q;
-    
+
     // Check DUT_MotionStage for an encoder error (range 0x44nn)
     bEncError := stMotionStage.bError AND stMotionStage.nErrorId >= 16#4400 AND stMotionStage.nErrorId <= 16#44FF;
 
