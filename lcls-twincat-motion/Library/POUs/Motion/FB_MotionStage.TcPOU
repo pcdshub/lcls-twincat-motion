@@ -14,6 +14,7 @@ VAR
     fbDriveVirtual: FB_DriveVirtual;
     fbMotionHome: FB_MotionHoming;
     fbSaveRestore: FB_EncSaveRestore;
+    fbLogError: FB_LogMotionError;
     bExecute: BOOL;
     bExecMove: BOOL;
     bExecHome: BOOL;
@@ -182,6 +183,10 @@ IF NOT stMotionStage.bError AND stMotionStage.bExecute AND NOT stMotionStage.bUs
     stMotionStage.nErrorId := 1;
     stMotionStage.sCustomErrorMessage := 'Move requested, but user enable is disabled!';
 END_IF
+
+fbLogError(
+    stMotionStage:=stMotionStage,
+    bEnable:=TRUE);
 
 // Set the error message if we have one
 IF stMotionStage.bError THEN

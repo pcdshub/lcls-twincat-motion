@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_LogMotionError" Id="{9500aa77-a355-4e4c-85a0-c8788ac59e2a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LogMotionError
+VAR_IN_OUT
+    stMotionStage: DUT_MotionStage;
+END_VAR
+VAR_INPUT
+    bEnable: BOOL;
+END_VAR
+VAR
+    fbLogMessage: FB_LogMessage;
+    rtNewError: R_TRIG;
+    sPrevErr: STRING;
+    fbJson: FB_JsonSaxWriter;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtNewError(CLK:=stMotionStage.bError AND sPrevErr <> stMotionStage.sErrorMessage);
+sPrevErr := stMotionStage.sErrorMessage;
+
+IF bEnable AND rtNewError.Q THEN
+    fbJson.StartObject();
+    fbJson.AddKey('motion_device_name');
+    fbJson.AddString(stMotionStage.sName);
+    fbJson.AddKey('motion_err_id');
+    fbJson.AddUdint(stMotionStage.nErrorId);
+    fbJson.EndObject();
+    fbLogMessage(
+        sMsg := stMotionStage.sErrorMessage,
+        eSevr := TcEventSeverity.Error,
+        eSubsystem := E_Subsystem.MOTION,
+        sJson := fbJson.GetDocument(),
+    );
+    fbJson.ResetDocument();
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
