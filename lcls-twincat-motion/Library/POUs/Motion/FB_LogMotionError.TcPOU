@@ -20,31 +20,43 @@ END_VAR
 VAR
     fbLogMessage: FB_LogMessage;
     rtNewError: R_TRIG;
-    rtErrChanged: R_TRIG;
+    bChangedError: BOOL;
     sPrevErr: STRING;
     fbJson: FB_JsonSaxWriter;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[rtNewError(CLK:=stMotionStage.bError);
-rtErrChanged(CLK:=sPrevErr <> stMotionStage.sErrorMessage);
+      <ST><![CDATA[
+rtNewError(CLK:=stMotionStage.bError);
+bChangedError := stMotionStage.sErrorMessage <> '' AND stMotionStage.sErrorMessage <> sPrevErr;
 sPrevErr := stMotionStage.sErrorMessage;
 
-IF bEnable AND (rtNewError.Q OR (stMotionstage.bError AND rtErrChanged.Q)) THEN
+IF bEnable AND (rtNewError.Q OR bChangedError) THEN
     fbJson.StartObject();
-    fbJson.AddKey('motion_device_name');
+    fbJson.AddKey('schema');
+    fbJson.AddString('DUT_MotionStage.bError');
+    fbJson.AddKey('dut_name');
     fbJson.AddString(stMotionStage.sName);
-    fbJson.AddKey('motion_err_id');
+    fbJson.AddKey('axis_name');
+    fbJson.AddString(stMotionStage.stAxisParameters.sAxisName);
+    fbJson.AddKey('axis_id');
+    fbJson.AddUdint(stMotionStage.stAxisParameters.AxisId);
+    fbJson.AddKey('err_id');
     fbJson.AddUdint(stMotionStage.nErrorId);
+    fbJson.AddKey('position');
+    fbJson.AddLreal(stMotionStage.stAxisStatus.fActPosition);
+    fbJson.AddKey('position_lag');
+    fbJson.AddLreal(stMotionStage.stAxisStatus.fActDiff);
     fbJson.EndObject();
+    fbLogMessage.sJson := fbJson.GetDocument();
     fbLogMessage(
         sMsg := stMotionStage.sErrorMessage,
         eSevr := TcEventSeverity.Error,
         eSubsystem := E_Subsystem.MOTION,
-        sJson := fbJson.GetDocument(),
     );
     fbJson.ResetDocument();
-END_IF]]></ST>
+END_IF
+]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
