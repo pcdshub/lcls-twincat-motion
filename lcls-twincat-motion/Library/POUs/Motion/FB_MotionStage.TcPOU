@@ -14,6 +14,7 @@ VAR
     fbDriveVirtual: FB_DriveVirtual;
     fbMotionHome: FB_MotionHoming;
     fbSaveRestore: FB_EncSaveRestore;
+    fbLogError: FB_LogMotionError;
     bExecute: BOOL;
     bExecMove: BOOL;
     bExecHome: BOOL;
@@ -192,6 +193,10 @@ IF stMotionStage.bError THEN
         stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
     END_IF
 END_IF
+
+fbLogError(
+    stMotionStage:=stMotionStage,
+    bEnable:=TRUE);
 
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);

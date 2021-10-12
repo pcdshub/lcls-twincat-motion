@@ -334,7 +334,8 @@ STRUCT
         io: i
         field: ZNAM FALSE
         field: ONAM TRUE
-        field: DESC TRUE if we're in an error state
+        field: DESC TRUE if we are in an error state
+        update: 100Hz notify
     '}
     bError: BOOL;
     // Error code if nonzero
@@ -342,6 +343,7 @@ STRUCT
         pv: PLC:nErrorId
         io: i
         field: DESC Error code if nonzero
+        update: 100Hz notify
     '}
     nErrorId: UDINT;
     // Message to identify the error state
@@ -349,6 +351,7 @@ STRUCT
         pv: PLC:sErrorMessage
         io: i
         field: DESC Message to identify the error state
+        update: 100Hz notify
     '}
     sErrorMessage: STRING;
     // Internal hook for custom error messages
