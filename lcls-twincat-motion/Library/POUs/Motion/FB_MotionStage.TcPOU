@@ -184,10 +184,6 @@ IF NOT stMotionStage.bError AND stMotionStage.bExecute AND NOT stMotionStage.bUs
     stMotionStage.sCustomErrorMessage := 'Move requested, but user enable is disabled!';
 END_IF
 
-fbLogError(
-    stMotionStage:=stMotionStage,
-    bEnable:=TRUE);
-
 // Set the error message if we have one
 IF stMotionStage.bError THEN
     // Hook if other code wants to inject a non-NC error
@@ -197,6 +193,10 @@ IF stMotionStage.bError THEN
         stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
     END_IF
 END_IF
+
+fbLogError(
+    stMotionStage:=stMotionStage,
+    bEnable:=TRUE);
 
 // When we start, set the busy/done appropriately
 rtExec(CLK:=bExecute);

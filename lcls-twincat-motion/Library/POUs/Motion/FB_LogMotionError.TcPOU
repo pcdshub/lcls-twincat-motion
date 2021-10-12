@@ -2,6 +2,15 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_LogMotionError" Id="{9500aa77-a355-4e4c-85a0-c8788ac59e2a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_LogMotionError
+(*
+    If the motion struct has an error, log it.
+
+    The log condition is:
+    - When bError goes TRUE (catch transition from no error to error)
+    - When the error message changes while bError is TRUE (catch transition from error a to error b)
+
+    Includes the motor name and the NC error id in the json blob
+*)
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
 END_VAR
@@ -11,15 +20,17 @@ END_VAR
 VAR
     fbLogMessage: FB_LogMessage;
     rtNewError: R_TRIG;
+    rtErrChanged: R_TRIG;
     sPrevErr: STRING;
     fbJson: FB_JsonSaxWriter;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[rtNewError(CLK:=stMotionStage.bError AND sPrevErr <> stMotionStage.sErrorMessage);
+      <ST><![CDATA[rtNewError(CLK:=stMotionStage.bError);
+rtErrChanged(CLK:=sPrevErr <> stMotionStage.sErrorMessage);
 sPrevErr := stMotionStage.sErrorMessage;
 
-IF bEnable AND rtNewError.Q THEN
+IF bEnable AND (rtNewError.Q OR (stMotionstage.bError AND rtErrChanged.Q)) THEN
     fbJson.StartObject();
     fbJson.AddKey('motion_device_name');
     fbJson.AddString(stMotionStage.sName);
