@@ -132,6 +132,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#fb-homevirtual">FB_HomeVirtual</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-homewritencvelocities">FB_HomeWriteNcVelocities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-homewritesoftlimenable">FB_HomeWriteSoftLimEnable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-logmotionerror">FB_LogMotionError</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-microstepcounttest">FB_MicroStepCountTest</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionhoming">FB_MotionHoming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionpneumaticactuator">FB_MotionPneumaticActuator</a></li>
@@ -743,7 +744,8 @@
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">ZNAM</span> <span class="n">FALSE</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">ONAM</span> <span class="n">TRUE</span>
-        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">we</span><span class="s1">&#39;re in an error state</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">we</span> <span class="n">are</span> <span class="ow">in</span> <span class="n">an</span> <span class="n">error</span> <span class="n">state</span>
+        <span class="n">update</span><span class="p">:</span> <span class="mi">100</span><span class="n">Hz</span> <span class="n">notify</span>
     <span class="s1">&#39;}</span>
     <span class="n">bError</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Error</span> <span class="n">code</span> <span class="k">if</span> <span class="n">nonzero</span>
@@ -751,6 +753,7 @@
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">nErrorId</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Error</span> <span class="n">code</span> <span class="k">if</span> <span class="n">nonzero</span>
+        <span class="n">update</span><span class="p">:</span> <span class="mi">100</span><span class="n">Hz</span> <span class="n">notify</span>
     <span class="s1">&#39;}</span>
     <span class="n">nErrorId</span><span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Message</span> <span class="n">to</span> <span class="n">identify</span> <span class="n">the</span> <span class="n">error</span> <span class="n">state</span>
@@ -758,6 +761,7 @@
         <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">sErrorMessage</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Message</span> <span class="n">to</span> <span class="n">identify</span> <span class="n">the</span> <span class="n">error</span> <span class="n">state</span>
+        <span class="n">update</span><span class="p">:</span> <span class="mi">100</span><span class="n">Hz</span> <span class="n">notify</span>
     <span class="s1">&#39;}</span>
     <span class="n">sErrorMessage</span><span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Internal</span> <span class="n">hook</span> <span class="k">for</span> <span class="n">custom</span> <span class="n">error</span> <span class="n">messages</span>
@@ -5057,6 +5061,71 @@ END_FUNCTION_BLOCK
 </dd>
 </dl>
 </section>
+<section id="fb-logmotionerror">
+<h2>FB_LogMotionError<a class="headerlink" href="#fb-logmotionerror" title="Permalink to this headline"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_LogMotionError</span>
+<span class="p">(</span><span class="o">*</span>
+    <span class="n">If</span> <span class="n">the</span> <span class="n">motion</span> <span class="n">struct</span> <span class="n">has</span> <span class="n">an</span> <span class="n">error</span><span class="p">,</span> <span class="n">log</span> <span class="n">it</span><span class="o">.</span>
+
+    <span class="n">The</span> <span class="n">log</span> <span class="n">condition</span> <span class="ow">is</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">When</span> <span class="n">bError</span> <span class="n">goes</span> <span class="n">TRUE</span> <span class="p">(</span><span class="n">catch</span> <span class="n">transition</span> <span class="kn">from</span> <span class="nn">no</span> <span class="n">error</span> <span class="n">to</span> <span class="n">error</span><span class="p">)</span>
+    <span class="o">-</span> <span class="n">When</span> <span class="n">the</span> <span class="n">error</span> <span class="n">message</span> <span class="n">changes</span> <span class="k">while</span> <span class="n">bError</span> <span class="ow">is</span> <span class="n">TRUE</span> <span class="p">(</span><span class="n">catch</span> <span class="n">transition</span> <span class="kn">from</span> <span class="nn">error</span> <span class="n">a</span> <span class="n">to</span> <span class="n">error</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="n">Includes</span> <span class="n">the</span> <span class="n">motor</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">NC</span> <span class="n">error</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">json</span> <span class="n">blob</span>
+<span class="o">*</span><span class="p">)</span>
+<span class="n">VAR_IN_OUT</span>
+    <span class="n">stMotionStage</span><span class="p">:</span> <span class="n">DUT_MotionStage</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">bEnable</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">fbLogMessage</span><span class="p">:</span> <span class="n">FB_LogMessage</span><span class="p">;</span>
+    <span class="n">rtNewError</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">bChangedError</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">sPrevErr</span><span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+    <span class="n">fbJson</span><span class="p">:</span> <span class="n">FB_JsonSaxWriter</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">rtNewError</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span><span class="p">);</span>
+<span class="n">bChangedError</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span> <span class="o">&lt;&gt;</span> <span class="s1">&#39;&#39;</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span> <span class="o">&lt;&gt;</span> <span class="n">sPrevErr</span><span class="p">;</span>
+<span class="n">sPrevErr</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">bEnable</span> <span class="n">AND</span> <span class="p">(</span><span class="n">rtNewError</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">bChangedError</span><span class="p">)</span> <span class="n">THEN</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">StartObject</span><span class="p">();</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;schema&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddString</span><span class="p">(</span><span class="s1">&#39;DUT_MotionStage.bError&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;dut_name&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddString</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">sName</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;axis_name&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddString</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">sAxisName</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;axis_id&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddUdint</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">AxisId</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;err_id&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddUdint</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nErrorId</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;position&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddLreal</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">fActPosition</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddKey</span><span class="p">(</span><span class="s1">&#39;position_lag&#39;</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">AddLreal</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">fActDiff</span><span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">EndObject</span><span class="p">();</span>
+    <span class="n">fbLogMessage</span><span class="o">.</span><span class="n">sJson</span> <span class="o">:=</span> <span class="n">fbJson</span><span class="o">.</span><span class="n">GetDocument</span><span class="p">();</span>
+    <span class="n">fbLogMessage</span><span class="p">(</span>
+        <span class="n">sMsg</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">sErrorMessage</span><span class="p">,</span>
+        <span class="n">eSevr</span> <span class="o">:=</span> <span class="n">TcEventSeverity</span><span class="o">.</span><span class="n">Error</span><span class="p">,</span>
+        <span class="n">eSubsystem</span> <span class="o">:=</span> <span class="n">E_Subsystem</span><span class="o">.</span><span class="n">MOTION</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="n">fbJson</span><span class="o">.</span><span class="n">ResetDocument</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Related:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#dut-motionstage">DUT_MotionStage</a></p></li>
+</ul>
+</dd>
+</dl>
+</section>
 <section id="fb-microstepcounttest">
 <h2>FB_MicroStepCountTest<a class="headerlink" href="#fb-microstepcounttest" title="Permalink to this headline"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_MicroStepCountTest</span>
@@ -5822,6 +5891,7 @@ END_ACTION
     <span class="n">fbDriveVirtual</span><span class="p">:</span> <span class="n">FB_DriveVirtual</span><span class="p">;</span>
     <span class="n">fbMotionHome</span><span class="p">:</span> <span class="n">FB_MotionHoming</span><span class="p">;</span>
     <span class="n">fbSaveRestore</span><span class="p">:</span> <span class="n">FB_EncSaveRestore</span><span class="p">;</span>
+    <span class="n">fbLogError</span><span class="p">:</span> <span class="n">FB_LogMotionError</span><span class="p">;</span>
     <span class="n">bExecute</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bExecMove</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bExecHome</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
@@ -5999,6 +6069,10 @@ END_ACTION
     <span class="n">END_IF</span>
 <span class="n">END_IF</span>
 
+<span class="n">fbLogError</span><span class="p">(</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
+    <span class="n">bEnable</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">);</span>
+
 <span class="o">//</span> <span class="n">When</span> <span class="n">we</span> <span class="n">start</span><span class="p">,</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">busy</span><span class="o">/</span><span class="n">done</span> <span class="n">appropriately</span>
 <span class="n">rtExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">);</span>
 <span class="n">IF</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
@@ -6119,6 +6193,7 @@ END_ACTION
 <li><p><a class="reference internal" href="#fb-drivevirtual">FB_DriveVirtual</a></p></li>
 <li><p><a class="reference internal" href="#fb-encsaverestore">FB_EncSaveRestore</a></p></li>
 <li><p><a class="reference internal" href="#fb-encodervalue">FB_EncoderValue</a></p></li>
+<li><p><a class="reference internal" href="#fb-logmotionerror">FB_LogMotionError</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionhoming">FB_MotionHoming</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionstagencparams">FB_MotionStageNCParams</a></p></li>
 <li><p><a class="reference internal" href="#fb-setenables">FB_SetEnables</a></p></li>

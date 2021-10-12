@@ -561,7 +561,8 @@ DUT_MotionStage
             io: i
             field: ZNAM FALSE
             field: ONAM TRUE
-            field: DESC TRUE if we're in an error state
+            field: DESC TRUE if we are in an error state
+            update: 100Hz notify
         '}
         bError: BOOL;
         // Error code if nonzero
@@ -569,6 +570,7 @@ DUT_MotionStage
             pv: PLC:nErrorId
             io: i
             field: DESC Error code if nonzero
+            update: 100Hz notify
         '}
         nErrorId: UDINT;
         // Message to identify the error state
@@ -576,6 +578,7 @@ DUT_MotionStage
             pv: PLC:sErrorMessage
             io: i
             field: DESC Message to identify the error state
+            update: 100Hz notify
         '}
         sErrorMessage: STRING;
         // Internal hook for custom error messages
@@ -4954,6 +4957,71 @@ Related:
     * `FB_WriteParameterInNc_v1_00`_
 
 
+FB_LogMotionError
+^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_LogMotionError
+    (*
+        If the motion struct has an error, log it.
+
+        The log condition is:
+        - When bError goes TRUE (catch transition from no error to error)
+        - When the error message changes while bError is TRUE (catch transition from error a to error b)
+
+        Includes the motor name and the NC error id in the json blob
+    *)
+    VAR_IN_OUT
+        stMotionStage: DUT_MotionStage;
+    END_VAR
+    VAR_INPUT
+        bEnable: BOOL;
+    END_VAR
+    VAR
+        fbLogMessage: FB_LogMessage;
+        rtNewError: R_TRIG;
+        bChangedError: BOOL;
+        sPrevErr: STRING;
+        fbJson: FB_JsonSaxWriter;
+    END_VAR
+    rtNewError(CLK:=stMotionStage.bError);
+    bChangedError := stMotionStage.sErrorMessage <> '' AND stMotionStage.sErrorMessage <> sPrevErr;
+    sPrevErr := stMotionStage.sErrorMessage;
+
+    IF bEnable AND (rtNewError.Q OR bChangedError) THEN
+        fbJson.StartObject();
+        fbJson.AddKey('schema');
+        fbJson.AddString('DUT_MotionStage.bError');
+        fbJson.AddKey('dut_name');
+        fbJson.AddString(stMotionStage.sName);
+        fbJson.AddKey('axis_name');
+        fbJson.AddString(stMotionStage.stAxisParameters.sAxisName);
+        fbJson.AddKey('axis_id');
+        fbJson.AddUdint(stMotionStage.stAxisParameters.AxisId);
+        fbJson.AddKey('err_id');
+        fbJson.AddUdint(stMotionStage.nErrorId);
+        fbJson.AddKey('position');
+        fbJson.AddLreal(stMotionStage.stAxisStatus.fActPosition);
+        fbJson.AddKey('position_lag');
+        fbJson.AddLreal(stMotionStage.stAxisStatus.fActDiff);
+        fbJson.EndObject();
+        fbLogMessage.sJson := fbJson.GetDocument();
+        fbLogMessage(
+            sMsg := stMotionStage.sErrorMessage,
+            eSevr := TcEventSeverity.Error,
+            eSubsystem := E_Subsystem.MOTION,
+        );
+        fbJson.ResetDocument();
+    END_IF
+
+    END_FUNCTION_BLOCK
+
+
+Related:
+    * `DUT_MotionStage`_
+
+
 FB_MicroStepCountTest
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -5726,6 +5794,7 @@ FB_MotionStage
         fbDriveVirtual: FB_DriveVirtual;
         fbMotionHome: FB_MotionHoming;
         fbSaveRestore: FB_EncSaveRestore;
+        fbLogError: FB_LogMotionError;
         bExecute: BOOL;
         bExecMove: BOOL;
         bExecHome: BOOL;
@@ -5903,6 +5972,10 @@ FB_MotionStage
         END_IF
     END_IF
 
+    fbLogError(
+        stMotionStage:=stMotionStage,
+        bEnable:=TRUE);
+
     // When we start, set the busy/done appropriately
     rtExec(CLK:=bExecute);
     IF rtExec.Q THEN
@@ -6022,6 +6095,7 @@ Related:
     * `FB_DriveVirtual`_
     * `FB_EncSaveRestore`_
     * `FB_EncoderValue`_
+    * `FB_LogMotionError`_
     * `FB_MotionHoming`_
     * `FB_MotionStageNCParams`_
     * `FB_SetEnables`_
