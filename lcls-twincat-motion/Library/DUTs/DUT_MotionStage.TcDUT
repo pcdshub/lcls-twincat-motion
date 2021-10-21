@@ -115,6 +115,13 @@ STRUCT
         field: DESC Count from encoder hardware
     '}
     nEncoderCount: UDINT;
+    // PV entry point to kill motor power, do not write to this inside the PLC
+    {attribute 'pytmc' := '
+        pv: PLC:bKill
+        io: io
+        field: DESC Kill motor power
+    '}
+    bKill: BOOL;
 
     (* Settings *)
     // Name to use for log messages, fast faults, etc.

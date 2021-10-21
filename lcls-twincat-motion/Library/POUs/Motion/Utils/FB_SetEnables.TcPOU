@@ -7,11 +7,14 @@ VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis);
+      <ST><![CDATA[
+stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis);
 stMotionStage.bAllBackwardEnable := stMotionStage.bLimitBackwardEnable AND (stMotionStage.bGantryBackwardEnable OR NOT stMotionStage.bGantryAxis);
 
 stMotionStage.bAllEnable := stMotionStage.bEnable AND stMotionStage.bHardwareEnable;
-stMotionStage.bAllEnable R= NOT stMotionStage.bUserEnable;]]></ST>
+stMotionStage.bAllEnable R= NOT stMotionStage.bUserEnable;
+stMotionStage.bAllEnable R= stMotionStage.bKill;
+]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
