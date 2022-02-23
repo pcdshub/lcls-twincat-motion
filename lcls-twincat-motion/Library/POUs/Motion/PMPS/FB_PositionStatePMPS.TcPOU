@@ -14,7 +14,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
-    bAutoReset: BOOL := False;
+    bBPOKAutoReset: BOOL := False;
 END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
@@ -93,10 +93,7 @@ bAtSafeState := F_SafeBPCompare(stHighBeamThreshold, stBeamNeeded);
 ffBeamParamsOk.i_xOK := bFFOxOk;
 ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
 ffBeamParamsOk.i_xReset R= NOT ffBeamParamsOk.i_xOK;
-
-IF bAutoReset THEN
-    ffBeamParamsOk.i_xAutoReset := True;
-END_IF
+ffBeamParamsOk.i_xAutoReset := bBPOKAutoReset;
 
 ffBeamParamsOk(
     i_DevName:=stMotionStage.sName,
