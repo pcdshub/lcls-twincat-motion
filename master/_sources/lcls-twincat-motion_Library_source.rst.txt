@@ -5543,6 +5543,7 @@ FB_MotionPneumaticActuator
     ACT_IO();
 
     END_FUNCTION_BLOCK
+
     ACTION ACT_IO:
     (*Inputs*)
     stPneumaticActuator.i_bInLimitSwitch :=  i_xInsertedLS;
@@ -5556,6 +5557,7 @@ FB_MotionPneumaticActuator
     stPneumaticActuator.bRetractOK := ibRetractOK;
     stPneumaticActuator.bInsertOK := ibInsertOK;
     END_ACTION
+
     ACTION ACT_Logger:
     // Log Valve timeouts
     IF (tInserttimeout.Q OR tRetracttimeout.Q) THEN fbLogger(sMsg:=stPneumaticActuator.sErrorMessage, eSevr:=TcEventSeverity.Warning); END_IF
@@ -6441,9 +6443,11 @@ FB_PositionStateBase
     *)
 
     END_FUNCTION_BLOCK
+
     ACTION Exec:
     StateHandler();
     END_ACTION
+
     ACTION StateHandler:
     // Reset just goes through the first-cycle init again
     rtReset(CLK:=bReset);
@@ -6590,6 +6594,7 @@ FB_PositionStateBase_WithPMPS
         tArbiterTimeout: TIME := T#1s;
         bMoveOnArbiterTimeout: BOOL := TRUE;
         fStateBoundaryDeadband: LREAL := 0;
+        bBPOKAutoReset: BOOL := False;
     END_VAR
     VAR
         {attribute 'pytmc' := 'pv: PMPS'}
@@ -6609,10 +6614,12 @@ FB_PositionStateBase_WithPMPS
     *)
 
     END_FUNCTION_BLOCK
+
     ACTION Exec:
     StateHandler();
     PMPSHandler();
     END_ACTION
+
     ACTION PMPSHandler:
     fbStatePMPS(
         fbArbiter:=fbArbiter,
@@ -6628,7 +6635,8 @@ FB_PositionStateBase_WithPMPS
         bArbiterEnabled:=bArbiterEnabled,
         tArbiterTimeout:=tArbiterTimeout,
         bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
-        fStateBoundaryDeadband:=fStateBoundaryDeadband);
+        fStateBoundaryDeadband:=fStateBoundaryDeadband,
+        bBPOKAutoReset:=bBPOKAutoReset);
 
     fbEncErrFFO(
         stMotionStage:=stMotionStage,
@@ -6675,10 +6683,12 @@ FB_PositionStateBase_WithPMPS_Test
     *)
 
     END_FUNCTION_BLOCK
+
     ACTION Exec:
     StateHandler();
     PMPSHandler();
     END_ACTION
+
     ACTION PMPSHandler:
     fbStatePMPS(
         stMotionStage:=stMotionStage,
@@ -7333,6 +7343,7 @@ FB_PositionStatePMPS
     END_VAR
     VAR_INPUT
         stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
+        bBPOKAutoReset: BOOL := False;
     END_VAR
     VAR
         bptm: BeamParameterTransitionManager;
@@ -7348,12 +7359,14 @@ FB_PositionStatePMPS
     Exec();
 
     END_FUNCTION_BLOCK
+
     ACTION AssertHere:
     fbArbiter.AddRequest(
         sDevName := stMotionStage.sName,
         nReqID := stStateReq.nRequestAssertionID,
         stReqBP := stStateReq.stBeamParams);
     END_ACTION
+
     ACTION ClearAsserts:
     fbArbiter.RemoveRequest(nTransitionAssertionID);
     fbArbiter.RemoveRequest(nUnknownAssertionID);
@@ -7361,6 +7374,7 @@ FB_PositionStatePMPS
         fbArbiter.RemoveRequest(arrStates[nIter].nRequestAssertionID);
     END_FOR
     END_ACTION
+
     ACTION HandleBPTM:
     (*
       Handle finishing the bptm late if timed out
@@ -7387,6 +7401,7 @@ FB_PositionStatePMPS
          q_xTransitionAuthorized=>bInternalAuth,
          bDone=>bBPTMDone);
     END_ACTION
+
     ACTION HandleFFO:
     // stBeamNeeded will point to Unknown/No beam if we are out of state bounds or in motion
     // Otherwise we'll have the current state's beam parameters
@@ -7403,6 +7418,8 @@ FB_PositionStatePMPS
     ffBeamParamsOk.i_xOK := bFFOxOk;
     ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
     ffBeamParamsOk.i_xReset R= NOT ffBeamParamsOk.i_xOK;
+    ffBeamParamsOk.i_xAutoReset := bBPOKAutoReset;
+
     ffBeamParamsOk(
         i_DevName:=stMotionStage.sName,
         i_Desc:='Beam parameter mismatch',
@@ -7525,12 +7542,15 @@ FB_PositionStatePMPS_Base
     // This is meant to be subclassed. The parent class body is in the Exec action.
 
     END_FUNCTION_BLOCK
+
     ACTION AssertHere:
 
     END_ACTION
+
     ACTION ClearAsserts:
 
     END_ACTION
+
     ACTION Exec:
     // Initialize or reinitialize to the current state value
     rtBPTMDone(CLK:=bBPTMDone);
@@ -7651,12 +7671,55 @@ FB_PositionStatePMPS_Base
     stBeamNeeded := GetBeamFromState(getState);
     HandleFFO();
     END_ACTION
+
     ACTION HandleBPTM:
 
     END_ACTION
+
     ACTION HandleFFO:
 
     END_ACTION
+
+    METHOD GetBeamFromState : ST_BeamParams;
+    VAR_INPUT
+        nState: INT;
+    END_VAR
+    VAR
+        stState: DUT_PositionState;
+    END_VAR
+    stState := GetStateStruct(nState);
+    GetBeamFromState := stState.stBeamParams;
+    END_METHOD
+
+    METHOD GetStateCode : INT
+    VAR_INPUT
+        nState: INT;
+    END_VAR
+    IF nState < 0 OR nState > MOTION_GVL.MAX_STATES THEN
+        GetStateCode := -1;
+    ELSE
+        GetStateCode := nState;
+    END_IF
+    END_METHOD
+
+    METHOD GetStateStruct : DUT_PositionState
+    VAR_INPUT
+        nState: INT;
+    END_VAR
+    {warning disable C0371}
+    // Implicit VAR_IN_OUT reference inside a method needs special handling
+    IF NOT __ISVALIDREF(arrStates) THEN
+        GetStateStruct := stInvalidState;
+        RETURN;
+    END_IF
+    CASE GetStateCode(nState) OF
+        -1: GetStateStruct := stInvalidState;
+        0: GetStateStruct := stUnknownState;
+        ELSE
+            GetStateStruct := arrStates[nState];
+    END_CASE
+    {warning restore C0371}
+    END_METHOD
 
 
 Related:
@@ -7685,6 +7748,7 @@ FB_PositionStatePMPS_Test
     Exec();
 
     END_FUNCTION_BLOCK
+
     ACTION HandleBPTM:
     // Send the fake BPTM our assertion request by changing stStateReq.stBeamParams
     // We expect to recieve bTransitionAuthorized TRUE after some delta T
@@ -7694,6 +7758,7 @@ FB_PositionStatePMPS_Test
         PT:=T#3s);
     bTransitionAuthorized := tonReq.Q AND stMotionStage.bExecute;
     END_ACTION
+
     ACTION HandleFFO:
     // Skip implementing this for offline testing
     // We won't be able to tell if it worked anyway

@@ -5640,6 +5640,7 @@ fbFF(i_xOK := xMPS_OK,
 ACT_IO();
 
 END_FUNCTION_BLOCK
+
 ACTION ACT_IO:
 (*Inputs*)
 stPneumaticActuator.i_bInLimitSwitch :=  i_xInsertedLS;
@@ -5653,6 +5654,7 @@ q_xRetract_DO:=stPneumaticActuator.q_bRetract;
 stPneumaticActuator.bRetractOK := ibRetractOK;
 stPneumaticActuator.bInsertOK := ibInsertOK;
 END_ACTION
+
 ACTION ACT_Logger:
 // Log Valve timeouts
 IF (tInserttimeout.Q OR tRetracttimeout.Q) THEN fbLogger(sMsg:=stPneumaticActuator.sErrorMessage, eSevr:=TcEventSeverity.Warning); END_IF
@@ -6534,9 +6536,11 @@ END_ACTION
 <span class="o">*</span><span class="p">)</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
+
 <span class="n">ACTION</span> <span class="n">Exec</span><span class="p">:</span>
 <span class="n">StateHandler</span><span class="p">();</span>
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">StateHandler</span><span class="p">:</span>
 <span class="o">//</span> <span class="n">Reset</span> <span class="n">just</span> <span class="n">goes</span> <span class="n">through</span> <span class="n">the</span> <span class="n">first</span><span class="o">-</span><span class="n">cycle</span> <span class="n">init</span> <span class="n">again</span>
 <span class="n">rtReset</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bReset</span><span class="p">);</span>
@@ -6683,6 +6687,7 @@ END_ACTION
     <span class="n">tArbiterTimeout</span><span class="p">:</span> <span class="n">TIME</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#1s;</span>
     <span class="n">bMoveOnArbiterTimeout</span><span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">fStateBoundaryDeadband</span><span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">bBPOKAutoReset</span><span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="kc">False</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;pv: PMPS&#39;</span><span class="p">}</span>
@@ -6702,10 +6707,12 @@ END_ACTION
 <span class="o">*</span><span class="p">)</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
+
 <span class="n">ACTION</span> <span class="n">Exec</span><span class="p">:</span>
 <span class="n">StateHandler</span><span class="p">();</span>
 <span class="n">PMPSHandler</span><span class="p">();</span>
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">PMPSHandler</span><span class="p">:</span>
 <span class="n">fbStatePMPS</span><span class="p">(</span>
     <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter</span><span class="p">,</span>
@@ -6721,7 +6728,8 @@ END_ACTION
     <span class="n">bArbiterEnabled</span><span class="o">:=</span><span class="n">bArbiterEnabled</span><span class="p">,</span>
     <span class="n">tArbiterTimeout</span><span class="o">:=</span><span class="n">tArbiterTimeout</span><span class="p">,</span>
     <span class="n">bMoveOnArbiterTimeout</span><span class="o">:=</span><span class="n">bMoveOnArbiterTimeout</span><span class="p">,</span>
-    <span class="n">fStateBoundaryDeadband</span><span class="o">:=</span><span class="n">fStateBoundaryDeadband</span><span class="p">);</span>
+    <span class="n">fStateBoundaryDeadband</span><span class="o">:=</span><span class="n">fStateBoundaryDeadband</span><span class="p">,</span>
+    <span class="n">bBPOKAutoReset</span><span class="o">:=</span><span class="n">bBPOKAutoReset</span><span class="p">);</span>
 
 <span class="n">fbEncErrFFO</span><span class="p">(</span>
     <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
@@ -6768,10 +6776,12 @@ END_ACTION
 <span class="o">*</span><span class="p">)</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
+
 <span class="n">ACTION</span> <span class="n">Exec</span><span class="p">:</span>
 <span class="n">StateHandler</span><span class="p">();</span>
 <span class="n">PMPSHandler</span><span class="p">();</span>
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">PMPSHandler</span><span class="p">:</span>
 <span class="n">fbStatePMPS</span><span class="p">(</span>
     <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
@@ -7426,6 +7436,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
+    bBPOKAutoReset: BOOL := False;
 END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
@@ -7441,12 +7452,14 @@ END_VAR
 Exec();
 
 END_FUNCTION_BLOCK
+
 ACTION AssertHere:
 fbArbiter.AddRequest(
     sDevName := stMotionStage.sName,
     nReqID := stStateReq.nRequestAssertionID,
     stReqBP := stStateReq.stBeamParams);
 END_ACTION
+
 ACTION ClearAsserts:
 fbArbiter.RemoveRequest(nTransitionAssertionID);
 fbArbiter.RemoveRequest(nUnknownAssertionID);
@@ -7454,6 +7467,7 @@ FOR nIter := 1 TO MOTION_GVL.MAX_STATES DO
     fbArbiter.RemoveRequest(arrStates[nIter].nRequestAssertionID);
 END_FOR
 END_ACTION
+
 ACTION HandleBPTM:
 (*
   Handle finishing the bptm late if timed out
@@ -7480,6 +7494,7 @@ bptm(fbArbiter:=fbArbiter,
      q_xTransitionAuthorized=&gt;bInternalAuth,
      bDone=&gt;bBPTMDone);
 END_ACTION
+
 ACTION HandleFFO:
 // stBeamNeeded will point to Unknown/No beam if we are out of state bounds or in motion
 // Otherwise we&#39;ll have the current state&#39;s beam parameters
@@ -7496,6 +7511,8 @@ bAtSafeState := F_SafeBPCompare(stHighBeamThreshold, stBeamNeeded);
 ffBeamParamsOk.i_xOK := bFFOxOk;
 ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
 ffBeamParamsOk.i_xReset R= NOT ffBeamParamsOk.i_xOK;
+ffBeamParamsOk.i_xAutoReset := bBPOKAutoReset;
+
 ffBeamParamsOk(
     i_DevName:=stMotionStage.sName,
     i_Desc:=&#39;Beam parameter mismatch&#39;,
@@ -7618,12 +7635,15 @@ END_ACTION
 <span class="o">//</span> <span class="n">This</span> <span class="ow">is</span> <span class="n">meant</span> <span class="n">to</span> <span class="n">be</span> <span class="n">subclassed</span><span class="o">.</span> <span class="n">The</span> <span class="n">parent</span> <span class="k">class</span> <span class="nc">body</span> <span class="ow">is</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">Exec</span> <span class="n">action</span><span class="o">.</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
+
 <span class="n">ACTION</span> <span class="n">AssertHere</span><span class="p">:</span>
 
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">ClearAsserts</span><span class="p">:</span>
 
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">Exec</span><span class="p">:</span>
 <span class="o">//</span> <span class="n">Initialize</span> <span class="ow">or</span> <span class="n">reinitialize</span> <span class="n">to</span> <span class="n">the</span> <span class="n">current</span> <span class="n">state</span> <span class="n">value</span>
 <span class="n">rtBPTMDone</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bBPTMDone</span><span class="p">);</span>
@@ -7744,12 +7764,55 @@ END_ACTION
 <span class="n">stBeamNeeded</span> <span class="o">:=</span> <span class="n">GetBeamFromState</span><span class="p">(</span><span class="n">getState</span><span class="p">);</span>
 <span class="n">HandleFFO</span><span class="p">();</span>
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">HandleBPTM</span><span class="p">:</span>
 
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">HandleFFO</span><span class="p">:</span>
 
 <span class="n">END_ACTION</span>
+
+<span class="n">METHOD</span> <span class="n">GetBeamFromState</span> <span class="p">:</span> <span class="n">ST_BeamParams</span><span class="p">;</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nState</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">stState</span><span class="p">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">stState</span> <span class="o">:=</span> <span class="n">GetStateStruct</span><span class="p">(</span><span class="n">nState</span><span class="p">);</span>
+<span class="n">GetBeamFromState</span> <span class="o">:=</span> <span class="n">stState</span><span class="o">.</span><span class="n">stBeamParams</span><span class="p">;</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">GetStateCode</span> <span class="p">:</span> <span class="n">INT</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nState</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">IF</span> <span class="n">nState</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="n">OR</span> <span class="n">nState</span> <span class="o">&gt;</span> <span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">MAX_STATES</span> <span class="n">THEN</span>
+    <span class="n">GetStateCode</span> <span class="o">:=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="n">ELSE</span>
+    <span class="n">GetStateCode</span> <span class="o">:=</span> <span class="n">nState</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">GetStateStruct</span> <span class="p">:</span> <span class="n">DUT_PositionState</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nState</span><span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="p">{</span><span class="n">warning</span> <span class="n">disable</span> <span class="n">C0371</span><span class="p">}</span>
+<span class="o">//</span> <span class="n">Implicit</span> <span class="n">VAR_IN_OUT</span> <span class="n">reference</span> <span class="n">inside</span> <span class="n">a</span> <span class="n">method</span> <span class="n">needs</span> <span class="n">special</span> <span class="n">handling</span>
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">__ISVALIDREF</span><span class="p">(</span><span class="n">arrStates</span><span class="p">)</span> <span class="n">THEN</span>
+    <span class="n">GetStateStruct</span> <span class="o">:=</span> <span class="n">stInvalidState</span><span class="p">;</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">CASE</span> <span class="n">GetStateCode</span><span class="p">(</span><span class="n">nState</span><span class="p">)</span> <span class="n">OF</span>
+    <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="n">GetStateStruct</span> <span class="o">:=</span> <span class="n">stInvalidState</span><span class="p">;</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="n">GetStateStruct</span> <span class="o">:=</span> <span class="n">stUnknownState</span><span class="p">;</span>
+    <span class="n">ELSE</span>
+        <span class="n">GetStateStruct</span> <span class="o">:=</span> <span class="n">arrStates</span><span class="p">[</span><span class="n">nState</span><span class="p">];</span>
+<span class="n">END_CASE</span>
+<span class="p">{</span><span class="n">warning</span> <span class="n">restore</span> <span class="n">C0371</span><span class="p">}</span>
+<span class="n">END_METHOD</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -7778,6 +7841,7 @@ END_ACTION
 <span class="n">Exec</span><span class="p">();</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
+
 <span class="n">ACTION</span> <span class="n">HandleBPTM</span><span class="p">:</span>
 <span class="o">//</span> <span class="n">Send</span> <span class="n">the</span> <span class="n">fake</span> <span class="n">BPTM</span> <span class="n">our</span> <span class="n">assertion</span> <span class="n">request</span> <span class="n">by</span> <span class="n">changing</span> <span class="n">stStateReq</span><span class="o">.</span><span class="n">stBeamParams</span>
 <span class="o">//</span> <span class="n">We</span> <span class="n">expect</span> <span class="n">to</span> <span class="n">recieve</span> <span class="n">bTransitionAuthorized</span> <span class="n">TRUE</span> <span class="n">after</span> <span class="n">some</span> <span class="n">delta</span> <span class="n">T</span>
@@ -7787,6 +7851,7 @@ END_ACTION
     <span class="n">PT</span><span class="o">:=</span><span class="n">T</span><span class="c1">#3s);</span>
 <span class="n">bTransitionAuthorized</span> <span class="o">:=</span> <span class="n">tonReq</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bExecute</span><span class="p">;</span>
 <span class="n">END_ACTION</span>
+
 <span class="n">ACTION</span> <span class="n">HandleFFO</span><span class="p">:</span>
 <span class="o">//</span> <span class="n">Skip</span> <span class="n">implementing</span> <span class="n">this</span> <span class="k">for</span> <span class="n">offline</span> <span class="n">testing</span>
 <span class="o">//</span> <span class="n">We</span> <span class="n">won</span><span class="s1">&#39;t be able to tell if it worked anyway</span>
