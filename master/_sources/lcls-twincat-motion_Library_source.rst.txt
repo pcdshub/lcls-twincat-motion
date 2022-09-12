@@ -5402,9 +5402,13 @@ FB_MotionPneumaticActuator
         ibOverrideInterlock:BOOL; (*if true interlocks are ignored*)
         // Reset fault
         {attribute 'pytmc' := '
-        pv: FF_Reset
+        pv: FFO_Reset
         '}
         i_xReset: BOOL;
+        {attribute 'pytmc' := '
+        pv: FFO_AutoReset
+        '}
+        i_xAutoReset: BOOL;
     END_VAR
     VAR_OUTPUT
         {attribute 'pytmc' := '
@@ -5537,6 +5541,7 @@ FB_MotionPneumaticActuator
     (*FAST FAULT*)
     fbFF(i_xOK := xMPS_OK,
         i_xReset := i_xReset,
+        i_xAutoReset := i_xAutoReset,
         io_fbFFHWO := io_fbFFHWO);
 
     (*Soft IO Mapping to Epics pvs*)
