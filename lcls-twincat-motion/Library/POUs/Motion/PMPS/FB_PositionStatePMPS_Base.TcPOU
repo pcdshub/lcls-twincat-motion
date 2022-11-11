@@ -9,7 +9,7 @@
 *)
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
-    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
+    arrStates: ARRAY[1..MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
     bArbiterEnabled: BOOL := TRUE;
@@ -218,7 +218,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF nState < 0 OR nState > MOTION_GVL.MAX_STATES THEN
+        <ST><![CDATA[IF nState < 0 OR nState > MAX_STATES THEN
     GetStateCode := -1;
 ELSE
     GetStateCode := nState;
