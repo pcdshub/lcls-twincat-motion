@@ -13,10 +13,15 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
+    bReadPmpsDb: BOOL;
+    sPmpsDeviceName: STRING;
+    stPmpsDoc: SJsonValue := PMPS_GVL.BP_jsonDoc;
     stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
     bBPOKAutoReset: BOOL := False;
 END_VAR
 VAR
+    fbReadPmpsDb: FB_JsonDocToSafeBP;
+    ftDbBusy: F_TRIG;
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
     ffZeroRate: FB_FastFault;
@@ -140,6 +145,27 @@ ffMaint(
     i_Desc := 'Device is in maintenance mode',
     i_TypeCode := 16#1004,
     io_fbFFHWO := fbFFHWO);]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandlePmpsDb" Id="{12f558ca-eec1-4749-8d96-1f602a06515d}">
+      <Implementation>
+        <ST><![CDATA[
+// Automatically read from the pmps db when it updates
+// Assume update if no longer busy and no errors
+
+ftDbBusy(CLK:=PMPS_GVL.fbPmpsFileReader.bBusy);
+IF ftDbBusy.Q THEN
+    bReadPmpsDb S= NOT PMPS_GVL.fbPmpsFileReader.bError;
+END_IF
+
+fbReadPmpsDb(
+    bExecute:=bReadPmpsDb,
+    jsonDoc:=stPmpsDoc,
+    sDeviceName:=sPmpsDeviceName,
+    arrStates:=arrStates,
+    io_fbFFHWO:=fbFFHWO,
+);
+bReadPmpsDb R= NOT fbReadPmpsDb.bBusy;]]></ST>
       </Implementation>
     </Action>
   </POU>

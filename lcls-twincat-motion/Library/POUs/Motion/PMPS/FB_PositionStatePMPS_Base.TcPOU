@@ -77,7 +77,11 @@ END_VAR]]></Declaration>
     </Action>
     <Action Name="Exec" Id="{5b04393f-c32f-49f1-a610-cb4c89f50675}">
       <Implementation>
-        <ST><![CDATA[// Initialize or reinitialize to the current state value
+        <ST><![CDATA[
+// Load the pmps parameters as needed
+HandlePmpsDb();
+
+// Initialize or reinitialize to the current state value
 rtBPTMDone(CLK:=bBPTMDone);
 ftMotorExec(CLK:=stMotionStage.bExecute);
 tonDone(
@@ -253,6 +257,11 @@ END_CASE
       </Implementation>
     </Action>
     <Action Name="HandleFFO" Id="{4a6d3817-8b4c-48a0-a34b-e22189bbf6e2}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandlePmpsDb" Id="{c46541f7-0c03-4891-89e4-77cab70d8f02}">
       <Implementation>
         <ST><![CDATA[]]></ST>
       </Implementation>
