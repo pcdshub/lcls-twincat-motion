@@ -100,7 +100,14 @@ STRUCT
     sPmpsState: STRING;
 
     // Beam parameters associated with this state
+    {attribute 'pytmc' := '
+        pv: BP
+        io: i
+    '}
     stBeamParams: ST_BeamParams := PMPS_GVL.cst0RateBeam;
+
+    // Set to TRUE once the PMPS library has loaded a valid state from the database
+    bBeamParamsLoaded: BOOL;
 
     // Transition ID associated with this state
     nRequestAssertionID: UDINT;
