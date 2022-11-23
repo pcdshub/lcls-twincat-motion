@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_Standard_PMPSDB" Id="{52f7b5a3-5818-4b33-bcd8-067d0c9d8102}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Standard_PMPSDB
+VAR_IN_OUT
+    io_fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // If TRUE, FB will run. Reads when enable goes TRUE.
+    bEnable: BOOL;
+    // E.g. lfe-motion
+    sPlcName: STRING;
+    {attribute 'pytmc' := '
+        pv: @(PREFIX)DB:REFRESH
+        io: io
+    '}
+    // Set to TRUE to cause an extra read.
+    bRefresh: BOOL;
+    // Directory where the DB is stored.
+    sDirectory: STRING := '/Hard Disk/ftp/PMPS/';
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    bExecute: BOOL;
+    rtEnable: R_TRIG;
+    rtRefresh: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT bEnable THEN
+    RETURN;
+END_IF
+rtEnable(CLK:=bEnable);
+rtRefresh(CLK:=bRefresh);
+bRefresh := FALSE;
+
+bExecute S= rtEnable.Q OR rtRefresh.Q;
+
+MOTION_GVL.fbPmpsFileReader(
+    io_fbFFHWO:=io_fbFFHWO,
+    bExecute:=bExecute,
+    sSrcPathName:=CONCAT(CONCAT(sDirectory, sPlcName), '.json'),
+    sPLCName:=sPLCName,
+    PMPS_jsonDoc=>PMPS_GVL.BP_jsonDoc,
+);
+
+bExecute R= NOT MOTION_GVL.fbPmpsFileReader.bBusy AND NOT rtEnable.Q AND NOT rtRefresh.Q;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

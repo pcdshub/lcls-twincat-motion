@@ -15,7 +15,7 @@ END_VAR
 VAR_INPUT
     bReadPmpsDb: BOOL;
     sPmpsDeviceName: STRING;
-    stPmpsDoc: SJsonValue := PMPS_GVL.BP_jsonDoc;
+    stPmpsDoc: SJsonValue;
     stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
     bBPOKAutoReset: BOOL := False;
 END_VAR
@@ -153,9 +153,9 @@ ffMaint(
 // Automatically read from the pmps db when it updates
 // Assume update if no longer busy and no errors
 
-ftDbBusy(CLK:=PMPS_GVL.fbPmpsFileReader.bBusy);
+ftDbBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
 IF ftDbBusy.Q THEN
-    bReadPmpsDb S= NOT PMPS_GVL.fbPmpsFileReader.bError;
+    bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
 END_IF
 
 fbReadPmpsDb(
