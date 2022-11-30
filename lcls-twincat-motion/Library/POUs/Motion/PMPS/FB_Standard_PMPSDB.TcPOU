@@ -20,11 +20,22 @@ VAR_INPUT
     sDirectory: STRING := '/Hard Disk/ftp/PMPS/';
 END_VAR
 VAR_OUTPUT
+    {attribute 'pytmc' := '
+        pv: LAST_REFRESH
+        io: i
+    '}
+    nLastRefreshTime: DINT;
 END_VAR
 VAR
     bExecute: BOOL;
     rtEnable: R_TRIG;
     rtRefresh: R_TRIG;
+    ftBusy: F_TRIG;
+
+    // Time tracking liften from Arbiter PLCs
+	fbTime : FB_LocalSystemTime := ( bEnable := TRUE, dwCycle := 1 );
+	fbTime_to_UTC: FB_TzSpecificLocalTimeToSystemTime;
+	fbGetTimeZone: FB_GetTimeZoneInformation;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -45,7 +56,19 @@ MOTION_GVL.fbPmpsFileReader(
     PMPS_jsonDoc=>PMPS_GVL.BP_jsonDoc,
 );
 
-bExecute R= NOT MOTION_GVL.fbPmpsFileReader.bBusy AND NOT rtEnable.Q AND NOT rtRefresh.Q;]]></ST>
+ftBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+
+// Lifted from Arbiter PLCs: keep track of the time
+fbTime(sNetID:='');
+fbGetTimeZone(sNetID:='', bExecute:=True, tTimeout:=T#10S);
+fbTime_to_UTC(in:= fbTime.systemTime , tzInfo:=fbGetTimeZone.tzInfo);
+
+// Update the refresh time on successful read
+IF ftBusy.Q AND NOT MOTION_GVL.fbPmpsFileReader.bError THEN
+   nLastRefreshTime := TO_DINT(TO_DT(SystemTime_TO_DT(fbTime_to_UTC.out))); 
+END_IF
+
+bExecute R= ftBusy.Q;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
