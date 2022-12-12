@@ -68,7 +68,7 @@ VAR
         io: io
         expand: %.2d
     '}
-    arrStates: ARRAY[1..MAX_STATES] OF DUT_PositionState;
+    arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
 
     // Corresponding arrStates index to move to, or 0 if no move selected
     setState: INT;
@@ -81,7 +81,7 @@ VAR
     stUnknown: DUT_PositionState;
     stGoal: DUT_PositionState;
     fbStateMove: FB_PositionStateMove;
-    fbStateInternal: ARRAY[1..MAX_STATES] OF FB_PositionStateInternal;
+    fbStateInternal: ARRAY[1..GeneralConstants.MAX_STATES] OF FB_PositionStateInternal;
     nIndex: INT;
     bNewGoal: BOOL;
     bInnerExec: BOOL;
@@ -131,7 +131,7 @@ IF NOT bInit THEN
 END_IF
 
 // All state internal handlers
-FOR nIndex := 1 TO MAX_STATES DO
+FOR nIndex := 1 TO GeneralConstants.MAX_STATES DO
     IF arrStates[nIndex].bValid THEN
         fbStateInternal[nIndex](
             stMotionStage:=stMotionStage,
@@ -142,7 +142,7 @@ END_FOR
 // Check where we are by going through all possible states.
 // Note this favors the highest-number state that we're at, it's up to you to make your states mutually exclusive.
 getState := 0;
-FOR nIndex := 1 TO MAX_STATES DO
+FOR nIndex := 1 TO GeneralConstants.MAX_STATES DO
     IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
         getState := nIndex;
     END_IF
