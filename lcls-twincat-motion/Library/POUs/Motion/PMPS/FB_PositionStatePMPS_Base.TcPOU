@@ -22,13 +22,8 @@ VAR_INPUT
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-    nTransitionAssertionID: UDINT;
-    nUnknownAssertionID: UDINT;
     tArbiterTimeout: TIME := T#1s;
     bMoveOnArbiterTimeout: BOOL := TRUE;
-    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -37,6 +32,8 @@ VAR_OUTPUT
     bArbiterTimeout: BOOL;
 END_VAR
 VAR
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
+    stTransitionState: DUT_PositionState;
     bInit: BOOL := TRUE;
     bTransDone: BOOL;
     rtTransReq: R_TRIG;
@@ -96,8 +93,6 @@ IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);
     bInTransition := FALSE;
-    stInvalidState.nRequestAssertionID := nUnknownAssertionID;
-    stUnknownState.nRequestAssertionID := nUnknownAssertionID;
     rtTransReq(CLK:=FALSE);
     bTransitionAuthorized := FALSE;
     bArbiterTimeout := FALSE;
@@ -239,12 +234,12 @@ END_VAR
         <ST><![CDATA[{warning disable C0371}
 // Implicit VAR_IN_OUT reference inside a method needs special handling
 IF NOT __ISVALIDREF(arrStates) THEN
-    GetStateStruct := stInvalidState;
+    GetStateStruct := stTransitionState;
     RETURN;
 END_IF
 CASE GetStateCode(nState) OF
-    -1: GetStateStruct := stInvalidState;
-    0: GetStateStruct := stUnknownState;
+    -1: GetStateStruct := stTransitionState;
+    0: GetStateStruct := stTransitionState;
     ELSE
         GetStateStruct := arrStates[nState];
 END_CASE
