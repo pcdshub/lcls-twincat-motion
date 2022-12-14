@@ -13,9 +13,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     sPmpsDeviceName: STRING;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-    nTransitionAssertionID: UDINT;
-    nUnknownAssertionID: UDINT;
+    sTransitionKey: STRING;
     {attribute 'pytmc' := '
         pv: PMPS:ARB:ENABLE
         io: io
@@ -59,6 +57,7 @@ PMPSHandler();]]></ST>
     stMotionStage:=stMotionStage,
     arrStates:=arrStates,
     sPmpsDeviceName:=sPmpsDeviceName,
+    sTransitionKey:=sTransitionKey,
     stPmpsDoc:= PMPS_GVL.BP_jsonDoc,
     bRequestTransition:=setState <> 0,
     setState:=setState,
