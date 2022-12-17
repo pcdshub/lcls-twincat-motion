@@ -96,31 +96,11 @@ STRUCT
     // Is set to TRUE by FB_PositionStateInternal when called
     bUpdated: BOOL;
 
-    // PMPS database lookup name for this state
+    // We give this a state name and it is used to load parameters from the pmps database.
     {attribute 'pytmc' := '
-        pv: PMPS_STATE
-        io: i
-        field: DESC PMPS Database Lookup Key
+        pv:
     '}
-    sPmpsState: STRING;
-
-    // Beam parameters associated with this state
-    {attribute 'pytmc' := '
-        pv: BP
-        io: i
-    '}
-    stBeamParams: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-
-    // Set to TRUE once the PMPS library has loaded a valid state from the database
-    {attribute 'pytmc' := '
-        pv: PMPS_LOADED
-        io: i
-        field: DESC TRUE if PMPS loaded parameters from the database.
-    '}
-    bBeamParamsLoaded: BOOL;
-
-    // Transition ID associated with this state
-    nRequestAssertionID: UDINT;
+    stPMPS: ST_DbStateParams;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>

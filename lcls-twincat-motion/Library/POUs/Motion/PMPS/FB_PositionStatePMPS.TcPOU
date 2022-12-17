@@ -21,9 +21,7 @@ VAR_INPUT
     bBPOKAutoReset: BOOL := False;
 END_VAR
 VAR
-    arrLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
-    arrBPs: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_BeamParams;
-    arrTransitionIDs: ARRAY[0..GeneralConstants.MAX_STATES] OF UDINT;
+    arrPMPS: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     nBPIndex: INT;
     nTransitionAssertionID: UDINT;
     fbReadPmpsDb: FB_JsonDocToSafeBP;
@@ -48,15 +46,15 @@ END_VAR
       <Implementation>
         <ST><![CDATA[fbArbiter.AddRequest(
     sDevName := stMotionStage.sName,
-    nReqID := stStateReq.nRequestAssertionID,
-    stReqBP := stStateReq.stBeamParams);]]></ST>
+    nReqID := stStateReq.stPMPS.nRequestAssertionID,
+    stReqBP := stStateReq.stPMPS.stBeamParams);]]></ST>
       </Implementation>
     </Action>
     <Action Name="ClearAsserts" Id="{a5b537df-5b20-41f7-b1d6-59ce223e5b6e}">
       <Implementation>
         <ST><![CDATA[fbArbiter.RemoveRequest(nTransitionAssertionID);
 FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
-    fbArbiter.RemoveRequest(arrStates[nIter].nRequestAssertionID);
+    fbArbiter.RemoveRequest(arrStates[nIter].stPMPS.nRequestAssertionID);
 END_FOR]]></ST>
       </Implementation>
     </Action>
@@ -75,14 +73,14 @@ IF rtDoLateFinish.Q THEN
     bLateFinish := FALSE;
 END_IF
 
-IF stStateReq.nRequestAssertionID <> nTransitionAssertionID THEN
+IF stStateReq.stPMPS.nRequestAssertionID <> nTransitionAssertionID THEN
     // Just normal bptm call
     bptm(fbArbiter:=fbArbiter,
          i_sDeviceName:=stMotionStage.sName,
          i_TransitionAssertionID:=nTransitionAssertionID,
          i_stTransitionAssertion:=stTransitionBeam,
-         i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
-         i_stRequestedAssertion:=stStateReq.stBeamParams,
+         i_nRequestedAssertionID:=stStateReq.stPMPS.nRequestAssertionID,
+         i_stRequestedAssertion:=stStateReq.stPMPS.stBeamParams,
          i_xDoneMoving:=bTransDone,
          stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
          q_xTransitionAuthorized=>bInternalAuth,
@@ -176,19 +174,17 @@ IF ftDbBusy.Q THEN
     bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
 END_IF
 
-arrLookupKeys[0] := sTransitionKey;
+arrPMPS[0].sPmpsState := sTransitionKey;
 FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
-    arrLookupKeys[nBPIndex] := arrStates[nBPIndex].sPmpsState;
+    arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
 END_FOR
 
 fbReadPmpsDb(
     bExecute:=bReadPmpsDb,
     jsonDoc:=stPmpsDoc,
     sDeviceName:=sPmpsDeviceName,
-    arrKeys:=arrLookupKeys,
     io_fbFFHWO:=fbFFHWO,
-    arrBPs=>arrBPs,
-    arrIDs=>arrTransitionIDs,
+    arrStates:=arrPMPS,
 );
 bReadPmpsDb R= NOT fbReadPmpsDb.bBusy;
 
@@ -196,15 +192,11 @@ ftRead(CLK:=fbReadPmpsDb.bBusy);
 
 stTransitionState.sName := 'Transition';
 IF ftRead.Q AND NOT fbReadPmpsDb.bError THEN
-    stTransitionBeam := arrBPs[0];
-    nTransitionAssertionID := arrTransitionIDs[0];
-    stTransitionState.stBeamParams := stTransitionBeam;
-    stTransitionState.nRequestAssertionID := nTransitionAssertionID;
-    stTransitionState.bBeamParamsLoaded := TRUE;
+    stTransitionBeam := arrPMPS[0].stBeamParams;
+    nTransitionAssertionID := arrPMPS[0].nRequestAssertionID;
+    stTransitionState.stPMPS := arrPMPS[0];
     FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
-        arrStates[nBPIndex].stBeamParams := arrBPs[nBPIndex];
-        arrStates[nBPIndex].nRequestAssertionID := arrTransitionIDs[nBPIndex];
-        arrStates[nBPIndex].bBeamParamsLoaded := TRUE;
+        arrStates[nBPIndex].stPMPS := arrPMPS[nBPIndex];
     END_FOR
 END_IF]]></ST>
       </Implementation>
