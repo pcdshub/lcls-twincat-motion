@@ -710,11 +710,11 @@ DUT_PositionState
         // Is set to TRUE by FB_PositionStateInternal when called
         bUpdated: BOOL;
 
-        // Beam parameters associated with this state
-        stBeamParams: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-
-        // Transition ID associated with this state
-        nRequestAssertionID: UDINT;
+        // We give this a state name and it is used to load parameters from the pmps database.
+        {attribute 'pytmc' := '
+            pv:
+        '}
+        stPMPS: ST_DbStateParams;
     END_STRUCT
     END_TYPE
 
@@ -1066,18 +1066,22 @@ MOTION_GVL
 
     {attribute 'qualified_only'}
     VAR_GLOBAL
-        stUnknownState: DUT_PositionState := (sName := 'Unknown');
-        stInvalidState: DUT_PositionState;
+        fbPmpsFileReader: FB_JsonFileToJsonDoc;
+        {attribute 'pytmc' := '
+            pv: @(PREFIX)DB
+            io: io
+        '}
+        fbStandardPMPSDB: FB_Standard_PMPSDB;
     END_VAR
     VAR_GLOBAL CONSTANT
-        // 16 including "Unknown" is the max for an EPICS MBBI
-        // This is the max number of user-defined states (OUT, TARGET1, YAG...)
-        MAX_STATES: INT := 15;
+        // Backcompat with the move of this constant to lcls-twincat-general
+        // Probably remove this later
+        MAX_STATES: INT := GeneralConstants.MAX_STATES;
     END_VAR
 
 
 Related:
-    * `DUT_PositionState`_
+    * `FB_Standard_PMPSDB`_
 
 
 POUs
@@ -6415,7 +6419,7 @@ FB_PositionStateBase
             io: io
             expand: %.2d
         '}
-        arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
+        arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
 
         // Corresponding arrStates index to move to, or 0 if no move selected
         setState: INT;
@@ -6428,7 +6432,7 @@ FB_PositionStateBase
         stUnknown: DUT_PositionState;
         stGoal: DUT_PositionState;
         fbStateMove: FB_PositionStateMove;
-        fbStateInternal: ARRAY[1..MOTION_GVL.MAX_STATES] OF FB_PositionStateInternal;
+        fbStateInternal: ARRAY[1..GeneralConstants.MAX_STATES] OF FB_PositionStateInternal;
         nIndex: INT;
         bNewGoal: BOOL;
         bInnerExec: BOOL;
@@ -6477,7 +6481,7 @@ FB_PositionStateBase
     END_IF
 
     // All state internal handlers
-    FOR nIndex := 1 TO MOTION_GVL.MAX_STATES DO
+    FOR nIndex := 1 TO GeneralConstants.MAX_STATES DO
         IF arrStates[nIndex].bValid THEN
             fbStateInternal[nIndex](
                 stMotionStage:=stMotionStage,
@@ -6488,7 +6492,7 @@ FB_PositionStateBase
     // Check where we are by going through all possible states.
     // Note this favors the highest-number state that we're at, it's up to you to make your states mutually exclusive.
     getState := 0;
-    FOR nIndex := 1 TO MOTION_GVL.MAX_STATES DO
+    FOR nIndex := 1 TO GeneralConstants.MAX_STATES DO
         IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=arrStates[nIndex]) THEN
             getState := nIndex;
         END_IF
@@ -6570,7 +6574,6 @@ Related:
     * `FB_PositionStateInternal`_
     * `FB_PositionStateMove`_
     * `F_AtPositionState`_
-    * `MOTION_GVL`_
 
 
 FB_PositionStateBase_WithPMPS
@@ -6589,9 +6592,8 @@ FB_PositionStateBase_WithPMPS
         fbFFHWO: FB_HardwareFFOutput;
     END_VAR
     VAR_INPUT
-        stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-        nTransitionAssertionID: UDINT;
-        nUnknownAssertionID: UDINT;
+        sPmpsDeviceName: STRING;
+        sTransitionKey: STRING;
         {attribute 'pytmc' := '
             pv: PMPS:ARB:ENABLE
             io: io
@@ -6632,12 +6634,12 @@ FB_PositionStateBase_WithPMPS
         fbFFHWO:=fbFFHWO,
         stMotionStage:=stMotionStage,
         arrStates:=arrStates,
+        sPmpsDeviceName:=sPmpsDeviceName,
+        sTransitionKey:=sTransitionKey,
+        stPmpsDoc:= PMPS_GVL.BP_jsonDoc,
         bRequestTransition:=setState <> 0,
         setState:=setState,
         getState:=getState,
-        stTransitionBeam:=stTransitionBeam,
-        nTransitionAssertionID:=nTransitionAssertionID,
-        nUnknownAssertionID:=nUnknownAssertionID,
         bArbiterEnabled:=bArbiterEnabled,
         tArbiterTimeout:=tArbiterTimeout,
         bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
@@ -6701,9 +6703,7 @@ FB_PositionStateBase_WithPMPS_Test
         arrStates:=arrStates,
         bRequestTransition:=setState <> 0,
         setState:=setState,
-        getState:=getState,
-        stTransitionBeam:=stTransitionBeam,
-        nTransitionAssertionID:=nTransitionAssertionID);
+        getState:=getState);
     END_ACTION
 
 
@@ -7348,16 +7348,27 @@ FB_PositionStatePMPS
         fbFFHWO: FB_HardwareFFOutput;
     END_VAR
     VAR_INPUT
+        bReadPmpsDb: BOOL;
+        sPmpsDeviceName: STRING;
+        sTransitionKey: STRING;
+        stPmpsDoc: SJsonValue;
         stHighBeamThreshold: ST_BeamParams := PMPS_GVL.cstFullBeam;
         bBPOKAutoReset: BOOL := False;
     END_VAR
     VAR
+        arrPMPS: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
+        nBPIndex: INT;
+        nTransitionAssertionID: UDINT;
+        fbReadPmpsDb: FB_JsonDocToSafeBP;
+        ftDbBusy: F_TRIG;
+        ftRead: F_TRIG;
         bptm: BeamParameterTransitionManager;
         ffBeamParamsOk: FB_FastFault;
         ffZeroRate: FB_FastFault;
         ffBPTMTimeoutAndMove: FB_FastFault;
         ffBPTMError: FB_FastFault;
         ffMaint: FB_FastFault;
+        ffUnknown: FB_FastFault;
         bFFOxOk: BOOL;
         bAtSafeState: BOOL;
         nIter: INT;
@@ -7369,15 +7380,14 @@ FB_PositionStatePMPS
     ACTION AssertHere:
     fbArbiter.AddRequest(
         sDevName := stMotionStage.sName,
-        nReqID := stStateReq.nRequestAssertionID,
-        stReqBP := stStateReq.stBeamParams);
+        nReqID := stStateReq.stPMPS.nRequestAssertionID,
+        stReqBP := stStateReq.stPMPS.stBeamParams);
     END_ACTION
 
     ACTION ClearAsserts:
     fbArbiter.RemoveRequest(nTransitionAssertionID);
-    fbArbiter.RemoveRequest(nUnknownAssertionID);
-    FOR nIter := 1 TO MOTION_GVL.MAX_STATES DO
-        fbArbiter.RemoveRequest(arrStates[nIter].nRequestAssertionID);
+    FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+        fbArbiter.RemoveRequest(arrStates[nIter].stPMPS.nRequestAssertionID);
     END_FOR
     END_ACTION
 
@@ -7395,17 +7405,19 @@ FB_PositionStatePMPS
         bLateFinish := FALSE;
     END_IF
 
-    // Just normal bptm call
-    bptm(fbArbiter:=fbArbiter,
-         i_sDeviceName:=stMotionStage.sName,
-         i_TransitionAssertionID:=nTransitionAssertionID,
-         i_stTransitionAssertion:=stTransitionBeam,
-         i_nRequestedAssertionID:=stStateReq.nRequestAssertionID,
-         i_stRequestedAssertion:=stStateReq.stBeamParams,
-         i_xDoneMoving:=bTransDone,
-         stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-         q_xTransitionAuthorized=>bInternalAuth,
-         bDone=>bBPTMDone);
+    IF stStateReq.stPMPS.nRequestAssertionID <> nTransitionAssertionID THEN
+        // Just normal bptm call
+        bptm(fbArbiter:=fbArbiter,
+             i_sDeviceName:=stMotionStage.sName,
+             i_TransitionAssertionID:=nTransitionAssertionID,
+             i_stTransitionAssertion:=stTransitionBeam,
+             i_nRequestedAssertionID:=stStateReq.stPMPS.nRequestAssertionID,
+             i_stRequestedAssertion:=stStateReq.stPMPS.stBeamParams,
+             i_xDoneMoving:=bTransDone,
+             stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+             q_xTransitionAuthorized=>bInternalAuth,
+             bDone=>bBPTMDone);
+    END_IF
     END_ACTION
 
     ACTION HandleFFO:
@@ -7471,6 +7483,51 @@ FB_PositionStatePMPS
         i_Desc := 'Device is in maintenance mode',
         i_TypeCode := 16#1004,
         io_fbFFHWO := fbFFHWO);
+
+    // Trip the beam for unknown state
+    ffUnknown(
+        i_xOK := getState <= 0 AND NOT bInTransition,
+        i_xAutoReset := TRUE,
+        i_DevName := stMotionStage.sName,
+        i_Desc := 'Unknown position between moves',
+        i_TypeCode := 16#1005,
+        io_fbFFHWO := fbFFHWO);
+    END_ACTION
+
+    ACTION HandlePmpsDb:
+    // Automatically read from the pmps db when it updates
+    // Assume update if no longer busy and no errors
+
+    ftDbBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+    IF ftDbBusy.Q THEN
+        bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
+    END_IF
+
+    arrPMPS[0].sPmpsState := sTransitionKey;
+    FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
+        arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
+    END_FOR
+
+    fbReadPmpsDb(
+        bExecute:=bReadPmpsDb,
+        jsonDoc:=stPmpsDoc,
+        sDeviceName:=sPmpsDeviceName,
+        io_fbFFHWO:=fbFFHWO,
+        arrStates:=arrPMPS,
+    );
+    bReadPmpsDb R= NOT fbReadPmpsDb.bBusy;
+
+    ftRead(CLK:=fbReadPmpsDb.bBusy);
+
+    stTransitionState.sName := 'Transition';
+    IF ftRead.Q AND NOT fbReadPmpsDb.bError THEN
+        stTransitionBeam := arrPMPS[0].stBeamParams;
+        nTransitionAssertionID := arrPMPS[0].nRequestAssertionID;
+        stTransitionState.stPMPS := arrPMPS[0];
+        FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
+            arrStates[nBPIndex].stPMPS := arrPMPS[nBPIndex];
+        END_FOR
+    END_IF
     END_ACTION
 
 
@@ -7492,7 +7549,7 @@ FB_PositionStatePMPS_Base
     *)
     VAR_IN_OUT
         stMotionStage: DUT_MotionStage;
-        arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
+        arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
     END_VAR
     VAR_INPUT
         bArbiterEnabled: BOOL := TRUE;
@@ -7505,13 +7562,8 @@ FB_PositionStatePMPS_Base
         setState: INT;
         getState: INT;
         fStateBoundaryDeadband: LREAL := 0;
-        stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-        nTransitionAssertionID: UDINT;
-        nUnknownAssertionID: UDINT;
         tArbiterTimeout: TIME := T#1s;
         bMoveOnArbiterTimeout: BOOL := TRUE;
-        stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-        stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
     END_VAR
     VAR_OUTPUT
         bTransitionAuthorized: BOOL;
@@ -7520,6 +7572,8 @@ FB_PositionStatePMPS_Base
         bArbiterTimeout: BOOL;
     END_VAR
     VAR
+        stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
+        stTransitionState: DUT_PositionState;
         bInit: BOOL := TRUE;
         bTransDone: BOOL;
         rtTransReq: R_TRIG;
@@ -7558,6 +7612,9 @@ FB_PositionStatePMPS_Base
     END_ACTION
 
     ACTION Exec:
+    // Load the pmps parameters as needed
+    HandlePmpsDb();
+
     // Initialize or reinitialize to the current state value
     rtBPTMDone(CLK:=bBPTMDone);
     ftMotorExec(CLK:=stMotionStage.bExecute);
@@ -7573,8 +7630,6 @@ FB_PositionStatePMPS_Base
         nGoalState := getState;
         stStateReq := GetStateStruct(getState);
         bInTransition := FALSE;
-        stInvalidState.nRequestAssertionID := nUnknownAssertionID;
-        stUnknownState.nRequestAssertionID := nUnknownAssertionID;
         rtTransReq(CLK:=FALSE);
         bTransitionAuthorized := FALSE;
         bArbiterTimeout := FALSE;
@@ -7686,6 +7741,10 @@ FB_PositionStatePMPS_Base
 
     END_ACTION
 
+    ACTION HandlePmpsDb:
+
+    END_ACTION
+
     METHOD GetBeamFromState : ST_BeamParams;
     VAR_INPUT
         nState: INT;
@@ -7694,14 +7753,14 @@ FB_PositionStatePMPS_Base
         stState: DUT_PositionState;
     END_VAR
     stState := GetStateStruct(nState);
-    GetBeamFromState := stState.stBeamParams;
+    GetBeamFromState := stState.stPMPS.stBeamParams;
     END_METHOD
 
     METHOD GetStateCode : INT
     VAR_INPUT
         nState: INT;
     END_VAR
-    IF nState < 0 OR nState > MOTION_GVL.MAX_STATES THEN
+    IF nState < 0 OR nState > GeneralConstants.MAX_STATES THEN
         GetStateCode := -1;
     ELSE
         GetStateCode := nState;
@@ -7715,12 +7774,12 @@ FB_PositionStatePMPS_Base
     {warning disable C0371}
     // Implicit VAR_IN_OUT reference inside a method needs special handling
     IF NOT __ISVALIDREF(arrStates) THEN
-        GetStateStruct := stInvalidState;
+        GetStateStruct := stTransitionState;
         RETURN;
     END_IF
     CASE GetStateCode(nState) OF
-        -1: GetStateStruct := stInvalidState;
-        0: GetStateStruct := stUnknownState;
+        -1: GetStateStruct := stTransitionState;
+        0: GetStateStruct := stTransitionState;
         ELSE
             GetStateStruct := arrStates[nState];
     END_CASE
@@ -7735,7 +7794,6 @@ Related:
     * `F_AtPositionState`_
     * `F_PosOverLowerBound`_
     * `F_PosUnderUpperBound`_
-    * `MOTION_GVL`_
 
 
 FB_PositionStatePMPS_Test
@@ -8016,6 +8074,85 @@ FB_SetEnables
 
 Related:
     * `DUT_MotionStage`_
+
+
+FB_Standard_PMPSDB
+^^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_Standard_PMPSDB
+    VAR_IN_OUT
+        io_fbFFHWO: FB_HardwareFFOutput;
+    END_VAR
+    VAR_INPUT
+        // If TRUE, FB will run. Reads when enable goes TRUE.
+        bEnable: BOOL;
+        // E.g. lfe-motion
+        sPlcName: STRING;
+        {attribute 'pytmc' := '
+            pv: REFRESH
+            io: io
+        '}
+        // Set to TRUE to cause an extra read.
+        bRefresh: BOOL;
+        // Directory where the DB is stored.
+        sDirectory: STRING := '/Hard Disk/ftp/PMPS/';
+    END_VAR
+    VAR_OUTPUT
+        {attribute 'pytmc' := '
+            pv: LAST_REFRESH
+            io: i
+        '}
+        nLastRefreshTime: DINT;
+    END_VAR
+    VAR
+        bExecute: BOOL;
+        rtEnable: R_TRIG;
+        rtRefresh: R_TRIG;
+        ftBusy: F_TRIG;
+
+        // Time tracking liften from Arbiter PLCs
+        fbTime : FB_LocalSystemTime := ( bEnable := TRUE, dwCycle := 1 );
+        fbTime_to_UTC: FB_TzSpecificLocalTimeToSystemTime;
+        fbGetTimeZone: FB_GetTimeZoneInformation;
+    END_VAR
+    IF NOT bEnable THEN
+        RETURN;
+    END_IF
+    rtEnable(CLK:=bEnable);
+    rtRefresh(CLK:=bRefresh);
+    bRefresh := FALSE;
+
+    bExecute S= rtEnable.Q OR rtRefresh.Q;
+
+    MOTION_GVL.fbPmpsFileReader(
+        io_fbFFHWO:=io_fbFFHWO,
+        bExecute:=bExecute,
+        sSrcPathName:=CONCAT(CONCAT(sDirectory, sPlcName), '.json'),
+        sPLCName:=sPLCName,
+        PMPS_jsonDoc=>PMPS_GVL.BP_jsonDoc,
+    );
+
+    ftBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+
+    // Lifted from Arbiter PLCs: keep track of the time
+    fbTime(sNetID:='');
+    fbGetTimeZone(sNetID:='', bExecute:=True, tTimeout:=T#10S);
+    fbTime_to_UTC(in:= fbTime.systemTime , tzInfo:=fbGetTimeZone.tzInfo);
+
+    // Update the refresh time on successful read
+    IF ftBusy.Q AND NOT MOTION_GVL.fbPmpsFileReader.bError THEN
+       nLastRefreshTime := TO_DINT(TO_DT(SystemTime_TO_DT(fbTime_to_UTC.out)));
+    END_IF
+
+    bExecute R= ftBusy.Q;
+
+    END_FUNCTION_BLOCK
+
+
+Related:
+    * `MOTION_GVL`_
 
 
 FB_StatePTPMove
