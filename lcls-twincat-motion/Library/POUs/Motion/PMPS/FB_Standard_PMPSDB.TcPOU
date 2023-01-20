@@ -33,9 +33,9 @@ VAR
     ftBusy: F_TRIG;
 
     // Time tracking liften from Arbiter PLCs
-	fbTime : FB_LocalSystemTime := ( bEnable := TRUE, dwCycle := 1 );
-	fbTime_to_UTC: FB_TzSpecificLocalTimeToSystemTime;
-	fbGetTimeZone: FB_GetTimeZoneInformation;
+    fbTime : FB_LocalSystemTime := ( bEnable := TRUE, dwCycle := 1 );
+    fbTime_to_UTC: FB_TzSpecificLocalTimeToSystemTime;
+    fbGetTimeZone: FB_GetTimeZoneInformation;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -65,7 +65,7 @@ fbTime_to_UTC(in:= fbTime.systemTime , tzInfo:=fbGetTimeZone.tzInfo);
 
 // Update the refresh time on successful read
 IF ftBusy.Q AND NOT MOTION_GVL.fbPmpsFileReader.bError THEN
-   nLastRefreshTime := TO_DINT(TO_DT(SystemTime_TO_DT(fbTime_to_UTC.out))); 
+   nLastRefreshTime := TO_DINT(TO_DT(SystemTime_TO_DT(fbTime_to_UTC.out)));
 END_IF
 
 bExecute R= ftBusy.Q;]]></ST>
