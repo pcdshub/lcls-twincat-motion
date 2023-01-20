@@ -12,9 +12,8 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-    nTransitionAssertionID: UDINT;
-    nUnknownAssertionID: UDINT;
+    sPmpsDeviceName: STRING;
+    sTransitionKey: STRING;
     {attribute 'pytmc' := '
         pv: PMPS:ARB:ENABLE
         io: io
@@ -57,12 +56,12 @@ PMPSHandler();]]></ST>
     fbFFHWO:=fbFFHWO,
     stMotionStage:=stMotionStage,
     arrStates:=arrStates,
+    sPmpsDeviceName:=sPmpsDeviceName,
+    sTransitionKey:=sTransitionKey,
+    stPmpsDoc:= PMPS_GVL.BP_jsonDoc,
     bRequestTransition:=setState <> 0,
     setState:=setState,
     getState:=getState,
-    stTransitionBeam:=stTransitionBeam,
-    nTransitionAssertionID:=nTransitionAssertionID,
-    nUnknownAssertionID:=nUnknownAssertionID,
     bArbiterEnabled:=bArbiterEnabled,
     tArbiterTimeout:=tArbiterTimeout,
     bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,

@@ -9,7 +9,7 @@
 *)
 VAR_IN_OUT
     stMotionStage: DUT_MotionStage;
-    arrStates: ARRAY[1..MOTION_GVL.MAX_STATES] OF DUT_PositionState;
+    arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
 END_VAR
 VAR_INPUT
     bArbiterEnabled: BOOL := TRUE;
@@ -22,13 +22,8 @@ VAR_INPUT
     setState: INT;
     getState: INT;
     fStateBoundaryDeadband: LREAL := 0;
-    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-    nTransitionAssertionID: UDINT;
-    nUnknownAssertionID: UDINT;
     tArbiterTimeout: TIME := T#1s;
     bMoveOnArbiterTimeout: BOOL := TRUE;
-    stInvalidState: DUT_PositionState := MOTION_GVL.stInvalidState;
-    stUnknownState: DUT_PositionState := MOTION_GVL.stUnknownState;
 END_VAR
 VAR_OUTPUT
     bTransitionAuthorized: BOOL;
@@ -37,6 +32,8 @@ VAR_OUTPUT
     bArbiterTimeout: BOOL;
 END_VAR
 VAR
+    stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
+    stTransitionState: DUT_PositionState;
     bInit: BOOL := TRUE;
     bTransDone: BOOL;
     rtTransReq: R_TRIG;
@@ -77,7 +74,11 @@ END_VAR]]></Declaration>
     </Action>
     <Action Name="Exec" Id="{5b04393f-c32f-49f1-a610-cb4c89f50675}">
       <Implementation>
-        <ST><![CDATA[// Initialize or reinitialize to the current state value
+        <ST><![CDATA[
+// Load the pmps parameters as needed
+HandlePmpsDb();
+
+// Initialize or reinitialize to the current state value
 rtBPTMDone(CLK:=bBPTMDone);
 ftMotorExec(CLK:=stMotionStage.bExecute);
 tonDone(
@@ -92,8 +93,6 @@ IF bInit OR nGoalState = 0 OR stMotionStage.bError THEN
     nGoalState := getState;
     stStateReq := GetStateStruct(getState);
     bInTransition := FALSE;
-    stInvalidState.nRequestAssertionID := nUnknownAssertionID;
-    stUnknownState.nRequestAssertionID := nUnknownAssertionID;
     rtTransReq(CLK:=FALSE);
     bTransitionAuthorized := FALSE;
     bArbiterTimeout := FALSE;
@@ -208,7 +207,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[stState := GetStateStruct(nState);
-GetBeamFromState := stState.stBeamParams;]]></ST>
+GetBeamFromState := stState.stPMPS.stBeamParams;]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetStateCode" Id="{30e413cd-5f48-49b3-b46d-6cd3e4359ded}">
@@ -218,7 +217,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF nState < 0 OR nState > MOTION_GVL.MAX_STATES THEN
+        <ST><![CDATA[IF nState < 0 OR nState > GeneralConstants.MAX_STATES THEN
     GetStateCode := -1;
 ELSE
     GetStateCode := nState;
@@ -235,12 +234,12 @@ END_VAR
         <ST><![CDATA[{warning disable C0371}
 // Implicit VAR_IN_OUT reference inside a method needs special handling
 IF NOT __ISVALIDREF(arrStates) THEN
-    GetStateStruct := stInvalidState;
+    GetStateStruct := stTransitionState;
     RETURN;
 END_IF
 CASE GetStateCode(nState) OF
-    -1: GetStateStruct := stInvalidState;
-    0: GetStateStruct := stUnknownState;
+    -1: GetStateStruct := stTransitionState;
+    0: GetStateStruct := stTransitionState;
     ELSE
         GetStateStruct := arrStates[nState];
 END_CASE
@@ -253,6 +252,11 @@ END_CASE
       </Implementation>
     </Action>
     <Action Name="HandleFFO" Id="{4a6d3817-8b4c-48a0-a34b-e22189bbf6e2}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandlePmpsDb" Id="{c46541f7-0c03-4891-89e4-77cab70d8f02}">
       <Implementation>
         <ST><![CDATA[]]></ST>
       </Implementation>

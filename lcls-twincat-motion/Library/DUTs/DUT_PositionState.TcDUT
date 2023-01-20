@@ -96,11 +96,11 @@ STRUCT
     // Is set to TRUE by FB_PositionStateInternal when called
     bUpdated: BOOL;
 
-    // Beam parameters associated with this state
-    stBeamParams: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-
-    // Transition ID associated with this state
-    nRequestAssertionID: UDINT;
+    // We give this a state name and it is used to load parameters from the pmps database.
+    {attribute 'pytmc' := '
+        pv:
+    '}
+    stPMPS: ST_DbStateParams;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>
