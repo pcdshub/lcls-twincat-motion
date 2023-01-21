@@ -26,6 +26,7 @@ VAR
     nTransitionAssertionID: UDINT;
     fbReadPmpsDb: FB_JsonDocToSafeBP;
     ftDbBusy: F_TRIG;
+    rtReadDBExec: R_TRIG;
     ftRead: F_TRIG;
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
@@ -174,10 +175,13 @@ IF ftDbBusy.Q THEN
     bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
 END_IF
 
-arrPMPS[0].sPmpsState := sTransitionKey;
-FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
-    arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
-END_FOR
+rtReadDBExec(CLK:=bReadPmpsDb);
+IF rtReadDBExec.Q THEN
+    arrPMPS[0].sPmpsState := sTransitionKey;
+    FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
+        arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
+    END_FOR
+END_IF
 
 fbReadPmpsDb(
     bExecute:=bReadPmpsDb,
