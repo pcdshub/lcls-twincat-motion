@@ -24,6 +24,7 @@ VAR
     arrPMPS: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     nBPIndex: INT;
     nTransitionAssertionID: UDINT;
+    nLastReqAssertionID: UDINT;
     fbReadPmpsDb: FB_JsonDocToSafeBP;
     ftDbBusy: F_TRIG;
     rtReadDBExec: R_TRIG;
@@ -75,6 +76,12 @@ IF rtDoLateFinish.Q THEN
 END_IF
 
 IF stStateReq.stPMPS.nRequestAssertionID <> nTransitionAssertionID THEN
+    (*
+        Edge case: the request is swapped out without a move
+        Same as above: we need a rising edge of bTransDone, so cause a falling edge and the let the rising edge happen next cycle
+        This will already be false when we request a positional move
+    *)
+    bTransDone R= stStateReq.stPMPS.nRequestAssertionID <> nLastReqAssertionID;
     // Just normal bptm call
     bptm(fbArbiter:=fbArbiter,
          i_sDeviceName:=stMotionStage.sName,
@@ -86,6 +93,7 @@ IF stStateReq.stPMPS.nRequestAssertionID <> nTransitionAssertionID THEN
          stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
          q_xTransitionAuthorized=>bInternalAuth,
          bDone=>bBPTMDone);
+    nLastReqAssertionID := stStateReq.stPMPS.nRequestAssertionID;
 END_IF]]></ST>
       </Implementation>
     </Action>
