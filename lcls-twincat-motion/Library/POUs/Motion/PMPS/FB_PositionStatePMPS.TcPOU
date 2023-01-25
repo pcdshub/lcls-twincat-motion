@@ -204,6 +204,7 @@ ftRead(CLK:=fbReadPmpsDb.bBusy);
 
 stTransitionState.sName := 'Transition';
 IF ftRead.Q AND NOT fbReadPmpsDb.bError THEN
+    stTransitionDb := arrPMPS[0];
     stTransitionBeam := arrPMPS[0].stBeamParams;
     nTransitionAssertionID := arrPMPS[0].nRequestAssertionID;
     stTransitionState.stPMPS := arrPMPS[0];
