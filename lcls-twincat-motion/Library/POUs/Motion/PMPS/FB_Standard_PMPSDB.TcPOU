@@ -46,7 +46,14 @@ rtEnable(CLK:=bEnable);
 rtRefresh(CLK:=bRefresh);
 bRefresh := FALSE;
 
-bExecute S= rtEnable.Q OR rtRefresh.Q;
+IF rtEnable.Q OR rtRefresh.Q THEN
+    // Make sure file reader gets a rising edge
+    MOTION_GVL.fbPmpsFileReader(
+        io_fbFFHWO:=io_fbFFHWO,
+        bExecute:=FALSE,
+    );
+    bExecute := TRUE;
+END_IF
 
 MOTION_GVL.fbPmpsFileReader(
     io_fbFFHWO:=io_fbFFHWO,
@@ -60,7 +67,7 @@ ftBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
 
 // Lifted from Arbiter PLCs: keep track of the time
 fbTime(sNetID:='');
-fbGetTimeZone(sNetID:='', bExecute:=True, tTimeout:=T#10S);
+fbGetTimeZone(sNetID:='', bExecute:=TRUE, tTimeout:=T#10S);
 fbTime_to_UTC(in:= fbTime.systemTime , tzInfo:=fbGetTimeZone.tzInfo);
 
 // Update the refresh time on successful read
