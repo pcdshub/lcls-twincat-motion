@@ -1279,10 +1279,11 @@
 <section id="global-version">
 <h2>Global_Version<a class="headerlink" href="#global-version" title="Permalink to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;TcGenerated&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;no-analysis&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;linkalways&#39;</span><span class="p">}</span>
 <span class="o">//</span> <span class="n">This</span> <span class="n">function</span> <span class="n">has</span> <span class="n">been</span> <span class="n">automatically</span> <span class="n">generated</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">project</span> <span class="n">information</span><span class="o">.</span>
 <span class="n">VAR_GLOBAL</span> <span class="n">CONSTANT</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;const_non_replaced&#39;</span><span class="p">}</span>
-    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;linkalways&#39;</span><span class="p">}</span>
     <span class="n">stLibVersion_lcls_twincat_motion</span> <span class="p">:</span> <span class="n">ST_LibVersion</span> <span class="o">:=</span> <span class="p">(</span><span class="n">iMajor</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">iMinor</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">iBuild</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">iRevision</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sVersion</span> <span class="o">:=</span> <span class="s1">&#39;0.0.0&#39;</span><span class="p">);</span>
 <span class="n">END_VAR</span>
 </pre></div>
@@ -1316,11 +1317,6 @@
         <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
     <span class="s1">&#39;}</span>
     <span class="n">fbStandardPMPSDB</span><span class="p">:</span> <span class="n">FB_Standard_PMPSDB</span><span class="p">;</span>
-<span class="n">END_VAR</span>
-<span class="n">VAR_GLOBAL</span> <span class="n">CONSTANT</span>
-    <span class="o">//</span> <span class="n">Backcompat</span> <span class="k">with</span> <span class="n">the</span> <span class="n">move</span> <span class="n">of</span> <span class="n">this</span> <span class="n">constant</span> <span class="n">to</span> <span class="n">lcls</span><span class="o">-</span><span class="n">twincat</span><span class="o">-</span><span class="n">general</span>
-    <span class="o">//</span> <span class="n">Probably</span> <span class="n">remove</span> <span class="n">this</span> <span class="n">later</span>
-    <span class="n">MAX_STATES</span><span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 </pre></div>
 </div>
@@ -7546,8 +7542,10 @@ VAR
     arrPMPS: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     nBPIndex: INT;
     nTransitionAssertionID: UDINT;
+    nLastReqAssertionID: UDINT;
     fbReadPmpsDb: FB_JsonDocToSafeBP;
     ftDbBusy: F_TRIG;
+    rtReadDBExec: R_TRIG;
     ftRead: F_TRIG;
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
@@ -7593,6 +7591,12 @@ IF rtDoLateFinish.Q THEN
 END_IF
 
 IF stStateReq.stPMPS.nRequestAssertionID &lt;&gt; nTransitionAssertionID THEN
+    (*
+        Edge case: the request is swapped out without a move
+        Same as above: we need a rising edge of bTransDone, so cause a falling edge and the let the rising edge happen next cycle
+        This will already be false when we request a positional move
+    *)
+    bTransDone R= stStateReq.stPMPS.nRequestAssertionID &lt;&gt; nLastReqAssertionID;
     // Just normal bptm call
     bptm(fbArbiter:=fbArbiter,
          i_sDeviceName:=stMotionStage.sName,
@@ -7604,6 +7608,7 @@ IF stStateReq.stPMPS.nRequestAssertionID &lt;&gt; nTransitionAssertionID THEN
          stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
          q_xTransitionAuthorized=&gt;bInternalAuth,
          bDone=&gt;bBPTMDone);
+    nLastReqAssertionID := stStateReq.stPMPS.nRequestAssertionID;
 END_IF
 END_ACTION
 
@@ -7673,7 +7678,7 @@ ffMaint(
 
 // Trip the beam for unknown state
 ffUnknown(
-    i_xOK := getState &lt;= 0 AND NOT bInTransition,
+    i_xOK := getState &gt; 0 OR bInTransition,
     i_xAutoReset := TRUE,
     i_DevName := stMotionStage.sName,
     i_Desc := &#39;Unknown position between moves&#39;,
@@ -7690,10 +7695,13 @@ IF ftDbBusy.Q THEN
     bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
 END_IF
 
-arrPMPS[0].sPmpsState := sTransitionKey;
-FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
-    arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
-END_FOR
+rtReadDBExec(CLK:=bReadPmpsDb);
+IF rtReadDBExec.Q THEN
+    arrPMPS[0].sPmpsState := sTransitionKey;
+    FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
+        arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
+    END_FOR
+END_IF
 
 fbReadPmpsDb(
     bExecute:=bReadPmpsDb,
@@ -7708,6 +7716,7 @@ ftRead(CLK:=fbReadPmpsDb.bBusy);
 
 stTransitionState.sName := &#39;Transition&#39;;
 IF ftRead.Q AND NOT fbReadPmpsDb.bError THEN
+    stTransitionDb := arrPMPS[0];
     stTransitionBeam := arrPMPS[0].stBeamParams;
     nTransitionAssertionID := arrPMPS[0].nRequestAssertionID;
     stTransitionState.stPMPS := arrPMPS[0];
@@ -7759,6 +7768,11 @@ END_ACTION
     <span class="n">bArbiterTimeout</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">TRANS</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">stTransitionDb</span><span class="p">:</span> <span class="n">ST_DbStateParams</span><span class="p">;</span>
     <span class="n">stTransitionBeam</span><span class="p">:</span> <span class="n">ST_BeamParams</span> <span class="o">:=</span> <span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">cst0RateBeam</span><span class="p">;</span>
     <span class="n">stTransitionState</span><span class="p">:</span> <span class="n">DUT_PositionState</span><span class="p">;</span>
     <span class="n">bInit</span><span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
@@ -8299,7 +8313,14 @@ END_ACTION
 <span class="n">rtRefresh</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bRefresh</span><span class="p">);</span>
 <span class="n">bRefresh</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 
-<span class="n">bExecute</span> <span class="n">S</span><span class="o">=</span> <span class="n">rtEnable</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">rtRefresh</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">IF</span> <span class="n">rtEnable</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">rtRefresh</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="o">//</span> <span class="n">Make</span> <span class="n">sure</span> <span class="n">file</span> <span class="n">reader</span> <span class="n">gets</span> <span class="n">a</span> <span class="n">rising</span> <span class="n">edge</span>
+    <span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">fbPmpsFileReader</span><span class="p">(</span>
+        <span class="n">io_fbFFHWO</span><span class="o">:=</span><span class="n">io_fbFFHWO</span><span class="p">,</span>
+        <span class="n">bExecute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
 
 <span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">fbPmpsFileReader</span><span class="p">(</span>
     <span class="n">io_fbFFHWO</span><span class="o">:=</span><span class="n">io_fbFFHWO</span><span class="p">,</span>
@@ -8313,7 +8334,7 @@ END_ACTION
 
 <span class="o">//</span> <span class="n">Lifted</span> <span class="kn">from</span> <span class="nn">Arbiter</span> <span class="n">PLCs</span><span class="p">:</span> <span class="n">keep</span> <span class="n">track</span> <span class="n">of</span> <span class="n">the</span> <span class="n">time</span>
 <span class="n">fbTime</span><span class="p">(</span><span class="n">sNetID</span><span class="o">:=</span><span class="s1">&#39;&#39;</span><span class="p">);</span>
-<span class="n">fbGetTimeZone</span><span class="p">(</span><span class="n">sNetID</span><span class="o">:=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">bExecute</span><span class="o">:=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tTimeout</span><span class="o">:=</span><span class="n">T</span><span class="c1">#10S);</span>
+<span class="n">fbGetTimeZone</span><span class="p">(</span><span class="n">sNetID</span><span class="o">:=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">bExecute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span> <span class="n">tTimeout</span><span class="o">:=</span><span class="n">T</span><span class="c1">#10S);</span>
 <span class="n">fbTime_to_UTC</span><span class="p">(</span><span class="ow">in</span><span class="o">:=</span> <span class="n">fbTime</span><span class="o">.</span><span class="n">systemTime</span> <span class="p">,</span> <span class="n">tzInfo</span><span class="o">:=</span><span class="n">fbGetTimeZone</span><span class="o">.</span><span class="n">tzInfo</span><span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Update</span> <span class="n">the</span> <span class="n">refresh</span> <span class="n">time</span> <span class="n">on</span> <span class="n">successful</span> <span class="n">read</span>
