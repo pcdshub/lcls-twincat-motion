@@ -24,8 +24,10 @@ VAR
     arrPMPS: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     nBPIndex: INT;
     nTransitionAssertionID: UDINT;
+    nLastReqAssertionID: UDINT;
     fbReadPmpsDb: FB_JsonDocToSafeBP;
     ftDbBusy: F_TRIG;
+    rtReadDBExec: R_TRIG;
     ftRead: F_TRIG;
     bptm: BeamParameterTransitionManager;
     ffBeamParamsOk: FB_FastFault;
@@ -74,6 +76,12 @@ IF rtDoLateFinish.Q THEN
 END_IF
 
 IF stStateReq.stPMPS.nRequestAssertionID <> nTransitionAssertionID THEN
+    (*
+        Edge case: the request is swapped out without a move
+        Same as above: we need a rising edge of bTransDone, so cause a falling edge and the let the rising edge happen next cycle
+        This will already be false when we request a positional move
+    *)
+    bTransDone R= stStateReq.stPMPS.nRequestAssertionID <> nLastReqAssertionID;
     // Just normal bptm call
     bptm(fbArbiter:=fbArbiter,
          i_sDeviceName:=stMotionStage.sName,
@@ -85,6 +93,7 @@ IF stStateReq.stPMPS.nRequestAssertionID <> nTransitionAssertionID THEN
          stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
          q_xTransitionAuthorized=>bInternalAuth,
          bDone=>bBPTMDone);
+    nLastReqAssertionID := stStateReq.stPMPS.nRequestAssertionID;
 END_IF]]></ST>
       </Implementation>
     </Action>
@@ -155,7 +164,7 @@ ffMaint(
 
 // Trip the beam for unknown state
 ffUnknown(
-    i_xOK := getState <= 0 AND NOT bInTransition,
+    i_xOK := getState > 0 OR bInTransition,
     i_xAutoReset := TRUE,
     i_DevName := stMotionStage.sName,
     i_Desc := 'Unknown position between moves',
@@ -174,10 +183,13 @@ IF ftDbBusy.Q THEN
     bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
 END_IF
 
-arrPMPS[0].sPmpsState := sTransitionKey;
-FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
-    arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
-END_FOR
+rtReadDBExec(CLK:=bReadPmpsDb);
+IF rtReadDBExec.Q THEN
+    arrPMPS[0].sPmpsState := sTransitionKey;
+    FOR nBPIndex := 1 TO GeneralConstants.MAX_STATES BY 1 DO
+        arrPMPS[nBPIndex] := arrStates[nBPIndex].stPMPS;
+    END_FOR
+END_IF
 
 fbReadPmpsDb(
     bExecute:=bReadPmpsDb,
@@ -192,6 +204,7 @@ ftRead(CLK:=fbReadPmpsDb.bBusy);
 
 stTransitionState.sName := 'Transition';
 IF ftRead.Q AND NOT fbReadPmpsDb.bError THEN
+    stTransitionDb := arrPMPS[0];
     stTransitionBeam := arrPMPS[0].stBeamParams;
     nTransitionAssertionID := arrPMPS[0].nRequestAssertionID;
     stTransitionState.stPMPS := arrPMPS[0];
