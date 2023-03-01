@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <DUT Name="DUT_MotionStage" Id="{10b5775d-5646-4d55-ad77-40abc3888de3}">
     <Declaration><![CDATA[TYPE DUT_MotionStage :
     // Defines the EPICS interface to moving a motor in TwinCAT
@@ -115,6 +115,27 @@ STRUCT
         field: DESC Count from encoder hardware
     '}
     nEncoderCount: UDINT;
+    // Forward Enable EPS struct
+    {attribute 'pytmc' := '
+        pv: PLC:stEPSForwardEnable
+        io: i
+        field: DESC Forward Enable Interlocks
+    '}
+    stEPSForwardEnable: DUT_EPS;
+    // Backward Enable EPS struct
+    {attribute 'pytmc' := '
+        pv: PLC:stEPSBackwardEnable
+        io: i
+        field: DESC Backward Enable Interlocks
+    '}
+    stEPSBackwardEnable: DUT_EPS;
+    // Power Enable EPS struct
+    {attribute 'pytmc' := '
+        pv: PLC:stEPSPowerEnable
+        io: i
+        field: DESC Power Interlocks
+    '}
+    stEPSPowerEnable: DUT_EPS;
 
     (* Settings *)
     // Name to use for log messages, fast faults, etc.
