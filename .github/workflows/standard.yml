@@ -1,0 +1,18 @@
+name: PCDS Standard Testing
+
+on:
+  push:
+  pull_request:
+  release:
+    types:
+      - published
+
+jobs:
+  standard:
+    uses: pcdshub/pcds-ci-helpers/.github/workflows/twincat-standard.yml@master
+    with:
+      # The workflow can be configured to look at a specific project directory, if
+      # desirable.  This defaults to the root of the repository (".").
+      project-root: "."
+      # Pattern (grep-compatible) of filenames to exclude in style checks.
+      style-exclude: ""
