@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MotionBPTM" Id="{f471bde6-e465-403f-9379-def7c3329cbf}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_MotionBPTM
+(*
+    This function block handles the beam parameter transition manager for a group of motors moving together to a destination with shared beam state.
+    stGoalParams and stTransParams are required arguments and must not share IDs with other state parameters in the PLC.
+
+    This is a building block not intended for use outside of lcls-twincat-motion.
+*)
+VAR_IN_OUT
+    // Array of motors that will move for this beam transition
+    astMotionStage: ARRAY[*] OF DUT_MotionStage;
+    // The arbiter to request beam states from
+    fbArbiter: FB_Arbiter;
+    // The fast fault output to fault to
+    fbFFHWO: FB_HardwareFFOutput;
+    // The parameters we want to transition to
+    stGoalParams: ST_DbStateParams;
+    // The parameters we want to use during the transition
+    stTransParams: ST_DbStateParams;
+END_VAR
+VAR_INPUT
+    // A device name to use in the GUI
+    sDeviceName: STRING;
+    // How long to wait for parameters before timing out
+    tArbiterTimeout: TIME := T#1s;
+    // Whether to fault and move on timeout (TRUE) or to wait (FALSE)
+    bMoveOnArbiterTimeout: BOOL := TRUE;
+    // Set to TRUE when it is safe to reset the BPTM timeout fast fault, to reset it early.
+    bResetBPTMTimeout: BOOL;
+END_VAR
+VAR_OUTPUT
+    // This becomes TRUE when the motors are allowed to move to their destinations.
+    bTransitionAuthorized: BOOL;
+    // This becomes TRUE once the full beam transition is done.
+    bDone: BOOL;
+END_VAR
+VAR
+    bptm: BeamParameterTransitionManager;
+    bDoneMoving: BOOL;
+    nPrevID: UDINT;
+    nIndex: DINT;
+
+    bInternalAuth: BOOL;
+
+    tonArbiter: TON;
+    bArbiterTimeout: BOOL;
+    ffBPTMTimeoutAndMove: FB_FastFault;
+    ffBPTMError: FB_FastFault;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+SetDefaultName();
+SetDoneMoving();
+RunBPTM();
+HandleTimeout();
+]]></ST>
+    </Implementation>
+    <Action Name="HandleTimeout" Id="{47918ef2-270e-45c7-89d1-13860ad00457}">
+      <Implementation>
+        <ST><![CDATA[
+// Time the bptm busy
+tonArbiter(
+    IN:=bptm.bBusy,
+    PT:=tArbiterTimeout,
+    Q=>bArbiterTimeout,
+);
+bTransitionAuthorized := bInternalAuth OR (bArbiterTimeout AND bMoveOnArbiterTimeout);
+
+// Trip the beam for BPTM timeouts if we want to move
+// Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
+ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
+ffBPTMTimeoutAndMove.i_xReset S= bResetBPTMTimeout OR (bptm.bDone AND NOT bptm.bError);
+ffBPTMTimeoutAndMove(
+    i_DevName := sDeviceName,
+    i_Desc := 'BPTM Timeout',
+    i_TypeCode := 16#1002,
+    io_fbFFHWO := fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RunBPTM" Id="{2a8eea81-b08c-4171-a9e1-1702d22d9fba}">
+      <Implementation>
+        <ST><![CDATA[
+bptm(
+    fbArbiter:=fbArbiter,
+    i_sDeviceName:=sDeviceName,
+    i_TransitionAssertionID:=stTransParams.nRequestAssertionID,
+    i_stTransitionAssertion:=stTransParams.stBeamParams,
+    i_nRequestedAssertionID:=stGoalParams.nRequestAssertionID,
+    i_stRequestedAssertion:=stGoalParams.stBeamParams,
+    i_xDoneMoving:=bDoneMoving,
+    stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+    q_xTransitionAuthorized=>bInternalAuth,
+    bDone=>bDone,
+);
+
+// Trip the beam for BPTM Errors
+ffBPTMError.i_xOK := NOT bptm.bError;
+ffBPTMError.i_xReset S= bptm.bDone AND NOT bptm.bError;
+ffBPTMError(
+    i_DevName := sDeviceName,
+    i_Desc := 'BPTM error, state transition failed',
+    i_TypeCode := 16#1003,
+    io_fbFFHWO := fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SetDefaultName" Id="{c5f79c18-8787-4126-aeac-ec23a8e691e3}">
+      <Implementation>
+        <ST><![CDATA[
+// Pick the name of the first motor if none is provided
+IF sDeviceName = '' THEN
+    sDeviceName := astMotionStage[LOWER_BOUND(astMotionStage, 1)].sName;
+END_IF
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SetDoneMoving" Id="{87e565bf-89c7-4274-a57e-d0d3644bc8f1}">
+      <Implementation>
+        <ST><![CDATA[
+// Set bDoneMoving if all the motors are done
+bDoneMoving := TRUE;
+FOR nIndex := LOWER_BOUND(astMotionStage, 1) TO UPPER_BOUND(astMotionStage, 1) DO
+    bDoneMoving := bDoneMoving AND astMotionStage[nIndex].bDone;
+END_FOR
+// Reset bDoneMoving if the goal has changed to reset bptm's motor done for an in-place transition
+// This allows us to change to a new beam state without requiring a motor state change
+bDoneMoving R= nPrevID <> stGoalParams.nRequestAssertionID;
+nPrevID := stGoalParams.nRequestAssertionID;
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>
