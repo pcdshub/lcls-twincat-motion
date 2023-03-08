@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateReadND" Id="{3c302874-e55d-4c41-bc18-ae389049a346}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND
+(*
+    Function block to get the combined N-dimensional state of a group of motors.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    Use FB_PositionStateRead1D, FB_PositionStateRead2D, ... etc. instead
+*)
+VAR_IN_OUT
+    // The motors with a combined N-dimensional state
+    astMotionStage: ARRAY[*] OF DUT_MotionStage;
+    // A multidimensional array with all of the position states for all of the motors. This must match astMotionStage in length along dimension 1, which should correleate with the motors. Dimension 2 is the states for each individual motor.
+    astPositionState: ARRAY[*, *] OF DUT_PositionState;
+    // The individual position state reader function blocks
+    afbPositionStateRead: ARRAY[*] OF FB_PositionStateRead;
+END_VAR
+VAR_OUTPUT
+    // TRUE if we're standing still at a known state.
+    bKnownState: BOOL;
+    // TRUE if we're moving, there can be no valid state if we are moving.
+    bMovingState: BOOL;
+    // If we're at a known state, this will be the index along dimension 2 in the astPositionState array that matches the state. Otherwise, this will be below the bounds of the array.
+    nPositionIndex: DINT;
+    // TRUE if the array inputs had mismatching dimensions
+    bArrayMismatchError: BOOL;
+END_VAR
+VAR
+    nIter: DINT;
+    nLowerBound: DINT;
+    nUpperBound: DINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckArrayLengths();
+IF NOT bArrayMismatchError THEN
+    DoStateReads();
+    CombineOutputs();
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="CheckArrayLengths" Id="{21aece42-11dd-4a43-9ed8-fc6ef8203bcd}">
+      <Implementation>
+        <ST><![CDATA[
+// Get the bounds and make sure they are all the same
+nLowerBound := LOWER_BOUND(astMotionStage, 1);
+nUpperBound := UPPER_BOUND(astMotionStage, 1);
+
+nLowerBound := LOWER_BOUND(astPositionState, 2);
+nUpperBound := UPPER_BOUND(astPositionState, 2);
+
+bArrayMismatchError S= nLowerBound <> LOWER_BOUND(astPositionState, 1);
+bArrayMismatchError S= nUpperBound <> UPPER_BOUND(astPositionState, 1);
+bArrayMismatchError S= nLowerBound <> LOWER_BOUND(afbPositionStateRead, 1);
+bArrayMismatchError S= nUpperBound <> UPPER_BOUND(afbPositionStateRead, 1);
+
+bKnownState R= bArrayMismatchError;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="CombineOutputs" Id="{4846d43a-1304-4a25-a7f8-7277efded98f}">
+      <Implementation>
+        <ST><![CDATA[
+// bKnownState is TRUE if ALL motors have known states
+bKnownState := TRUE;
+FOR nIter := nLowerBound TO nUpperBound DO
+    bKnownState := bKnownState AND afbPositionStateRead[nIter].bKnownState;
+END_FOR
+
+// bMovingState is TRUE if ANY motor is moving
+bMovingState := FALSE;
+FOR nIter := nLowerBound TO nUpperBound DO
+    bMovingState := bMovingState OR afbPositionStateRead[nIter].bMovingState;
+END_FOR
+
+// nPositionIndex MUST be matching across ALL motors, else it should be the invalid number
+nPositionIndex := afbPositionStateRead[nLowerBound].nPositionIndex;
+FOR nIter := nLowerBound TO nUpperBound DO
+    IF nPositionIndex <> afbPositionStateRead[nIter].nPositionIndex THEN
+        nPositionIndex := LOWER_BOUND(astPositionState, 2) - 1;
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="DoStateReads" Id="{792912d8-47d8-414a-9ac1-60fb2bf5ef46}">
+      <Implementation>
+        <ST><![CDATA[
+FOR nIter := nLowerBound TO nUpperBound DO
+    afbPositionStateRead[nIter](
+        stMotionStage:=astMotionStage[nIter],
+        astPositionState:=astPositionState[nIter],
+    );
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

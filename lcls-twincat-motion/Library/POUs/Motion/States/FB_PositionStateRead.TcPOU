@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateRead" Id="{31debd70-d9f5-409b-baff-9d61c2241864}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateRead
+(*
+    This function block tells us what state a single motor is at.
+    In the case of multiple valid overlapping states, one will be picked arbitrarily.
+*)
+VAR_IN_OUT
+    // The motor to check the state of
+    stMotionStage: DUT_MotionStage;
+    // The allowed states for this motor
+    astPositionState: ARRAY[*] OF DUT_PositionState;
+END_VAR
+VAR_OUTPUT
+    // TRUE if we're standing still at a known state.
+    bKnownState: BOOL;
+    // TRUE if we're moving, there can be no valid state if we are moving.
+    bMovingState: BOOL;
+    // If we're at a known state, this will be the index in the astPositionState array that matches the state. Otherwise, this will be below the bounds of the array.
+    nPositionIndex: DINT;
+    // A copy of the details of the current position state, for convenience. This will be a moving state if we are moving.
+    stCurrentPosition: DUT_PositionState;
+END_VAR
+VAR
+    nIter: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+bMovingState := stMotionStage.bBusy;
+bKnownState := FALSE;
+
+IF bMovingState THEN
+    nPositionIndex := LOWER_BOUND(astPositionState, 1) - 1;
+    stCurrentPosition.sName := 'Moving';
+    stCurrentPosition.fPosition := stMotionStage.stAxisStatus.fActPosition;
+    stCurrentPosition.fVelocity := stMotionStage.fVelocity;
+    stCurrentPosition.fAccel := stMotionStage.fAcceleration;
+    stCurrentPosition.fDelta := 0;
+    stCurrentPosition.bMoveOk := False;
+    stCurrentPosition.bValid := False;
+    stCurrentPosition.bUseRawCounts := False;
+ELSE
+    FOR nIter := LOWER_BOUND(astPositionState, 1) TO UPPER_BOUND(astPositionState, 1) DO
+        IF astPositionState[nIter].bValid THEN
+            IF (stMotionStage.stAxisStatus.fActPosition < (astPositionState[nIter].fPosition + astPositionState[nIter].fDelta)) AND (stMotionStage.stAxisStatus.fActPosition > (astPositionState[nIter].fPosition - astPositionState[nIter].fDelta)) THEN
+                bKnownState := TRUE;
+                nPositionIndex := nIter;
+                stCurrentPosition := astPositionState[nIter];
+            END_IF
+        END_IF
+    END_FOR
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

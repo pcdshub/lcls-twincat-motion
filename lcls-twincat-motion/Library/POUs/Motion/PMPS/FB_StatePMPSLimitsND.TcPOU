@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_StatePMPSLimitsND" Id="{d098ccc9-7db0-41da-97e3-aba758c57f5d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSLimitsND
+(*
+    Function block to set virtual limit enables using MC_POWER for multidimensional state movers.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    Each motor has a virtual "allowed" range of motion based on its goal position.
+    Motors can move toward their goal delta ranges or within them, but not away from these ranges.
+*)
+VAR_IN_OUT
+    // The motors with a combined N-dimensional state
+    astMotionStage: ARRAY[*] OF DUT_MotionStage;
+    // A multidimensional array with all of the position states for all of the motors. This must match astMotionStage in length along dimension 1, which should correleate with the motors. Dimension 2 is the states for each individual motor.
+    astPositionState: ARRAY[*, *] OF DUT_PositionState;
+    // The individual state limit function blocks
+    afbStateLimits: ARRAY[*] OF FB_StatePMPSLimits;
+    // Hardware output to fault to if there is a problem.
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // The state that the motors are moving to, along dimension 2 of the position state array. This may be the same as the current state.
+    nGoalStateIndex: DINT;
+END_VAR
+VAR_OUTPUT
+    // Set to TRUE if the arrays have mismatched sizing
+    bArrayMismatchError: BOOL;
+END_VAR
+VAR
+    nIter: DINT;
+    nLowerBound: DINT;
+    nUpperBound: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckArrayLengths();
+IF NOT bArrayMismatchError THEN
+    DoLimits();
+END_IF]]></ST>
+    </Implementation>
+    <Action Name="CheckArrayLengths" Id="{bacd4c1d-93ee-476b-b899-90790681ae2f}">
+      <Implementation>
+        <ST><![CDATA[
+// Get the bounds and make sure they are all the same
+nLowerBound := LOWER_BOUND(astMotionStage, 1);
+nUpperBound := UPPER_BOUND(astMotionStage, 1);
+
+bArrayMismatchError S= nLowerBound <> LOWER_BOUND(astPositionState, 1);
+bArrayMismatchError S= nUpperBound <> UPPER_BOUND(astPositionState, 1);
+bArrayMismatchError S= nLowerBound <> LOWER_BOUND(afbStateLimits, 1);
+bArrayMismatchError S= nUpperBound <> UPPER_BOUND(afbStateLimits, 1);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="DoLimits" Id="{15f05e27-5b0c-49f7-878f-6aa0afaa7407}">
+      <Implementation>
+        <ST><![CDATA[
+FOR nIter := nLowerBound TO nUpperBound DO
+    afbStateLimits[nIter](
+        stMotionStage:=astMotionStage[nIter],
+        astPositionState:=astPositionState[nIter],
+        fbFFHWO:=fbFFHWO,
+        nGoalStateIndex:=nGoalStateIndex,
+    );
+END_FOR]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

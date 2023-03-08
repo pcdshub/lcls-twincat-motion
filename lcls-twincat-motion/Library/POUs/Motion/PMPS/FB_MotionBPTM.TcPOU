@@ -22,6 +22,8 @@ VAR_IN_OUT
     stTransParams: ST_DbStateParams;
 END_VAR
 VAR_INPUT
+    // TRUE if we're at the physical state that matches the goal parameters
+    bAtState: BOOL;
     // A device name to use in the GUI
     sDeviceName: STRING;
     // How long to wait for parameters before timing out
@@ -93,7 +95,7 @@ bptm(
     i_stTransitionAssertion:=stTransParams.stBeamParams,
     i_nRequestedAssertionID:=stGoalParams.nRequestAssertionID,
     i_stRequestedAssertion:=stGoalParams.stBeamParams,
-    i_xDoneMoving:=bDoneMoving,
+    i_xDoneMoving:=bDoneMoving AND bAtState,
     stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
     q_xTransitionAuthorized=>bInternalAuth,
     bDone=>bDone,
