@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPS2D" Id="{9dffd600-2d32-4e33-bb6b-8aab4cc29ee5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS2D
+(*
+    Proof of concept for a 2D pmps state mover
+    This should illustrate how many more building blocks need to be added to reach the goal
+    When finished, this should be usable as a function block in live PLCs, just pragma and add your enum
+    Need to also make 1D, 3D, and non-pmps versions
+    Known missing:
+    - Some FFOs aren't here yet
+    - Database reading isn't here yet
+    - pytmc pragmas are missing
+*)
+VAR_IN_OUT
+    stMotionStage1: DUT_MotionStage;
+    astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    stMotionStage2: DUT_MotionStage;
+    astPositionStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter;
+END_VAR
+VAR_INPUT
+    nSetPoint: DINT;
+END_VAR
+VAR_OUTPUT
+    nReadback: DINT;
+END_VAR
+VAR
+    astAllMotors: ARRAY[1..2] OF DUT_MotionStage;
+    astFullPositionStates: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    fbBPTM: FB_MotionBPTM;
+    fbLimits: FB_StatePMPSLimitsND;
+    afbStateLimits: ARRAY[1..2] OF FB_StatePMPSLimits;
+    fbMove: FB_PositionStateMoveND;
+    afbMove: ARRAY[1..2] OF FB_PositionStateMove;
+    fbRead: FB_PositionStateReadND;
+    afbRead: ARRAY[1..2] OF FB_PositionStateRead;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// TODO does this actually work? Can I pass this array down and ask a motor to move and then the global motor state updates?
+// If this doesn't work I need to pass ADDRs instead to the inner FBs
+astAllMotors[1] := stMotionStage1;
+astAllMotors[2] := stMotionStage2;
+
+astFullPositionStates[1] := astPositionStates1;
+astFullPositionStates[2] := astPositionStates2;
+
+// Missing some things it needs, these come from the other FBs
+fbBPTM(
+    astMotionStage:=astAllMotors,
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stGoalParams:=stGoalParams,
+    stTransParams:=stTransParams,
+    bAtState:=bAtState,
+    sDeviceName:=sDeviceName,
+    tArbiterTimeout:=tArbiterTimeout,
+    bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
+    bResetBPTMTimeout:=bResetBPTMTimeout,
+);
+
+// Need to run the other FBs
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
