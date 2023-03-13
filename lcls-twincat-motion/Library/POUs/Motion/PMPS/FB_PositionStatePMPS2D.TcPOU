@@ -10,7 +10,6 @@
     Known missing:
     - Some FFOs aren't here yet
     - Database reading isn't here yet
-    - pytmc pragmas are missing
 *)
 VAR_IN_OUT
     stMotionStage1: DUT_MotionStage;
@@ -22,6 +21,11 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     nSetPoint: DINT;
+    {attribute 'pytmc' := '
+        pv: STATES
+    }
+    // TODO does this need to split into inputs and outputs?
+    stEpicsInputs: DUT_StatePMPSEpicsInterface;
 END_VAR
 VAR_OUTPUT
     nReadback: DINT;
@@ -29,6 +33,9 @@ END_VAR
 VAR
     astAllMotors: ARRAY[1..2] OF DUT_MotionStage;
     astFullPositionStates: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
+
+    fbDB: FB_MotionReadPMPSDBND;
     fbBPTM: FB_MotionBPTM;
     fbLimits: FB_StatePMPSLimitsND;
     afbStateLimits: ARRAY[1..2] OF FB_StatePMPSLimits;
@@ -39,15 +46,25 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// TODO does this actually work? Can I pass this array down and ask a motor to move and then the global motor state updates?
-// If this doesn't work I need to pass ADDRs instead to the inner FBs
+      <ST><![CDATA[
+// TODO if I assign like this here and invert at the end of the FB, does it work?
+// Otherwise I need to use POINTER or REFERENCE
 astAllMotors[1] := stMotionStage1;
 astAllMotors[2] := stMotionStage2;
 
 astFullPositionStates[1] := astPositionStates1;
 astFullPositionStates[2] := astPositionStates2;
 
-// Missing some things it needs, these come from the other FBs
+fbDB(
+    astPositionState:=astFullPositionStates,
+    astDbStateParams:=astDbStateParams,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:=sTransitionKey,
+    sDeviceName:=sDeviceName,
+    bError=>,
+    bArrayMismatchError=>,
+);
+
 fbBPTM(
     astMotionStage:=astAllMotors,
     fbArbiter:=fbArbiter,
@@ -59,9 +76,50 @@ fbBPTM(
     tArbiterTimeout:=tArbiterTimeout,
     bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
     bResetBPTMTimeout:=bResetBPTMTimeout,
+    bTransitionAuthorized=>,
+    bDone=>,
 );
 
-// Need to run the other FBs
+fbLimits(
+    astMotionStage:=astAllMotors,
+    astPositionState:=astFullPositionStates,
+    afbStateLimits:=afbStateLimits,
+    fbFFHWO:=fbFFHWO,
+    nGoalStateIndex:=nGoalStateIndex,
+    bArrayMismatchError=>,
+);
+
+fbMove(
+    astMotionStage:=astAllMotors,
+    astPositionState:=astCurrentGoalStates,
+    afbPositionStateMove:=afbMove,
+    bExecute:=bTimeToMove,
+    bReset:=bTimeToReset,
+    enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
+    bAtState=>,
+    bBusy=>,
+    bDone=>,
+    bError=>,
+    nErrorCount=>,
+    nShownError=>,
+    nErrorID=>,
+    sErrorMessage=>,
+);
+
+fbRead(
+    astMotionStage:=astAllMotors,
+    astPositionState:=astFullPositionStates,
+    afbPositionStateRead:=afbRead,
+    bKnownState=>,
+    bMovingState=>,
+    nPositionIndex=>,
+    bArrayMismatchError=>,
+);
+
+// Need to update the global state of the motion DUTs
+// See top of this FB
+stMotionStage1 := astAllMotors[1];
+stMotionStage2 := astAllMotors[2];
 ]]></ST>
     </Implementation>
   </POU>

@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MotionReadPMPSDBND" Id="{d57cc3a9-6332-4332-bcc7-1d1c0dd5e201}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionReadPMPSDBND
+(*
+    When we read the JSON PMPS database file, update the lookup parameters for one state mover.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    This is intended to support one N-dimensional state motion function block.
+    The keys for the database lookup can be set on any of the motor's position states.
+    Each of them have an allocated state.stPMPS.sPmpsState STRING parameter.
+    If there is a conflict and two of the motors disagree on parameter lookups, that will
+    be a fast fault.
+
+    When the global JSON read function block is no longer busy and has no errors,
+    we will assume that the file has been read and we will update the parameters here.
+*)
+VAR_IN_OUT
+    // A multidimensional array with all of the position states for all of the motors. Dimension 1 should correleate with the number of motors. Dimension 2 is the states for each individual motor.
+    astPositionState: ARRAY[*, *] OF DUT_PositionState;
+    // An uninitialized array of PMPS DB lookups. This must be one larger than Dimension 2 of astPositionState so we can prepend it with the transition state.
+    astDbStateParams: ARRAY[*] OF ST_DbStateParams;
+    // Hardware output to fault to if there is a problem.
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // The database lookup key for the transition state. This has no corresponding DUT_PositionState.
+    sTransitionKey: STRING;
+    // A name to use for fast faults, etc.
+    sDeviceName: STRING;
+    // For debug: set this to TRUE in online mode to read the database immediately.
+    bReadNow: BOOL;
+END_VAR
+VAR_OUTPUT
+    // This will be set to TRUE if there was an error reading from the database.
+    bError: BOOL;
+    // This will be set to TRUE if the arrays have mismatched sizing
+    bArrayMismatchError: BOOL;
+END_VAR
+VAR
+    nLowerPositionState: DINT;
+    nUpperPositionState: DINT;
+    nLowerDbStateParams: DINT;
+    nUpperDbStateParams: DINT;
+    fbReadPmpsDb: FB_JsonDocToSafeBP;
+    ftDbBusy: F_TRIG;
+    ftRead: F_TRIG;
+    rtReadDBExec: R_TRIG;
+    bReadPmpsDb: BOOL;
+    nIter1: DINT;
+    nIter2: DINT;
+    nLoopStateParamIndex: DINT;
+    sLoopNewKey: STRING;
+    sLoopPrevKey: STRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckArrayLengths();
+IF NOT bArrayMismatchError THEN
+    SelectLookupKeys();
+    ReadDatabase();
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="CheckArrayLengths" Id="{274c2de0-6789-4c80-936e-324c5844aaba}">
+      <Implementation>
+        <ST><![CDATA[
+// Ensure that the array sizes are compatible.
+nLowerPositionState := LOWER_BOUND(astPositionState, 2);
+nUpperPositionState := UPPER_BOUND(astPositionState, 2);
+nLowerDbStateParams := LOWER_BOUND(astDbStateParams, 1);
+nUpperDbStateParams := UPPER_BOUND(astDbStateParams, 1);
+
+// Indexes don't need to match, but we need to have 1 additional db lookup (for transition state)
+bArrayMismatchError S= (nUpperPositionState - nLowerPositionState + 1) <> (nUpperDbStateParams - nLowerDbStateParams);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ReadDatabase" Id="{2d32dd1e-c552-499a-8dca-6b4b0541920e}">
+      <Implementation>
+        <ST><![CDATA[
+// Read the database at the right timing
+ftDbBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+IF ftDbBusy.Q THEN
+    bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
+END_IF
+
+bReadPmpsDb S= bReadNow;
+bReadNow := FALSE;
+
+fbReadPmpsDb(
+    bExecute:=bReadPmpsDb,
+    jsonDoc:=PMPS_GVL.BP_jsonDoc,
+    sDeviceName:=sDeviceName,
+    io_fbFFHWO:=fbFFHWO,
+    arrStates:=astDbStateParams,
+);
+bReadPmpsDb R= NOT fbReadPmpsDb.bBusy;
+
+ftRead(CLK:=fbReadPmpsDb.bBusy);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SelectLookupKeys" Id="{71f0a60e-a81f-4e3a-97ce-0d232ce9e316}">
+      <Implementation>
+        <ST><![CDATA[
+// Fill the lookup key information in astDbStateParams based on the strings from astPositionState and sTransitionKey.
+
+// Start by emptying any pre-existing values
+FOR nIter1 := LOWER_BOUND(astDbStateParams, 1) TO UPPER_BOUND(astDbStateParams, 1) DO
+    astDbStateParams[nIter1].sPmpsState := '';
+END_FOR
+
+// Transition key is simple
+astDbStateParams[nLowerDbStateParams].sPmpsState := sTransitionKey;
+
+// The other keys might be at different points in the astPositionState array.
+// Try all of the posibilities, set error if we end up overwriting something.
+
+// Outer loop: index of each motor at this position state
+FOR nIter1 := LOWER_BOUND(astPositionState, 1) TO UPPER_BOUND(astPositionState, 1) DO
+    // Inner loop: index of each position state for this motor
+    FOR nIter2 := LOWER_BOUND(astPositionState, 2) TO UPPER_BOUND(astPositionState, 2) DO
+        sLoopNewKey := astPositionState[nIter1, nIter2].stPMPS.sPmpsState;
+        IF sLoopNewKey <> '' THEN
+            // We have a new key, start doing things
+            nLoopStateParamIndex := LOWER_BOUND(astDbStateParams, 1) + 1 + (nIter2 - LOWER_BOUND(astPositionState, 2));
+            sLoopPrevKey := astDbStateParams[nLoopStateParamIndex].sPmpsState;
+            IF sLoopPrevKey = '' OR sLoopPrevKey = sLoopNewKey THEN
+                // No key yet, or exactly the same key (redudant programmer)
+                astDbStateParams[nLoopStateParamIndex] := sLoopNewKey;
+            ELSE
+                // We already had a key! Don't just override it, have an error!
+                bError := TRUE;
+            END_IF
+        END_IF
+    END_FOR
+END_FOR]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>
