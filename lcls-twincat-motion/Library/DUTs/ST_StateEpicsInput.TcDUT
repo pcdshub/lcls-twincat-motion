@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <DUT Name="ST_StateEpicsInput" Id="{233f01d3-5e73-4c09-b009-203daf86cb72}">
+    <Declaration><![CDATA[TYPE ST_StateEpicsInput :
+(*
+    This data structure contains the standard EPICS input connection points for the state movers.
+
+    It includes everything except the SET PV, which cannot be included here
+    as it is sourced from enum values unique to the application, and the array PVs,
+    which can be an array of various lengths, so it must be set in the FB that defines the
+    static array size.
+
+    This also does not include any PMPS inputs, which are handled separately in
+    ST_StatePMPSEpicsInput.
+
+    A placeholder for SET is included here, with commented-out pragmas that
+    demonstrate what they would look like if we could include it.
+    This placeholders is actively used by state blocks even though it is not exposed
+    directly to EPICS. You are expected to set the SET placeholder using your EPICS-linked
+    SET enum.
+*)
+STRUCT
+    // Set this from your enum value at the start of the cycle.
+    (*
+    Example of what the pragma would be if we had your enum:
+    {attribute 'pytmc' := '
+        pv: SET
+        io: io
+    '}
+    *)
+    nSetValue: DINT;
+
+    // Set this to TRUE to acknowledge and clear an error.
+    {attribute 'pytmc' := '
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bReset: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

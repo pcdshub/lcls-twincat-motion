@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateInternalND" Id="{2770a312-c46b-42e8-8f61-76e005039b82}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateInternalND
+(*
+    Given a standard ND state setup, call all the required state management FBs.
+*)
+VAR_IN_OUT
+    // All the motors to apply the standard routines to
+    astMotionStage: ARRAY[*] OF DUT_MotionStage;
+    // All the position states for all of the motors. Dimension 1 must be the same length as astMotionStage.
+    astPositionState: ARRAY[*, *] OF DUT_PositionState;
+    // The individual instantiated internal FBs. Must have the same bounds as astPositionState.
+    afbStateInternal: ARRAY[*, *] OF FB_PositionStateInternal;
+END_VAR
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+    // This will be set to TRUE if the arrays have mismatched sizing
+    bArrayMismatchError: BOOL;
+END_VAR
+VAR
+    nIter1: DINT;
+    nIter2: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckArrayLengths();
+IF NOT bArrayMismatchError THEN
+    ApplyInternals();
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="ApplyInternals" Id="{583acb33-e29a-4fda-9b03-852834776577}">
+      <Implementation>
+        <ST><![CDATA[
+// Do the loop here so the encapsuling FB doesn't become a loop maze
+FOR nIter1 := LOWER_BOUND(afbStateInternal, 1) TO UPPER_BOUND(afbStateInternal, 1) DO
+    FOR nIter2 := LOWER_BOUND(afbStateInternal, 2) TO UPPER_BOUND(afbStateInternal, 2) DO
+        afbStateInternal[nIter1, nIter2](
+            stMotionStage:=astMotionStage[nIter1],
+            stPositionState:=astPositionState[nIter1, nIter2],
+        );
+    END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="CheckArrayLengths" Id="{e4931656-4432-4aab-a5cc-ff807dcc6e44}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the variable length arrays are the same size to avoid issues later
+bArrayMismatchError S= LOWER_BOUND(astMotionStage, 1) <> LOWER_BOUND(astPositionState, 1);
+bArrayMismatchError S= UPPER_BOUND(astMotionStage, 1) <> UPPER_BOUND(astPositionState, 1);
+bArrayMismatchError S= LOWER_BOUND(astMotionStage, 1) <> LOWER_BOUND(afbStateInternal, 1);
+bArrayMismatchError S= UPPER_BOUND(astMotionStage, 1) <> UPPER_BOUND(afbStateInternal, 1);
+bArrayMismatchError S= LOWER_BOUND(astPositionState, 2) <> LOWER_BOUND(afbStateInternal, 2);
+bArrayMismatchError S= UPPER_BOUND(astPositionState, 2) <> UPPER_BOUND(afbStateInternal, 2);
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

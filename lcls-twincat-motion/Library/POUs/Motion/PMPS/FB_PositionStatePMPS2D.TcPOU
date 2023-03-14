@@ -9,32 +9,61 @@
     Need to also make 1D, 3D, and non-pmps versions
     Known missing:
     - Some FFOs aren't here yet
-    - Database reading isn't here yet
+    - Maintenance mode
+    - Arbiter disable
+    TODO: can I make it super easy to churn these out? Or are we doomed to a copy and paste?
 *)
 VAR_IN_OUT
     stMotionStage1: DUT_MotionStage;
+    {attribute 'pytmc' := '
+        pv: STATES:M1
+        io: io
+        expand: %.2d
+    '}
     astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
     stMotionStage2: DUT_MotionStage;
+    {attribute 'pytmc' := '
+        pv: STATES:M2
+        io: io
+        expand: %.2d
+    '}
     astPositionStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter;
 END_VAR
 VAR_INPUT
-    nSetPoint: DINT;
+    // A name to use as reference for fast faults, etc., defaults to motor1's name.
+    sDeviceName: STRING;
+    // The database lookup string for the transition state.
+    sTransitionKey: STRING;
+    // How long to wait for parameters before timing out
+    tArbiterTimeout: TIME := T#1s;
+    // Whether to fault and move on timeout (TRUE) or to wait (FALSE)
+    bMoveOnArbiterTimeout: BOOL := TRUE;
+    // Set this to TRUE when you need to reset the BPTM timeout FB, this surprisingly case specific
+    bResetBPTMTimeout: BOOL;
     {attribute 'pytmc' := '
         pv: STATES
     '}
-    // TODO does this need to split into inputs and outputs?
-    stEpicsInputs: DUT_StatePMPSEpicsInterface;
+    stEpicsInput: ST_StateEpicsInput;
+    {attribute 'pytmc' := '
+        pv: STATES
+    '}
+    stPMPSEpicsInput: ST_StatePMPSEpicsInput;
 END_VAR
 VAR_OUTPUT
-    nReadback: DINT;
+    {attribute 'pytmc' := '
+        pv: STATES
+    '}
+    stEpicsOutput: ST_StateEpicsOutput;
 END_VAR
 VAR
     astAllMotors: ARRAY[1..2] OF DUT_MotionStage;
     astFullPositionStates: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
     astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
 
+    fbInternalND: FB_PositionStateInternalND;
+    afbInternal: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF FB_PositionStateInternal;
     fbDB: FB_MotionReadPMPSDBND;
     fbBPTM: FB_MotionBPTM;
     fbLimits: FB_StatePMPSLimitsND;
@@ -43,6 +72,11 @@ VAR
     afbMove: ARRAY[1..2] OF FB_PositionStateMove;
     fbRead: FB_PositionStateReadND;
     afbRead: ARRAY[1..2] OF FB_PositionStateRead;
+
+    nGoalIndex: DINT;
+    nPrevGoalIndex: DINT;
+    astGoalPositionStates: ARRAY[1..2] OF DUT_PositionState;
+    bTimeToMove: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -55,6 +89,13 @@ astAllMotors[2] := stMotionStage2;
 astFullPositionStates[1] := astPositionStates1;
 astFullPositionStates[2] := astPositionStates2;
 
+fbInternalND(
+    astMotionStage:=astAllMotors,
+    astPositionState:=astFullPositionStates,
+    afbStateInternal:=afbInternal,
+    bArrayMismatchError=>,
+);
+
 fbDB(
     astPositionState:=astFullPositionStates,
     astDbStateParams:=astDbStateParams,
@@ -65,13 +106,21 @@ fbDB(
     bArrayMismatchError=>,
 );
 
+// Sanitize the input in case we get something wild from EPICS
+IF 1 <= stEpicsInput.nSetValue AND stEpicsInput.nSetValue <= GeneralConstants.MAX_STATES THEN
+    nGoalIndex := stEpicsInput.nSetValue;
+ELSE
+    // Transition state should always be the safest
+    nGoalIndex := 0;
+END_IF
+
 fbBPTM(
     astMotionStage:=astAllMotors,
     fbArbiter:=fbArbiter,
     fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoalParams,
-    stTransParams:=stTransParams,
-    bAtState:=bAtState,
+    stGoalParams:=astDbStateParams[nGoalIndex].stBeamParams,
+    stTransParams:=astDbStateParams[0].stBeamParams,
+    bAtState:=fbRead.bKnownState AND fbRead.nPositionIndex=nGoalIndex,
     sDeviceName:=sDeviceName,
     tArbiterTimeout:=tArbiterTimeout,
     bMoveOnArbiterTimeout:=bMoveOnArbiterTimeout,
@@ -85,16 +134,23 @@ fbLimits(
     astPositionState:=astFullPositionStates,
     afbStateLimits:=afbStateLimits,
     fbFFHWO:=fbFFHWO,
-    nGoalStateIndex:=nGoalStateIndex,
+    nGoalStateIndex:=nGoalIndex,
     bArrayMismatchError=>,
 );
 
+IF nGoalIndex <> 0 THEN
+    astGoalPositionStates[1] := astFullPositionStates[1, nGoalIndex];
+    astGoalPositionStates[2] := astFullPositionStates[2, nGoalIndex];
+END_IF
+bTimeToMove S= nGoalIndex <> nPrevGoalIndex;
+nPrevGoalIndex := nGoalIndex;
+
 fbMove(
     astMotionStage:=astAllMotors,
-    astPositionState:=astCurrentGoalStates,
+    astPositionState:=astGoalPositionStates,
     afbPositionStateMove:=afbMove,
     bExecute:=bTimeToMove,
-    bReset:=bTimeToReset,
+    bReset:=stEpicsInput.bReset,
     enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
     bAtState=>,
     bBusy=>,
@@ -105,6 +161,7 @@ fbMove(
     nErrorID=>,
     sErrorMessage=>,
 );
+bTimeToMove R= fbMove.bDone;
 
 fbRead(
     astMotionStage:=astAllMotors,
@@ -112,7 +169,7 @@ fbRead(
     afbPositionStateRead:=afbRead,
     bKnownState=>,
     bMovingState=>,
-    nPositionIndex=>,
+    nPositionIndex=>stEpicsOutput.nGetValue,
     bArrayMismatchError=>,
 );
 
@@ -120,6 +177,9 @@ fbRead(
 // See top of this FB
 stMotionStage1 := astAllMotors[1];
 stMotionStage2 := astAllMotors[2];
+
+astPositionStates1 := astFullPositionStates[1];
+astPositionStates2 := astFullPositionStates[2];
 ]]></ST>
     </Implementation>
   </POU>
