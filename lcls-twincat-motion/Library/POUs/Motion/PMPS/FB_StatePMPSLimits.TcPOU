@@ -19,16 +19,18 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
+    // If TRUE, do the limits as normal. If FALSE, allow all moves regardless of the limits defined here.
+    bEnable: BOOL;
     // The state that the motor is moving to.
     nGoalStateIndex: DINT;
 END_VAR
 VAR_OUTPUT
     // The enable state we send to MC_Power. This is a pass-through from stMotionStage.
-    bEnable: BOOL;
+    bEnabled: BOOL;
     // The forward enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
-    bForwardEnable: BOOL;
+    bForwardEnabled: BOOL;
     // The backwards enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
-    bBackwardEnable: BOOL;
+    bBackwardEnabled: BOOL;
     // TRUE if there is a valid goal position and FALSE otherwise. This makes a fast fault if FALSE.
     bValidGoal: BOOL;
 END_VAR
@@ -54,15 +56,15 @@ RunFastFaults();
     This action takes runs MC_POWER appropriately
     given the motor's own enables and the results of this FB's checks.
 *)
-bEnable := stMotionStage.bAllEnable;
-bForwardEnable := bForwardEnable AND stMotionStage.bAllForwardEnable;
-bBackwardEnable := bBackwardEnable AND stMotionStage.bAllBackwardEnable;
+bEnabled := stMotionStage.bAllEnable;
+bForwardEnabled := bForwardEnabled AND stMotionStage.bAllForwardEnable;
+bBackwardEnabled := bBackwardEnabled AND stMotionStage.bAllBackwardEnable;
 
 mc_power(
     Axis:=stMotionStage.Axis,
-    Enable:=bEnable,
-    Enable_Positive:=bForwardEnable,
-    Enable_Negative:=bBackwardEnable,
+    Enable:=bEnabled,
+    Enable_Positive:=bForwardEnabled,
+    Enable_Negative:=bBackwardEnabled,
 );
 ]]></ST>
       </Implementation>
@@ -103,13 +105,13 @@ ffNoGoal(
     This action sets bForwardEnable and bBackwardEnable based on
     the current position and the calculated bounds.
 *)
-IF bValidGoal THEN
-    bForwardEnable := stMotionStage.stAxisStatus.fActPosition < fUpperPos;
-    bBackwardEnable := stMotionStage.stAxisStatus.fActPosition > fLowerPos;
+IF bValidGoal AND bEnable THEN
+    bForwardEnabled := stMotionStage.stAxisStatus.fActPosition < fUpperPos;
+    bBackwardEnabled := stMotionStage.stAxisStatus.fActPosition > fLowerPos;
 ELSE
-    // Avoid interrupting motion, there will be a fault anyway
-    bForwardEnable := TRUE;
-    bBackwardEnable := TRUE;
+    // Either invalid state with a fault or FB not enabled
+    bForwardEnabled := TRUE;
+    bBackwardEnabled := TRUE;
 END_IF
 ]]></ST>
       </Implementation>

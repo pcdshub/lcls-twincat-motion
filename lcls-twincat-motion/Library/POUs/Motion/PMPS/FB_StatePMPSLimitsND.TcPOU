@@ -22,12 +22,17 @@ END_VAR
 VAR_INPUT
     // The state that the motors are moving to, along dimension 2 of the position state array. This may be the same as the current state.
     nGoalStateIndex: DINT;
+    // A name to use for this state mover in the case of fast faults.
+    sDeviceName: STRING;
+    // Set to TRUE to put motors into maintenance mode. This allows us to freely move the motors at the cost of a fast fault.
+    bMaintMode: BOOL;
 END_VAR
 VAR_OUTPUT
     // Set to TRUE if the arrays have mismatched sizing
     bArrayMismatchError: BOOL;
 END_VAR
 VAR
+    ffMaint: FB_FastFault;
     nIter: DINT;
     nLowerBound: DINT;
     nUpperBound: DINT;
@@ -38,6 +43,7 @@ END_VAR
 CheckArrayLengths();
 IF NOT bArrayMismatchError THEN
     DoLimits();
+    RunFastFaults();
 END_IF]]></ST>
     </Implementation>
     <Action Name="CheckArrayLengths" Id="{bacd4c1d-93ee-476b-b899-90790681ae2f}">
@@ -62,9 +68,24 @@ FOR nIter := nLowerBound TO nUpperBound DO
         stMotionStage:=astMotionStage[nIter],
         astPositionState:=astPositionState[nIter],
         fbFFHWO:=fbFFHWO,
+        bEnable:=NOT bMaintMode,
         nGoalStateIndex:=nGoalStateIndex,
     );
 END_FOR]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RunFastFaults" Id="{6106ff0e-c9c3-479a-9da2-c952ec5198ee}">
+      <Implementation>
+        <ST><![CDATA[
+ffMaint(
+    i_xOK := NOT bMaintMode,
+    i_xAutoReset := TRUE,
+    i_DevName := sDeviceName,
+    i_Desc := 'Device is in maintenance mode',
+    i_TypeCode := 16#1004,
+    io_fbFFHWO := fbFFHWO,
+);
+]]></ST>
       </Implementation>
     </Action>
   </POU>
