@@ -7,9 +7,11 @@
     This should illustrate how many more building blocks need to be added to reach the goal
     When finished, this should be usable as a function block in live PLCs, just pragma and add your enum
     Need to also make 1D, 3D, and non-pmps versions
-    Known missing:
-    - Some FFOs aren't here yet
     TODO: can I make it super easy to churn these out? Or are we doomed to a copy and paste?
+    TODO: move old versions of the state movers to the "Deprecated" folder
+    TODO: move internal-only FBs to an "Internals" folder
+    TODO: fix variable prefix naming and DUT->ST
+    TODO: make the array bounds more strict, make it match on index
 *)
 VAR_IN_OUT
     stMotionStage1: DUT_MotionStage;
@@ -71,11 +73,15 @@ VAR
     afbMove: ARRAY[1..2] OF FB_PositionStateMove;
     fbRead: FB_PositionStateReadND;
     afbRead: ARRAY[1..2] OF FB_PositionStateRead;
+    fbPerMotorFFO: FB_PerMotorFFOND;
+    afbEncError: ARRAY[1..2] OF FB_EncErrorFFO;
+    fbMiscStatesFFO: FB_MiscStatesErrorFFO;
 
     nGoalIndex: DINT;
     nPrevGoalIndex: DINT;
     astGoalPositionStates: ARRAY[1..2] OF DUT_PositionState;
     bTimeToMove: BOOL;
+    stExpectedParams: ST_BeamParams;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -184,6 +190,29 @@ fbRead(
     bMovingState=>,
     nPositionIndex=>stEpicsOutput.nGetValue,
     bArrayMismatchError=>,
+);
+
+IF 0 <= fbRead.nPositionIndex AND fbRead.nPositionIndex <= GeneralConstants.MAX_STATES THEN
+    stExpectedParams := astDbStateParams[fbRead.nPositionIndex].stBeamParams;
+ELSE
+    stExpectedParams := astDbStateParams[0].stBeamParams;
+END_IF
+
+fbPerMotorFFO(
+    astMotionStage:=astAllMotors,
+    afbEncError:=afbEncError,
+    fbFFHWO:=fbFFHWO,
+    sDeviceName:=sDeviceName,
+    bArrayMismatch=>,
+);
+
+fbMiscStatesFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    sDeviceName:=sDeviceName,
+    stCurrentBeamReq:=stExpectedParams,
+    bKnownState:=fbRead.bKnownState,
+    nTransitionID:=astDbStateParams[0].nRequestAssertionID,
 );
 
 // Need to update the global state of the motion DUTs

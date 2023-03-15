@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MiscStatesErrorFFO" Id="{89bc15f3-9d13-41da-a444-416428941e28}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MiscStatesErrorFFO
+(*
+    A catch-all for miscelleneous state FFOS that are not better organized elsewhere.
+    Contains the following fast faults:
+    - ffBeamParamsOK: trip the beam if the beam parameters are not safe enough for our current (known) state
+    - ffZeroRate: trip the beam if we've asked for zero rate (as a shortcut)
+    - ffUnknown: trip the beam if we're at an unknown state and our transition id is not asserted.
+    - ffDebounce: trip the beam (no autoreset) if ffBeamParamsOK fast faults fault on and off multiple times too quickly.
+      This solves an issue where ffBeamParamsOK might solve its own problem and creating a blinking fast fault issue.
+
+    The inputs are mostly outputs of non-pmps function blocks and heavily-reused info like state details.
+*)
+VAR_IN_OUT
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // A name to link to these fast faults
+    sDeviceName: STRING;
+    // Current requested beam details: either a known state or the transition beam
+    stCurrentBeamReq: ST_BeamParams;
+    // TRUE if we're at a known state (doesn't matter which)
+    bKnownState: BOOL;
+    // Lookup ID of the transition beam
+    nTransitionID: DWORD;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR CONSTANT
+    // Number of consecutive trips before we debounce
+    nMaxTrips: UINT := 5;
+    // Decrease trip count by 1 after this much time has passed
+    tTripReset: TIME := T#1s;
+END_VAR
+VAR
+    // If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
+    ffBeamParamsOk: FB_FastFault;
+    // If we asked for zero rate (NC or SC) then we can cut the beam early. This is somewhat redundant.
+    ffZeroRate: FB_FastFault;
+    // Trip the beam for unknown state
+    ffUnknown: FB_FastFault;
+    // Trip the beam (no autoreset) if any of the previous FBs are tripping/resetting too quickly.
+    ffDebounce: FB_FastFault;
+
+    // Number of consecutive trips so far
+    nTripCount: UINT;
+    // Increase by 1 whenever there is a fault (rising edge)
+    ftTripCount: F_TRIG;
+    ftTripCount2: F_TRIG;
+    ftTripCount3: F_TRIG;
+    // Decrease trip count by 1 each timeout
+    tonTripCount: TOF;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+ffBeamParamsOk(
+    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stCurrentBeamReq) AND ffDebounce.i_xOK,
+    i_xAutoReset:=TRUE,
+    i_DevName:=sDeviceName,
+    i_Desc:='Beam parameter mismatch',
+    i_TypeCode:=16#1000,
+    io_fbFFHWO:=fbFFHWO);
+
+CASE PMPS_GVL.stCurrentBeamParameters.nMachineMode OF
+    // NC mode
+    1: ffZeroRate.i_xOK := stCurrentBeamReq.nRate > 0;
+    // SC mode
+    2: ffZeroRate.i_xOK := stCurrentBeamReq.nBCRange > 0;
+ELSE
+    // Ambiguous or new mode
+    ffZeroRate.i_xOK := stCurrentBeamReq.nRate > 0 AND stCurrentBeamReq.nBCRange > 0;
+END_CASE
+
+ffZeroRate(
+    i_xAutoReset := TRUE,
+    i_DevName := sDeviceName,
+    i_Desc := 'Device requesting zero rate',
+    i_TypeCode := 16#1001,
+    io_fbFFHWO := fbFFHWO,
+);
+
+ffUnknown(
+    i_xOK := bknownState OR fbArbiter.CheckRequestInPool(nReqID:=nTransitionID),
+    i_xAutoReset := TRUE,
+    i_DevName := sDeviceName,
+    i_Desc := 'Unknown position between moves',
+    i_TypeCode := 16#1005,
+    io_fbFFHWO := fbFFHWO,
+);
+
+ftTripCount(CLK:=ffBeamParamsOk.i_xOK);
+
+IF ftTripCount.Q THEN
+    nTripCount := nTripCount + 1;
+END_IF
+
+tonTripCount(
+    IN:=NOT tonTripCount.Q,
+    PT:=tTripReset,
+);
+IF tonTripCount.Q AND nTripCount > 0 THEN
+    nTripCount := nTripCount - 1;
+END_IF
+
+ffDebounce(
+    i_xOK := nTripCount < 5,
+    i_xAutoReset := FALSE,
+    i_DevName := sDeviceName,
+    i_Desc := 'Tripped beam parameter mismatch off/on too many times, hold off',
+    i_TypeCode := 16#1007,
+    io_fbFFHWO := fbFFHWO,
+);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
