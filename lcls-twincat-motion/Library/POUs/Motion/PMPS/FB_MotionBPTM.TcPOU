@@ -22,6 +22,8 @@ VAR_IN_OUT
     stTransParams: ST_DbStateParams;
 END_VAR
 VAR_INPUT
+    // Set to TRUE to use the BPTM, FALSE to stop using the BPTM.
+    bEnable: BOOL;
     // TRUE if we're at the physical state that matches the goal parameters
     bAtState: BOOL;
     // A device name to use in the GUI
@@ -57,8 +59,11 @@ END_VAR
       <ST><![CDATA[
 SetDefaultName();
 SetDoneMoving();
-RunBPTM();
-HandleTimeout();
+IF bEnable THEN
+    RunBPTM();
+    HandleTimeout();
+END_IF
+
 ]]></ST>
     </Implementation>
     <Action Name="HandleTimeout" Id="{47918ef2-270e-45c7-89d1-13860ad00457}">

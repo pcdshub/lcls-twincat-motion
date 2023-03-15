@@ -10,7 +10,6 @@
     Known missing:
     - Some FFOs aren't here yet
     - Maintenance mode
-    - Arbiter disable
     TODO: can I make it super easy to churn these out? Or are we doomed to a copy and paste?
 *)
 VAR_IN_OUT
@@ -66,6 +65,7 @@ VAR
     afbInternal: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF FB_PositionStateInternal;
     fbDB: FB_MotionReadPMPSDBND;
     fbBPTM: FB_MotionBPTM;
+    fbClear: FB_MotionClearAsserts;
     fbLimits: FB_StatePMPSLimitsND;
     afbStateLimits: ARRAY[1..2] OF FB_StatePMPSLimits;
     fbMove: FB_PositionStateMoveND;
@@ -120,6 +120,7 @@ fbBPTM(
     fbFFHWO:=fbFFHWO,
     stGoalParams:=astDbStateParams[nGoalIndex].stBeamParams,
     stTransParams:=astDbStateParams[0].stBeamParams,
+    bEnable:=stPMPSEpicsInput.bArbiterEnabled,
     bAtState:=fbRead.bKnownState AND fbRead.nPositionIndex=nGoalIndex,
     sDeviceName:=sDeviceName,
     tArbiterTimeout:=tArbiterTimeout,
@@ -127,6 +128,12 @@ fbBPTM(
     bResetBPTMTimeout:=bResetBPTMTimeout,
     bTransitionAuthorized=>,
     bDone=>,
+);
+
+fbClear(
+    astDbStateParams:=astDbStateParams,
+    fbArbiter:=fbArbiter,
+    bExecute:=NOT stPMPSEpicsInput.bArbiterEnabled,
 );
 
 fbLimits(
