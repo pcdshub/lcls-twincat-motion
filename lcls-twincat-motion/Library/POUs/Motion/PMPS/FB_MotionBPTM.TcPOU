@@ -57,7 +57,6 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-SetDefaultName();
 SetDoneMoving();
 IF bEnable THEN
     RunBPTM();
@@ -115,16 +114,6 @@ ffBPTMError(
     i_TypeCode := 16#1003,
     io_fbFFHWO := fbFFHWO,
 );
-]]></ST>
-      </Implementation>
-    </Action>
-    <Action Name="SetDefaultName" Id="{c5f79c18-8787-4126-aeac-ec23a8e691e3}">
-      <Implementation>
-        <ST><![CDATA[
-// Pick the name of the first motor if none is provided
-IF sDeviceName = '' THEN
-    sDeviceName := astMotionStage[LOWER_BOUND(astMotionStage, 1)].sName;
-END_IF
 ]]></ST>
       </Implementation>
     </Action>

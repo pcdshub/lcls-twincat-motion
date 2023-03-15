@@ -9,7 +9,6 @@
     Need to also make 1D, 3D, and non-pmps versions
     Known missing:
     - Some FFOs aren't here yet
-    - Set sDeviceName default consistently
     TODO: can I make it super easy to churn these out? Or are we doomed to a copy and paste?
 *)
 VAR_IN_OUT
@@ -88,6 +87,11 @@ astAllMotors[2] := stMotionStage2;
 
 astFullPositionStates[1] := astPositionStates1;
 astFullPositionStates[2] := astPositionStates2;
+
+// Pick the name of the first motor if none is provided
+IF sDeviceName = '' THEN
+    sDeviceName := astAllMotors[1].sName;
+END_IF
 
 fbInternalND(
     astMotionStage:=astAllMotors,
