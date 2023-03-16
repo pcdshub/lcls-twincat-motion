@@ -18,7 +18,7 @@
 VAR_IN_OUT
     // A multidimensional array with all of the position states for all of the motors. Dimension 1 should correleate with the number of motors. Dimension 2 is the states for each individual motor.
     astPositionState: ARRAY[*, *] OF ST_PositionState;
-    // An uninitialized array of PMPS DB lookups. This must be one larger than Dimension 2 of astPositionState so we can prepend it with the transition state.
+    // An uninitialized array of PMPS DB lookups. This must share indexes with astPositionState along dimension 2, with an extra state (transition) one lower than the lowest bound.
     astDbStateParams: ARRAY[*] OF ST_DbStateParams;
     // Hardware output to fault to if there is a problem.
     fbFFHWO: FB_HardwareFFOutput;
@@ -72,8 +72,9 @@ nUpperPositionState := UPPER_BOUND(astPositionState, 2);
 nLowerDbStateParams := LOWER_BOUND(astDbStateParams, 1);
 nUpperDbStateParams := UPPER_BOUND(astDbStateParams, 1);
 
-// Indexes don't need to match, but we need to have 1 additional db lookup (for transition state)
-bArrayMismatchError S= (nUpperPositionState - nLowerPositionState + 1) <> (nUpperDbStateParams - nLowerDbStateParams);
+// Upper index must match, lower index must go one lower on the db state params
+bArrayMismatchError S= nLowerPositionState - 1 <> nLowerDbStateParams;
+bArrayMismatchError S= nUpperPositionState <> nUpperDbStateParams;
 ]]></ST>
       </Implementation>
     </Action>
