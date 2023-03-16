@@ -20,14 +20,14 @@ VAR_IN_OUT
         io: io
         expand: %.2d
     '}
-    astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     stMotionStage2: DUT_MotionStage;
     {attribute 'pytmc' := '
         pv: STATES:M2
         io: io
         expand: %.2d
     '}
-    astPositionStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    astPositionStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter;
 END_VAR
@@ -59,7 +59,7 @@ VAR_OUTPUT
 END_VAR
 VAR
     astAllMotors: ARRAY[1..2] OF DUT_MotionStage;
-    astFullPositionStates: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    astFullPositionStates: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
 
     fbInternalND: FB_PositionStateInternalND;
@@ -79,7 +79,7 @@ VAR
 
     nGoalIndex: DINT;
     nPrevGoalIndex: DINT;
-    astGoalPositionStates: ARRAY[1..2] OF DUT_PositionState;
+    astGoalPositionStates: ARRAY[1..2] OF ST_PositionState;
     bTimeToMove: BOOL;
     stExpectedParams: ST_BeamParams;
 END_VAR

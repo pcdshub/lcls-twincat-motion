@@ -17,14 +17,14 @@
 *)
 VAR_IN_OUT
     // A multidimensional array with all of the position states for all of the motors. Dimension 1 should correleate with the number of motors. Dimension 2 is the states for each individual motor.
-    astPositionState: ARRAY[*, *] OF DUT_PositionState;
+    astPositionState: ARRAY[*, *] OF ST_PositionState;
     // An uninitialized array of PMPS DB lookups. This must be one larger than Dimension 2 of astPositionState so we can prepend it with the transition state.
     astDbStateParams: ARRAY[*] OF ST_DbStateParams;
     // Hardware output to fault to if there is a problem.
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
-    // The database lookup key for the transition state. This has no corresponding DUT_PositionState.
+    // The database lookup key for the transition state. This has no corresponding ST_PositionState.
     sTransitionKey: STRING;
     // A name to use for fast faults, etc.
     sDeviceName: STRING;
