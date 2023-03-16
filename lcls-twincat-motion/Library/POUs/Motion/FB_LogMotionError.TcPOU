@@ -12,7 +12,7 @@
     Includes the motor name and the NC error id in the json blob
 *)
 VAR_IN_OUT
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 END_VAR
 VAR_INPUT
     bEnable: BOOL;
@@ -34,7 +34,7 @@ sPrevErr := stMotionStage.sErrorMessage;
 IF bEnable AND (rtNewError.Q OR bChangedError) THEN
     fbJson.StartObject();
     fbJson.AddKey('schema');
-    fbJson.AddString('DUT_MotionStage.bError');
+    fbJson.AddString('ST_MotionStage.bError');
     fbJson.AddKey('dut_name');
     fbJson.AddString(stMotionStage.sName);
     fbJson.AddKey('axis_name');

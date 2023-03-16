@@ -5,12 +5,12 @@
 (*
     Request a move from an axis controlled via EPICS using FB_MotionStage
     This exists to manage situations where different bits of code may need to move the same motor.
-    With just the DUT_MotionStage/FB_MotionStage setup it is possible for two function blocks to
+    With just the ST_MotionStage/FB_MotionStage setup it is possible for two function blocks to
     fight with and interfere with each other and with the EPICS commands.
 *)
 VAR_IN_OUT
     // Motor to move
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 END_VAR
 VAR_INPUT
     // Start move on rising edge, stop move on falling edge
@@ -121,7 +121,7 @@ CASE nState OF
         IF NOT stMotionStage.bBusy THEN
             nState := START_MOVE;
         END_IF
-    // Set the correct values on DUT_MotionStage to start a new absolute move
+    // Set the correct values on ST_MotionStage to start a new absolute move
     START_MOVE:
         bMyMove := TRUE;
         stMotionStage.bExecute := TRUE;

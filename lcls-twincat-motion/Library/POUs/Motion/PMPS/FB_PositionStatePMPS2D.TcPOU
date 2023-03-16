@@ -14,14 +14,14 @@
     TODO: make the array bounds more strict, make it match on index
 *)
 VAR_IN_OUT
-    stMotionStage1: DUT_MotionStage;
+    stMotionStage1: ST_MotionStage;
     {attribute 'pytmc' := '
         pv: STATES:M1
         io: io
         expand: %.2d
     '}
     astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    stMotionStage2: DUT_MotionStage;
+    stMotionStage2: ST_MotionStage;
     {attribute 'pytmc' := '
         pv: STATES:M2
         io: io
@@ -58,7 +58,7 @@ VAR_OUTPUT
     stEpicsOutput: ST_StateEpicsOutput;
 END_VAR
 VAR
-    astAllMotors: ARRAY[1..2] OF DUT_MotionStage;
+    astAllMotors: ARRAY[1..2] OF ST_MotionStage;
     astFullPositionStates: ARRAY[1..2, 1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
 

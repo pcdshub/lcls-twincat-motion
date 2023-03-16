@@ -3,7 +3,7 @@
   <POU Name="FB_EncSaveRestore" Id="{7f38772f-c9da-4f49-aee1-95cd4af3fbdf}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_EncSaveRestore
 VAR_IN_OUT
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 END_VAR
 VAR_INPUT
     bEnable: BOOL;
@@ -73,7 +73,7 @@ END_VAR
     bLoad S= tonRetry.Q;
     bWaitRetry R= tonRetry.Q;
 
-    // Check DUT_MotionStage for an encoder error (range 0x44nn)
+    // Check ST_MotionStage for an encoder error (range 0x44nn)
     bEncError := stMotionStage.bError AND stMotionStage.nErrorId >= 16#4400 AND stMotionStage.nErrorId <= 16#44FF;
 
     // Do not save if we're currently loading or if there is an encoder error
