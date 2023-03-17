@@ -3,6 +3,8 @@
   <POU Name="FB_PositionStateRead_Test" Id="{5aa06afc-15a8-4899-b127-6c473eb50869}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateRead_Test EXTENDS TcUnit.FB_TestSuite
 VAR
+    // TODO must run FB_PositionStateInternal on all states or else this behaves poorly
+    // How do I accomplish this most cleanly + reusably on other states tests?
     stMotionStage: ST_MotionStage;
     astPositionState: ARRAY[1..3] OF ST_PositionState;
     stDummyPos: ST_PositionState;
@@ -12,6 +14,8 @@ VAR
     nTestCounter: UINT;
 
     bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -74,11 +78,22 @@ TestStaticPosition(
     nPositionIndex:=3,
     stCurrentPosition:=astPositionState[3],
 );
-// At position 3 and also moving check
+// At position 3 and moving within bounds check
 TestMovingPosition(
     nTestIndex:=4,
     sTestName:='MovingAt3',
     fPosition:=30,
+    fVelocity:=0.001,
+    bKnownState:=TRUE,
+    bMovingState:=FALSE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+// At position 3 and moving away check
+TestMovingPosition(
+    nTestIndex:=5,
+    sTestName:='MovingFrom3',
+    fPosition:=300,
     fVelocity:=0.001,
     bKnownState:=FALSE,
     bMovingState:=TRUE,
@@ -89,8 +104,14 @@ TestMovingPosition(
 IF bOneTestDone THEN
     nTestCounter := nTestCounter + 1;
     bOneTestDone := FALSE;
+    fTestStartPos := stMotionStage.stAxisStatus.fActPosition;
+    tonTimer(IN:=FALSE);
 END_IF
-]]></ST>
+
+tonTimer(
+    IN:=TRUE,
+    PT:=T#1s,
+);]]></ST>
     </Implementation>
     <Method Name="Asserts" Id="{9a2b93ac-1d78-442c-a37b-5d49647c861f}">
       <Declaration><![CDATA[METHOD Asserts
@@ -103,6 +124,11 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+AssertEquals_BOOL(
+    Expected:=FALSE,
+    Actual:=tonTimer.Q,
+    Message:='Test timed out',
+);
 AssertEquals_BOOL(
     Expected:=bKnownState,
     Actual:=fbRead.bKnownState,
@@ -169,7 +195,7 @@ fbRead(
     astPositionState:=astPositionState,
 );
 
-IF fbMovePos.bBusy THEN
+IF stMotionStage.stAxisStatus.fActPosition <> fTestStartPos OR tonTimer.Q THEN
     Asserts(
         bKnownState:=bKnownState,
         bMovingState:=bMovingState,
@@ -218,7 +244,7 @@ fbRead(
     astPositionState:=astPositionState,
 );
 
-IF fbSetPos.bDone THEN
+IF fbSetPos.bDone OR tonTimer.Q THEN
     Asserts(
         bKnownState:=bKnownState,
         bMovingState:=bMovingState,
