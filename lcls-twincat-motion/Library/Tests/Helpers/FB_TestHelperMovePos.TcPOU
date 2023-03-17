@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_TestHelperMovePos" Id="{464087f0-40f0-4ea7-acd9-8dba248ed84b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TestHelperMovePos
+(*
+    During a unit test, move towards a position and handle everything.
+*)
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_INPUT
+    bExecute: BOOL;
+    bPowerSelf: BOOL;
+    fPosition: LREAL;
+    fVelocity: LREAL;
+END_VAR
+VAR_OUTPUT
+    bBusy: BOOL;
+    bDone: BOOL;
+END_VAR
+VAR
+    bInitDone: BOOL;
+    fbMotionStage: FB_MotionStage;
+    fbMoveReq: FB_MotionRequest;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF NOT bInitDone THEN
+    bInitDone := TRUE;
+    fbMoveReq(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
+END_IF
+stMotionStage.bLimitBackwardEnable := TRUE;
+stMotionStage.bLimitForwardEnable := TRUE;
+stMotionStage.bUserEnable := TRUE;
+stMotionStage.bPowerSelf := bPowerSelf;
+fbMotionStage(stMotionStage:=stMotionStage);
+fbMoveReq(
+    stMotionStage:=stMotionStage,
+    bExecute:=bExecute,
+    fPos:=fPosition,
+    fVel:=fVelocity,
+    bBusy=>bBusy,
+    bDone=>bDone,
+);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

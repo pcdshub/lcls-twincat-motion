@@ -35,7 +35,7 @@
     <Folder Include="POUs\Motion\States" />
     <Folder Include="POUs\ImplicitChecks" />
     <Folder Include="POUs\Deprecated" />
-    <Folder Include="UnitTests" />
+    <Folder Include="Tests" />
     <Folder Include="POUs" />
     <Folder Include="POUs\Motion" />
     <Folder Include="POUs\Motion\Gantry" />
@@ -55,6 +55,7 @@
     <Folder Include="tc_mca_std_lib\POUs\Hardware\Other" />
     <Folder Include="tc_mca_std_lib\POUs\Motion" />
     <Folder Include="tc_mca_std_lib\POUs\Motion\Homing" />
+    <Folder Include="Tests\Helpers" />
     <Folder Include="Version" />
     <Folder Include="tc_mca_std_lib\DUTs" />
     <Folder Include="tc_mca_std_lib\POUs" />
@@ -126,6 +127,9 @@
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Deprecated\BasicTests.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Deprecated\FB_EpicsInOut.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -160,6 +164,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Deprecated\FB_StatePTPMove.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\Interactive.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\ImplicitChecks\CheckBounds.TcPOU">
@@ -433,10 +440,16 @@
     <Compile Include="tc_mca_std_lib\POUs\Motion\Homing\FB_HomeWriteSoftLimEnable.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="UnitTests\BasicTests.TcPOU">
+    <Compile Include="Tests\FB_PositionStateRead_Test.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="UnitTests\Interactive.TcPOU">
+    <Compile Include="Tests\Helpers\FB_TestHelperMovePos.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\Helpers\FB_TestHelperSetPos.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\PRG_TEST.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Version\Global_Version.TcGVL">
@@ -480,6 +493,11 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
+    <PlaceholderReference Include="TcUnit">
+      <DefaultResolution>TcUnit, * (www.tcunit.org)</DefaultResolution>
+      <Namespace>TcUnit</Namespace>
+      <HideWhenReferencedAsDependency>true</HideWhenReferencedAsDependency>
+    </PlaceholderReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Library.tmc">
@@ -489,6 +507,9 @@
   <ItemGroup>
     <PlaceholderResolution Include="Tc3_JsonXml">
       <Resolution>Tc3_JsonXml, * (Beckhoff Automation GmbH)</Resolution>
+    </PlaceholderResolution>
+    <PlaceholderResolution Include="TcUnit">
+      <Resolution>TcUnit, * (www.tcunit.org)</Resolution>
     </PlaceholderResolution>
   </ItemGroup>
   <ProjectExtensions>

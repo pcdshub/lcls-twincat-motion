@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateRead_Test" Id="{5aa06afc-15a8-4899-b127-6c473eb50869}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateRead_Test EXTENDS TcUnit.FB_TestSuite
+VAR
+    stMotionStage: ST_MotionStage;
+    astPositionState: ARRAY[1..3] OF ST_PositionState;
+    stDummyPos: ST_PositionState;
+    fbSetPos: FB_TestHelperSetPos;
+    fbMovePos: FB_TestHelperMovePos;
+    fbRead: FB_PositionStateRead;
+    nTestCounter: UINT;
+
+    bOneTestDone: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+astPositionState[1].sName := 'UNO';
+astPositionState[1].fPosition := 10;
+astPositionState[1].fDelta := 1;
+astPositionState[1].bValid := TRUE;
+astPositionState[1].bUseRawCounts := FALSE;
+
+astPositionState[2].sName := 'DOS';
+astPositionState[2].fPosition := 20;
+astPositionState[2].fDelta := 1;
+astPositionState[2].bValid := FALSE;
+astPositionState[2].bUseRawCounts := FALSE;
+
+astPositionState[3].sName := 'TRES';
+astPositionState[3].fPosition := 30;
+astPositionState[3].fDelta := 1;
+astPositionState[3].bValid := TRUE;
+astPositionState[3].bUseRawCounts := FALSE;
+
+// At position 1 check
+TestStaticPosition(
+    nTestIndex:=0,
+    sTestName:='AtPos1',
+    fPosition:=10.2,
+    bKnownState:=TRUE,
+    bMovingState:=FALSE,
+    nPositionIndex:=1,
+    stCurrentPosition:=astPositionState[1],
+);
+// Outside the deltas check
+TestStaticPosition(
+    nTestIndex:=1,
+    sTestName:='OutsidePos1Delta',
+    fPosition:=12,
+    bKnownState:=FALSE,
+    bMovingState:=FALSE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+// At invalid state 2 check
+TestStaticPosition(
+    nTestIndex:=2,
+    sTestName:='AtInvalidPos',
+    fPosition:=20,
+    bKnownState:=FALSE,
+    bMovingState:=FALSE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+// At position 3 check
+TestStaticPosition(
+    nTestIndex:=3,
+    sTestName:='AtPos3',
+    fPosition:=29.5,
+    bKnownState:=TRUE,
+    bMovingState:=FALSE,
+    nPositionIndex:=3,
+    stCurrentPosition:=astPositionState[3],
+);
+// At position 3 and also moving check
+TestMovingPosition(
+    nTestIndex:=4,
+    sTestName:='MovingAt3',
+    fPosition:=30,
+    fVelocity:=0.001,
+    bKnownState:=FALSE,
+    bMovingState:=TRUE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+
+IF bOneTestDone THEN
+    nTestCounter := nTestCounter + 1;
+    bOneTestDone := FALSE;
+END_IF
+]]></ST>
+    </Implementation>
+    <Method Name="Asserts" Id="{9a2b93ac-1d78-442c-a37b-5d49647c861f}">
+      <Declaration><![CDATA[METHOD Asserts
+VAR_INPUT
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    stCurrentPosition: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+AssertEquals_BOOL(
+    Expected:=bKnownState,
+    Actual:=fbRead.bKnownState,
+    Message:='Incorrect bKnownState',
+);
+AssertEquals_BOOL(
+    Expected:=bMovingState,
+    Actual:=fbRead.bMovingState,
+    Message:='Incorrect bMovingState',
+);
+
+IF bKnownState THEN
+    // Match a known index
+    AssertEquals_DINT(
+        Expected:=nPositionIndex,
+        Actual:=fbRead.nPositionIndex,
+        Message:='Incorrect nPositionIndex',
+    );
+    AssertEquals_STRING(
+        Expected:=stCurrentPosition.sName,
+        Actual:=fbRead.stCurrentPosition.sName,
+        Message:='Did not provide correct current position struct',
+    );
+ELSE
+    // Anything lower than the lowest bound
+    AssertEquals_BOOL(
+        Expected:=TRUE,
+        Actual:=fbRead.nPositionIndex < 1,
+        Message:='Unknown state not below lower bound of array',
+    );
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMovingPosition" Id="{718d69e0-eec5-43ac-85a7-32e459f1fdac}">
+      <Declaration><![CDATA[METHOD TestMovingPosition
+VAR_INPUT
+    nTestIndex: UINT;
+    sTestName: STRING;
+    fPosition: LREAL;
+    fVelocity: LREAL;
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    stCurrentPosition: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(sTestName);
+IF nTestIndex <> nTestCounter THEN
+    RETURN;
+END_IF
+
+fbMovePos(
+    stMotionStage:=stMotionStage,
+    bExecute:=TRUE,
+    bPowerSelf:=TRUE,
+    fPosition:=fPosition,
+    fVelocity:=fVelocity,
+);
+fbRead(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+);
+
+IF fbMovePos.bBusy THEN
+    Asserts(
+        bKnownState:=bKnownState,
+        bMovingState:=bMovingState,
+        nPositionIndex:=nPositionIndex,
+        stCurrentPosition:=stCurrentPosition,
+    );
+    fbMovePos(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+        fPosition:=fPosition,
+        fVelocity:=fVelocity,
+    );
+
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStaticPosition" Id="{1757b5fc-f3f6-4976-b181-53e15896a6a6}">
+      <Declaration><![CDATA[METHOD PRIVATE TestStaticPosition
+VAR_INPUT
+    nTestIndex: UINT;
+    sTestName: STRING;
+    fPosition: LREAL;
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    stCurrentPosition: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(sTestName);
+IF nTestIndex <> nTestCounter THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    bExecute:=TRUE,
+    stMotionStage:=stMotionStage,
+    fPosition:=fPosition,
+);
+fbRead(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+);
+
+IF fbSetPos.bDone THEN
+    Asserts(
+        bKnownState:=bKnownState,
+        bMovingState:=bMovingState,
+        nPositionIndex:=nPositionIndex,
+        stCurrentPosition:=stCurrentPosition,
+    );
+    fbSetPos(
+        bExecute:=FALSE,
+        stMotionStage:=stMotionStage,
+        fPosition:=fPosition,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

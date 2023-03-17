@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_TestHelperSetPos" Id="{d3609f49-feb9-462d-afa0-b253b6f01323}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TestHelperSetPos
+(*
+    During a unit test, set the apparent position for an ST_MotionStage
+    without running any "move" code.
+
+    You will not be able to move this motor during the test.
+*)
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_INPUT
+    bExecute: BOOL;
+    fPosition: LREAL;
+END_VAR
+VAR_OUTPUT
+    bDone: BOOL;
+END_VAR
+VAR
+    fbMotionStage: FB_MotionStage;
+    mcSetPos: MC_SetPosition;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+stMotionStage.bLimitBackwardEnable := FALSE;
+stMotionStage.bLimitForwardEnable := FALSE;
+stMotionStage.bUserEnable := FALSE;
+mcSetPos(
+    Axis:=stMotionStage.Axis,
+    Execute:=bExecute,
+    Position:=fPosition,
+);
+fbMotionStage(stMotionStage:=stMotionStage);
+bDone := fPosition = stMotionStage.stAxisStatus.fActPosition;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
