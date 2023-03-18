@@ -1,0 +1,548 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_AtPositionState_Test" Id="{cc4d1353-89e8-4ab0-b592-6491b8e8bd3e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_AtPositionState_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Test the following related helper functions:
+    - F_PosOverLowerBound
+    - F_PosUnderUpperBound
+    - F_PosWithinDelta
+    - F_AtPositionState
+*)
+VAR
+    // For the multi-cycle tests
+    stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStage;
+    fbSetPos: FB_TestHelperSetPos;
+    fbMovPos: FB_TestHelperMovePos;
+    stPositionStateInactive: ST_PositionState;
+    stPositionStateInvalid: ST_PositionState;
+    stPositionStateGood: ST_PositionState;
+    tonInactive: TON;
+    fbInternalGood: FB_PositionStateInternal;
+    fbInternalInvalid: FB_PositionStateInternal;
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    tonTimeout: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// Single cycle tests
+TestPosOverLowerBoundYes();
+TestPosOverLowerBoundNo();
+TestPosUnderUpperBoundYes();
+TestPosUnderUpperBoundNo();
+TestPosWithinDeltaTooLow();
+TestPosWithinDeltaTooHigh();
+TestPosWithinDeltaJustRight();
+
+// Multi cycle tests
+fbMotionStage(stMotionStage:=stMotionStage);
+stPositionStateInactive.sName := 'Inactive';
+stPositionStateInactive.fPosition := 30.0;
+stPositionStateInactive.fDelta := 1.0;
+stPositionStateInactive.bValid := TRUE;
+tonInactive(
+    IN:=TRUE,
+    PT:=T#1s,
+);
+TestAtPositionStateWithoutInternal();
+
+stPositionStateInvalid.sName := 'Invalid';
+stPositionStateInvalid.fPosition := 40.0;
+stPositionStateInvalid.fDelta := 1.0;
+stPositionStateInvalid.bValid := FALSE;
+fbInternalInvalid(
+    stMotionStage:=stMotionStage,
+    stPositionState:=stPositionStateInvalid,
+);
+TestAtPositionStateInvalid();
+
+stPositionStateGood.sName := 'Good';
+stPositionStateGood.fPosition := 50.0;
+stPositionStateGood.fDelta := 1.0;
+stPositionStateGood.bValid := TRUE;
+fbInternalGood(
+    stMotionStage:=stMotionStage,
+    stPositionState:=stPositionStateGood,
+);
+TestAtPositionStateTooLow();
+TestAtPositionStateTooHigh();
+TestAtPositionStateJustRight();
+TestAtPositionStateTweak();
+TestAtPositionStateLeave();
+
+tonTimeout(
+    IN:=nTestCounter<7,
+    PT:=T#1s,
+);
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    fbSetPos(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
+    fbMovPos(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
+    tonTimeout(IN:=FALSE);
+END_IF
+
+]]></ST>
+    </Implementation>
+    <Method Name="TestAtPositionStateInvalid" Id="{cd076af2-9cac-4a9c-b69d-20d2d211c94e}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateInvalid
+(*
+    If a position state is invalid, it is never the right state.
+*)
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateInvalid');
+IF nTestCounter <> 1 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=40,
+);
+IF stPositionStateInvalid.bUpdated AND fbSetPos.bDone THEN
+    AssertFalse(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateInvalid,
+        ),
+        Message:='Invalid state was marked OK',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestAtPositionStateJustRight" Id="{39ff2cac-d40d-4406-a14e-6c167c76a2b9}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateJustRight
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateJustRight');
+IF nTestCounter <> 4 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=50.2,
+);
+IF stPositionStateGood.bUpdated AND fbSetPos.bDone THEN
+    AssertTrue(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateGood,
+        ),
+        Message:='50.2 was found to be outside 49 < x < 51',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestAtPositionStateLeave" Id="{72bf20af-3ef6-49e3-8f7b-9ccf7642a01b}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateLeave
+(*
+    A move away from a state should be not at the state, even before we've left
+*)
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateLeave');
+IF nTestCounter <> 6 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=49.1,
+);
+fbMovPos(
+    stMotionStage:=stMotionStage,
+    bExecute:=fbSetPos.bDone,
+    bPowerSelf:=TRUE,
+    fPosition:=100,
+    fVelocity:=0.001,
+);
+IF stPositionStateGood.bUpdated AND fbSetPos.bDone AND stMotionStage.stAxisStatus.fActPosition <> 49.1 THEN
+    // Everything is ready and the move has started
+    AssertFalse(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateGood,
+        ),
+        Message:='Leaving state is not at state once the move starts',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestAtPositionStateTooHigh" Id="{fffcbd9f-b84e-4e73-869e-5d30112d5f41}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateTooHigh
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateTooHigh');
+IF nTestCounter <> 3 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=52,
+);
+IF stPositionStateGood.bUpdated AND fbSetPos.bDone THEN
+    AssertFalse(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateGood,
+        ),
+        Message:='52 was found to be within 49 < x < 51',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestAtPositionStateTooLow" Id="{1e4e3123-a9ec-43be-b844-164b02fc21fb}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateTooLow
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateTooLow');
+IF nTestCounter <> 2 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=48,
+);
+IF stPositionStateGood.bUpdated AND fbSetPos.bDone THEN
+    AssertFalse(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateGood,
+        ),
+        Message:='48 was found to be within 49 < x < 51',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestAtPositionStateTweak" Id="{a5723450-03c2-48d9-81a3-66f14077db94}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateTweak
+(*
+    A small tweak move within the delta of a position state should be OK
+*)
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateTweak');
+IF nTestCounter <> 5 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=50.5,
+);
+fbMovPos(
+    stMotionStage:=stMotionStage,
+    bExecute:=fbSetPos.bDone,
+    bPowerSelf:=TRUE,
+    fPosition:=49.5,
+    fVelocity:=0.001,
+);
+IF stPositionStateGood.bUpdated AND fbSetPos.bDone AND stMotionStage.stAxisStatus.fActPosition <> 50.5 THEN
+    // Everything is ready and the move has started
+    AssertTrue(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateGood,
+        ),
+        Message:='Small tweak in range should count as at state',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestAtPositionStateWithoutInternal" Id="{ebef7a20-0da3-478a-8be6-cb376035d974}">
+      <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateWithoutInternal
+(*
+    If a position state is never updated by the internal FB, it is never the right state.
+*)
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestAtPositionStateWithoutInternal');
+IF nTestCounter <> 0 THEN
+    RETURN;
+END_IF
+
+fbSetPos(
+    stMotionStage:=stMotionstage,
+    bExecute:=TRUE,
+    fPosition:=30,
+);
+IF stPositionStateInvalid.bUpdated AND fbSetPos.bDone THEN
+    // Enough time has passed for something else to get updated by an internal block
+    // So if I made a mistake and updated the actual position state it will be caught here
+    AssertFalse(
+        Condition:=F_AtPositionState(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stPositionStateInactive,
+        ),
+        Message:='This is the control group, internal was not run so this should not work',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
+    bOneTestDone := TRUE;
+    AssertFalse(
+        Condition:=TRUE,
+        Message:='Timeout in multi cycle test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosOverLowerBoundNo" Id="{c7b3c6d5-cfde-4efa-b380-ef718a268150}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosOverLowerBoundNo
+VAR
+    stPositionState: ST_PositionState;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosOverLowerBoundNo');
+stPositionState.fPosition := 10;
+stPositionState.fDelta := 1;
+
+AssertFalse(
+    Condition:=F_PosOverLowerBound(
+        fPosition:=8.5,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 8.5 > 9.0',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosOverLowerBoundYes" Id="{7ad2987d-8fe3-4ede-a43d-522c670c925b}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosOverLowerBoundYes
+VAR
+    stPositionState: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosOverLowerBoundYes');
+stPositionState.fPosition := 10;
+stPositionState.fDelta := 1;
+
+AssertTrue(
+    Condition:=F_PosOverLowerBound(
+        fPosition:=9.1,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 9.0 > 9.1',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosUnderUpperBoundNo" Id="{720399c3-37fb-45f8-a28e-4bbad2cc7738}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosUnderUpperBoundNo
+VAR
+    stPositionState: ST_PositionState;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosUnderUpperBoundNo');
+stPositionState.fPosition := 10;
+stPositionState.fDelta := 1;
+
+AssertFalse(
+    Condition:=F_PosUnderUpperBound(
+        fPosition:=12.0,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 11.0 > 12.0',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosUnderUpperBoundYes" Id="{48bb5b7e-8ffc-4686-b2a9-ab5fec8c7ed8}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosUnderUpperBoundYes
+VAR
+    stPositionState: ST_PositionState;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosUnderUpperBoundYes');
+stPositionState.fPosition := 10;
+stPositionState.fDelta := 1;
+
+AssertTrue(
+    Condition:=F_PosUnderUpperBound(
+        fPosition:=10.9,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 10.9 > 11.0',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosWithinDeltaJustRight" Id="{c0819698-ac76-412a-b318-85ac31c07ff9}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosWithinDeltaJustRight
+VAR
+    stPositionState: ST_PositionState;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosWithinDeltaJustRight');
+stPositionState.fPosition := 20;
+stPositionState.fDelta := 1;
+
+AssertTrue(
+    Condition:=F_PosWithinDelta(
+        fPosition:=20.2,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 20.2 not within 19 to 21 bounds',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosWithinDeltaTooHigh" Id="{9819f8f5-cffd-409d-9f2d-4c2b085e21e1}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosWithinDeltaTooHigh
+VAR
+    stPositionState: ST_PositionState;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosWithinDeltaTooHigh');
+stPositionState.fPosition := 20;
+stPositionState.fDelta := 1;
+
+AssertFalse(
+    Condition:=F_PosWithinDelta(
+        fPosition:=25.0,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 21.0 > 25.0',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestPosWithinDeltaTooLow" Id="{32360390-5818-4444-9536-05d1806527b3}">
+      <Declaration><![CDATA[METHOD PRIVATE TestPosWithinDeltaTooLow
+VAR
+    stPositionState: ST_PositionState;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestPosWithinDeltaTooLow');
+stPositionState.fPosition := 20;
+stPositionState.fDelta := 1;
+
+AssertFalse(
+    Condition:=F_PosWithinDelta(
+        fPosition:=12.0,
+        stPositionState:=stPositionState,
+    ),
+    Message:='Decided 12.0 > 19.0',
+);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

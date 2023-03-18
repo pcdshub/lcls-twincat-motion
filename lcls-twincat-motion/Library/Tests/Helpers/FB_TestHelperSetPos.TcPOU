@@ -24,17 +24,23 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[
-stMotionStage.bLimitBackwardEnable := FALSE;
-stMotionStage.bLimitForwardEnable := FALSE;
-stMotionStage.bUserEnable := FALSE;
+      <ST><![CDATA[bDone R= NOT bExecute;
+
+IF bExecute AND NOT bDone THEN
+    stMotionStage.bLimitBackwardEnable := FALSE;
+    stMotionStage.bLimitForwardEnable := FALSE;
+    stMotionStage.bHardwareEnable := FALSE;
+    stMotionStage.bUserEnable := FALSE;
+END_IF
+
 mcSetPos(
     Axis:=stMotionStage.Axis,
     Execute:=bExecute,
     Position:=fPosition,
 );
-fbMotionStage(stMotionStage:=stMotionStage);
-bDone := fPosition = stMotionStage.stAxisStatus.fActPosition;
+
+bDone S= fPosition = stMotionStage.stAxisStatus.fActPosition;
+
 ]]></ST>
     </Implementation>
   </POU>

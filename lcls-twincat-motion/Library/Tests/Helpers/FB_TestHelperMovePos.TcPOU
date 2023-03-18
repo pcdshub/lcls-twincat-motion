@@ -22,6 +22,7 @@ VAR
     bInitDone: BOOL;
     fbMotionStage: FB_MotionStage;
     fbMoveReq: FB_MotionRequest;
+    rtExec: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -33,11 +34,18 @@ IF NOT bInitDone THEN
         bExecute:=FALSE,
     );
 END_IF
-stMotionStage.bLimitBackwardEnable := TRUE;
-stMotionStage.bLimitForwardEnable := TRUE;
-stMotionStage.bUserEnable := TRUE;
-stMotionStage.bPowerSelf := bPowerSelf;
-fbMotionStage(stMotionStage:=stMotionStage);
+
+rtExec(CLK:=bExecute);
+bDone R= rtExec.Q;
+
+IF bExecute AND NOT bDone THEN
+    stMotionStage.bLimitBackwardEnable := TRUE;
+    stMotionStage.bLimitForwardEnable := TRUE;
+    stMotionStage.bHardwareEnable := TRUE;
+    stMotionStage.bUserEnable := TRUE;
+    stMotionStage.bPowerSelf := bPowerSelf;
+END_IF
+
 fbMoveReq(
     stMotionStage:=stMotionStage,
     bExecute:=bExecute,
