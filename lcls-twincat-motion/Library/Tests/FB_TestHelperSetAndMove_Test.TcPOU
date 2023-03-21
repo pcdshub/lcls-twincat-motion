@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_TestHelperSetAndMove_Test" Id="{fabeb413-c671-4e17-8ed8-2cdfd13d09b0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TestHelperSetAndMove_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Ensure that the test helper function block works as needed.
+    Without this, all tests that need motion cannot pass.
+*)
+VAR
+    stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStage;
+    fbTestMove: FB_TestHelperSetAndMove;
+    rtResetDone: R_TRIG;
+    rtSetDone: R_TRIG;
+    rtMotionStart: R_TRIG;
+    rtMoveDone: R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbMotionStage(stMotionStage:=stMotionstage);
+BasicMotion();
+]]></ST>
+    </Implementation>
+    <Method Name="BasicMotion" Id="{18b58f91-fb57-42d9-8ad5-49bcaf7c02ef}">
+      <Declaration><![CDATA[METHOD PRIVATE BasicMotion
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('BasicMotion');
+
+IF NOT fbTestMove.bExecute THEN
+    stMotionStage.bError := TRUE;
+END_IF
+fbTestMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=TRUE,
+    fStartPosition:=15.0,
+    fGoalPosition:=17.0,
+    fVelocity:=1.0,
+    bHWEnable:=TRUE,
+);
+rtResetDone(CLK:=fbTestMove.bResetDone);
+rtSetDone(CLK:=fbTestMove.bSetDone);
+rtMotionStart(CLK:=fbTestMove.bMotionStarted);
+rtMoveDone(CLK:=fbTestMove.bMoveDone);
+IF rtResetDone.Q THEN
+    AssertFalse(
+        Condition:=stMotionStage.bError,
+        Message:='Reset did not clear error',
+    );
+    AssertEquals_LREAL(
+        Expected:=stMotionStage.stAxisStatus.fActPosition,
+        Actual:=fbTestMove.fActPosition,
+        Delta:=0,
+        Message:='Real position output does not match real position.',
+    );
+END_IF
+IF rtSetDone.Q THEN
+    AssertEquals_LREAL(
+        Expected:=fbTestMove.fStartPosition,
+        Actual:=fbTestMove.fActPosition,
+        Delta:=0,
+        Message:='Was not set to start position after set done',
+    );
+END_IF
+IF rtMotionStart.Q THEN
+    AssertTrue(
+        Condition:=stMotionStage.bBusy,
+        Message:='stMotionStage is not busy, but motion is said to have started.',
+    );
+    AssertTrue(
+        Condition:=fbTestMove.fActPosition > fbTestMove.fStartPosition,
+        Message:='stMotionStage has not moved, but motion is said to have started.',
+    );
+END_IF
+IF rtMoveDone.Q THEN
+    AssertEquals_LREAL(
+        Expected:=fbTestMove.fGoalPosition,
+        Actual:=fbTestMove.fActPosition,
+        Delta:=0.001,
+        Message:='Did not reach destination at move done',
+    );
+END_IF
+IF fbTestMove.bError OR fbTestMove.tElapsed > T#5s OR (fbTestMove.bResetDone AND fbTestMove.bSetDone AND fbTestMove.bMotionStarted AND fbTestMove.bMoveDone) THEN
+    AssertFalse(
+        Condition:=fbTestMove.bError,
+        Message:='Error in fbTestMove',
+    );
+    AssertFalse(
+        Condition:=fbTestMove.tElapsed > T#5s,
+        Message:='Timeout in basic motion test',
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
