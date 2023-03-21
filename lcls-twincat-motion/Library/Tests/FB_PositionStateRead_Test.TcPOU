@@ -4,19 +4,19 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateRead_Test EXTENDS TcUnit.FB_TestSuite
 VAR
     stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStage;
     astPositionState: ARRAY[1..3] OF ST_PositionState;
     afbInternal: ARRAY[1..3] OF FB_PositionStateInternal;
     stDummyPos: ST_PositionState;
-    fbSetPos: FB_TestHelperSetPos;
-    fbMovePos: FB_TestHelperMovePos;
+    fbTestMove: FB_TestHelperSetAndMove;
     fbRead: FB_PositionStateRead;
-
 
     nTestCounter: UINT;
     bOneTestDone: BOOL;
     fTestStartPos: LREAL;
     tonTimer: TON;
     nIter: DINT;
+    bStatesReady: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -39,18 +39,21 @@ astPositionState[3].fDelta := 1;
 astPositionState[3].bValid := TRUE;
 astPositionState[3].bUseRawCounts := FALSE;
 
+bStatesReady := TRUE;
 FOR nIter := 1 TO 3 DO
     afbInternal[nIter](
         stMotionStage:=stMotionStage,
         stPositionState:=astPositionState[nIter],
     );
+    bStatesReady := bStatesReady AND astPositionState[nIter].bUpdated;
 END_FOR
+fbMotionStage(stMotionStage:=stMotionStage);
 
 // At position 1 check
 TestStaticPosition(
     nTestIndex:=0,
     sTestName:='AtPos1',
-    fPosition:=10.2,
+    fPosition:=astPositionState[1].fPosition + 0.2 * astPositionState[1].fDelta,
     bKnownState:=TRUE,
     bMovingState:=FALSE,
     nPositionIndex:=1,
@@ -60,7 +63,7 @@ TestStaticPosition(
 TestStaticPosition(
     nTestIndex:=1,
     sTestName:='OutsidePos1Delta',
-    fPosition:=12,
+    fPosition:=astPositionState[1].fPosition + 2 * astPositionState[1].fDelta,
     bKnownState:=FALSE,
     bMovingState:=FALSE,
     nPositionIndex:=0,
@@ -70,7 +73,7 @@ TestStaticPosition(
 TestStaticPosition(
     nTestIndex:=2,
     sTestName:='AtInvalidPos',
-    fPosition:=20,
+    fPosition:=astPositionState[2].fPosition,
     bKnownState:=FALSE,
     bMovingState:=FALSE,
     nPositionIndex:=0,
@@ -80,7 +83,7 @@ TestStaticPosition(
 TestStaticPosition(
     nTestIndex:=3,
     sTestName:='AtPos3',
-    fPosition:=29.5,
+    fPosition:=astPositionState[3].fPosition - 0.5 * astPositionState[3].fDelta,
     bKnownState:=TRUE,
     bMovingState:=FALSE,
     nPositionIndex:=3,
@@ -90,18 +93,20 @@ TestStaticPosition(
 TestMovingPosition(
     nTestIndex:=4,
     sTestName:='MovingAt3',
-    fPosition:=30,
+    fStartPosition:=astPositionState[3].fPosition,
+    fGoalPosition:=astPositionState[3].fPosition + 0.9 * astPositionState[3].fDelta,
     fVelocity:=0.001,
     bKnownState:=TRUE,
     bMovingState:=FALSE,
-    nPositionIndex:=0,
-    stCurrentPosition:=stDummyPos,
+    nPositionIndex:=3,
+    stCurrentPosition:=astPositionState[3],
 );
 // At position 3 and moving away check
 TestMovingPosition(
     nTestIndex:=5,
     sTestName:='MovingFrom3',
-    fPosition:=300,
+    fStartPosition:=astPositionState[3].fPosition,
+    fGoalPosition:=astPositionState[3].fPosition + 100 * astPositionState[3].fDelta,
     fVelocity:=0.001,
     bKnownState:=FALSE,
     bMovingState:=TRUE,
@@ -110,20 +115,19 @@ TestMovingPosition(
 );
 
 IF bOneTestDone THEN
-    nTestCounter := nTestCounter + 1;
     bOneTestDone := FALSE;
-    fTestStartPos := stMotionStage.stAxisStatus.fActPosition;
-    tonTimer(IN:=FALSE);
+    nTestCounter := nTestCounter + 1;
+    fbTestMove(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
 END_IF
-
-tonTimer(
-    IN:=TRUE,
-    PT:=T#1s,
-);]]></ST>
+]]></ST>
     </Implementation>
     <Method Name="Asserts" Id="{9a2b93ac-1d78-442c-a37b-5d49647c861f}">
       <Declaration><![CDATA[METHOD PRIVATE Asserts
 VAR_INPUT
+    tTimeout: TIME;
     bKnownState: BOOL;
     bMovingState: BOOL;
     nPositionIndex: DINT;
@@ -132,9 +136,14 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
+fbRead(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionstate,
+);
+
 AssertEquals_BOOL(
     Expected:=FALSE,
-    Actual:=tonTimer.Q,
+    Actual:=fbTestMove.tElapsed > tTimeout,
     Message:='Test timed out',
 );
 AssertEquals_BOOL(
@@ -176,7 +185,8 @@ END_IF
 VAR_INPUT
     nTestIndex: UINT;
     sTestName: STRING;
-    fPosition: LREAL;
+    fStartPosition: LREAL;
+    fGoalPosition: LREAL;
     fVelocity: LREAL;
     bKnownState: BOOL;
     bMovingState: BOOL;
@@ -191,32 +201,23 @@ IF nTestIndex <> nTestCounter THEN
     RETURN;
 END_IF
 
-fbMovePos(
+fbTestMove(
     stMotionStage:=stMotionStage,
     bExecute:=TRUE,
-    bPowerSelf:=TRUE,
-    fPosition:=fPosition,
-    fVelocity:=fVelocity,
-);
-fbRead(
-    stMotionStage:=stMotionStage,
-    astPositionState:=astPositionState,
+    fStartPosition:=fStartPosition,
+    fGoalPosition:=fGoalPosition,
+    fVelocity:=0.001,
+    bHWEnable:=TRUE,
 );
 
-IF stMotionStage.stAxisStatus.fActPosition <> fTestStartPos OR tonTimer.Q THEN
+IF fbTestMove.tElapsed > T#5s OR (fbTestMove.bMotionStarted AND bStatesReady) THEN
     Asserts(
+        tTimeout:=T#5s,
         bKnownState:=bKnownState,
         bMovingState:=bMovingState,
         nPositionIndex:=nPositionIndex,
         stCurrentPosition:=stCurrentPosition,
     );
-    fbMovePos(
-        stMotionStage:=stMotionStage,
-        bExecute:=FALSE,
-        fPosition:=fPosition,
-        fVelocity:=fVelocity,
-    );
-
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
@@ -242,27 +243,20 @@ IF nTestIndex <> nTestCounter THEN
     RETURN;
 END_IF
 
-fbSetPos(
+fbTestMove(
+    stMotionStage:=stMotionStage,
     bExecute:=TRUE,
-    stMotionStage:=stMotionStage,
-    fPosition:=fPosition,
-);
-fbRead(
-    stMotionStage:=stMotionStage,
-    astPositionState:=astPositionState,
+    fStartPosition:=fPosition,
+    fGoalPosition:=fPosition,
 );
 
-IF fbSetPos.bDone OR tonTimer.Q THEN
+IF fbTestMove.tElapsed > T#1s OR (fbTestMove.bSetDone AND bStatesReady) THEN
     Asserts(
+        tTimeout:=T#1s,
         bKnownState:=bKnownState,
         bMovingState:=bMovingState,
         nPositionIndex:=nPositionIndex,
         stCurrentPosition:=stCurrentPosition,
-    );
-    fbSetPos(
-        bExecute:=FALSE,
-        stMotionStage:=stMotionStage,
-        fPosition:=fPosition,
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();
