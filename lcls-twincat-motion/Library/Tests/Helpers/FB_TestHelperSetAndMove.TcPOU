@@ -46,6 +46,8 @@ VAR_OUTPUT
     tElapsed: TIME;
     // Current motor position in case you're looking for it
     fActPosition: LREAL;
+    // Goes to TRUE if we're trying to stop a move. We'll stop an in-progress move when bExecute goes to FALSE, and we'll make sure the motor fully stops before responding to the next bExecute rising edge.
+    bStoppingMotor: BOOL;
 END_VAR
 VAR
     fbMoveRequest: FB_MotionRequest;
@@ -53,6 +55,7 @@ VAR
     tonTimeout: TON;
     rtExec: R_TRIG;
     ftExec: F_TRIG;
+    bExecQueued: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -63,6 +66,7 @@ tonTimeout(
     ET=>tElapsed,
 );
 rtExec(CLK:=bExecute);
+ftExec(CLK:=bExecute);
 
 // Set the outputs to known values on exec
 bResetDone R= rtExec.Q;
@@ -71,6 +75,10 @@ bMotionStarted R= rtExec.Q;
 bMoveDone R= rtExec.Q;
 bBusy S= rtExec.Q;
 bError R= rtExec.Q;
+
+bExecQueued S= rtExec.Q;
+bExecQueued R= ftExec.Q;
+bStoppingMotor S= ftExec.Q;
 
 // Set the hardware enables if asked
 IF bHWEnable THEN
@@ -85,8 +93,16 @@ END_IF
 bResetDone S= stMotionStage.bError = FALSE AND stMotionStage.bBusy = FALSE AND stMotionStage.bAllEnable = FALSE;
 
 // All uses of fbMoveRequest are in this IF/ELSE tree
-IF rtExec.Q THEN
+IF bStoppingMotor THEN
+    // Continue stopping the motor from previous cycles
+    fbMoveRequest(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
+    bStoppingMotor R= NOT stMotionStage.Axis.Status.ControlLoopClosed AND NOT fbMoveRequest.bBusy;
+ELSIF bExecQueued THEN
     // First exec cycle: bring these to FALSE for later use
+    bExecQueued := FALSE;
     stMotionStage.bUserEnable := FALSE;
     fbMoveRequest(
         stMotionStage:=stMotionStage,
@@ -99,7 +115,7 @@ ELSIF NOT bResetDone THEN
         stMotionStage:=stMotionStage,
         bReset:=bExecute,
     );
-ELSE
+ELSIF fStartPosition <> fGoalPosition THEN
     // Later: do the move
     // Important to not enable the motor until the set position is done
     stMotionStage.bUserEnable := bSetDone;
@@ -127,8 +143,7 @@ bSetDone S= mcSetPos.Done AND NOT mcSetPos.Error AND stMotionStage.stAxisStatus.
 bError := fbMoveRequest.bError OR mcSetPos.Error;
 
 // Reset bBusy when appropriate
-ftExec(CLK:=bExecute);
-bBusy R= bMoveDone OR bError OR ftExec.Q;
+bBusy R= (bMoveDone AND NOT bStoppingMotor) OR bError OR ftExec.Q;
 
 // Extract the motor position
 fActPosition := stMotionStage.stAxisStatus.fActPosition;

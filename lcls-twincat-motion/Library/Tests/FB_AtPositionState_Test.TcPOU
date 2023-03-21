@@ -13,8 +13,7 @@ VAR
     // For the multi-cycle tests
     stMotionStage: ST_MotionStage;
     fbMotionStage: FB_MotionStage;
-    fbSetPos: FB_TestHelperSetPos;
-    fbMovPos: FB_TestHelperMovePos;
+    fbTestMove: FB_TestHelperSetAndMove;
     stPositionStateInactive: ST_PositionState;
     stPositionStateInvalid: ST_PositionState;
     stPositionStateGood: ST_PositionState;
@@ -23,7 +22,6 @@ VAR
     fbInternalInvalid: FB_PositionStateInternal;
     nTestCounter: UINT;
     bOneTestDone: BOOL;
-    tonTimeout: TON;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -73,22 +71,13 @@ TestAtPositionStateJustRight();
 TestAtPositionStateTweak();
 TestAtPositionStateLeave();
 
-tonTimeout(
-    IN:=nTestCounter<7,
-    PT:=T#1s,
-);
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
     nTestCounter := nTestCounter + 1;
-    fbSetPos(
+    fbTestMove(
         stMotionStage:=stMotionStage,
         bExecute:=FALSE,
     );
-    fbMovPos(
-        stMotionStage:=stMotionStage,
-        bExecute:=FALSE,
-    );
-    tonTimeout(IN:=FALSE);
 END_IF
 
 ]]></ST>
@@ -100,7 +89,8 @@ END_IF
 *)
 VAR
 
-END_VAR]]></Declaration>
+END_VAR
+]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('TestAtPositionStateInvalid');
@@ -108,12 +98,13 @@ IF nTestCounter <> 1 THEN
     RETURN;
 END_IF
 
-fbSetPos(
+fbTestMove(
     stMotionStage:=stMotionstage,
     bExecute:=TRUE,
-    fPosition:=40,
+    fStartPosition:=stPositionStateInvalid.fPosition,
+    fGoalPosition:=stPositionStateInvalid.fPosition,
 );
-IF stPositionStateInvalid.bUpdated AND fbSetPos.bDone THEN
+IF fbTestMove.tElapsed > T#1s OR (stPositionStateInvalid.bUpdated AND fbTestMove.bSetDone) THEN
     AssertFalse(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
@@ -121,14 +112,11 @@ IF stPositionStateInvalid.bUpdated AND fbSetPos.bDone THEN
         ),
         Message:='Invalid state was marked OK',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#1s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
@@ -137,7 +125,7 @@ END_IF
     <Method Name="TestAtPositionStateJustRight" Id="{39ff2cac-d40d-4406-a14e-6c167c76a2b9}">
       <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateJustRight
 VAR
-
+    fLocalGoal: LREAL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -146,27 +134,26 @@ IF nTestCounter <> 4 THEN
     RETURN;
 END_IF
 
-fbSetPos(
+fLocalGoal := stPositionStateGood.fPosition + 0.2*stPositionStateGood.fDelta;
+fbTestMove(
     stMotionStage:=stMotionstage,
     bExecute:=TRUE,
-    fPosition:=50.2,
+    fStartPosition:=fLocalGoal,
+    fGoalPosition:=fLocalGoal,
 );
-IF stPositionStateGood.bUpdated AND fbSetPos.bDone THEN
+IF fbTestMove.tElapsed > T#1s OR (stPositionStateGood.bUpdated AND fbTestMove.bSetDone) THEN
     AssertTrue(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
             stPositionState:=stPositionStateGood,
         ),
-        Message:='50.2 was found to be outside 49 < x < 51',
+        Message:='Within delta counted as outside range',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#1s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
@@ -177,7 +164,7 @@ END_IF
 (*
     A move away from a state should be not at the state, even before we've left
 *)
-VAR_INPUT
+VAR
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -187,20 +174,20 @@ IF nTestCounter <> 6 THEN
     RETURN;
 END_IF
 
-fbSetPos(
-    stMotionStage:=stMotionstage,
-    bExecute:=TRUE,
-    fPosition:=49.1,
-);
-fbMovPos(
+fbTestMove(
     stMotionStage:=stMotionStage,
-    bExecute:=fbSetPos.bDone,
-    bPowerSelf:=TRUE,
-    fPosition:=100,
+    bExecute:=TRUE,
+    fStartPosition:=stPositionStateGood.fPosition,
+    fGoalPosition:=stPositionStateGood.fPosition + 100 * stPositionStateGood.fDelta,
     fVelocity:=0.001,
+    bHWEnable:=TRUE,
 );
-IF stPositionStateGood.bUpdated AND fbSetPos.bDone AND stMotionStage.stAxisStatus.fActPosition <> 49.1 THEN
-    // Everything is ready and the move has started
+
+IF fbTestMove.tElapsed > T#5s OR (stPositionStateGood.bUpdated AND fbTestMove.bMotionStarted) THEN
+    AssertTrue(
+        Condition:=fbTestMove.fActPosition < stPositionStateGood.fPosition + stPositionStateGood.fDelta,
+        Message:='We must be at the state location still to properly run this test.',
+    );
     AssertFalse(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
@@ -208,14 +195,11 @@ IF stPositionStateGood.bUpdated AND fbSetPos.bDone AND stMotionStage.stAxisStatu
         ),
         Message:='Leaving state is not at state once the move starts',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#5s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
@@ -224,7 +208,7 @@ END_IF
     <Method Name="TestAtPositionStateTooHigh" Id="{fffcbd9f-b84e-4e73-869e-5d30112d5f41}">
       <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateTooHigh
 VAR
-
+    fLocalGoal: LREAL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -233,27 +217,26 @@ IF nTestCounter <> 3 THEN
     RETURN;
 END_IF
 
-fbSetPos(
+fLocalGoal := stPositionStateGood.fPosition + 2*stPositionStateGood.fDelta;
+fbTestMove(
     stMotionStage:=stMotionstage,
     bExecute:=TRUE,
-    fPosition:=52,
+    fStartPosition:=fLocalGoal,
+    fGoalPosition:=fLocalGoal,
 );
-IF stPositionStateGood.bUpdated AND fbSetPos.bDone THEN
+IF fbTestMove.tElapsed > T#1s OR (stPositionStateGood.bUpdated AND fbTestMove.bSetDone) THEN
     AssertFalse(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
             stPositionState:=stPositionStateGood,
         ),
-        Message:='52 was found to be within 49 < x < 51',
+        Message:='Above delta counted as in range',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#1s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
@@ -262,7 +245,7 @@ END_IF
     <Method Name="TestAtPositionStateTooLow" Id="{1e4e3123-a9ec-43be-b844-164b02fc21fb}">
       <Declaration><![CDATA[METHOD PRIVATE TestAtPositionStateTooLow
 VAR
-
+    fLocalGoal: LREAL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -271,27 +254,26 @@ IF nTestCounter <> 2 THEN
     RETURN;
 END_IF
 
-fbSetPos(
+fLocalGoal := stPositionStateGood.fPosition - 2*stPositionStateGood.fDelta;
+fbTestMove(
     stMotionStage:=stMotionstage,
     bExecute:=TRUE,
-    fPosition:=48,
+    fStartPosition:=fLocalGoal,
+    fGoalPosition:=fLocalGoal,
 );
-IF stPositionStateGood.bUpdated AND fbSetPos.bDone THEN
+IF fbTestMove.tElapsed > T#1s OR (stPositionStateGood.bUpdated AND fbTestMove.bSetDone) THEN
     AssertFalse(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
             stPositionState:=stPositionStateGood,
         ),
-        Message:='48 was found to be within 49 < x < 51',
+        Message:='Below delta counted as in range',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#1s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
@@ -302,7 +284,8 @@ END_IF
 (*
     A small tweak move within the delta of a position state should be OK
 *)
-VAR_INPUT
+VAR
+
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -312,20 +295,16 @@ IF nTestCounter <> 5 THEN
     RETURN;
 END_IF
 
-fbSetPos(
-    stMotionStage:=stMotionstage,
-    bExecute:=TRUE,
-    fPosition:=50.5,
-);
-fbMovPos(
+fbTestMove(
     stMotionStage:=stMotionStage,
-    bExecute:=fbSetPos.bDone,
-    bPowerSelf:=TRUE,
-    fPosition:=49.5,
+    bExecute:=TRUE,
+    fStartPosition:=stPositionStateGood.fPosition,
+    fGoalPosition:=stPositionStateGood.fPosition + 0.9 * stPositionStateGood.fDelta,
     fVelocity:=0.001,
+    bHWEnable:=TRUE,
 );
-IF stPositionStateGood.bUpdated AND fbSetPos.bDone AND stMotionStage.stAxisStatus.fActPosition <> 50.5 THEN
-    // Everything is ready and the move has started
+
+IF fbTestMove.tElapsed > T#5s OR (stPositionStateGood.bUpdated AND fbTestMove.bMotionStarted) THEN
     AssertTrue(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
@@ -333,14 +312,11 @@ IF stPositionStateGood.bUpdated AND fbSetPos.bDone AND stMotionStage.stAxisStatu
         ),
         Message:='Small tweak in range should count as at state',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#5s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
@@ -361,14 +337,14 @@ IF nTestCounter <> 0 THEN
     RETURN;
 END_IF
 
-fbSetPos(
+fbTestMove(
     stMotionStage:=stMotionstage,
     bExecute:=TRUE,
-    fPosition:=30,
+    fStartPosition:=stPositionStateInactive.fPosition,
+    fGoalPosition:=stPositionStateInactive.fPosition,
 );
-IF stPositionStateInvalid.bUpdated AND fbSetPos.bDone THEN
-    // Enough time has passed for something else to get updated by an internal block
-    // So if I made a mistake and updated the actual position state it will be caught here
+IF fbTestMove.tElapsed > T#1s OR (stPositionStateInvalid.bUpdated AND fbTestMove.bSetDone) THEN
+    // Check for a different state to be bUpdated for timing purposes, this one never gets bUpdated
     AssertFalse(
         Condition:=F_AtPositionState(
             stMotionStage:=stMotionStage,
@@ -376,14 +352,11 @@ IF stPositionStateInvalid.bUpdated AND fbSetPos.bDone THEN
         ),
         Message:='This is the control group, internal was not run so this should not work',
     );
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
-ELSIF tonTimeout.Q AND NOT bOneTestDone THEN
-    bOneTestDone := TRUE;
     AssertFalse(
-        Condition:=TRUE,
+        Condition:=fbTestMove.tElapsed > T#1s,
         Message:='Timeout in multi cycle test',
     );
+    bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 ]]></ST>
