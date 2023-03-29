@@ -8,18 +8,18 @@
 
     This will only run properly if FB_PositionStateInternal has been called on each position state to initialize it.
 *)
-VAR_IN_OUT
+VAR_INPUT
     // The motor to check the state of
     stMotionStage: ST_MotionStage;
     // The allowed states for this motor
-    astPositionState: ARRAY[*] OF ST_PositionState;
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 END_VAR
 VAR_OUTPUT
     // TRUE if we're standing still at a known state, or moving within the bounds of a state to another location in the bounds.
     bKnownState: BOOL;
     // TRUE if we're moving to some other state or to another non-state position.
     bMovingState: BOOL;
-    // If we're at a known state, this will be the index in the astPositionState array that matches the state. Otherwise, this will be below the bounds of the array so it cannot be confused with a valid output.
+    // If we're at a known state, this will be the index in the astPositionState array that matches the state. Otherwise, this will be 0, which is below the bounds of the array, so it cannot be confused with a valid output.
     nPositionIndex: DINT;
     // A copy of the details of the current position state, for convenience. This may be a moving state or an unknown state as a placeholder if we are not at a known state.
     stCurrentPosition: ST_PositionState;
@@ -33,7 +33,7 @@ END_VAR
 bKnownState := FALSE;
 bMovingState := FALSE;
 
-FOR nIter := LOWER_BOUND(astPositionState, 1) TO UPPER_BOUND(astPositionState, 1) DO
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
     IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=astPositionState[nIter]) THEN
         bKnownState := TRUE;
         nPositionIndex := nIter;
@@ -42,7 +42,7 @@ FOR nIter := LOWER_BOUND(astPositionState, 1) TO UPPER_BOUND(astPositionState, 1
 END_FOR
 
 IF NOT bKnownState THEN
-    nPositionIndex := LOWER_BOUND(astPositionState, 1) - 1;
+    nPositionIndex := 0;
     stCurrentPosition.fPosition := stMotionStage.stAxisStatus.fActPosition;
     stCurrentPosition.fDelta := 0;
     stCurrentPosition.bMoveOk := FALSE;

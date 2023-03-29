@@ -3,15 +3,13 @@
   <POU Name="FB_PositionStateReadND_Test" Id="{4b592fad-9c2c-4bce-a31b-7960aad2ca81}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND_Test EXTENDS TcUnit.FB_TestSuite
 VAR
-    astMotionStage: ARRAY[1..3] OF ST_MotionStage;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
-    astPositionState: ARRAY[1..3] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     afbInternal: ARRAY[1..3] OF ARRAY [1..2] OF FB_PositionStateInternal;
-    afbPositionStateRead: ARRAY[1..3] OF FB_PositionStateRead;
     afbTestMove: ARRAY[1..3] OF FB_TestHelperSetAndMove;
     fbRead: FB_PositionStateReadND;
-    bOneTestDone: BOOL;
-    nTestCounter: UINT;
+    bOneAssertDone: BOOL;
     nIter1: UINT;
     nIter2: UINT;
     nIter3: UINT;
@@ -30,20 +28,20 @@ PerMotor(2);
 PerMotor(3);
 
 // First check the case of mismatched arrays
-TestMismatched();
+TestForgot();
 
 // Each motor can be at no state, at OUT, at OUT and moving, at IN, at IN and moving, or moving away from a state
 FOR nIter1 := NO_STATE TO AWAY DO
     FOR nIter2 := NO_STATE TO AWAY DO
         FOR nIter3 := NO_STATE TO AWAY DO
-            TestNormal(nIter1, nIter2, nIter3);
+            // This should be one big test case with 125 asserts
+            TestCombos(nIter1, nIter2, nIter3);
         END_FOR
     END_FOR
 END_FOR
 
-IF bOneTestDone THEN
-    bOneTestDone := FALSE;
-    nTestCounter := nTestCounter + 1;
+IF bOneAssertDone THEN
+    bOneAssertDone := FALSE;
     afbTestMove[1](
         stMotionStage:=astMotionStage[1],
         bExecute:=FALSE,
@@ -194,7 +192,7 @@ END_VAR
 fbRead(
     astMotionStage:=astMotionStage,
     astPositionState:=astPositionState,
-    afbPositionStateRead:=afbPositionStateRead,
+    nActiveMotorCount:=3,
 );
     ]]></ST>
       </Implementation>
@@ -231,41 +229,14 @@ afbInternal[nIndex][2](
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="TestMismatched" Id="{8ee66784-0269-4074-a44f-3e9eda7e6735}">
-      <Declaration><![CDATA[METHOD PRIVATE TestMismatched
-VAR
-    fbMisRead: FB_PositionStateReadND;
-    astGoodStage: ARRAY[1..4] OF ST_MotionStage;
-    astWrongStateShape: ARRAY[1..2] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    afbNormalReads: ARRAY[1..4] OF FB_PositionStateRead;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[
-TEST('MismatchedArrays');
-fbMisRead(
-    astMotionStage:=astGoodStage,
-    astPositionState:=astWrongStateShape,
-    afbPositionStateRead:=afbNormalReads,
-);
-
-AssertTrue(
-    Condition:=fbMisRead.bArrayMismatchError,
-    Message:='Failed to notice mismatched arrays',
-);
-TEST_FINISHED();
-]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="TestNormal" Id="{481100c9-0915-4b4e-b684-ec082ca225fc}">
-      <Declaration><![CDATA[METHOD PRIVATE TestNormal
+    <Method Name="TestCombos" Id="{481100c9-0915-4b4e-b684-ec082ca225fc}">
+      <Declaration><![CDATA[METHOD PRIVATE TestCombos
 VAR_INPUT
     nMotor1Case: UINT;
     nMotor2Case: UINT;
     nMotor3Case: UINT;
 END_VAR
 VAR
-    nThisTestCount: UINT;
     bReady1: BOOL;
     bReady2: BOOL;
     bReady3: BOOL;
@@ -273,12 +244,8 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-nThisTestCount := 25*nMotor1Case + 5*nMotor2Case + nMotor3Case;
-
-TEST(TO_STRING(nThisTestCount));
-IF nThisTestCount <> nTestCounter THEN
-    RETURN;
-END_IF
+// This should be one big test case with 125 asserts
+TEST('TestAllCombos');
 
 bReady1 := DoMove(1, nMotor1Case);
 bReady2 := DoMove(2, nMotor2Case);
@@ -287,9 +254,36 @@ bReady3 := DoMove(3, nMotor3Case);
 IF bReady1 AND bReady2 AND bReady3 THEN
     DoRead();
     DoAssert(nMotor1Case, nMotor2Case, nMotor3Case);
-    bOneTestDone := TRUE;
-    TEST_FINISHED();
+    bOneAssertDone := TRUE;
+    // The final assert case marks test as finished
+    IF nMotor1Case = AWAY AND nMotor2Case = AWAY AND nMotor3Case = AWAY THEN
+        TEST_FINISHED();
+    END_IF
 END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestForgot" Id="{8ee66784-0269-4074-a44f-3e9eda7e6735}">
+      <Declaration><![CDATA[METHOD PRIVATE TestForgot
+VAR
+    fbMisRead: FB_PositionStateReadND;
+    astGoodStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astGoodStateShape: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('ForgotCount');
+fbMisRead(
+    astMotionStage:=astGoodStage,
+    astPositionState:=astGoodStateShape,
+);
+
+AssertTrue(
+    Condition:=fbMisRead.bMotorCountError,
+    Message:='Failed to notice missing count',
+);
+TEST_FINISHED();
 ]]></ST>
       </Implementation>
     </Method>

@@ -8,33 +8,34 @@
 
     Use FB_PositionStateRead1D, FB_PositionStateRead2D, ... etc. instead
 *)
-VAR_IN_OUT
+VAR_INPUT
     // The motors with a combined N-dimensional state
-    astMotionStage: ARRAY[*] OF ST_MotionStage;
-    // A multidimensional array with all of the position states for all of the motors. This must match astMotionStage in length along dimension 1, which should correleate with the motors. Dimension 2 is the states for each individual motor.
-    astPositionState: ARRAY[*] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    // The individual position state reader function blocks
-    afbPositionStateRead: ARRAY[*] OF FB_PositionStateRead;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // Each motor's respective position states along its direction
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
 END_VAR
 VAR_OUTPUT
     // TRUE if we're standing still at a known state.
     bKnownState: BOOL;
     // TRUE if we're moving, there can be no valid state if we are moving.
     bMovingState: BOOL;
-    // If we're at a known state, this will be the index along dimension 2 in the astPositionState array that matches the state. Otherwise, this will be below the bounds of the array.
+    // If we're at a known state, this will be the state index along the enclosed states arrays. Otherwise, it will be zero, which is below the bounds of the states array.
     nPositionIndex: DINT;
-    // TRUE if the array inputs had mismatching dimensions
-    bArrayMismatchError: BOOL;
+    // TRUE if the active motor count was invalid
+    bMotorCountError: BOOL;
 END_VAR
 VAR
+    // The individual position state reader function blocks
+    afbPositionStateRead: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_PositionStateRead;
+
     nIter: DINT;
-    nLowerBound: DINT;
-    nUpperBound: DINT;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 CheckArrayLengths();
-IF NOT bArrayMismatchError THEN
+IF NOT bMotorCountError THEN
     DoStateReads();
     CombineOutputs();
 END_IF
@@ -43,16 +44,9 @@ END_IF
     <Action Name="CheckArrayLengths" Id="{21aece42-11dd-4a43-9ed8-fc6ef8203bcd}">
       <Implementation>
         <ST><![CDATA[
-// Get the bounds and make sure they are all the same
-nLowerBound := LOWER_BOUND(astMotionStage, 1);
-nUpperBound := UPPER_BOUND(astMotionStage, 1);
-
-bArrayMismatchError S= nLowerBound <> LOWER_BOUND(astPositionState, 1);
-bArrayMismatchError S= nUpperBound <> UPPER_BOUND(astPositionState, 1);
-bArrayMismatchError S= nLowerBound <> LOWER_BOUND(afbPositionStateRead, 1);
-bArrayMismatchError S= nUpperBound <> UPPER_BOUND(afbPositionStateRead, 1);
-
-bKnownState R= bArrayMismatchError;
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
 ]]></ST>
       </Implementation>
     </Action>
@@ -61,21 +55,21 @@ bKnownState R= bArrayMismatchError;
         <ST><![CDATA[
 // bKnownState is TRUE if ALL motors have known states
 bKnownState := TRUE;
-FOR nIter := nLowerBound TO nUpperBound DO
+FOR nIter := 1 TO nActiveMotorCount DO
     bKnownState := bKnownState AND afbPositionStateRead[nIter].bKnownState;
 END_FOR
 
 // bMovingState is TRUE if ANY motor is moving
 bMovingState := FALSE;
-FOR nIter := nLowerBound TO nUpperBound DO
+FOR nIter := 1 TO nActiveMotorCount DO
     bMovingState := bMovingState OR afbPositionStateRead[nIter].bMovingState;
 END_FOR
 
 // nPositionIndex MUST be matching across ALL motors, else it should be the invalid number
-nPositionIndex := afbPositionStateRead[nLowerBound].nPositionIndex;
-FOR nIter := nLowerBound TO nUpperBound DO
+nPositionIndex := afbPositionStateRead[1].nPositionIndex;
+FOR nIter := 1 TO nActiveMotorCount DO
     IF nPositionIndex <> afbPositionStateRead[nIter].nPositionIndex THEN
-        nPositionIndex := LOWER_BOUND(astPositionState, 2) - 1;
+        nPositionIndex := 0;
     END_IF
 END_FOR
 ]]></ST>
@@ -84,7 +78,7 @@ END_FOR
     <Action Name="DoStateReads" Id="{792912d8-47d8-414a-9ac1-60fb2bf5ef46}">
       <Implementation>
         <ST><![CDATA[
-FOR nIter := nLowerBound TO nUpperBound DO
+FOR nIter := 1 TO nActiveMotorCount DO
     afbPositionStateRead[nIter](
         stMotionStage:=astMotionStage[nIter],
         astPositionState:=astPositionState[nIter],
