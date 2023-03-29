@@ -12,7 +12,7 @@ VAR_IN_OUT
     // The motors with a combined N-dimensional state
     astMotionStage: ARRAY[*] OF ST_MotionStage;
     // A multidimensional array with all of the position states for all of the motors. This must match astMotionStage in length along dimension 1, which should correleate with the motors. Dimension 2 is the states for each individual motor.
-    astPositionState: ARRAY[*, *] OF ST_PositionState;
+    astPositionState: ARRAY[*] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // The individual position state reader function blocks
     afbPositionStateRead: ARRAY[*] OF FB_PositionStateRead;
 END_VAR
@@ -46,9 +46,6 @@ END_IF
 // Get the bounds and make sure they are all the same
 nLowerBound := LOWER_BOUND(astMotionStage, 1);
 nUpperBound := UPPER_BOUND(astMotionStage, 1);
-
-nLowerBound := LOWER_BOUND(astPositionState, 2);
-nUpperBound := UPPER_BOUND(astPositionState, 2);
 
 bArrayMismatchError S= nLowerBound <> LOWER_BOUND(astPositionState, 1);
 bArrayMismatchError S= nUpperBound <> UPPER_BOUND(astPositionState, 1);
