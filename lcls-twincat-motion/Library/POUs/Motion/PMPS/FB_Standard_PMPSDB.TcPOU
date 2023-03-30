@@ -4,6 +4,8 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_Standard_PMPSDB
 VAR_IN_OUT
     io_fbFFHWO: FB_HardwareFFOutput;
+    bRefreshBPs: BOOL;
+
 END_VAR
 VAR_INPUT
     // If TRUE, FB will run. Reads when enable goes TRUE.
@@ -41,6 +43,10 @@ END_VAR
     <Implementation>
       <ST><![CDATA[IF NOT bEnable THEN
     RETURN;
+END_IF
+
+IF bRefresh = TRUE THEN
+    bRefreshBPs := TRUE;
 END_IF
 rtEnable(CLK:=bEnable);
 rtRefresh(CLK:=bRefresh);
