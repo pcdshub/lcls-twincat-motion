@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionState3D" Id="{eb582aca-9c78-4511-9c28-b4749e72999a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionState3D
+(*
+    3-Dimensional position state function block.
+
+    You can use this in your project by defining enums as explained in ST_StateEpicsinput and ST_StateEpicsOutput's docstrings.
+    Your "command" enum should write to stEpicsInput.nSetValue and your "readback" enum should read from stEpicsOutput.nGetValue.
+
+    This represents three motors moving among same-named states simultaneously.
+    When nSetValue changes, a move is made.
+    The motor must already be set up for point-to-point motion for this function block to work properly.
+
+    With no PMPS handling, this FB basically just links the state names with positions in both directions for set and readback.
+*)
+VAR_IN_OUT
+    stMotionStage1: ST_MotionStage;
+    stMotionStage2: ST_MotionStage;
+    stMotionStage3: ST_MotionStage;
+    {attribute 'pytmc' := '
+        pv: STATES:01
+        io: io
+        expand: %.2d
+    '}
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    {attribute 'pytmc' := '
+        pv: STATES:02
+        io: io
+        expand: %.2d
+    '}
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    {attribute 'pytmc' := '
+        pv: STATES:03
+        io: io
+        expand: %.2d
+    '}
+    astPositionState3: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+VAR_INPUT
+    bEnable: BOOL;
+    {attribute 'pytmc' := '
+        pv: STATES
+        io: io
+    '}
+    stEpicsInput: ST_StateEpicsInput;
+END_VAR
+VAR_OUTPUT
+    {attribute 'pytmc' := '
+        pv: STATES
+        io: i
+    '}
+    stEpicsOutput: ST_StateEpicsOutput;
+END_VAR
+VAR
+    fbInput: FB_StatesInputHandler;
+    fbInternal: FB_PositionStateInternalND;
+    fbMove: FB_PositionStateMoveND;
+    fbRead: FB_PositionStateReadND;
+    astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astMoveGoals: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
+    nIterMotor: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbInput(
+    stUserInput:=stEpicsInput,
+    bMoveBusy:=fbMove.bBusy,
+);
+
+astMotionStageMax[1] := stMotionStage1;
+astMotionStageMax[2] := stMotionStage2;
+astMotionStageMax[3] := stMotionStage3;
+astPositionStateMax[1] := astPositionState1;
+astPositionStateMax[2] := astPositionState2;
+astPositionStateMax[3] := astPositionState3;
+
+fbInternal(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astPositionStateMax,
+);
+
+FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
+    astMoveGoals[nIterMotor] := astPositionStateMax[nIterMotor][fbInput.nCurrGoal];
+END_FOR
+
+fbMove(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astMoveGoals,
+    nActiveMotorCount:=3,
+    bExecute:=fbInput.bExecMove,
+    bReset:=fbInput.bResetMove,
+    enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
+    bAtState=>,
+    bError=>stEpicsOutput.bError,
+    nErrorID=>stEpicsOutput.nErrorID,
+    sErrorMessage=>stEpicsOutput.sErrorMsg,
+    bBusy=>stEpicsOutput.bBusy,
+    bDone=>stEpicsOutput.bDone,
+);
+
+fbRead(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astPositionStateMax,
+    nActiveMotorCount:=3,
+    bKnownState=>,
+    bMovingState=>,
+    nPositionIndex=>stEpicsOutput.nGetValue,
+);
+
+stMotionStage1 := astMotionStageMax[1];
+stMotionStage2 := astMotionStageMax[2];
+stMotionStage3 := astMotionStageMax[3];
+astPositionState1 := astPositionStateMax[1];
+astPositionState2 := astPositionStateMax[2];
+astPositionState3 := astPositionStateMax[3];
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
