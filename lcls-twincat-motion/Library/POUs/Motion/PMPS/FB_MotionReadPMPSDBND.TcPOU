@@ -16,10 +16,10 @@
     we will assume that the file has been read and we will update the parameters here.
 *)
 VAR_IN_OUT
-    // A multidimensional array with all of the position states for all of the motors. Dimension 1 should correleate with the number of motors. Dimension 2 is the states for each individual motor.
-    astPositionState: ARRAY[*, *] OF ST_PositionState;
-    // An uninitialized array of PMPS DB lookups. This must share indexes with astPositionState along dimension 2, with an extra state (transition) one lower than the lowest bound.
-    astDbStateParams: ARRAY[*] OF ST_DbStateParams;
+    // Each motor's respective position states along its direction
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // An uninitialized array of PMPS DB lookups. Indices 1 to the end match the static positions, index 0 is the transition state.
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     // Hardware output to fault to if there is a problem.
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
@@ -34,50 +34,26 @@ END_VAR
 VAR_OUTPUT
     // This will be set to TRUE if there was an error reading from the database.
     bError: BOOL;
-    // This will be set to TRUE if the arrays have mismatched sizing
-    bArrayMismatchError: BOOL;
 END_VAR
 VAR
-    nLowerPositionState: DINT;
-    nUpperPositionState: DINT;
-    nLowerDbStateParams: DINT;
-    nUpperDbStateParams: DINT;
+    ffError: FB_FastFault;
     fbReadPmpsDb: FB_JsonDocToSafeBP;
     ftDbBusy: F_TRIG;
     ftRead: F_TRIG;
-    rtReadDBExec: R_TRIG;
     bReadPmpsDb: BOOL;
-    nIter1: DINT;
-    nIter2: DINT;
-    nLoopStateParamIndex: DINT;
+    nIterMotor: DINT;
+    nIterState: DINT;
     sLoopNewKey: STRING;
     sLoopPrevKey: STRING;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-CheckArrayLengths();
-IF NOT bArrayMismatchError THEN
-    SelectLookupKeys();
-    ReadDatabase();
-END_IF
+SelectLookupKeys();
+ReadDatabase();
+RunFastFaults();
 ]]></ST>
     </Implementation>
-    <Action Name="CheckArrayLengths" Id="{274c2de0-6789-4c80-936e-324c5844aaba}">
-      <Implementation>
-        <ST><![CDATA[
-// Ensure that the array sizes are compatible.
-nLowerPositionState := LOWER_BOUND(astPositionState, 2);
-nUpperPositionState := UPPER_BOUND(astPositionState, 2);
-nLowerDbStateParams := LOWER_BOUND(astDbStateParams, 1);
-nUpperDbStateParams := UPPER_BOUND(astDbStateParams, 1);
-
-// Upper index must match, lower index must go one lower on the db state params
-bArrayMismatchError S= nLowerPositionState - 1 <> nLowerDbStateParams;
-bArrayMismatchError S= nUpperPositionState <> nUpperDbStateParams;
-]]></ST>
-      </Implementation>
-    </Action>
     <Action Name="ReadDatabase" Id="{2d32dd1e-c552-499a-8dca-6b4b0541920e}">
       <Implementation>
         <ST><![CDATA[
@@ -103,36 +79,49 @@ ftRead(CLK:=fbReadPmpsDb.bBusy);
 ]]></ST>
       </Implementation>
     </Action>
+    <Action Name="RunFastFaults" Id="{2e7d9fcc-02e3-4e02-b548-1b8dee14dd95}">
+      <Implementation>
+        <ST><![CDATA[
+ffError(
+    i_xOK:=NOT bError,
+    i_xAutoReset:=TRUE,
+    i_DevName:=sDeviceName,
+    i_Desc:='Programmer error selecting state names in ND motion FB',
+    i_TypeCode:=16#1009,
+    io_fbFFHWO:=fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="SelectLookupKeys" Id="{71f0a60e-a81f-4e3a-97ce-0d232ce9e316}">
       <Implementation>
         <ST><![CDATA[
 // Fill the lookup key information in astDbStateParams based on the strings from astPositionState and sTransitionKey.
 
 // Start by emptying any pre-existing values
-FOR nIter1 := LOWER_BOUND(astDbStateParams, 1) TO UPPER_BOUND(astDbStateParams, 1) DO
-    astDbStateParams[nIter1].sPmpsState := '';
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    astDbStateParams[nIterState].sPmpsState := '';
 END_FOR
 
 // Transition key is simple
-astDbStateParams[nLowerDbStateParams].sPmpsState := sTransitionKey;
+astDbStateParams[0].sPmpsState := sTransitionKey;
 
 // The other keys might be at different points in the astPositionState array.
 // Try all of the posibilities, set error if we end up overwriting something.
 
 // Outer loop: index of each motor at this position state
-FOR nIter1 := LOWER_BOUND(astPositionState, 1) TO UPPER_BOUND(astPositionState, 1) DO
+FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
     // Inner loop: index of each position state for this motor
-    FOR nIter2 := LOWER_BOUND(astPositionState, 2) TO UPPER_BOUND(astPositionState, 2) DO
-        sLoopNewKey := astPositionState[nIter1, nIter2].stPMPS.sPmpsState;
+    FOR nIterState := 1 TO GeneralConstants.MAX_STATES DO
+        sLoopNewKey := astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState;
         IF sLoopNewKey <> '' THEN
             // We have a new key, start doing things
-            nLoopStateParamIndex := LOWER_BOUND(astDbStateParams, 1) + 1 + (nIter2 - LOWER_BOUND(astPositionState, 2));
-            sLoopPrevKey := astDbStateParams[nLoopStateParamIndex].sPmpsState;
+            sLoopPrevKey := astDbStateParams[nIterState].sPmpsState;
             IF sLoopPrevKey = '' OR sLoopPrevKey = sLoopNewKey THEN
                 // No key yet, or exactly the same key (redudant programmer)
-                astDbStateParams[nLoopStateParamIndex] := sLoopNewKey;
+                astDbStateParams[nIterState] := sLoopNewKey;
             ELSE
-                // We already had a key! Don't just override it, have an error!
+                // We already had a different key! Don't just override it, have an error!
                 bError := TRUE;
             END_IF
         END_IF

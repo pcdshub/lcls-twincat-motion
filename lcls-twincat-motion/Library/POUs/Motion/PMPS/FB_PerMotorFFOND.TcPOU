@@ -11,38 +11,40 @@
       so we can't trust anything if the encoder is faulting.
 *)
 VAR_IN_OUT
-    astMotionStage: ARRAY[*] OF ST_MotionStage;
-    afbEncError: ARRAY[*] OF FB_EncErrorFFO;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
     // Identifying name to use in group fast faults
     sDeviceName: STRING;
 END_VAR
 VAR_OUTPUT
     // Set to TRUE if the arrays don't have the same bounds. In this FB, that's an automatic fault.
-    bArrayMismatch: BOOL;
+    bMotorCountError: BOOL;
 END_VAR
 VAR
+    afbEncError: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_EncErrorFFO;
     ffProgrammerError: FB_FastFault;
     nIter: DINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-CheckArrayLengths();
-IF NOT bArrayMismatch THEN
+CheckCount();
+IF NOT bMotorCountError THEN
     HandleLoops();
 END_IF
 HandleFFO();
 ]]></ST>
     </Implementation>
-    <Action Name="CheckArrayLengths" Id="{c31a9d14-bd55-46b2-acd9-f19ee66712e4}">
+    <Action Name="CheckCount" Id="{235dae93-1a14-4907-b10f-6bed99260854}">
       <Implementation>
         <ST><![CDATA[
-// Ensure that the variable length arrays have the same bounds
-bArrayMismatch S= LOWER_BOUND(astMotionStage, 1) <> LOWER_BOUND(afbEncError, 1);
-bArrayMismatch S= UPPER_BOUND(astMotionStage, 1) <> UPPER_BOUND(afbEncError, 1);
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
 ]]></ST>
       </Implementation>
     </Action>
@@ -50,10 +52,11 @@ bArrayMismatch S= UPPER_BOUND(astMotionStage, 1) <> UPPER_BOUND(afbEncError, 1);
       <Implementation>
         <ST><![CDATA[
 ffProgrammerError(
-    i_xOK:=NOT bArrayMismatch,
+    i_xOK:=NOT bMotorCountError,
     i_xAutoReset:=FALSE,
     i_DevName:=sDeviceName,
-    i_Desc:='Error matching array lengths in program',
+    i_Desc:='Programmer error picking motor count',
+    i_TypeCode:=16#1009,
     io_fbFFHWO:=fbFFHWO,
 );
 ]]></ST>
@@ -62,7 +65,7 @@ ffProgrammerError(
     <Action Name="HandleLoops" Id="{1e2bc2d2-019c-4cea-a7e4-68373d08cb58}">
       <Implementation>
         <ST><![CDATA[
-FOR nIter := LOWER_BOUND(astMotionStage, 1) TO UPPER_BOUND(astMotionStage, 1) DO
+FOR nIter := 1 TO nActiveMotorCount DO
     afbEncError[nIter](
         stMotionstage:=astMotionStage[nIter],
         fbFFHWO:=fbFFHWO,

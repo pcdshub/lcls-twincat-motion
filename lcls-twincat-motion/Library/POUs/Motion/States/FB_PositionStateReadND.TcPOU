@@ -8,11 +8,13 @@
 
     Use FB_PositionStateRead1D, FB_PositionStateRead2D, ... etc. instead
 *)
-VAR_INPUT
+VAR_IN_OUT
     // The motors with a combined N-dimensional state
     astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     // Each motor's respective position states along its direction
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+VAR_INPUT
     // The number of motors we're actually using
     nActiveMotorCount: UINT;
 END_VAR
@@ -34,14 +36,14 @@ VAR
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-CheckArrayLengths();
+CheckCount();
 IF NOT bMotorCountError THEN
     DoStateReads();
     CombineOutputs();
 END_IF
 ]]></ST>
     </Implementation>
-    <Action Name="CheckArrayLengths" Id="{21aece42-11dd-4a43-9ed8-fc6ef8203bcd}">
+    <Action Name="CheckCount" Id="{21aece42-11dd-4a43-9ed8-fc6ef8203bcd}">
       <Implementation>
         <ST><![CDATA[
 // Make sure the motor count is valid (positive, nonzero, less or equal to the max)

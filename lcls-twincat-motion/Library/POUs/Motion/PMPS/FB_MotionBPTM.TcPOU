@@ -11,7 +11,7 @@ FUNCTION_BLOCK FB_MotionBPTM
 *)
 VAR_IN_OUT
     // Array of motors that will move for this beam transition
-    astMotionStage: ARRAY[*] OF ST_MotionStage;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     // The arbiter to request beam states from
     fbArbiter: FB_Arbiter;
     // The fast fault output to fault to
@@ -22,6 +22,8 @@ VAR_IN_OUT
     stTransParams: ST_DbStateParams;
 END_VAR
 VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
     // Set to TRUE to use the BPTM, FALSE to stop using the BPTM.
     bEnable: BOOL;
     // TRUE if we're at the physical state that matches the goal parameters
@@ -40,6 +42,8 @@ VAR_OUTPUT
     bTransitionAuthorized: BOOL;
     // This becomes TRUE once the full beam transition is done.
     bDone: BOOL;
+    // TRUE if we're using a bad motor count
+    bMotorCountError: BOOL;
 END_VAR
 VAR
     bptm: BeamParameterTransitionManager;
@@ -57,14 +61,25 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-SetDoneMoving();
-IF bEnable THEN
-    RunBPTM();
-    HandleTimeout();
+CheckCount();
+IF NOT bMotorCountError THEN
+    SetDoneMoving();
+    IF bEnable THEN
+        RunBPTM();
+        HandleTimeout();
+    END_IF
 END_IF
-
 ]]></ST>
     </Implementation>
+    <Action Name="CheckCount" Id="{00ab74a4-e7f5-479a-b541-b15eabe2156b}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
+]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="HandleTimeout" Id="{47918ef2-270e-45c7-89d1-13860ad00457}">
       <Implementation>
         <ST><![CDATA[
@@ -122,7 +137,7 @@ ffBPTMError(
         <ST><![CDATA[
 // Set bDoneMoving if all the motors are done
 bDoneMoving := TRUE;
-FOR nIndex := LOWER_BOUND(astMotionStage, 1) TO UPPER_BOUND(astMotionStage, 1) DO
+FOR nIndex := 1 TO nActiveMotorCount DO
     bDoneMoving := bDoneMoving AND astMotionStage[nIndex].bDone;
 END_FOR
 // Reset bDoneMoving if the goal has changed to reset bptm's motor done for an in-place transition

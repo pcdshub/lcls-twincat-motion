@@ -11,15 +11,15 @@
 *)
 VAR_IN_OUT
     // The motors with a combined N-dimensional state
-    astMotionStage: ARRAY[*] OF ST_MotionStage;
-    // A multidimensional array with all of the position states for all of the motors. This must match astMotionStage in length along dimension 1, which should correleate with the motors. Dimension 2 is the states for each individual motor.
-    astPositionState: ARRAY[*, *] OF ST_PositionState;
-    // The individual state limit function blocks
-    afbStateLimits: ARRAY[*] OF FB_StatePMPSLimits;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // Each motor's respective position states along its direction
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // Hardware output to fault to if there is a problem.
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
     // The state that the motors are moving to, along dimension 2 of the position state array. This may be the same as the current state.
     nGoalStateIndex: DINT;
     // A name to use for this state mover in the case of fast faults.
@@ -29,41 +29,36 @@ VAR_INPUT
 END_VAR
 VAR_OUTPUT
     // Set to TRUE if the arrays have mismatched sizing. For this FB, this means the motor won't ever get an enable.
-    bArrayMismatchError: BOOL;
+    bMotorCountError: BOOL;
 END_VAR
 VAR
+    // The individual state limit function blocks
+    afbStateLimits: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_StatePMPSLimits;
     ffMaint: FB_FastFault;
     nIter: DINT;
-    nLowerBound: DINT;
-    nUpperBound: DINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-CheckArrayLengths();
-IF NOT bArrayMismatchError THEN
+CheckCount();
+IF NOT bMotorCountError THEN
     DoLimits();
     RunFastFaults();
 END_IF]]></ST>
     </Implementation>
-    <Action Name="CheckArrayLengths" Id="{bacd4c1d-93ee-476b-b899-90790681ae2f}">
+    <Action Name="CheckCount" Id="{df0115f1-b4f0-450f-a425-72f1ab0b2f35}">
       <Implementation>
         <ST><![CDATA[
-// Get the bounds and make sure they are all the same
-nLowerBound := LOWER_BOUND(astMotionStage, 1);
-nUpperBound := UPPER_BOUND(astMotionStage, 1);
-
-bArrayMismatchError S= nLowerBound <> LOWER_BOUND(astPositionState, 1);
-bArrayMismatchError S= nUpperBound <> UPPER_BOUND(astPositionState, 1);
-bArrayMismatchError S= nLowerBound <> LOWER_BOUND(afbStateLimits, 1);
-bArrayMismatchError S= nUpperBound <> UPPER_BOUND(afbStateLimits, 1);
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
 ]]></ST>
       </Implementation>
     </Action>
     <Action Name="DoLimits" Id="{15f05e27-5b0c-49f7-878f-6aa0afaa7407}">
       <Implementation>
         <ST><![CDATA[
-FOR nIter := nLowerBound TO nUpperBound DO
+FOR nIter := 1 TO nActiveMotorCount DO
     afbStateLimits[nIter](
         stMotionStage:=astMotionStage[nIter],
         astPositionState:=astPositionState[nIter],

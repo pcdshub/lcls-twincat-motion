@@ -6,8 +6,8 @@
     Clear all of the PMPS asserts related to a states mover.
 *)
 VAR_IN_OUT
-    // All states to deactivate
-    astDbStateParams: ARRAY[*] OF ST_DbStateParams;
+    // All states to deactivate: transition + the static position states
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     // The arbiter who made the PMPS assert requests
     fbArbiter: FB_ARBITER;
 END_VAR
@@ -26,7 +26,7 @@ END_VAR
       <ST><![CDATA[
 rtExec(CLK:=bExecute);
 IF rtExec.Q THEN
-    FOR nIter := LOWER_BOUND(astDbStateParams, 1) TO UPPER_BOUND(astDbStateParams, 1) DO
+    FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
         fbArbiter.RemoveRequest(astDbStateParams[nIter].nRequestAssertionID);
     END_FOR
 END_IF

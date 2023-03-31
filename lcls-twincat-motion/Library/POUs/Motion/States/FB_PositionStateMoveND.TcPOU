@@ -11,13 +11,13 @@ FUNCTION_BLOCK FB_PositionStateMoveND
 *)
 VAR_IN_OUT
     // Array of motors to move together
-    astMotionStage: ARRAY[*] OF ST_MotionStage;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     // 1D Position states: the current position to send each axis to
-    astPositionState: ARRAY[*] OF ST_PositionState;
-    // 1D State movers: FBs to move the motors, need to be instantiated in the outer FB
-    afbPositionStateMove: ARRAY[*] OF FB_PositionStateMove;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
 END_VAR
 VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
     // Start all moves on rising edge, stop all moves on falling edge
     bExecute: BOOL;
     // Reset any errors
@@ -44,36 +44,33 @@ VAR_OUTPUT
     sErrorMessage: STRING;
 END_VAR
 VAR
+    // 1D State movers: FBs to move the motors
+    afbPositionStateMove: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_PositionStateMove;
     nIndex: DINT;
-    bInternalError: BOOL;
+    bMotorCountError: BOOL;
     nLowerBound: DINT;
     nUpperBound: DINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-CheckArrayLengths();
-IF NOT bInternalError THEN
+CheckCount();
+IF NOT bMotorCountError THEN
     DoStateMoves();
     CombineOutputs();
 END_IF
 ]]></ST>
     </Implementation>
-    <Action Name="CheckArrayLengths" Id="{9244b3c0-fac6-4a82-83fe-d3ec9dc81390}">
+    <Action Name="CheckCount" Id="{9244b3c0-fac6-4a82-83fe-d3ec9dc81390}">
       <Implementation>
         <ST><![CDATA[
-// Get the bounds and make sure they are all the same
-nLowerBound := LOWER_BOUND(astMotionStage, 1);
-nUpperBound := UPPER_BOUND(astMotionStage, 1);
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
 
-bInternalError S= nLowerBound <> LOWER_BOUND(astPositionState, 1);
-bInternalError S= nUpperBound <> UPPER_BOUND(astPositionState, 1);
-bInternalError S= nLowerBound <> LOWER_BOUND(afbPositionStateMove, 1);
-bInternalError S= nUpperBound <> UPPER_BOUND(afbPositionStateMove, 1);
-
-IF bInternalError THEN
+IF bMotorCountError THEN
     bError := TRUE;
-    sErrorMessage := 'Internal Error: array lengths are inconsistent';
+    sErrorMessage := 'Internal Error: invalid motor count';
 END_IF
 ]]></ST>
       </Implementation>
@@ -83,19 +80,19 @@ END_IF
         <ST><![CDATA[
 // bAtState is TRUE if ALL entries are TRUE
 bAtState := TRUE;
-FOR nIndex := nLowerBound TO nUpperBound DO
+FOR nIndex := 1 TO nActiveMotorCount DO
     bAtState := bAtState AND afbPositionStateMove[nIndex].bAtState;
 END_FOR
 
 // bBusy is TRUE if ANY entry is TRUE
 bBusy := FALSE;
-FOR nIndex := nLowerBound TO nUpperBound DO
+FOR nIndex := 1 TO nActiveMotorCount DO
     bBusy := bBusy OR afbPositionStateMove[nIndex].bBusy;
 END_FOR
 
 // bDone is TRUE if ALL entries are TRUE
 bDone := TRUE;
-FOR nIndex := nLowerBound TO nUpperBound DO
+FOR nIndex := 1 TO nActiveMotorCount DO
     bDone := bDone AND afbPositionStateMove[nIndex].bDone;
 END_FOR
 
@@ -103,7 +100,7 @@ END_FOR
 // also set nShownError and increment nErrorCount
 bError := FALSE;
 nErrorCount := 0;
-FOR nIndex := nLowerBound TO nUpperBound DO
+FOR nIndex := 1 TO nActiveMotorCount DO
     bError := bError OR afbPositionStateMove[nIndex].bError;
     IF afbPositionStateMove[nIndex].bError THEN
         nShownError := nIndex;
@@ -126,7 +123,7 @@ END_IF
       <Implementation>
         <ST><![CDATA[
 // Do the individual moves
-FOR nIndex := nLowerBound TO nUpperBound DO
+FOR nIndex := 1 TO nActiveMotorCount DO
     afbPositionStateMove[nIndex](
         stMotionStage:=astMotionStage[nIndex],
         stPositionState:=astPositionState[nIndex],

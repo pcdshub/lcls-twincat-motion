@@ -14,7 +14,7 @@ VAR_IN_OUT
     // The motor with a position state.
     stMotionStage: ST_MotionStage;
     // All possible position states for this motor.
-    astPositionState: ARRAY[*] OF ST_PositionState;
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // Hardware output to fault to if there is a problem.
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
@@ -75,10 +75,14 @@ mc_power(
 (*
     This action sets fLowerPos and fUpperPos based on our goal position.
 *)
-IF nGoalStateIndex >= LOWER_BOUND(astPositionState, 1) AND nGoalStateIndex <= UPPER_BOUND(astPositionState, 1) THEN
-    bValidGoal := TRUE;
-    fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
-    fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);
+IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
+    IF astPositionState[nGoalStateIndex].bValid THEN
+        bValidGoal := TRUE;
+        fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
+        fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);
+    ELSE
+        bValidGoal := FALSE;
+    END_IF
 ELSE
     bValidGoal := FALSE;
 END_IF]]></ST>
