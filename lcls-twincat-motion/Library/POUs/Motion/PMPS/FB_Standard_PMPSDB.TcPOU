@@ -4,7 +4,6 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_Standard_PMPSDB
 VAR_IN_OUT
     io_fbFFHWO: FB_HardwareFFOutput;
-    bRefreshBPs: BOOL;
 END_VAR
 VAR_INPUT
     // If TRUE, FB will run. Reads when enable goes TRUE.
@@ -26,6 +25,7 @@ VAR_OUTPUT
         io: i
     '}
     nLastRefreshTime: DINT;
+    bReadPmpsDb: BOOL;
 END_VAR
 VAR
     bExecute: BOOL;
@@ -44,9 +44,6 @@ END_VAR
     RETURN;
 END_IF
 
-IF bRefresh = TRUE THEN
-    bRefreshBPs := TRUE;
-END_IF
 rtEnable(CLK:=bEnable);
 rtRefresh(CLK:=bRefresh);
 bRefresh := FALSE;
@@ -69,6 +66,12 @@ MOTION_GVL.fbPmpsFileReader(
 );
 
 ftBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+IF ftBusy.Q THEN
+    bReadPmpsDb := TRUE;
+ELSE
+    bReadPmpsDb := FALSE;
+END_IF
+
 
 // Lifted from Arbiter PLCs: keep track of the time
 fbTime(sNetID:='');
