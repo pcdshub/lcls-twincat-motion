@@ -25,6 +25,7 @@ VAR_OUTPUT
         io: i
     '}
     nLastRefreshTime: DINT;
+    bReadPmpsDb: BOOL;
 END_VAR
 VAR
     bExecute: BOOL;
@@ -42,6 +43,7 @@ END_VAR
       <ST><![CDATA[IF NOT bEnable THEN
     RETURN;
 END_IF
+
 rtEnable(CLK:=bEnable);
 rtRefresh(CLK:=bRefresh);
 bRefresh := FALSE;
@@ -64,6 +66,12 @@ MOTION_GVL.fbPmpsFileReader(
 );
 
 ftBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+IF ftBusy.Q THEN
+    bReadPmpsDb := TRUE;
+ELSE
+    bReadPmpsDb := FALSE;
+END_IF
+
 
 // Lifted from Arbiter PLCs: keep track of the time
 fbTime(sNetID:='');
