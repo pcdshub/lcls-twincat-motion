@@ -50,16 +50,16 @@ DUT_MotionStage
     * - $(PREFIX):PLC:bBusy_RBV
       - bi
       - TRUE if in the middle of a command
-      - | field: ONAM FALSE
-        | field: ZNAM TRUE
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
         | io: input
 
 
     * - $(PREFIX):PLC:bDone_RBV
       - bi
       - TRUE if command finished successfully
-      - | field: ONAM FALSE
-        | field: ZNAM TRUE
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
         | io: input
 
 
@@ -82,17 +82,18 @@ DUT_MotionStage
     * - $(PREFIX):PLC:bEnableDone_RBV
       - bi
       - TRUE if done enabling
-      - | field: ONAM FALSE
-        | field: ZNAM TRUE
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
         | io: input
 
 
     * - $(PREFIX):PLC:bError_RBV
       - bi
-      - TRUE if we
-      - | field: ONAM FALSE
-        | field: ZNAM TRUE
+      - TRUE if we are in an error state
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
         | io: input
+        | update: 100hz notify
 
 
     * - $(PREFIX):PLC:bExecute
@@ -151,6 +152,24 @@ DUT_MotionStage
         | io: input
 
 
+    * - $(PREFIX):PLC:bHomeCmd
+      - bo
+      - Start the homing routine
+      - | io: output
+
+
+    * - $(PREFIX):PLC:bHomeCmd_RBV
+      - bi
+      - Start the homing routine
+      - | io: output
+
+
+    * - $(PREFIX):PLC:bHomed_RBV
+      - bi
+      - TRUE if the motor has been homed
+      - | io: input
+
+
     * - $(PREFIX):PLC:bLimitBackwardEnable_RBV
       - bi
       - FALSE if reverse limit hit
@@ -165,6 +184,18 @@ DUT_MotionStage
       - | field: ONAM TRUE
         | field: ZNAM FALSE
         | io: input
+
+
+    * - $(PREFIX):PLC:bMoveCmd
+      - bo
+      - Start a move
+      - | io: output
+
+
+    * - $(PREFIX):PLC:bMoveCmd_RBV
+      - bi
+      - Start a move
+      - | io: output
 
 
     * - $(PREFIX):PLC:bPowerSelf_RBV
@@ -194,9 +225,25 @@ DUT_MotionStage
     * - $(PREFIX):PLC:bSafetyReady_RBV
       - bi
       - TRUE if safe to start a move
-      - | field: ONAM FALSE
-        | field: ZNAM TRUE
+      - | field: ONAM TRUE
+        | field: ZNAM FALSE
         | io: input
+
+
+    * - $(PREFIX):PLC:bUserEnable
+      - bo
+      - Used to disable power entirely for an axis
+      - | field: ONAM ENABLE
+        | field: ZNAM DISABLE
+        | io: output
+
+
+    * - $(PREFIX):PLC:bUserEnable_RBV
+      - bi
+      - Used to disable power entirely for an axis
+      - | field: ONAM ENABLE
+        | field: ZNAM DISABLE
+        | io: output
 
 
     * - $(PREFIX):PLC:fAcceleration
@@ -233,6 +280,12 @@ DUT_MotionStage
       - ai
       - Used internally and by the IOC to pick home position
       - | io: output
+
+
+    * - $(PREFIX):PLC:fPosDiff_RBV
+      - ai
+      - Position lag difference
+      - | io: input
 
 
     * - $(PREFIX):PLC:fPosition
@@ -305,6 +358,7 @@ DUT_MotionStage
       - longin
       - Error code if nonzero
       - | io: input
+        | update: 100hz notify
 
 
     * - $(PREFIX):PLC:nHomingMode_RBV
@@ -323,11 +377,66 @@ DUT_MotionStage
       - waveform
       - Message to identify the error state
       - | io: input
+        | update: 100hz notify
 
 
     * - $(PREFIX):PLC:sName_RBV
       - waveform
       - PLC program name
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSBackwardEnable:nFlags_RBV
+      - longin
+      - Contains EPS flags
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSBackwardEnable:sFlagDesc_RBV
+      - waveform
+      - of nFlag variable, using
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSBackwardEnable:sMessage_RBV
+      - waveform
+      - Message from EPS to usr
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSForwardEnable:nFlags_RBV
+      - longin
+      - Contains EPS flags
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSForwardEnable:sFlagDesc_RBV
+      - waveform
+      - of nFlag variable, using
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSForwardEnable:sMessage_RBV
+      - waveform
+      - Message from EPS to usr
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSPowerEnable:nFlags_RBV
+      - longin
+      - Contains EPS flags
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSPowerEnable:sFlagDesc_RBV
+      - waveform
+      - of nFlag variable, using
+      - | io: input
+
+
+    * - $(PREFIX):PLC:stEPSPowerEnable:sMessage_RBV
+      - waveform
+      - Message from EPS to usr
       - | io: input
 
 
@@ -353,6 +462,152 @@ DUT_PositionState
       - ai
       - Acceleration to use for moves to this state
       - | io: output
+
+
+    * - $(PREFIX):BP:Apt:01:Height_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[1].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:OK_RBV
+      - bi
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[1].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:Width_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[1].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:Height_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[2].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:OK_RBV
+      - bi
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[2].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:Width_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[2].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:Height_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[3].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:OK_RBV
+      - bi
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[3].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:Width_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[3].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:Height_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[4].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:OK_RBV
+      - bi
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[4].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:Width_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.astApertures[4].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:BeamClass_RBV
+      - longin
+      - $(SYMBOL).stPMPS.stBeamParams.nBeamClass
+      - | io: input
+
+
+    * - $(PREFIX):BP:BeamClassRanges_RBV
+      - longin
+      - $(SYMBOL).stPMPS.stBeamParams.nBCRange
+      - | io: input
+
+
+    * - $(PREFIX):BP:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | io: input
+
+
+    * - $(PREFIX):BP:eVRanges_RBV
+      - longin
+      - $(SYMBOL).stPMPS.stBeamParams.neVRange
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):BP:MachineMode_RBV
+      - longin
+      - $(SYMBOL).stPMPS.stBeamParams.nMachineMode
+      - | io: input
+
+
+    * - $(PREFIX):BP:PhotonEnergy_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.neV
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):BP:Rate_RBV
+      - longin
+      - $(SYMBOL).stPMPS.stBeamParams.nRate
+      - | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX):BP:Transmission_RBV
+      - ai
+      - $(SYMBOL).stPMPS.stBeamParams.nTran
+      - | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
+        | io: input
+
+
+    * - $(PREFIX):BP:Valid_RBV
+      - bi
+      - $(SYMBOL).stPMPS.stBeamParams.xValid
+      - | io: input
+
+
+    * - $(PREFIX):BP:Veto_RBV
+      - waveform
+      - $(SYMBOL).stPMPS.stBeamParams.aVetoDevices
+      - | io: input
 
 
     * - $(PREFIX):DCCL
@@ -409,6 +664,24 @@ DUT_PositionState
       - | io: input
 
 
+    * - $(PREFIX):PMPS_ID_RBV
+      - longin
+      - Assertion Request ID
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_LOADED_RBV
+      - bi
+      - TRUE if PMPS loaded parameters from the database.
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_STATE_RBV
+      - waveform
+      - PMPS Database Lookup Key
+      - | io: input
+
+
     * - $(PREFIX):SETPOINT
       - ao
       - Axis position associated with this state
@@ -441,7 +714,7 @@ DUT_PositionState
       - | io: output
 
 
-                
+                   
 FB_PositionStateMove
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -471,6 +744,152 @@ FB_PositionStateMove
       - | field: ONAM True
         | field: ZNAM False
         | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:Height_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[1].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:OK_RBV
+      - bi
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[1].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:Width_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[1].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:Height_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[2].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:OK_RBV
+      - bi
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[2].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:Width_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[2].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:Height_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[3].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:OK_RBV
+      - bi
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[3].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:Width_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[3].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:Height_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[4].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:OK_RBV
+      - bi
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[4].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:Width_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.astApertures[4].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:BeamClass_RBV
+      - longin
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.nBeamClass
+      - | io: input
+
+
+    * - $(PREFIX):BP:BeamClassRanges_RBV
+      - longin
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.nBCRange
+      - | io: input
+
+
+    * - $(PREFIX):BP:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | io: input
+
+
+    * - $(PREFIX):BP:eVRanges_RBV
+      - longin
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.neVRange
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):BP:MachineMode_RBV
+      - longin
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.nMachineMode
+      - | io: input
+
+
+    * - $(PREFIX):BP:PhotonEnergy_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.neV
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):BP:Rate_RBV
+      - longin
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.nRate
+      - | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX):BP:Transmission_RBV
+      - ai
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.nTran
+      - | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
+        | io: input
+
+
+    * - $(PREFIX):BP:Valid_RBV
+      - bi
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.xValid
+      - | io: input
+
+
+    * - $(PREFIX):BP:Veto_RBV
+      - waveform
+      - $(SYMBOL).stPositionState.stPMPS.stBeamParams.aVetoDevices
+      - | io: input
 
 
     * - $(PREFIX):BUSY_RBV
@@ -579,6 +998,24 @@ FB_PositionStateMove
       - | io: input
 
 
+    * - $(PREFIX):PMPS_ID_RBV
+      - longin
+      - Assertion Request ID
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_LOADED_RBV
+      - bi
+      - TRUE if PMPS loaded parameters from the database.
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_STATE_RBV
+      - waveform
+      - PMPS Database Lookup Key
+      - | io: input
+
+
     * - $(PREFIX):RESET
       - bo
       - $(SYMBOL).bReset
@@ -627,7 +1064,67 @@ FB_PositionStateMove
       - | io: output
 
 
-       
+    
+FB_Standard_PMPSDB
+^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):LAST_REFRESH_RBV
+      - longin
+      - $(SYMBOL).nLastRefreshTime
+      - | io: input
+
+
+    * - $(PREFIX):REFRESH
+      - bo
+      - $(SYMBOL).bRefresh
+      - | io: output
+
+
+    * - $(PREFIX):REFRESH_RBV
+      - bi
+      - $(SYMBOL).bRefresh
+      - | io: output
+
+
+    
+LCLS_General.DUT_EPS
+^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):nFlags_RBV
+      - longin
+      - Contains EPS flags
+      - | io: input
+
+
+    * - $(PREFIX):sFlagDesc_RBV
+      - waveform
+      - of nFlag variable, using
+      - | io: input
+
+
+    * - $(PREFIX):sMessage_RBV
+      - waveform
+      - Message from EPS to usr
+      - | io: input
+
+
+ 
 LCLS_General.FB_LogMessage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -657,7 +1154,6967 @@ LCLS_General.FB_LogMessage
       - | io: input
 
 
-                                           
+                                                 
+PMPS.FB_HardwareFFOutput
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):ClearFault
+      - bo
+      - Might be overidden by PLC writes
+      - | io: output
+
+
+    * - $(PREFIX):ClearFault_RBV
+      - bi
+      - Might be overidden by PLC writes
+      - | io: output
+
+
+    * - $(PREFIX):EnableVeto
+      - bo
+      - $(SYMBOL).i_xVeto
+      - | io: output
+
+
+    * - $(PREFIX):EnableVeto_RBV
+      - bi
+      - $(SYMBOL).i_xVeto
+      - | io: output
+
+
+    * - $(PREFIX):FaultHWO_RBV
+      - bi
+      - Hardware Output Status
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[1].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[1].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[1].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[1].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[1].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[1].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[1].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[1].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[1].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[1].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[1].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[1].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[1].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[1].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[1].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[1].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[1].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[1].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[1].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:001:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[1].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[1].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Reset
+      - bo
+      - $(SYMBOL).astFF[1].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:001:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[1].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[2].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[2].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[2].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[2].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[2].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[2].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[2].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[2].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[2].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[2].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[2].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[2].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[2].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[2].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[2].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[2].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[2].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[2].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[2].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:002:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[2].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[2].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Reset
+      - bo
+      - $(SYMBOL).astFF[2].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:002:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[2].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[3].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[3].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[3].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[3].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[3].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[3].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[3].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[3].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[3].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[3].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[3].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[3].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[3].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[3].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[3].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[3].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[3].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[3].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[3].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:003:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[3].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[3].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Reset
+      - bo
+      - $(SYMBOL).astFF[3].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:003:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[3].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[4].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[4].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[4].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[4].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[4].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[4].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[4].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[4].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[4].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[4].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[4].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[4].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[4].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[4].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[4].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[4].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[4].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[4].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[4].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:004:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[4].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[4].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Reset
+      - bo
+      - $(SYMBOL).astFF[4].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:004:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[4].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[5].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[5].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[5].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[5].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[5].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[5].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[5].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[5].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[5].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[5].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[5].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[5].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[5].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[5].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[5].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[5].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[5].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[5].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[5].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:005:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[5].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[5].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Reset
+      - bo
+      - $(SYMBOL).astFF[5].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:005:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[5].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[6].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[6].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[6].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[6].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[6].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[6].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[6].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[6].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[6].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[6].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[6].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[6].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[6].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[6].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[6].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[6].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[6].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[6].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[6].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:006:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[6].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[6].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Reset
+      - bo
+      - $(SYMBOL).astFF[6].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:006:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[6].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[7].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[7].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[7].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[7].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[7].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[7].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[7].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[7].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[7].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[7].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[7].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[7].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[7].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[7].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[7].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[7].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[7].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[7].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[7].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:007:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[7].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[7].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Reset
+      - bo
+      - $(SYMBOL).astFF[7].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:007:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[7].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[8].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[8].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[8].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[8].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[8].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[8].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[8].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[8].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[8].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[8].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[8].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[8].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[8].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[8].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[8].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[8].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[8].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[8].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[8].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:008:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[8].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[8].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Reset
+      - bo
+      - $(SYMBOL).astFF[8].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:008:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[8].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[9].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[9].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[9].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[9].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[9].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[9].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[9].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[9].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[9].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[9].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[9].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[9].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[9].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[9].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[9].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[9].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[9].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[9].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[9].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:009:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[9].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[9].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Reset
+      - bo
+      - $(SYMBOL).astFF[9].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:009:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[9].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[10].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[10].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[10].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[10].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[10].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[10].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[10].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[10].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[10].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[10].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[10].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[10].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[10].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[10].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[10].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[10].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[10].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[10].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[10].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:010:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[10].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[10].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Reset
+      - bo
+      - $(SYMBOL).astFF[10].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:010:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[10].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[11].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[11].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[11].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[11].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[11].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[11].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[11].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[11].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[11].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[11].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[11].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[11].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[11].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[11].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[11].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[11].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[11].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[11].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[11].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:011:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[11].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[11].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Reset
+      - bo
+      - $(SYMBOL).astFF[11].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:011:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[11].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[12].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[12].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[12].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[12].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[12].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[12].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[12].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[12].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[12].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[12].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[12].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[12].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[12].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[12].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[12].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[12].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[12].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[12].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[12].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:012:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[12].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[12].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Reset
+      - bo
+      - $(SYMBOL).astFF[12].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:012:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[12].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[13].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[13].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[13].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[13].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[13].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[13].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[13].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[13].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[13].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[13].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[13].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[13].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[13].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[13].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[13].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[13].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[13].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[13].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[13].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:013:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[13].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[13].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Reset
+      - bo
+      - $(SYMBOL).astFF[13].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:013:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[13].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[14].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[14].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[14].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[14].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[14].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[14].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[14].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[14].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[14].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[14].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[14].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[14].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[14].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[14].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[14].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[14].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[14].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[14].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[14].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:014:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[14].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[14].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Reset
+      - bo
+      - $(SYMBOL).astFF[14].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:014:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[14].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[15].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[15].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[15].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[15].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[15].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[15].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[15].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[15].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[15].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[15].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[15].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[15].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[15].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[15].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[15].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[15].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[15].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[15].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[15].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:015:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[15].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[15].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Reset
+      - bo
+      - $(SYMBOL).astFF[15].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:015:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[15].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[16].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[16].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[16].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[16].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[16].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[16].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[16].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[16].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[16].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[16].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[16].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[16].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[16].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[16].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[16].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[16].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[16].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[16].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[16].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:016:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[16].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[16].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Reset
+      - bo
+      - $(SYMBOL).astFF[16].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:016:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[16].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[17].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[17].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[17].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[17].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[17].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[17].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[17].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[17].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[17].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[17].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[17].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[17].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[17].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[17].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[17].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[17].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[17].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[17].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[17].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:017:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[17].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[17].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Reset
+      - bo
+      - $(SYMBOL).astFF[17].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:017:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[17].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[18].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[18].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[18].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[18].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[18].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[18].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[18].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[18].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[18].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[18].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[18].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[18].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[18].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[18].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[18].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[18].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[18].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[18].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[18].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:018:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[18].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[18].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Reset
+      - bo
+      - $(SYMBOL).astFF[18].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:018:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[18].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[19].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[19].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[19].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[19].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[19].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[19].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[19].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[19].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[19].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[19].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[19].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[19].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[19].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[19].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[19].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[19].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[19].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[19].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[19].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:019:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[19].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[19].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Reset
+      - bo
+      - $(SYMBOL).astFF[19].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:019:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[19].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[20].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[20].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[20].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[20].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[20].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[20].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[20].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[20].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[20].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[20].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[20].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[20].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[20].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[20].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[20].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[20].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[20].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[20].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[20].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:020:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[20].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[20].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Reset
+      - bo
+      - $(SYMBOL).astFF[20].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:020:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[20].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[21].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[21].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[21].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[21].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[21].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[21].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[21].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[21].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[21].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[21].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[21].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[21].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[21].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[21].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[21].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[21].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[21].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[21].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[21].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:021:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[21].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[21].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Reset
+      - bo
+      - $(SYMBOL).astFF[21].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:021:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[21].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[22].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[22].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[22].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[22].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[22].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[22].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[22].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[22].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[22].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[22].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[22].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[22].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[22].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[22].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[22].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[22].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[22].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[22].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[22].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:022:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[22].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[22].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Reset
+      - bo
+      - $(SYMBOL).astFF[22].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:022:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[22].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[23].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[23].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[23].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[23].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[23].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[23].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[23].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[23].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[23].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[23].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[23].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[23].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[23].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[23].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[23].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[23].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[23].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[23].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[23].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:023:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[23].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[23].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Reset
+      - bo
+      - $(SYMBOL).astFF[23].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:023:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[23].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[24].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[24].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[24].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[24].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[24].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[24].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[24].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[24].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[24].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[24].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[24].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[24].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[24].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[24].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[24].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[24].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[24].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[24].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[24].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:024:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[24].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[24].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Reset
+      - bo
+      - $(SYMBOL).astFF[24].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:024:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[24].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[25].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[25].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[25].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[25].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[25].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[25].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[25].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[25].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[25].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[25].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[25].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[25].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[25].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[25].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[25].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[25].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[25].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[25].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[25].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:025:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[25].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[25].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Reset
+      - bo
+      - $(SYMBOL).astFF[25].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:025:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[25].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[26].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[26].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[26].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[26].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[26].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[26].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[26].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[26].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[26].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[26].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[26].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[26].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[26].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[26].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[26].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[26].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[26].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[26].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[26].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:026:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[26].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[26].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Reset
+      - bo
+      - $(SYMBOL).astFF[26].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:026:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[26].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[27].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[27].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[27].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[27].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[27].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[27].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[27].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[27].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[27].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[27].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[27].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[27].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[27].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[27].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[27].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[27].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[27].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[27].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[27].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:027:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[27].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[27].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Reset
+      - bo
+      - $(SYMBOL).astFF[27].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:027:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[27].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[28].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[28].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[28].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[28].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[28].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[28].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[28].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[28].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[28].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[28].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[28].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[28].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[28].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[28].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[28].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[28].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[28].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[28].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[28].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:028:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[28].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[28].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Reset
+      - bo
+      - $(SYMBOL).astFF[28].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:028:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[28].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[29].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[29].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[29].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[29].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[29].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[29].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[29].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[29].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[29].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[29].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[29].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[29].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[29].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[29].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[29].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[29].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[29].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[29].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[29].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:029:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[29].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[29].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Reset
+      - bo
+      - $(SYMBOL).astFF[29].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:029:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[29].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[30].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[30].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[30].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[30].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[30].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[30].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[30].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[30].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[30].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[30].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[30].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[30].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[30].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[30].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[30].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[30].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[30].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[30].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[30].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:030:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[30].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[30].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Reset
+      - bo
+      - $(SYMBOL).astFF[30].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:030:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[30].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[31].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[31].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[31].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[31].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[31].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[31].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[31].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[31].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[31].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[31].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[31].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[31].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[31].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[31].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[31].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[31].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[31].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[31].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[31].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:031:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[31].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[31].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Reset
+      - bo
+      - $(SYMBOL).astFF[31].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:031:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[31].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[32].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[32].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[32].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[32].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[32].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[32].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[32].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[32].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[32].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[32].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[32].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[32].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[32].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[32].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[32].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[32].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[32].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[32].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[32].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:032:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[32].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[32].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Reset
+      - bo
+      - $(SYMBOL).astFF[32].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:032:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[32].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[33].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[33].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[33].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[33].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[33].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[33].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[33].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[33].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[33].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[33].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[33].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[33].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[33].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[33].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[33].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[33].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[33].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[33].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[33].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:033:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[33].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[33].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Reset
+      - bo
+      - $(SYMBOL).astFF[33].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:033:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[33].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[34].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[34].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[34].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[34].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[34].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[34].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[34].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[34].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[34].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[34].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[34].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[34].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[34].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[34].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[34].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[34].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[34].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[34].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[34].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:034:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[34].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[34].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Reset
+      - bo
+      - $(SYMBOL).astFF[34].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:034:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[34].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[35].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[35].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[35].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[35].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[35].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[35].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[35].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[35].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[35].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[35].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[35].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[35].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[35].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[35].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[35].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[35].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[35].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[35].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[35].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:035:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[35].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[35].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Reset
+      - bo
+      - $(SYMBOL).astFF[35].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:035:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[35].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[36].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[36].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[36].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[36].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[36].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[36].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[36].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[36].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[36].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[36].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[36].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[36].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[36].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[36].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[36].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[36].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[36].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[36].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[36].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:036:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[36].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[36].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Reset
+      - bo
+      - $(SYMBOL).astFF[36].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:036:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[36].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[37].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[37].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[37].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[37].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[37].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[37].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[37].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[37].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[37].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[37].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[37].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[37].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[37].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[37].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[37].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[37].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[37].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[37].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[37].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:037:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[37].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[37].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Reset
+      - bo
+      - $(SYMBOL).astFF[37].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:037:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[37].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[38].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[38].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[38].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[38].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[38].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[38].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[38].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[38].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[38].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[38].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[38].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[38].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[38].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[38].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[38].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[38].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[38].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[38].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[38].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:038:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[38].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[38].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Reset
+      - bo
+      - $(SYMBOL).astFF[38].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:038:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[38].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[39].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[39].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[39].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[39].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[39].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[39].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[39].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[39].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[39].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[39].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[39].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[39].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[39].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[39].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[39].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[39].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[39].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[39].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[39].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:039:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[39].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[39].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Reset
+      - bo
+      - $(SYMBOL).astFF[39].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:039:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[39].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[40].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[40].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[40].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[40].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[40].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[40].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[40].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[40].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[40].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[40].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[40].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[40].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[40].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[40].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[40].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[40].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[40].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[40].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[40].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:040:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[40].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[40].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Reset
+      - bo
+      - $(SYMBOL).astFF[40].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:040:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[40].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[41].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[41].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[41].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[41].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[41].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[41].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[41].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[41].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[41].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[41].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[41].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[41].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[41].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[41].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[41].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[41].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[41].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[41].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[41].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:041:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[41].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[41].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Reset
+      - bo
+      - $(SYMBOL).astFF[41].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:041:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[41].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[42].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[42].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[42].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[42].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[42].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[42].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[42].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[42].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[42].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[42].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[42].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[42].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[42].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[42].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[42].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[42].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[42].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[42].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[42].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:042:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[42].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[42].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Reset
+      - bo
+      - $(SYMBOL).astFF[42].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:042:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[42].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[43].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[43].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[43].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[43].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[43].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[43].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[43].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[43].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[43].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[43].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[43].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[43].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[43].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[43].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[43].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[43].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[43].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[43].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[43].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:043:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[43].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[43].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Reset
+      - bo
+      - $(SYMBOL).astFF[43].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:043:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[43].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[44].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[44].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[44].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[44].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[44].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[44].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[44].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[44].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[44].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[44].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[44].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[44].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[44].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[44].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[44].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[44].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[44].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[44].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[44].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:044:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[44].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[44].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Reset
+      - bo
+      - $(SYMBOL).astFF[44].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:044:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[44].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[45].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[45].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[45].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[45].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[45].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[45].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[45].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[45].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[45].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[45].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[45].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[45].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[45].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[45].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[45].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[45].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[45].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[45].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[45].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:045:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[45].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[45].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Reset
+      - bo
+      - $(SYMBOL).astFF[45].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:045:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[45].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[46].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[46].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[46].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[46].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[46].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[46].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[46].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[46].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[46].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[46].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[46].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[46].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[46].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[46].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[46].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[46].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[46].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[46].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[46].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:046:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[46].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[46].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Reset
+      - bo
+      - $(SYMBOL).astFF[46].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:046:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[46].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[47].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[47].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[47].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[47].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[47].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[47].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[47].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[47].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[47].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[47].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[47].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[47].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[47].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[47].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[47].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[47].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[47].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[47].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[47].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:047:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[47].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[47].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Reset
+      - bo
+      - $(SYMBOL).astFF[47].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:047:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[47].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[48].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[48].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[48].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[48].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[48].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[48].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[48].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[48].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[48].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[48].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[48].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[48].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[48].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[48].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[48].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[48].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[48].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[48].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[48].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:048:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[48].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[48].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Reset
+      - bo
+      - $(SYMBOL).astFF[48].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:048:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[48].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[49].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[49].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[49].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[49].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[49].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[49].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[49].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[49].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[49].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[49].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[49].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[49].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[49].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[49].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[49].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[49].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[49].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[49].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[49].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:049:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[49].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[49].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Reset
+      - bo
+      - $(SYMBOL).astFF[49].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:049:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[49].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).astFF[50].BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).astFF[50].Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).astFF[50].Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).astFF[50].Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Info:InUse_RBV
+      - bi
+      - $(SYMBOL).astFF[50].Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Info:Path_RBV
+      - waveform
+      - $(SYMBOL).astFF[50].Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).astFF[50].Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:OK_RBV
+      - bi
+      - $(SYMBOL).astFF[50].OK
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Ovrd:Activate
+      - bo
+      - $(SYMBOL).astFF[50].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).astFF[50].Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).astFF[50].Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).astFF[50].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).astFF[50].Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:Duration
+      - longout
+      - $(SYMBOL).astFF[50].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).astFF[50].Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).astFF[50].Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Ovrd:Expiration
+      - longout
+      - $(SYMBOL).astFF[50].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).astFF[50].Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).astFF[50].Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):FF:050:Ovrd:StartDT
+      - longout
+      - $(SYMBOL).astFF[50].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).astFF[50].Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Reset
+      - bo
+      - $(SYMBOL).astFF[50].Reset
+      - | io: output
+
+
+    * - $(PREFIX):FF:050:Reset_RBV
+      - bi
+      - $(SYMBOL).astFF[50].Reset
+      - | io: output
+
+
+    * - $(PREFIX):OK_RBV
+      - bi
+      - $(SYMBOL).xOK
+      - | io: input
+
+
+    * - $(PREFIX):RegistrationFailure
+      - bo
+      - $(SYMBOL).xFastFaultRegFail
+      - | io: output
+
+
+    * - $(PREFIX):RegistrationFailure_RBV
+      - bi
+      - $(SYMBOL).xFastFaultRegFail
+      - | io: output
+
+
+   
 PMPS.ST_BeamParams
 ^^^^^^^^^^^^^^^^^^
 
@@ -669,23 +8126,121 @@ PMPS.ST_BeamParams
       - Type
       - Description
       - Pragma
+    * - $(PREFIX):Apt:01:Height_RBV
+      - ai
+      - $(SYMBOL).astApertures[1].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:01:OK_RBV
+      - bi
+      - $(SYMBOL).astApertures[1].xOK
+      - | io: input
+
+
+    * - $(PREFIX):Apt:01:Width_RBV
+      - ai
+      - $(SYMBOL).astApertures[1].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:02:Height_RBV
+      - ai
+      - $(SYMBOL).astApertures[2].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:02:OK_RBV
+      - bi
+      - $(SYMBOL).astApertures[2].xOK
+      - | io: input
+
+
+    * - $(PREFIX):Apt:02:Width_RBV
+      - ai
+      - $(SYMBOL).astApertures[2].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:03:Height_RBV
+      - ai
+      - $(SYMBOL).astApertures[3].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:03:OK_RBV
+      - bi
+      - $(SYMBOL).astApertures[3].xOK
+      - | io: input
+
+
+    * - $(PREFIX):Apt:03:Width_RBV
+      - ai
+      - $(SYMBOL).astApertures[3].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:04:Height_RBV
+      - ai
+      - $(SYMBOL).astApertures[4].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):Apt:04:OK_RBV
+      - bi
+      - $(SYMBOL).astApertures[4].xOK
+      - | io: input
+
+
+    * - $(PREFIX):Apt:04:Width_RBV
+      - ai
+      - $(SYMBOL).astApertures[4].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BeamClass_RBV
+      - longin
+      - $(SYMBOL).nBeamClass
+      - | io: input
+
+
+    * - $(PREFIX):BeamClassRanges_RBV
+      - longin
+      - $(SYMBOL).nBCRange
+      - | io: input
+
+
     * - $(PREFIX):Cohort_RBV
       - longin
       - Cohort inc on each arb cycle
       - | io: input
 
 
-    * - $(PREFIX):PhotonEnergyRanges_RBV
+    * - $(PREFIX):eVRanges_RBV
       - longin
       - $(SYMBOL).neVRange
       - | field: EGU eV
         | io: input
 
 
-    * - $(PREFIX):PulseEnergy_RBV
+    * - $(PREFIX):MachineMode_RBV
+      - longin
+      - $(SYMBOL).nMachineMode
+      - | io: input
+
+
+    * - $(PREFIX):PhotonEnergy_RBV
       - ai
-      - This beam parameter is non-op for now.
-      - | field: EGU mJ
+      - $(SYMBOL).neV
+      - | field: EGU eV
         | io: input
 
 
@@ -696,16 +8251,12 @@ PMPS.ST_BeamParams
         | io: input
 
 
-    * - $(PREFIX):ST_RBV
-      - waveform
-      - $(SYMBOL).aStoppers
-      - | io: input
-
-
     * - $(PREFIX):Transmission_RBV
-      - longin
+      - ai
       - $(SYMBOL).nTran
-      - | field: EGU %
+      - | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
         | io: input
 
 
@@ -713,6 +8264,476 @@ PMPS.ST_BeamParams
       - bi
       - $(SYMBOL).xValid
       - | io: input
+
+
+    * - $(PREFIX):Veto_RBV
+      - waveform
+      - $(SYMBOL).aVetoDevices
+      - | io: input
+
+
+ 
+PMPS.ST_DbStateParams
+^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):BP:Apt:01:Height_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[1].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:OK_RBV
+      - bi
+      - $(SYMBOL).stBeamParams.astApertures[1].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:01:Width_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[1].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:Height_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[2].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:OK_RBV
+      - bi
+      - $(SYMBOL).stBeamParams.astApertures[2].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:02:Width_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[2].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:Height_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[3].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:OK_RBV
+      - bi
+      - $(SYMBOL).stBeamParams.astApertures[3].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:03:Width_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[3].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:Height_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[4].Height
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:OK_RBV
+      - bi
+      - $(SYMBOL).stBeamParams.astApertures[4].xOK
+      - | io: input
+
+
+    * - $(PREFIX):BP:Apt:04:Width_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.astApertures[4].Width
+      - | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX):BP:BeamClass_RBV
+      - longin
+      - $(SYMBOL).stBeamParams.nBeamClass
+      - | io: input
+
+
+    * - $(PREFIX):BP:BeamClassRanges_RBV
+      - longin
+      - $(SYMBOL).stBeamParams.nBCRange
+      - | io: input
+
+
+    * - $(PREFIX):BP:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | io: input
+
+
+    * - $(PREFIX):BP:eVRanges_RBV
+      - longin
+      - $(SYMBOL).stBeamParams.neVRange
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):BP:MachineMode_RBV
+      - longin
+      - $(SYMBOL).stBeamParams.nMachineMode
+      - | io: input
+
+
+    * - $(PREFIX):BP:PhotonEnergy_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.neV
+      - | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX):BP:Rate_RBV
+      - longin
+      - $(SYMBOL).stBeamParams.nRate
+      - | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX):BP:Transmission_RBV
+      - ai
+      - $(SYMBOL).stBeamParams.nTran
+      - | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
+        | io: input
+
+
+    * - $(PREFIX):BP:Valid_RBV
+      - bi
+      - $(SYMBOL).stBeamParams.xValid
+      - | io: input
+
+
+    * - $(PREFIX):BP:Veto_RBV
+      - waveform
+      - $(SYMBOL).stBeamParams.aVetoDevices
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_ID_RBV
+      - longin
+      - Assertion Request ID
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_LOADED_RBV
+      - bi
+      - TRUE if PMPS loaded parameters from the database.
+      - | io: input
+
+
+    * - $(PREFIX):PMPS_STATE_RBV
+      - waveform
+      - PMPS Database Lookup Key
+      - | io: input
+
+
+ 
+PMPS.ST_FF
+^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):BeamPermitted_RBV
+      - bi
+      - $(SYMBOL).BeamPermitted
+      - | io: input
+
+
+    * - $(PREFIX):Info:Desc_RBV
+      - waveform
+      - $(SYMBOL).Info.Desc
+      - | io: input
+
+
+    * - $(PREFIX):Info:DevName_RBV
+      - waveform
+      - $(SYMBOL).Info.DevName
+      - | io: input
+
+
+    * - $(PREFIX):Info:InfoString_RBV
+      - waveform
+      - $(SYMBOL).Info.InfoString
+      - | io: input
+
+
+    * - $(PREFIX):Info:InUse_RBV
+      - bi
+      - $(SYMBOL).Info.InUse
+      - | io: input
+
+
+    * - $(PREFIX):Info:Path_RBV
+      - waveform
+      - $(SYMBOL).Info.sPath
+      - | io: input
+
+
+    * - $(PREFIX):Info:TypeCode_RBV
+      - longin
+      - $(SYMBOL).Info.TypeCode
+      - | io: input
+
+
+    * - $(PREFIX):OK_RBV
+      - bi
+      - $(SYMBOL).OK
+      - | io: input
+
+
+    * - $(PREFIX):Ovrd:Activate
+      - bo
+      - $(SYMBOL).Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:Activate_RBV
+      - bi
+      - $(SYMBOL).Ovrd.Activate
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:Active_RBV
+      - bi
+      - $(SYMBOL).Ovrd.Active
+      - | io: input
+
+
+    * - $(PREFIX):Ovrd:Deactivate
+      - bo
+      - $(SYMBOL).Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:Deactivate_RBV
+      - bi
+      - $(SYMBOL).Ovrd.Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:Duration
+      - longout
+      - $(SYMBOL).Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:Duration_RBV
+      - longin
+      - $(SYMBOL).Ovrd.Duration
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).Ovrd.ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):Ovrd:Expiration
+      - longout
+      - $(SYMBOL).Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:Expiration_RBV
+      - longin
+      - $(SYMBOL).Ovrd.Expiration
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:RemainingTime_RBV
+      - longin
+      - $(SYMBOL).Ovrd.RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):Ovrd:StartDT
+      - longout
+      - $(SYMBOL).Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):Ovrd:StartDT_RBV
+      - longin
+      - $(SYMBOL).Ovrd.StartDT
+      - | io: output
+
+
+    * - $(PREFIX):Reset
+      - bo
+      - $(SYMBOL).Reset
+      - | io: output
+
+
+    * - $(PREFIX):Reset_RBV
+      - bi
+      - $(SYMBOL).Reset
+      - | io: output
+
+
+ 
+PMPS.ST_FFInfo
+^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):Desc_RBV
+      - waveform
+      - $(SYMBOL).Desc
+      - | io: input
+
+
+    * - $(PREFIX):DevName_RBV
+      - waveform
+      - $(SYMBOL).DevName
+      - | io: input
+
+
+    * - $(PREFIX):InfoString_RBV
+      - waveform
+      - $(SYMBOL).InfoString
+      - | io: input
+
+
+    * - $(PREFIX):InUse_RBV
+      - bi
+      - $(SYMBOL).InUse
+      - | io: input
+
+
+    * - $(PREFIX):Path_RBV
+      - waveform
+      - $(SYMBOL).sPath
+      - | io: input
+
+
+    * - $(PREFIX):TypeCode_RBV
+      - longin
+      - $(SYMBOL).TypeCode
+      - | io: input
+
+
+ 
+PMPS.ST_FFOverride
+^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :align: center
+
+    * - Record
+      - Type
+      - Description
+      - Pragma
+    * - $(PREFIX):Activate
+      - bo
+      - $(SYMBOL).Activate
+      - | io: output
+
+
+    * - $(PREFIX):Activate_RBV
+      - bi
+      - $(SYMBOL).Activate
+      - | io: output
+
+
+    * - $(PREFIX):Active_RBV
+      - bi
+      - $(SYMBOL).Active
+      - | io: input
+
+
+    * - $(PREFIX):Deactivate
+      - bo
+      - $(SYMBOL).Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):Deactivate_RBV
+      - bi
+      - $(SYMBOL).Deactivate
+      - | io: output
+
+
+    * - $(PREFIX):Duration
+      - longout
+      - $(SYMBOL).Duration
+      - | io: output
+
+
+    * - $(PREFIX):Duration_RBV
+      - longin
+      - $(SYMBOL).Duration
+      - | io: output
+
+
+    * - $(PREFIX):ElapsedTime_RBV
+      - longin
+      - $(SYMBOL).ElapsedTime
+      - | io: input
+
+
+    * - $(PREFIX):Expiration
+      - longout
+      - $(SYMBOL).Expiration
+      - | io: output
+
+
+    * - $(PREFIX):Expiration_RBV
+      - longin
+      - $(SYMBOL).Expiration
+      - | io: output
+
+
+    * - $(PREFIX):RemainingTime_RBV
+      - longin
+      - $(SYMBOL).RemainingTime
+      - | io: input
+
+
+    * - $(PREFIX):StartDT
+      - longout
+      - $(SYMBOL).StartDT
+      - | io: output
+
+
+    * - $(PREFIX):StartDT_RBV
+      - longin
+      - $(SYMBOL).StartDT
+      - | io: output
 
 
  
@@ -779,7 +8800,7 @@ ST_PMPS_Aperture_IO
         | io: input
 
 
-                                                                      
+                                                                                              
 Database Records
 ----------------
 
@@ -827,6 +8848,24 @@ Database Records
       - | io: input
 
 
+    * - $(PREFIX)DB:REFRESH_RBV
+      - bi
+      - MOTION_GVL.fbStandardPMPSDB.bRefresh
+      - | io: output
+
+
+    * - $(PREFIX)DB:REFRESH
+      - bo
+      - MOTION_GVL.fbStandardPMPSDB.bRefresh
+      - | io: output
+
+
+    * - $(PREFIX)DB:LAST_REFRESH_RBV
+      - longin
+      - MOTION_GVL.fbStandardPMPSDB.nLastRefreshTime
+      - | io: input
+
+
     * - $(PREFIX)AccumulatedFastFaults_RBV
       - longin
       - PMPS_GVL.AccumulatedFF
@@ -839,24 +8878,297 @@ Database Records
       - | io: input
 
 
-    * - $(PREFIX)FullBeamCnst:ST_RBV
+    * - $(PREFIX)0RateBeamCnst:Veto_RBV
+      - waveform
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:01:Height_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:01:Width_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:01:OK_RBV
+      - bi
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:02:Height_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:02:Width_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:02:OK_RBV
+      - bi
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:03:Height_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:03:Width_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:03:OK_RBV
+      - bi
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:04:Height_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:04:Width_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Apt:04:OK_RBV
+      - bi
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:BeamClassRanges_RBV
+      - longin
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:BeamClass_RBV
+      - longin
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Cohort_RBV
+      - longin
+      - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:MachineMode_RBV
+      - longin
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Rate_RBV
+      - longin
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU Hz
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Transmission_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:PhotonEnergy_RBV
+      - ai
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:eVRanges_RBV
+      - longin
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)0RateBeamCnst:Valid_RBV
+      - bi
+      - 0-rate beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Veto_RBV
       - waveform
       - Full beam constant
       - | archive: 1s monitor
         | io: input
 
 
-    * - $(PREFIX)FullBeamCnst:PulseEnergy_RBV
+    * - $(PREFIX)FullBeamCnst:Apt:01:Height_RBV
       - ai
-      - This beam parameter is non-op for now.
+      - Full beam constant
       - | archive: 1s monitor
-        | field: EGU mJ
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:01:Width_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:01:OK_RBV
+      - bi
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:02:Height_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:02:Width_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:02:OK_RBV
+      - bi
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:03:Height_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:03:Width_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:03:OK_RBV
+      - bi
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:04:Height_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:04:Width_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:Apt:04:OK_RBV
+      - bi
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:BeamClassRanges_RBV
+      - longin
+      - Full beam constant
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:BeamClass_RBV
+      - longin
+      - Full beam constant
+      - | archive: 1s monitor
         | io: input
 
 
     * - $(PREFIX)FullBeamCnst:Cohort_RBV
       - longin
       - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:MachineMode_RBV
+      - longin
+      - Full beam constant
       - | archive: 1s monitor
         | io: input
 
@@ -870,14 +9182,24 @@ Database Records
 
 
     * - $(PREFIX)FullBeamCnst:Transmission_RBV
-      - longin
+      - ai
       - Full beam constant
       - | archive: 1s monitor
-        | field: EGU %
+        | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
         | io: input
 
 
-    * - $(PREFIX)FullBeamCnst:PhotonEnergyRanges_RBV
+    * - $(PREFIX)FullBeamCnst:PhotonEnergy_RBV
+      - ai
+      - Full beam constant
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)FullBeamCnst:eVRanges_RBV
       - longin
       - Full beam constant
       - | archive: 1s monitor
@@ -889,78 +9211,6 @@ Database Records
       - bi
       - Full beam constant
       - | archive: 1s monitor
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:ST_RBV
-      - waveform
-      - Safe beam constant
-      - | archive: 1s monitor
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:PulseEnergy_RBV
-      - ai
-      - This beam parameter is non-op for now.
-      - | archive: 1s monitor
-        | field: EGU mJ
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:Cohort_RBV
-      - longin
-      - Cohort inc on each arb cycle
-      - | archive: 1s monitor
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:Rate_RBV
-      - longin
-      - Safe beam constant
-      - | archive: 1s monitor
-        | field: EGU Hz
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:Transmission_RBV
-      - longin
-      - Safe beam constant
-      - | archive: 1s monitor
-        | field: EGU %
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:PhotonEnergyRanges_RBV
-      - longin
-      - Safe beam constant
-      - | archive: 1s monitor
-        | field: EGU eV
-        | io: input
-
-
-    * - $(PREFIX)SafeBeamCnst:Valid_RBV
-      - bi
-      - Safe beam constant
-      - | archive: 1s monitor
-        | io: input
-
-
-    * - $(PREFIX)L:UND:HiK_RBV
-      - ai
-      - PMPS_GVL.fHiK_LUnd
-      - | io: input
-
-
-    * - $(PREFIX)L:UND:LowK_RBV
-      - ai
-      - PMPS_GVL.fLowK_LUnd
-      - | io: input
-
-
-    * - Period_RBV
-      - ai
-      - PMPS_GVL.fPeriod_mm_LUnd
-      - | field: EGU mm
         | io: input
 
 
@@ -988,18 +9238,6 @@ Database Records
         | io: input
 
 
-    * - $(PREFIX)L:UND:LastSegment_RBV
-      - longin
-      - PMPS_GVL.iHighBound_LUnd
-      - | io: input
-
-
-    * - $(PREFIX)L:UND:FirstSegment_RBV
-      - longin
-      - PMPS_GVL.iLowBound_LUnd
-      - | io: input
-
-
     * - $(PREFIX)eVRangeHyst_RBV
       - ai
       - eV Range hystersis
@@ -1008,24 +9246,129 @@ Database Records
         | io: input
 
 
-    * - $(PREFIX)CurrentBP:ST_RBV
+    * - $(PREFIX)CurrentBP:Veto_RBV
       - waveform
-      - PMPS_GVL.stCurrentBeamParameters.aStoppers
+      - PMPS_GVL.stCurrentBeamParameters.aVetoDevices
       - | archive: 1s monitor
         | io: input
 
 
-    * - $(PREFIX)CurrentBP:PulseEnergy_RBV
+    * - $(PREFIX)CurrentBP:Apt:01:Height_RBV
       - ai
-      - This beam parameter is non-op for now.
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[1].Height
       - | archive: 1s monitor
-        | field: EGU mJ
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:01:Width_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[1].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:01:OK_RBV
+      - bi
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[1].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:02:Height_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[2].Height
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:02:Width_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[2].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:02:OK_RBV
+      - bi
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[2].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:03:Height_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[3].Height
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:03:Width_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[3].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:03:OK_RBV
+      - bi
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[3].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:04:Height_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[4].Height
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:04:Width_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[4].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:Apt:04:OK_RBV
+      - bi
+      - PMPS_GVL.stCurrentBeamParameters.astApertures[4].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:BeamClassRanges_RBV
+      - longin
+      - PMPS_GVL.stCurrentBeamParameters.nBCRange
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:BeamClass_RBV
+      - longin
+      - PMPS_GVL.stCurrentBeamParameters.nBeamClass
+      - | archive: 1s monitor
         | io: input
 
 
     * - $(PREFIX)CurrentBP:Cohort_RBV
       - longin
       - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:MachineMode_RBV
+      - longin
+      - PMPS_GVL.stCurrentBeamParameters.nMachineMode
       - | archive: 1s monitor
         | io: input
 
@@ -1039,14 +9382,24 @@ Database Records
 
 
     * - $(PREFIX)CurrentBP:Transmission_RBV
-      - longin
+      - ai
       - PMPS_GVL.stCurrentBeamParameters.nTran
       - | archive: 1s monitor
-        | field: EGU %
+        | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
         | io: input
 
 
-    * - $(PREFIX)CurrentBP:PhotonEnergyRanges_RBV
+    * - $(PREFIX)CurrentBP:PhotonEnergy_RBV
+      - ai
+      - PMPS_GVL.stCurrentBeamParameters.neV
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)CurrentBP:eVRanges_RBV
       - longin
       - PMPS_GVL.stCurrentBeamParameters.neVRange
       - | archive: 1s monitor
@@ -1061,24 +9414,129 @@ Database Records
         | io: input
 
 
-    * - $(PREFIX)RequestedBP:ST_RBV
+    * - $(PREFIX)RequestedBP:Veto_RBV
       - waveform
-      - PMPS_GVL.stRequestedBeamParameters.aStoppers
+      - PMPS_GVL.stRequestedBeamParameters.aVetoDevices
       - | archive: 1s monitor
         | io: input
 
 
-    * - $(PREFIX)RequestedBP:PulseEnergy_RBV
+    * - $(PREFIX)RequestedBP:Apt:01:Height_RBV
       - ai
-      - This beam parameter is non-op for now.
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[1].Height
       - | archive: 1s monitor
-        | field: EGU mJ
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:01:Width_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[1].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:01:OK_RBV
+      - bi
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[1].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:02:Height_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[2].Height
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:02:Width_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[2].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:02:OK_RBV
+      - bi
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[2].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:03:Height_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[3].Height
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:03:Width_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[3].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:03:OK_RBV
+      - bi
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[3].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:04:Height_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[4].Height
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:04:Width_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[4].Width
+      - | archive: 1s monitor
+        | field: EGU mm
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:Apt:04:OK_RBV
+      - bi
+      - PMPS_GVL.stRequestedBeamParameters.astApertures[4].xOK
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:BeamClassRanges_RBV
+      - longin
+      - PMPS_GVL.stRequestedBeamParameters.nBCRange
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:BeamClass_RBV
+      - longin
+      - PMPS_GVL.stRequestedBeamParameters.nBeamClass
+      - | archive: 1s monitor
         | io: input
 
 
     * - $(PREFIX)RequestedBP:Cohort_RBV
       - longin
       - Cohort inc on each arb cycle
+      - | archive: 1s monitor
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:MachineMode_RBV
+      - longin
+      - PMPS_GVL.stRequestedBeamParameters.nMachineMode
       - | archive: 1s monitor
         | io: input
 
@@ -1092,14 +9550,24 @@ Database Records
 
 
     * - $(PREFIX)RequestedBP:Transmission_RBV
-      - longin
+      - ai
       - PMPS_GVL.stRequestedBeamParameters.nTran
       - | archive: 1s monitor
-        | field: EGU %
+        | field: HOPR 1
+        | field: LOPR 0
+        | field: PREC 2
         | io: input
 
 
-    * - $(PREFIX)RequestedBP:PhotonEnergyRanges_RBV
+    * - $(PREFIX)RequestedBP:PhotonEnergy_RBV
+      - ai
+      - PMPS_GVL.stRequestedBeamParameters.neV
+      - | archive: 1s monitor
+        | field: EGU eV
+        | io: input
+
+
+    * - $(PREFIX)RequestedBP:eVRanges_RBV
       - longin
       - PMPS_GVL.stRequestedBeamParameters.neVRange
       - | archive: 1s monitor

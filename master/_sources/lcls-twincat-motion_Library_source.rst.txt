@@ -342,6 +342,27 @@ DUT_MotionStage
             field: DESC Count from encoder hardware
         '}
         nEncoderCount: UDINT;
+        // Forward Enable EPS struct
+        {attribute 'pytmc' := '
+            pv: PLC:stEPSForwardEnable
+            io: i
+            field: DESC Forward Enable Interlocks
+        '}
+        stEPSForwardEnable: DUT_EPS;
+        // Backward Enable EPS struct
+        {attribute 'pytmc' := '
+            pv: PLC:stEPSBackwardEnable
+            io: i
+            field: DESC Backward Enable Interlocks
+        '}
+        stEPSBackwardEnable: DUT_EPS;
+        // Power Enable EPS struct
+        {attribute 'pytmc' := '
+            pv: PLC:stEPSPowerEnable
+            io: i
+            field: DESC Power Interlocks
+        '}
+        stEPSPowerEnable: DUT_EPS;
 
         (* Settings *)
         // Name to use for log messages, fast faults, etc.
@@ -8077,10 +8098,10 @@ FB_SetEnables
     VAR_IN_OUT
         stMotionStage: DUT_MotionStage;
     END_VAR
-    stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis);
-    stMotionStage.bAllBackwardEnable := stMotionStage.bLimitBackwardEnable AND (stMotionStage.bGantryBackwardEnable OR NOT stMotionStage.bGantryAxis);
+    stMotionStage.bAllForwardEnable := stMotionStage.bLimitForwardEnable AND (stMotionStage.bGantryForwardEnable OR NOT stMotionStage.bGantryAxis) AND stMotionStage.stEPSForwardEnable.bEPS_OK;
+    stMotionStage.bAllBackwardEnable := stMotionStage.bLimitBackwardEnable AND (stMotionStage.bGantryBackwardEnable OR NOT stMotionStage.bGantryAxis) AND stMotionStage.stEPSBackwardEnable.bEPS_OK;
 
-    stMotionStage.bAllEnable := stMotionStage.bEnable AND stMotionStage.bHardwareEnable;
+    stMotionStage.bAllEnable := stMotionStage.bEnable AND stMotionStage.bHardwareEnable AND stMotionStage.stEPSPowerEnable.bEPS_OK;
     stMotionStage.bAllEnable R= NOT stMotionStage.bUserEnable;
 
     END_FUNCTION_BLOCK
@@ -8119,6 +8140,7 @@ FB_Standard_PMPSDB
             io: i
         '}
         nLastRefreshTime: DINT;
+        bReadPmpsDb: BOOL;
     END_VAR
     VAR
         bExecute: BOOL;
@@ -8134,6 +8156,7 @@ FB_Standard_PMPSDB
     IF NOT bEnable THEN
         RETURN;
     END_IF
+
     rtEnable(CLK:=bEnable);
     rtRefresh(CLK:=bRefresh);
     bRefresh := FALSE;
@@ -8156,6 +8179,12 @@ FB_Standard_PMPSDB
     );
 
     ftBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+    IF ftBusy.Q THEN
+        bReadPmpsDb := TRUE;
+    ELSE
+        bReadPmpsDb := FALSE;
+    END_IF
+
 
     // Lifted from Arbiter PLCs: keep track of the time
     fbTime(sNetID:='');
