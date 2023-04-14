@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{0F01AF51-134F-07B9-81D4-40460F36CAA2}" GeneratedBy="TwinCAT XAE Plc">
+<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{653660DE-80D7-8472-DB3D-66878A327BA7}" GeneratedBy="TwinCAT XAE Plc">
   <DataTypes>
     <DataType>
       <Name GUID="{18071995-0000-0000-0000-000000000041}" TcBaseType="true" HideSubItems="true" CName="AmsNetId">AMSNETID</Name>
@@ -209,31 +209,31 @@
         <Name>bBusy</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <GetCodeOffs>96675052</GetCodeOffs>
+        <GetCodeOffs>100813540</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>bError</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <GetCodeOffs>96675088</GetCodeOffs>
+        <GetCodeOffs>100813576</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>hrErrorCode</Name>
         <Type GUID="{18071995-0000-0000-0000-000000000019}">HRESULT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>96675096</GetCodeOffs>
+        <GetCodeOffs>100813584</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nStringSize</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>96675076</GetCodeOffs>
+        <GetCodeOffs>100813564</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sResult</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>96675092</GetCodeOffs>
+        <GetCodeOffs>100813580</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name RpcEnable="plc" VTableIndex="0">__getbBusy</Name>
@@ -1472,15 +1472,15 @@
         <Name>nId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>96674992</GetCodeOffs>
-        <SetCodeOffs>96675016</SetCodeOffs>
+        <GetCodeOffs>100813480</GetCodeOffs>
+        <SetCodeOffs>100813504</SetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sName</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>96675032</GetCodeOffs>
-        <SetCodeOffs>96675044</SetCodeOffs>
+        <GetCodeOffs>100813520</GetCodeOffs>
+        <SetCodeOffs>100813532</SetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>ExtendName</Name>
@@ -1726,37 +1726,37 @@
         <Name>eSeverity</Name>
         <Type GUID="{B57D3F4A-0836-49B0-81C3-BED5F4817EC9}">TcEventSeverity</Type>
         <BitSize>16</BitSize>
-        <GetCodeOffs>96675144</GetCodeOffs>
+        <GetCodeOffs>100813632</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>ipSourceInfo</Name>
         <Type Namespace="LCLS_General.Tc3_EventLogger">I_TcSourceInfo</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>96675124</GetCodeOffs>
+        <GetCodeOffs>100813612</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nEventId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>96675212</GetCodeOffs>
+        <GetCodeOffs>100813700</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nUniqueId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>96675216</GetCodeOffs>
+        <GetCodeOffs>100813704</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sEventClassName</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>96675172</GetCodeOffs>
+        <GetCodeOffs>100813660</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sEventText</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>96675220</GetCodeOffs>
+        <GetCodeOffs>100813708</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>EqualsToEventClass</Name>
@@ -2355,7 +2355,7 @@
         <Name>nTimeSent</Name>
         <Type>ULINT</Type>
         <BitSize>64</BitSize>
-        <GetCodeOffs>96675244</GetCodeOffs>
+        <GetCodeOffs>100813732</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>SetJsonAttribute</Name>
@@ -28184,34 +28184,34 @@ External Setpoint Generation:
     </DataType>
     <DataType>
       <Name>FB_PositionStateRead</Name>
-      <BitSize>83840</BitSize>
+      <BitSize>3904</BitSize>
       <SubItem>
         <Name>stMotionStage</Name>
-        <Type>ST_MotionStage</Type>
+        <Type ReferenceTo="true">ST_MotionStage</Type>
         <Comment> The motor to check the state of</Comment>
-        <BitSize>25280</BitSize>
-        <BitOffs>64</BitOffs>
+        <BitSize>32</BitSize>
+        <BitOffs>32</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
-            <Value>Input</Value>
+            <Value>InOut</Value>
           </Property>
         </Properties>
       </SubItem>
       <SubItem>
         <Name>astPositionState</Name>
         <Type>ST_PositionState</Type>
-        <ArrayInfo>
+        <ArrayInfo ReferenceTo="true">
           <LBound>1</LBound>
           <Elements>15</Elements>
         </ArrayInfo>
         <Comment> The allowed states for this motor</Comment>
-        <BitSize>54720</BitSize>
-        <BitOffs>25344</BitOffs>
+        <BitSize>32</BitSize>
+        <BitOffs>64</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
-            <Value>Input</Value>
+            <Value>InOut</Value>
           </Property>
         </Properties>
       </SubItem>
@@ -28220,7 +28220,7 @@ External Setpoint Generation:
         <Type>BOOL</Type>
         <Comment> TRUE if we're standing still at a known state, or moving within the bounds of a state to another location in the bounds.</Comment>
         <BitSize>8</BitSize>
-        <BitOffs>80064</BitOffs>
+        <BitOffs>96</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28233,7 +28233,7 @@ External Setpoint Generation:
         <Type>BOOL</Type>
         <Comment> TRUE if we're moving to some other state or to another non-state position.</Comment>
         <BitSize>8</BitSize>
-        <BitOffs>80072</BitOffs>
+        <BitOffs>104</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28246,7 +28246,7 @@ External Setpoint Generation:
         <Type>DINT</Type>
         <Comment> If we're at a known state, this will be the index in the astPositionState array that matches the state. Otherwise, this will be 0, which is below the bounds of the array, so it cannot be confused with a valid output.</Comment>
         <BitSize>32</BitSize>
-        <BitOffs>80096</BitOffs>
+        <BitOffs>128</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28259,7 +28259,7 @@ External Setpoint Generation:
         <Type>ST_PositionState</Type>
         <Comment> A copy of the details of the current position state, for convenience. This may be a moving state or an unknown state as a placeholder if we are not at a known state.</Comment>
         <BitSize>3648</BitSize>
-        <BitOffs>80128</BitOffs>
+        <BitOffs>192</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28271,7 +28271,7 @@ External Setpoint Generation:
         <Name>nIter</Name>
         <Type>DINT</Type>
         <BitSize>32</BitSize>
-        <BitOffs>83776</BitOffs>
+        <BitOffs>3840</BitOffs>
       </SubItem>
       <Properties>
         <Property>
@@ -28282,7 +28282,7 @@ External Setpoint Generation:
     </DataType>
     <DataType>
       <Name>FB_PositionStateRead_Test</Name>
-      <BitSize>34061248</BitSize>
+      <BitSize>33981312</BitSize>
       <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
       <SubItem>
         <Name>stMotionStage</Name>
@@ -28331,44 +28331,44 @@ External Setpoint Generation:
       <SubItem>
         <Name>fbRead</Name>
         <Type>FB_PositionStateRead</Type>
-        <BitSize>83840</BitSize>
+        <BitSize>3904</BitSize>
         <BitOffs>33976960</BitOffs>
       </SubItem>
       <SubItem>
         <Name>nTestCounter</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>34060800</BitOffs>
+        <BitOffs>33980864</BitOffs>
       </SubItem>
       <SubItem>
         <Name>bOneTestDone</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <BitOffs>34060816</BitOffs>
+        <BitOffs>33980880</BitOffs>
       </SubItem>
       <SubItem>
         <Name>fTestStartPos</Name>
         <Type>LREAL</Type>
         <BitSize>64</BitSize>
-        <BitOffs>34060864</BitOffs>
+        <BitOffs>33980928</BitOffs>
       </SubItem>
       <SubItem>
         <Name>tonTimer</Name>
         <Type Namespace="Tc2_Standard">TON</Type>
         <BitSize>224</BitSize>
-        <BitOffs>34060928</BitOffs>
+        <BitOffs>33980992</BitOffs>
       </SubItem>
       <SubItem>
         <Name>nIter</Name>
         <Type>DINT</Type>
         <BitSize>32</BitSize>
-        <BitOffs>34061152</BitOffs>
+        <BitOffs>33981216</BitOffs>
       </SubItem>
       <SubItem>
         <Name>bStatesReady</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <BitOffs>34061184</BitOffs>
+        <BitOffs>33981248</BitOffs>
       </SubItem>
       <Method>
         <Name>TestStaticPosition</Name>
@@ -28493,28 +28493,28 @@ External Setpoint Generation:
     </DataType>
     <DataType>
       <Name>FB_PositionStateReadND</Name>
-      <BitSize>819456</BitSize>
+      <BitSize>19776</BitSize>
       <SubItem>
         <Name>astMotionStage</Name>
         <Type>ST_MotionStage</Type>
-        <ArrayInfo>
+        <ArrayInfo ReferenceTo="true">
           <LBound>1</LBound>
           <Elements>5</Elements>
         </ArrayInfo>
         <Comment> The motors with a combined N-dimensional state</Comment>
-        <BitSize>126400</BitSize>
-        <BitOffs>64</BitOffs>
+        <BitSize>32</BitSize>
+        <BitOffs>32</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
-            <Value>Input</Value>
+            <Value>InOut</Value>
           </Property>
         </Properties>
       </SubItem>
       <SubItem>
         <Name>astPositionState</Name>
         <Type>ST_PositionState</Type>
-        <ArrayInfo Level="0">
+        <ArrayInfo Level="0" ReferenceTo="true">
           <LBound>1</LBound>
           <Elements>5</Elements>
         </ArrayInfo>
@@ -28523,12 +28523,12 @@ External Setpoint Generation:
           <Elements>15</Elements>
         </ArrayInfo>
         <Comment> Each motor's respective position states along its direction</Comment>
-        <BitSize>273600</BitSize>
-        <BitOffs>126464</BitOffs>
+        <BitSize>32</BitSize>
+        <BitOffs>64</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
-            <Value>Input</Value>
+            <Value>InOut</Value>
           </Property>
         </Properties>
       </SubItem>
@@ -28537,7 +28537,7 @@ External Setpoint Generation:
         <Type>UINT</Type>
         <Comment> The number of motors we're actually using</Comment>
         <BitSize>16</BitSize>
-        <BitOffs>400064</BitOffs>
+        <BitOffs>96</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28550,7 +28550,7 @@ External Setpoint Generation:
         <Type>BOOL</Type>
         <Comment> TRUE if we're standing still at a known state.</Comment>
         <BitSize>8</BitSize>
-        <BitOffs>400080</BitOffs>
+        <BitOffs>112</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28563,7 +28563,7 @@ External Setpoint Generation:
         <Type>BOOL</Type>
         <Comment> TRUE if we're moving, there can be no valid state if we are moving.</Comment>
         <BitSize>8</BitSize>
-        <BitOffs>400088</BitOffs>
+        <BitOffs>120</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28576,7 +28576,7 @@ External Setpoint Generation:
         <Type>DINT</Type>
         <Comment> If we're at a known state, this will be the state index along the enclosed states arrays. Otherwise, it will be zero, which is below the bounds of the states array.</Comment>
         <BitSize>32</BitSize>
-        <BitOffs>400096</BitOffs>
+        <BitOffs>128</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28589,7 +28589,7 @@ External Setpoint Generation:
         <Type>BOOL</Type>
         <Comment> TRUE if the active motor count was invalid</Comment>
         <BitSize>8</BitSize>
-        <BitOffs>400128</BitOffs>
+        <BitOffs>160</BitOffs>
         <Properties>
           <Property>
             <Name>ItemType</Name>
@@ -28605,17 +28605,17 @@ External Setpoint Generation:
           <Elements>5</Elements>
         </ArrayInfo>
         <Comment> The individual position state reader function blocks</Comment>
-        <BitSize>419200</BitSize>
-        <BitOffs>400192</BitOffs>
+        <BitSize>19520</BitSize>
+        <BitOffs>192</BitOffs>
       </SubItem>
       <SubItem>
         <Name>nIter</Name>
         <Type>DINT</Type>
         <BitSize>32</BitSize>
-        <BitOffs>819392</BitOffs>
+        <BitOffs>19712</BitOffs>
       </SubItem>
       <Action>
-        <Name>CheckArrayLengths</Name>
+        <Name>CheckCount</Name>
       </Action>
       <Action>
         <Name>DoStateReads</Name>
@@ -28632,7 +28632,7 @@ External Setpoint Generation:
     </DataType>
     <DataType>
       <Name>FB_PositionStateReadND_Test</Name>
-      <BitSize>35758464</BitSize>
+      <BitSize>34958784</BitSize>
       <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
       <SubItem>
         <Name>astMotionStage</Name>
@@ -28695,38 +28695,38 @@ External Setpoint Generation:
       <SubItem>
         <Name>fbRead</Name>
         <Type>FB_PositionStateReadND</Type>
-        <BitSize>819456</BitSize>
+        <BitSize>19776</BitSize>
         <BitOffs>34938816</BitOffs>
       </SubItem>
       <SubItem>
         <Name>bOneAssertDone</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <BitOffs>35758272</BitOffs>
+        <BitOffs>34958592</BitOffs>
       </SubItem>
       <SubItem>
         <Name>nIter1</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758288</BitOffs>
+        <BitOffs>34958608</BitOffs>
       </SubItem>
       <SubItem>
         <Name>nIter2</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758304</BitOffs>
+        <BitOffs>34958624</BitOffs>
       </SubItem>
       <SubItem>
         <Name>nIter3</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758320</BitOffs>
+        <BitOffs>34958640</BitOffs>
       </SubItem>
       <SubItem>
         <Name>NO_STATE</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758336</BitOffs>
+        <BitOffs>34958656</BitOffs>
         <Default>
           <Value>0</Value>
         </Default>
@@ -28735,7 +28735,7 @@ External Setpoint Generation:
         <Name>OUT_STATE</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758352</BitOffs>
+        <BitOffs>34958672</BitOffs>
         <Default>
           <Value>1</Value>
         </Default>
@@ -28744,7 +28744,7 @@ External Setpoint Generation:
         <Name>IN_STATE</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758368</BitOffs>
+        <BitOffs>34958688</BitOffs>
         <Default>
           <Value>2</Value>
         </Default>
@@ -28753,7 +28753,7 @@ External Setpoint Generation:
         <Name>IN_TWEAK</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758384</BitOffs>
+        <BitOffs>34958704</BitOffs>
         <Default>
           <Value>3</Value>
         </Default>
@@ -28762,7 +28762,7 @@ External Setpoint Generation:
         <Name>AWAY</Name>
         <Type>UINT</Type>
         <BitSize>16</BitSize>
-        <BitOffs>35758400</BitOffs>
+        <BitOffs>34958720</BitOffs>
         <Default>
           <Value>4</Value>
         </Default>
@@ -28840,7 +28840,7 @@ External Setpoint Generation:
         <Local>
           <Name>fbMisRead</Name>
           <Type>FB_PositionStateReadND</Type>
-          <BitSize>819456</BitSize>
+          <BitSize>19776</BitSize>
         </Local>
         <Local>
           <Name>astGoodStage</Name>
@@ -28910,6 +28910,377 @@ External Setpoint Generation:
       </Method>
       <Method>
         <Name>DoRead</Name>
+      </Method>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
+      <Name>FB_PositionStateMove</Name>
+      <BitSize>2560</BitSize>
+      <SubItem>
+        <Name>stMotionStage</Name>
+        <Type ReferenceTo="true">ST_MotionStage</Type>
+        <Comment> Motor to move</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>32</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>stPositionState</Name>
+        <Type ReferenceTo="true">ST_PositionState</Type>
+        <Comment> State to move to</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>64</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv:
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bExecute</Name>
+        <Type>BOOL</Type>
+        <Comment> Start move on rising edge, stop move on falling edge</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>96</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: GO
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bReset</Name>
+        <Type>BOOL</Type>
+        <Comment> Rising edge error reset</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>104</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>enumMotionRequest</Name>
+        <Type>ENUM_MotionRequest</Type>
+        <Comment> Define behavior for when a move is already active</Comment>
+        <BitSize>16</BitSize>
+        <BitOffs>112</BitOffs>
+        <Default>
+          <Value>0</Value>
+        </Default>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bAtState</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if the motor is at this state</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>128</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: AT_STATE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bError</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if we have an error</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>136</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: ERR
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nErrorID</Name>
+        <Type>UDINT</Type>
+        <Comment> Error code</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>160</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: ERRID
+        io: input
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>sErrorMessage</Name>
+        <Type>STRING(80)</Type>
+        <Comment> Error description</Comment>
+        <BitSize>648</BitSize>
+        <BitOffs>192</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: ERRMSG
+        io: input
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bBusy</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if we are moving to a state</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>840</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: BUSY
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bDone</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if we are not moving and we reached a state successfully on our last move</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>848</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+          <Property>
+            <Name>pytmc</Name>
+            <Value>
+        pv: DONE
+        io: input
+        field: ZNAM False
+        field: ONAM True
+    </Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>fbMotionRequest</Name>
+        <Type>FB_MotionRequest</Type>
+        <BitSize>1600</BitSize>
+        <BitOffs>896</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bAllowMove</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>2496</BitOffs>
+      </SubItem>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
+      <Name>FB_PositionStateMove_Test</Name>
+      <BitSize>33982720</BitSize>
+      <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
+      <SubItem>
+        <Name>stMotionStage</Name>
+        <Type>ST_MotionStage</Type>
+        <BitSize>25280</BitSize>
+        <BitOffs>33551744</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbMotionStage</Name>
+        <Type>FB_MotionStage</Type>
+        <BitSize>299392</BitSize>
+        <BitOffs>33577024</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>astPositionState</Name>
+        <Type>ST_PositionState</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>15</Elements>
+        </ArrayInfo>
+        <BitSize>54720</BitSize>
+        <BitOffs>33876416</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>afbInternal</Name>
+        <Type>FB_PositionStateInternal</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>3</Elements>
+        </ArrayInfo>
+        <BitSize>37632</BitSize>
+        <BitOffs>33931136</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>stDummyPos</Name>
+        <Type>ST_PositionState</Type>
+        <BitSize>3648</BitSize>
+        <BitOffs>33968768</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>stInvalid</Name>
+        <Type>ST_PositionState</Type>
+        <BitSize>3648</BitSize>
+        <BitOffs>33972416</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>stNotUpdated</Name>
+        <Type>ST_PositionState</Type>
+        <BitSize>3648</BitSize>
+        <BitOffs>33976064</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbMove</Name>
+        <Type>FB_PositionStateMove</Type>
+        <BitSize>2560</BitSize>
+        <BitOffs>33979712</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nTestCounter</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>33982272</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bOneTestDone</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>33982288</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fTestStartPos</Name>
+        <Type>LREAL</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>33982336</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>tonTimer</Name>
+        <Type Namespace="Tc2_Standard">TON</Type>
+        <BitSize>224</BitSize>
+        <BitOffs>33982400</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nIter</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>33982624</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bStatesReady</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>33982656</BitOffs>
+      </SubItem>
+      <Method>
+        <Name>TestBadStates</Name>
+        <Parameter>
+          <Name>nTestIndex</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+      </Method>
+      <Method>
+        <Name>TestMove</Name>
+        <Parameter>
+          <Name>nTestIndex</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Parameter>
+          <Name>nStateIndex</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Parameter>
+          <Name>bInterrupt</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+        </Parameter>
       </Method>
       <Properties>
         <Property>
@@ -35412,6 +35783,389 @@ contributing fast faults, unless the FFO is currently vetoed.
         <Hide GUID="{9E76D1D7-D744-4E3D-B111-F6F94B60E6AB}"/>
       </Hides>
     </DataType>
+    <DataType>
+      <Name>FB_PositionStateMoveND</Name>
+      <BitSize>13888</BitSize>
+      <SubItem>
+        <Name>astMotionStage</Name>
+        <Type>ST_MotionStage</Type>
+        <ArrayInfo ReferenceTo="true">
+          <LBound>1</LBound>
+          <Elements>5</Elements>
+        </ArrayInfo>
+        <Comment> Array of motors to move together</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>32</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>astPositionState</Name>
+        <Type>ST_PositionState</Type>
+        <ArrayInfo ReferenceTo="true">
+          <LBound>1</LBound>
+          <Elements>5</Elements>
+        </ArrayInfo>
+        <Comment> 1D Position states: the current position to send each axis to</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>64</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nActiveMotorCount</Name>
+        <Type>UINT</Type>
+        <Comment> The number of motors we're actually using</Comment>
+        <BitSize>16</BitSize>
+        <BitOffs>96</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bExecute</Name>
+        <Type>BOOL</Type>
+        <Comment> Start all moves on rising edge, stop all moves on falling edge</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>112</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bReset</Name>
+        <Type>BOOL</Type>
+        <Comment> Reset any errors</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>120</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>enumMotionRequest</Name>
+        <Type>ENUM_MotionRequest</Type>
+        <Comment> Define behavior for when a move request is interrupted with a new request</Comment>
+        <BitSize>16</BitSize>
+        <BitOffs>128</BitOffs>
+        <Default>
+          <Value>0</Value>
+        </Default>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bAtState</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if ALL of the motors are at their goal states</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>144</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bBusy</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if ANY of this FB's moves are in progress</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>152</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bDone</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if ALL motors have completed the last move request from this FB</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>160</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bError</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if ANY of this FB's moves had an error</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>168</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nErrorCount</Name>
+        <Type>UINT</Type>
+        <Comment> How many FBs are erroring</Comment>
+        <BitSize>16</BitSize>
+        <BitOffs>176</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nShownError</Name>
+        <Type>DINT</Type>
+        <Comment> Which component is the source of the example/summarized error</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>192</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nErrorID</Name>
+        <Type>UDINT</Type>
+        <Comment> One of the error ids</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>224</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>sErrorMessage</Name>
+        <Type>STRING(80)</Type>
+        <Comment> The error error message matching the ID</Comment>
+        <BitSize>648</BitSize>
+        <BitOffs>256</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>afbPositionStateMove</Name>
+        <Type>FB_PositionStateMove</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>5</Elements>
+        </ArrayInfo>
+        <Comment> 1D State movers: FBs to move the motors</Comment>
+        <BitSize>12800</BitSize>
+        <BitOffs>960</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nIndex</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>13760</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bMotorCountError</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>13792</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nLowerBound</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>13824</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nUpperBound</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>13856</BitOffs>
+      </SubItem>
+      <Action>
+        <Name>DoStateMoves</Name>
+      </Action>
+      <Action>
+        <Name>CheckCount</Name>
+      </Action>
+      <Action>
+        <Name>CombineOutputs</Name>
+      </Action>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
+      <Name>FB_PositionStateMoveND_Test</Name>
+      <BitSize>34650176</BitSize>
+      <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
+      <SubItem>
+        <Name>astMotionStage</Name>
+        <Type>ST_MotionStage</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>5</Elements>
+        </ArrayInfo>
+        <BitSize>126400</BitSize>
+        <BitOffs>33551744</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>afbMotionStage</Name>
+        <Type>FB_MotionStage</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>3</Elements>
+        </ArrayInfo>
+        <BitSize>898176</BitSize>
+        <BitOffs>33678144</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>astGoalPositions</Name>
+        <Type>ST_PositionState</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>5</Elements>
+        </ArrayInfo>
+        <BitSize>18240</BitSize>
+        <BitOffs>34576320</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>afbInternal</Name>
+        <Type>FB_PositionStateInternal</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>3</Elements>
+        </ArrayInfo>
+        <BitSize>37632</BitSize>
+        <BitOffs>34594560</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>stDummyPos</Name>
+        <Type>ST_PositionState</Type>
+        <BitSize>3648</BitSize>
+        <BitOffs>34632192</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbMove</Name>
+        <Type>FB_PositionStateMoveND</Type>
+        <BitSize>13888</BitSize>
+        <BitOffs>34635840</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bInit</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>34649728</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nTestCounter</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>34649744</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bOneTestDone</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>34649760</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fTestStartPos</Name>
+        <Type>LREAL</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>34649792</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>tonTimer</Name>
+        <Type Namespace="Tc2_Standard">TON</Type>
+        <BitSize>224</BitSize>
+        <BitOffs>34649856</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nIter</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>34650080</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bStatesReady</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>34650112</BitOffs>
+      </SubItem>
+      <Method>
+        <Name>ResetGoals</Name>
+      </Method>
+      <Method>
+        <Name>TestMove</Name>
+        <Parameter>
+          <Name>nTestIndex</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Parameter>
+          <Name>fMotor1Pos</Name>
+          <Type>LREAL</Type>
+          <BitSize>64</BitSize>
+        </Parameter>
+        <Parameter>
+          <Name>fMotor2Pos</Name>
+          <Type>LREAL</Type>
+          <BitSize>64</BitSize>
+        </Parameter>
+        <Parameter>
+          <Name>fMotor3Pos</Name>
+          <Type>LREAL</Type>
+          <BitSize>64</BitSize>
+        </Parameter>
+        <Parameter>
+          <Name>bInterrupt</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+        </Parameter>
+      </Method>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
   </DataTypes>
   <Modules>
     <Module GUID="{DED1545C-5FCD-48E2-B686-7D2C250A3641}" TcSmClass="TComPlcObjDef">
@@ -35433,7 +36187,7 @@ contributing fast faults, unless the FFO is currently vetoed.
           <AreaNo AreaType="InputDst" CreateSymbols="true">0</AreaNo>
           <Name>PlcTask Inputs</Name>
           <ContextId>0</ContextId>
-          <ByteSize>97320960</ByteSize>
+          <ByteSize>105840640</ByteSize>
           <Symbol>
             <Name>LCLS_General.DefaultGlobals.stSys.I_EcatMaster1</Name>
             <Comment> AMS Net ID used for FB_EcatDiag, among others </Comment>
@@ -35461,7 +36215,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668215424</BitOffs>
+            <BitOffs>668217792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -35484,7 +36238,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223424</BitOffs>
+            <BitOffs>668225792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -35507,7 +36261,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223432</BitOffs>
+            <BitOffs>668225800</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bHome</Name>
@@ -35530,7 +36284,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223440</BitOffs>
+            <BitOffs>668225808</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bHardwareEnable</Name>
@@ -35553,7 +36307,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223456</BitOffs>
+            <BitOffs>668225824</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -35566,7 +36320,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223488</BitOffs>
+            <BitOffs>668225856</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -35579,7 +36333,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223552</BitOffs>
+            <BitOffs>668225920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.nRawEncoderINT</Name>
@@ -35592,7 +36346,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668223568</BitOffs>
+            <BitOffs>668225936</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -35604,7 +36358,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668242112</BitOffs>
+            <BitOffs>668244480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.Axis.NcToPlc</Name>
@@ -35616,7 +36370,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702096640</BitOffs>
+            <BitOffs>702099008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -35639,7 +36393,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104640</BitOffs>
+            <BitOffs>702107008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -35662,7 +36416,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104648</BitOffs>
+            <BitOffs>702107016</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bHome</Name>
@@ -35685,7 +36439,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104656</BitOffs>
+            <BitOffs>702107024</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bHardwareEnable</Name>
@@ -35708,7 +36462,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104672</BitOffs>
+            <BitOffs>702107040</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -35721,7 +36475,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104704</BitOffs>
+            <BitOffs>702107072</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -35734,7 +36488,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104768</BitOffs>
+            <BitOffs>702107136</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.nRawEncoderINT</Name>
@@ -35747,7 +36501,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702104784</BitOffs>
+            <BitOffs>702107152</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -35759,7 +36513,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702123328</BitOffs>
+            <BitOffs>702125696</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.Axis.NcToPlc</Name>
@@ -35771,7 +36525,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736013952</BitOffs>
+            <BitOffs>736016320</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -35794,7 +36548,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736021952</BitOffs>
+            <BitOffs>736024320</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -35817,7 +36571,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736021960</BitOffs>
+            <BitOffs>736024328</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bHome</Name>
@@ -35840,7 +36594,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736021968</BitOffs>
+            <BitOffs>736024336</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bHardwareEnable</Name>
@@ -35863,7 +36617,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736021984</BitOffs>
+            <BitOffs>736024352</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -35876,7 +36630,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736022016</BitOffs>
+            <BitOffs>736024384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -35889,7 +36643,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736022080</BitOffs>
+            <BitOffs>736024448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.nRawEncoderINT</Name>
@@ -35902,7 +36656,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736022096</BitOffs>
+            <BitOffs>736024464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -35914,150 +36668,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736040640</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.Axis.NcToPlc</Name>
-            <BitSize>2048</BitSize>
-            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736439232</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.bLimitForwardEnable</Name>
-            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitForwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if forward limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447232</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.bLimitBackwardEnable</Name>
-            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitBackwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if reverse limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447240</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.bHome</Name>
-            <Comment> NO Home Switch: TRUE if at home</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHome
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if at homing switch
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447248</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.bHardwareEnable</Name>
-            <Comment> NC STO Input: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHardwareEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if STO not hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447264</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.nRawEncoderULINT</Name>
-            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
-            <BitSize>64</BitSize>
-            <BaseType>ULINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447296</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.nRawEncoderUINT</Name>
-            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447360</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.nRawEncoderINT</Name>
-            <Comment> Raw encoder IO for INT (LVDT)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>INT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447376</BitOffs>
+            <BitOffs>736043008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].Axis.NcToPlc</Name>
@@ -36069,7 +36680,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770075200</BitOffs>
+            <BitOffs>769997632</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bLimitForwardEnable</Name>
@@ -36092,7 +36703,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083200</BitOffs>
+            <BitOffs>770005632</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bLimitBackwardEnable</Name>
@@ -36115,7 +36726,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083208</BitOffs>
+            <BitOffs>770005640</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bHome</Name>
@@ -36138,7 +36749,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083216</BitOffs>
+            <BitOffs>770005648</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bHardwareEnable</Name>
@@ -36161,7 +36772,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083232</BitOffs>
+            <BitOffs>770005664</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].nRawEncoderULINT</Name>
@@ -36174,7 +36785,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083264</BitOffs>
+            <BitOffs>770005696</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].nRawEncoderUINT</Name>
@@ -36187,7 +36798,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083328</BitOffs>
+            <BitOffs>770005760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].nRawEncoderINT</Name>
@@ -36200,7 +36811,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770083344</BitOffs>
+            <BitOffs>770005776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].Axis.NcToPlc</Name>
@@ -36212,7 +36823,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770100480</BitOffs>
+            <BitOffs>770022912</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bLimitForwardEnable</Name>
@@ -36235,7 +36846,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108480</BitOffs>
+            <BitOffs>770030912</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bLimitBackwardEnable</Name>
@@ -36258,7 +36869,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108488</BitOffs>
+            <BitOffs>770030920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bHome</Name>
@@ -36281,7 +36892,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108496</BitOffs>
+            <BitOffs>770030928</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bHardwareEnable</Name>
@@ -36304,7 +36915,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108512</BitOffs>
+            <BitOffs>770030944</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].nRawEncoderULINT</Name>
@@ -36317,7 +36928,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108544</BitOffs>
+            <BitOffs>770030976</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].nRawEncoderUINT</Name>
@@ -36330,7 +36941,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108608</BitOffs>
+            <BitOffs>770031040</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].nRawEncoderINT</Name>
@@ -36343,7 +36954,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770108624</BitOffs>
+            <BitOffs>770031056</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].Axis.NcToPlc</Name>
@@ -36355,7 +36966,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770125760</BitOffs>
+            <BitOffs>770048192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bLimitForwardEnable</Name>
@@ -36378,7 +36989,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133760</BitOffs>
+            <BitOffs>770056192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bLimitBackwardEnable</Name>
@@ -36401,7 +37012,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133768</BitOffs>
+            <BitOffs>770056200</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bHome</Name>
@@ -36424,7 +37035,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133776</BitOffs>
+            <BitOffs>770056208</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bHardwareEnable</Name>
@@ -36447,7 +37058,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133792</BitOffs>
+            <BitOffs>770056224</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].nRawEncoderULINT</Name>
@@ -36460,7 +37071,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133824</BitOffs>
+            <BitOffs>770056256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].nRawEncoderUINT</Name>
@@ -36473,7 +37084,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133888</BitOffs>
+            <BitOffs>770056320</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].nRawEncoderINT</Name>
@@ -36486,7 +37097,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770133904</BitOffs>
+            <BitOffs>770056336</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].Axis.NcToPlc</Name>
@@ -36498,7 +37109,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770151040</BitOffs>
+            <BitOffs>770073472</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bLimitForwardEnable</Name>
@@ -36521,7 +37132,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159040</BitOffs>
+            <BitOffs>770081472</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bLimitBackwardEnable</Name>
@@ -36544,7 +37155,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159048</BitOffs>
+            <BitOffs>770081480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bHome</Name>
@@ -36567,7 +37178,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159056</BitOffs>
+            <BitOffs>770081488</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bHardwareEnable</Name>
@@ -36590,7 +37201,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159072</BitOffs>
+            <BitOffs>770081504</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].nRawEncoderULINT</Name>
@@ -36603,7 +37214,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159104</BitOffs>
+            <BitOffs>770081536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].nRawEncoderUINT</Name>
@@ -36616,7 +37227,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159168</BitOffs>
+            <BitOffs>770081600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].nRawEncoderINT</Name>
@@ -36629,7 +37240,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770159184</BitOffs>
+            <BitOffs>770081616</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].Axis.NcToPlc</Name>
@@ -36641,7 +37252,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770176320</BitOffs>
+            <BitOffs>770098752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bLimitForwardEnable</Name>
@@ -36664,7 +37275,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184320</BitOffs>
+            <BitOffs>770106752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bLimitBackwardEnable</Name>
@@ -36687,7 +37298,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184328</BitOffs>
+            <BitOffs>770106760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bHome</Name>
@@ -36710,7 +37321,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184336</BitOffs>
+            <BitOffs>770106768</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bHardwareEnable</Name>
@@ -36733,7 +37344,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184352</BitOffs>
+            <BitOffs>770106784</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].nRawEncoderULINT</Name>
@@ -36746,7 +37357,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184384</BitOffs>
+            <BitOffs>770106816</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].nRawEncoderUINT</Name>
@@ -36759,7 +37370,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184448</BitOffs>
+            <BitOffs>770106880</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].nRawEncoderINT</Name>
@@ -36772,7 +37383,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770184464</BitOffs>
+            <BitOffs>770106896</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -36784,7 +37395,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770203008</BitOffs>
+            <BitOffs>770125440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -36796,7 +37407,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770502400</BitOffs>
+            <BitOffs>770424832</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -36808,10 +37419,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770801792</BitOffs>
+            <BitOffs>770724224</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.Axis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -36820,10 +37431,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771462336</BitOffs>
+            <BitOffs>804956416</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].bLimitForwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bLimitForwardEnable</Name>
             <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -36843,10 +37454,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470336</BitOffs>
+            <BitOffs>804964416</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].bLimitBackwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bLimitBackwardEnable</Name>
             <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -36866,10 +37477,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470344</BitOffs>
+            <BitOffs>804964424</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].bHome</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bHome</Name>
             <Comment> NO Home Switch: TRUE if at home</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -36889,10 +37500,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470352</BitOffs>
+            <BitOffs>804964432</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].bHardwareEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bHardwareEnable</Name>
             <Comment> NC STO Input: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -36912,10 +37523,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470368</BitOffs>
+            <BitOffs>804964448</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].nRawEncoderULINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.nRawEncoderULINT</Name>
             <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
             <BitSize>64</BitSize>
             <BaseType>ULINT</BaseType>
@@ -36925,10 +37536,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470400</BitOffs>
+            <BitOffs>804964480</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].nRawEncoderUINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.nRawEncoderUINT</Name>
             <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
             <BitSize>16</BitSize>
             <BaseType>UINT</BaseType>
@@ -36938,10 +37549,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470464</BitOffs>
+            <BitOffs>804964544</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].nRawEncoderINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.nRawEncoderINT</Name>
             <Comment> Raw encoder IO for INT (LVDT)</Comment>
             <BitSize>16</BitSize>
             <BaseType>INT</BaseType>
@@ -36951,10 +37562,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771470480</BitOffs>
+            <BitOffs>804964560</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -36963,10 +37574,22 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771487616</BitOffs>
+            <BitOffs>804983104</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].bLimitForwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].Axis.NcToPlc</Name>
+            <BitSize>2048</BitSize>
+            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>844619520</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bLimitForwardEnable</Name>
             <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -36986,10 +37609,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495616</BitOffs>
+            <BitOffs>844627520</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].bLimitBackwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bLimitBackwardEnable</Name>
             <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37009,10 +37632,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495624</BitOffs>
+            <BitOffs>844627528</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].bHome</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bHome</Name>
             <Comment> NO Home Switch: TRUE if at home</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37032,10 +37655,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495632</BitOffs>
+            <BitOffs>844627536</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].bHardwareEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bHardwareEnable</Name>
             <Comment> NC STO Input: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37055,10 +37678,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495648</BitOffs>
+            <BitOffs>844627552</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].nRawEncoderULINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].nRawEncoderULINT</Name>
             <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
             <BitSize>64</BitSize>
             <BaseType>ULINT</BaseType>
@@ -37068,10 +37691,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495680</BitOffs>
+            <BitOffs>844627584</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].nRawEncoderUINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].nRawEncoderUINT</Name>
             <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
             <BitSize>16</BitSize>
             <BaseType>UINT</BaseType>
@@ -37081,10 +37704,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495744</BitOffs>
+            <BitOffs>844627648</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].nRawEncoderINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].nRawEncoderINT</Name>
             <Comment> Raw encoder IO for INT (LVDT)</Comment>
             <BitSize>16</BitSize>
             <BaseType>INT</BaseType>
@@ -37094,10 +37717,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771495760</BitOffs>
+            <BitOffs>844627664</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].Axis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37106,10 +37729,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771512896</BitOffs>
+            <BitOffs>844644800</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].bLimitForwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bLimitForwardEnable</Name>
             <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37129,10 +37752,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771520896</BitOffs>
+            <BitOffs>844652800</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].bLimitBackwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bLimitBackwardEnable</Name>
             <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37152,10 +37775,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771520904</BitOffs>
+            <BitOffs>844652808</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].bHome</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bHome</Name>
             <Comment> NO Home Switch: TRUE if at home</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37175,10 +37798,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771520912</BitOffs>
+            <BitOffs>844652816</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].bHardwareEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bHardwareEnable</Name>
             <Comment> NC STO Input: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37198,10 +37821,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771520928</BitOffs>
+            <BitOffs>844652832</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].nRawEncoderULINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].nRawEncoderULINT</Name>
             <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
             <BitSize>64</BitSize>
             <BaseType>ULINT</BaseType>
@@ -37211,10 +37834,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771520960</BitOffs>
+            <BitOffs>844652864</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].nRawEncoderUINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].nRawEncoderUINT</Name>
             <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
             <BitSize>16</BitSize>
             <BaseType>UINT</BaseType>
@@ -37224,10 +37847,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771521024</BitOffs>
+            <BitOffs>844652928</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].nRawEncoderINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].nRawEncoderINT</Name>
             <Comment> Raw encoder IO for INT (LVDT)</Comment>
             <BitSize>16</BitSize>
             <BaseType>INT</BaseType>
@@ -37237,10 +37860,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771521040</BitOffs>
+            <BitOffs>844652944</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].Axis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37249,10 +37872,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771538176</BitOffs>
+            <BitOffs>844670080</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].bLimitForwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bLimitForwardEnable</Name>
             <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37272,10 +37895,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546176</BitOffs>
+            <BitOffs>844678080</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].bLimitBackwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bLimitBackwardEnable</Name>
             <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37295,10 +37918,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546184</BitOffs>
+            <BitOffs>844678088</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].bHome</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bHome</Name>
             <Comment> NO Home Switch: TRUE if at home</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37318,10 +37941,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546192</BitOffs>
+            <BitOffs>844678096</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].bHardwareEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bHardwareEnable</Name>
             <Comment> NC STO Input: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37341,10 +37964,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546208</BitOffs>
+            <BitOffs>844678112</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].nRawEncoderULINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].nRawEncoderULINT</Name>
             <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
             <BitSize>64</BitSize>
             <BaseType>ULINT</BaseType>
@@ -37354,10 +37977,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546240</BitOffs>
+            <BitOffs>844678144</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].nRawEncoderUINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].nRawEncoderUINT</Name>
             <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
             <BitSize>16</BitSize>
             <BaseType>UINT</BaseType>
@@ -37367,10 +37990,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546304</BitOffs>
+            <BitOffs>844678208</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].nRawEncoderINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].nRawEncoderINT</Name>
             <Comment> Raw encoder IO for INT (LVDT)</Comment>
             <BitSize>16</BitSize>
             <BaseType>INT</BaseType>
@@ -37380,10 +38003,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771546320</BitOffs>
+            <BitOffs>844678224</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].Axis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37392,10 +38015,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771563456</BitOffs>
+            <BitOffs>844695360</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].bLimitForwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bLimitForwardEnable</Name>
             <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37415,10 +38038,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571456</BitOffs>
+            <BitOffs>844703360</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].bLimitBackwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bLimitBackwardEnable</Name>
             <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37438,10 +38061,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571464</BitOffs>
+            <BitOffs>844703368</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].bHome</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bHome</Name>
             <Comment> NO Home Switch: TRUE if at home</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37461,10 +38084,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571472</BitOffs>
+            <BitOffs>844703376</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].bHardwareEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bHardwareEnable</Name>
             <Comment> NC STO Input: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37484,10 +38107,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571488</BitOffs>
+            <BitOffs>844703392</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].nRawEncoderULINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].nRawEncoderULINT</Name>
             <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
             <BitSize>64</BitSize>
             <BaseType>ULINT</BaseType>
@@ -37497,10 +38120,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571520</BitOffs>
+            <BitOffs>844703424</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].nRawEncoderUINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].nRawEncoderUINT</Name>
             <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
             <BitSize>16</BitSize>
             <BaseType>UINT</BaseType>
@@ -37510,10 +38133,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571584</BitOffs>
+            <BitOffs>844703488</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].nRawEncoderINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].nRawEncoderINT</Name>
             <Comment> Raw encoder IO for INT (LVDT)</Comment>
             <BitSize>16</BitSize>
             <BaseType>INT</BaseType>
@@ -37523,10 +38146,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771571600</BitOffs>
+            <BitOffs>844703504</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].Axis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37535,10 +38158,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771862528</BitOffs>
+            <BitOffs>844720640</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.bLimitForwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bLimitForwardEnable</Name>
             <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37558,10 +38181,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870528</BitOffs>
+            <BitOffs>844728640</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.bLimitBackwardEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bLimitBackwardEnable</Name>
             <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37581,10 +38204,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870536</BitOffs>
+            <BitOffs>844728648</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.bHome</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bHome</Name>
             <Comment> NO Home Switch: TRUE if at home</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37604,10 +38227,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870544</BitOffs>
+            <BitOffs>844728656</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.bHardwareEnable</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bHardwareEnable</Name>
             <Comment> NC STO Input: TRUE if ok to move</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -37627,10 +38250,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870560</BitOffs>
+            <BitOffs>844728672</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.nRawEncoderULINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].nRawEncoderULINT</Name>
             <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
             <BitSize>64</BitSize>
             <BaseType>ULINT</BaseType>
@@ -37640,10 +38263,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870592</BitOffs>
+            <BitOffs>844728704</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.nRawEncoderUINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].nRawEncoderUINT</Name>
             <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
             <BitSize>16</BitSize>
             <BaseType>UINT</BaseType>
@@ -37653,10 +38276,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870656</BitOffs>
+            <BitOffs>844728768</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.nRawEncoderINT</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].nRawEncoderINT</Name>
             <Comment> Raw encoder IO for INT (LVDT)</Comment>
             <BitSize>16</BitSize>
             <BaseType>INT</BaseType>
@@ -37666,10 +38289,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771870672</BitOffs>
+            <BitOffs>844728784</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37678,141 +38301,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>771946368</BitOffs>
+            <BitOffs>844747328</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.bLimitForwardEnable</Name>
-            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitForwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if forward limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954368</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.bLimitBackwardEnable</Name>
-            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitBackwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if reverse limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954376</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.bHome</Name>
-            <Comment> NO Home Switch: TRUE if at home</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHome
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if at homing switch
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954384</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.bHardwareEnable</Name>
-            <Comment> NC STO Input: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHardwareEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if STO not hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954400</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.nRawEncoderULINT</Name>
-            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
-            <BitSize>64</BitSize>
-            <BaseType>ULINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954432</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.nRawEncoderUINT</Name>
-            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954496</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.nRawEncoderINT</Name>
-            <Comment> Raw encoder IO for INT (LVDT)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>INT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954512</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37821,141 +38313,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>772030208</BitOffs>
+            <BitOffs>845046720</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.bLimitForwardEnable</Name>
-            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitForwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if forward limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038208</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.bLimitBackwardEnable</Name>
-            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitBackwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if reverse limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038216</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.bHome</Name>
-            <Comment> NO Home Switch: TRUE if at home</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHome
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if at homing switch
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038224</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.bHardwareEnable</Name>
-            <Comment> NC STO Input: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHardwareEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if STO not hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038240</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.nRawEncoderULINT</Name>
-            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
-            <BitSize>64</BitSize>
-            <BaseType>ULINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038272</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.nRawEncoderUINT</Name>
-            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038336</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.nRawEncoderINT</Name>
-            <Comment> Raw encoder IO for INT (LVDT)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>INT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038352</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.Axis.NcToPlc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
             <Properties>
@@ -37964,288 +38325,14 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>772114048</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.bLimitForwardEnable</Name>
-            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitForwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if forward limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122048</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.bLimitBackwardEnable</Name>
-            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitBackwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if reverse limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122056</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.bHome</Name>
-            <Comment> NO Home Switch: TRUE if at home</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHome
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if at homing switch
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122064</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.bHardwareEnable</Name>
-            <Comment> NC STO Input: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHardwareEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if STO not hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122080</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.nRawEncoderULINT</Name>
-            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
-            <BitSize>64</BitSize>
-            <BaseType>ULINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122112</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.nRawEncoderUINT</Name>
-            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122176</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.nRawEncoderINT</Name>
-            <Comment> Raw encoder IO for INT (LVDT)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>INT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122192</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.Axis.NcToPlc</Name>
-            <BitSize>2048</BitSize>
-            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772197888</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.bLimitForwardEnable</Name>
-            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitForwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if forward limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772205888</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.bLimitBackwardEnable</Name>
-            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitBackwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if reverse limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772205896</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.bHome</Name>
-            <Comment> NO Home Switch: TRUE if at home</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHome
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if at homing switch
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772205904</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.bHardwareEnable</Name>
-            <Comment> NC STO Input: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHardwareEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if STO not hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772205920</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.nRawEncoderULINT</Name>
-            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
-            <BitSize>64</BitSize>
-            <BaseType>ULINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772205952</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.nRawEncoderUINT</Name>
-            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772206016</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.nRawEncoderINT</Name>
-            <Comment> Raw encoder IO for INT (LVDT)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>INT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772206032</BitOffs>
+            <BitOffs>845346112</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="OutputSrc" CreateSymbols="true">1</AreaNo>
           <Name>PlcTask Outputs</Name>
           <ContextId>0</ContextId>
-          <ByteSize>97320960</ByteSize>
+          <ByteSize>105840640</ByteSize>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
@@ -38256,7 +38343,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>668214400</BitOffs>
+            <BitOffs>668216768</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bBrakeRelease</Name>
@@ -38279,7 +38366,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>668223448</BitOffs>
+            <BitOffs>668225816</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -38291,7 +38378,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>668241088</BitOffs>
+            <BitOffs>668243456</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.Axis.PlcToNc</Name>
@@ -38303,7 +38390,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>702095616</BitOffs>
+            <BitOffs>702097984</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bBrakeRelease</Name>
@@ -38326,7 +38413,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>702104664</BitOffs>
+            <BitOffs>702107032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -38338,7 +38425,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>702122304</BitOffs>
+            <BitOffs>702124672</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.Axis.PlcToNc</Name>
@@ -38350,7 +38437,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>736012928</BitOffs>
+            <BitOffs>736015296</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bBrakeRelease</Name>
@@ -38373,7 +38460,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>736021976</BitOffs>
+            <BitOffs>736024344</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -38385,42 +38472,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>736039616</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.Axis.PlcToNc</Name>
-            <BitSize>1024</BitSize>
-            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736438208</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test.fbRead.stMotionStage.bBrakeRelease</Name>
-            <Comment> NC Brake Output: TRUE to release brake</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bBrakeRelease
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if brake released
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>736447256</BitOffs>
+            <BitOffs>736041984</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].Axis.PlcToNc</Name>
@@ -38432,7 +38484,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770074176</BitOffs>
+            <BitOffs>769996608</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bBrakeRelease</Name>
@@ -38455,7 +38507,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770083224</BitOffs>
+            <BitOffs>770005656</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].Axis.PlcToNc</Name>
@@ -38467,7 +38519,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770099456</BitOffs>
+            <BitOffs>770021888</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bBrakeRelease</Name>
@@ -38490,7 +38542,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770108504</BitOffs>
+            <BitOffs>770030936</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].Axis.PlcToNc</Name>
@@ -38502,7 +38554,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770124736</BitOffs>
+            <BitOffs>770047168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bBrakeRelease</Name>
@@ -38525,7 +38577,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770133784</BitOffs>
+            <BitOffs>770056216</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].Axis.PlcToNc</Name>
@@ -38537,7 +38589,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770150016</BitOffs>
+            <BitOffs>770072448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bBrakeRelease</Name>
@@ -38560,7 +38612,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770159064</BitOffs>
+            <BitOffs>770081496</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].Axis.PlcToNc</Name>
@@ -38572,7 +38624,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770175296</BitOffs>
+            <BitOffs>770097728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bBrakeRelease</Name>
@@ -38595,7 +38647,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770184344</BitOffs>
+            <BitOffs>770106776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -38607,7 +38659,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770201984</BitOffs>
+            <BitOffs>770124416</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -38619,7 +38671,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770501376</BitOffs>
+            <BitOffs>770423808</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -38631,10 +38683,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770800768</BitOffs>
+            <BitOffs>770723200</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38643,10 +38695,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771461312</BitOffs>
+            <BitOffs>804955392</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[1].bBrakeRelease</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bBrakeRelease</Name>
             <Comment> NC Brake Output: TRUE to release brake</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -38666,10 +38718,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771470360</BitOffs>
+            <BitOffs>804964440</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38678,10 +38730,22 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771486592</BitOffs>
+            <BitOffs>804982080</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[2].bBrakeRelease</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].Axis.PlcToNc</Name>
+            <BitSize>1024</BitSize>
+            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Output</Value>
+              </Property>
+            </Properties>
+            <BitOffs>844618496</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bBrakeRelease</Name>
             <Comment> NC Brake Output: TRUE to release brake</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -38701,10 +38765,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771495640</BitOffs>
+            <BitOffs>844627544</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38713,10 +38777,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771511872</BitOffs>
+            <BitOffs>844643776</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[3].bBrakeRelease</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bBrakeRelease</Name>
             <Comment> NC Brake Output: TRUE to release brake</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -38736,10 +38800,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771520920</BitOffs>
+            <BitOffs>844652824</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38748,10 +38812,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771537152</BitOffs>
+            <BitOffs>844669056</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[4].bBrakeRelease</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bBrakeRelease</Name>
             <Comment> NC Brake Output: TRUE to release brake</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -38771,10 +38835,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771546200</BitOffs>
+            <BitOffs>844678104</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38783,10 +38847,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771562432</BitOffs>
+            <BitOffs>844694336</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.astMotionStage[5].bBrakeRelease</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bBrakeRelease</Name>
             <Comment> NC Brake Output: TRUE to release brake</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -38806,10 +38870,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771571480</BitOffs>
+            <BitOffs>844703384</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38818,10 +38882,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771861504</BitOffs>
+            <BitOffs>844719616</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[1].stMotionStage.bBrakeRelease</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bBrakeRelease</Name>
             <Comment> NC Brake Output: TRUE to release brake</Comment>
             <BitSize>8</BitSize>
             <BaseType>BOOL</BaseType>
@@ -38841,10 +38905,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771870552</BitOffs>
+            <BitOffs>844728664</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38853,33 +38917,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>771945344</BitOffs>
+            <BitOffs>844746304</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[2].stMotionStage.bBrakeRelease</Name>
-            <Comment> NC Brake Output: TRUE to release brake</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bBrakeRelease
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if brake released
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>771954392</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38888,33 +38929,10 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>772029184</BitOffs>
+            <BitOffs>845045696</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[3].stMotionStage.bBrakeRelease</Name>
-            <Comment> NC Brake Output: TRUE to release brake</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bBrakeRelease
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if brake released
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772038232</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.Axis.PlcToNc</Name>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
             <Properties>
@@ -38923,72 +38941,14 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>772113024</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[4].stMotionStage.bBrakeRelease</Name>
-            <Comment> NC Brake Output: TRUE to release brake</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bBrakeRelease
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if brake released
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772122072</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.Axis.PlcToNc</Name>
-            <BitSize>1024</BitSize>
-            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772196864</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test.fbRead.afbPositionStateRead[5].stMotionStage.bBrakeRelease</Name>
-            <Comment> NC Brake Output: TRUE to release brake</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bBrakeRelease
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if brake released
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>772205912</BitOffs>
+            <BitOffs>845345088</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="Internal" CreateSymbols="true">3</AreaNo>
           <Name>PlcTask Internal</Name>
           <ContextId>0</ContextId>
-          <ByteSize>97320960</ByteSize>
+          <ByteSize>105840640</ByteSize>
           <Symbol>
             <Name>DefaultGlobals.stSys</Name>
             <Comment>Included for you</Comment>
@@ -44779,25 +44739,74 @@ contributing fast faults, unless the FFO is currently vetoed.
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test</Name>
             <BitSize>33881216</BitSize>
             <BaseType>FB_TestHelperSetAndMove_Test</BaseType>
-            <BitOffs>634662592</BitOffs>
+            <BitOffs>634664960</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test</Name>
             <BitSize>33917312</BitSize>
             <BaseType>FB_AtPositionState_Test</BaseType>
-            <BitOffs>668543808</BitOffs>
+            <BitOffs>668546176</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test</Name>
-            <BitSize>34061248</BitSize>
+            <BitSize>33981312</BitSize>
             <BaseType>FB_PositionStateRead_Test</BaseType>
-            <BitOffs>702461120</BitOffs>
+            <BitOffs>702463488</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test</Name>
-            <BitSize>35758464</BitSize>
+            <BitSize>34958784</BitSize>
             <BaseType>FB_PositionStateReadND_Test</BaseType>
-            <BitOffs>736522368</BitOffs>
+            <BitOffs>736444800</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateMove_Test</Name>
+            <BitSize>33982720</BitSize>
+            <BaseType>FB_PositionStateMove_Test</BaseType>
+            <BitOffs>771403584</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>MotionConstants.MAX_STATE_MOTORS</Name>
+            <Comment> Arbitary cap on multidimensional states to simplify statements for the compiler.</Comment>
+            <BitSize>16</BitSize>
+            <BaseType>UINT</BaseType>
+            <Default>
+              <Value>5</Value>
+            </Default>
+            <Properties>
+              <Property>
+                <Name>TcVarGlobal</Name>
+              </Property>
+            </Properties>
+            <BitOffs>805386816</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>GVL_ErrorSystem.cSizeOfErrorData</Name>
+            <BitSize>16</BitSize>
+            <BaseType>UINT</BaseType>
+            <Default>
+              <Value>128</Value>
+            </Default>
+            <Properties>
+              <Property>
+                <Name>TcVarGlobal</Name>
+              </Property>
+            </Properties>
+            <BitOffs>805386832</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>GVL.nHomingError</Name>
+            <BitSize>32</BitSize>
+            <BaseType>UDINT</BaseType>
+            <Default>
+              <Value>85248</Value>
+            </Default>
+            <Properties>
+              <Property>
+                <Name>TcVarGlobal</Name>
+              </Property>
+            </Properties>
+            <BitOffs>805386848</BitOffs>
           </Symbol>
           <Symbol>
             <Name>MOTION_GVL.fbPmpsFileReader</Name>
@@ -44808,7 +44817,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>772281344</BitOffs>
+            <BitOffs>805386880</BitOffs>
           </Symbol>
           <Symbol>
             <Name>MOTION_GVL.fbStandardPMPSDB</Name>
@@ -44826,7 +44835,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773209856</BitOffs>
+            <BitOffs>806315392</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Global_Version.stLibVersion_lcls_twincat_motion</Name>
@@ -44862,50 +44871,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773237600</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>GVL.nHomingError</Name>
-            <BitSize>32</BitSize>
-            <BaseType>UDINT</BaseType>
-            <Default>
-              <Value>85248</Value>
-            </Default>
-            <Properties>
-              <Property>
-                <Name>TcVarGlobal</Name>
-              </Property>
-            </Properties>
-            <BitOffs>773237888</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>GVL_ErrorSystem.cSizeOfErrorData</Name>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Default>
-              <Value>128</Value>
-            </Default>
-            <Properties>
-              <Property>
-                <Name>TcVarGlobal</Name>
-              </Property>
-            </Properties>
-            <BitOffs>773237920</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>MotionConstants.MAX_STATE_MOTORS</Name>
-            <Comment> Arbitary cap on multidimensional states to simplify statements for the compiler.</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Default>
-              <Value>5</Value>
-            </Default>
-            <Properties>
-              <Property>
-                <Name>TcVarGlobal</Name>
-              </Property>
-            </Properties>
-            <BitOffs>773237936</BitOffs>
+            <BitOffs>806343136</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bLittleEndian</Name>
@@ -44920,7 +44886,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773237960</BitOffs>
+            <BitOffs>806343432</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.RuntimeVersion</Name>
@@ -44950,7 +44916,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773237968</BitOffs>
+            <BitOffs>806343440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.CompilerVersion</Name>
@@ -44980,7 +44946,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238032</BitOffs>
+            <BitOffs>806343504</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bSimulationMode</Name>
@@ -44995,7 +44961,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238096</BitOffs>
+            <BitOffs>806343568</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bFPUSupport</Name>
@@ -45009,7 +44975,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238104</BitOffs>
+            <BitOffs>806343576</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.nRegisterSize</Name>
@@ -45024,7 +44990,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238112</BitOffs>
+            <BitOffs>806343584</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.nPackMode</Name>
@@ -45039,7 +45005,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238128</BitOffs>
+            <BitOffs>806343600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.RuntimeVersionNumeric</Name>
@@ -45053,7 +45019,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238144</BitOffs>
+            <BitOffs>806343616</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.CompilerVersionNumeric</Name>
@@ -45067,7 +45033,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238176</BitOffs>
+            <BitOffs>806343648</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._AppInfo</Name>
@@ -45081,7 +45047,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773238208</BitOffs>
+            <BitOffs>806343680</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskInfo</Name>
@@ -45099,7 +45065,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773240256</BitOffs>
+            <BitOffs>806345728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask</Name>
@@ -45113,7 +45079,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773241280</BitOffs>
+            <BitOffs>806346752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskOid_PlcTask</Name>
@@ -45127,7 +45093,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773241312</BitOffs>
+            <BitOffs>806346784</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList.__PlcTask</Name>
@@ -45148,7 +45114,7 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773241344</BitOffs>
+            <BitOffs>806346816</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TC_EVENTS.LCLSGeneralEventClass</Name>
@@ -45171,14 +45137,20 @@ contributing fast faults, unless the FFO is currently vetoed.
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>773273024</BitOffs>
+            <BitOffs>806378496</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test</Name>
+            <BitSize>34650176</BitSize>
+            <BaseType>FB_PositionStateMoveND_Test</BaseType>
+            <BitOffs>811066688</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="RetainSrc" CreateSymbols="true">4</AreaNo>
           <Name>PlcTask Retains</Name>
           <ContextId>0</ContextId>
-          <ByteSize>97320960</ByteSize>
+          <ByteSize>105840640</ByteSize>
           <Symbol>
             <Name>PMPS_GVL.SuccessfulPreemption</Name>
             <Comment> Any time BPTM applies a new BP request which is confirmed</Comment>
@@ -45243,15 +45215,15 @@ contributing fast faults, unless the FFO is currently vetoed.
         </Property>
         <Property>
           <Name>ChangeDate</Name>
-          <Value>2023-03-29T15:56:58</Value>
+          <Value>2023-04-14T16:18:06</Value>
         </Property>
         <Property>
           <Name>GeneratedCodeSize</Name>
-          <Value>561152</Value>
+          <Value>573440</Value>
         </Property>
         <Property>
           <Name>GlobalDataSize</Name>
-          <Value>96219136</Value>
+          <Value>104689664</Value>
         </Property>
       </Properties>
     </Module>

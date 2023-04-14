@@ -1,0 +1,217 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStateMove_Test" Id="{790463b9-e234-4505-8844-0fd9623da364}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateMove_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Test that FB_PositionStateMove can be used to move motors to named state positions
+    And that the API behaves exactly as described.
+*)
+VAR
+    stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStage;
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF FB_PositionStateInternal;
+    stDummyPos: ST_PositionState;
+    stInvalid: ST_PositionState;
+    stNotUpdated: ST_PositionState;
+    fbMove: FB_PositionStateMove;
+
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
+    nIter: DINT;
+    bStatesReady: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+astPositionState[1].sName := 'UNO';
+astPositionState[1].fPosition := 10;
+astPositionState[1].fDelta := 1;
+astPositionState[1].fVelocity := 10;
+astPositionState[1].bValid := TRUE;
+astPositionState[1].bUseRawCounts := FALSE;
+
+astPositionState[2].sName := 'DOS';
+astPositionState[2].fPosition := 20;
+astPositionState[2].fDelta := 1;
+astPositionState[2].fVelocity := 10;
+astPositionState[2].bValid := FALSE;
+astPositionState[2].bUseRawCounts := FALSE;
+
+astPositionState[3].sName := 'TRES';
+astPositionState[3].fPosition := 30;
+astPositionState[3].fDelta := 1;
+astPositionState[3].fVelocity := 10;
+astPositionState[3].bValid := TRUE;
+astPositionState[3].bUseRawCounts := FALSE;
+
+bStatesReady := TRUE;
+FOR nIter := 1 TO 3 DO
+    afbInternal[nIter](
+        stMotionStage:=stMotionStage,
+        stPositionState:=astPositionState[nIter],
+    );
+    bStatesReady := bStatesReady AND astPositionState[nIter].bUpdated;
+END_FOR
+stInvalid.bValid := FALSE;
+stInvalid.bUpdated := TRUE;
+stNotUpdated.bValid := TRUE;
+stNotUpdated.bUpdated := FALSE;
+fbMotionStage(stMotionStage:=stMotionStage);
+
+IF bStatesReady AND nTestCounter = 0 THEN
+    // Don't run any tests until the states are ready
+    nTestCounter := 1;
+END_IF
+
+// Test that we can move to state 1 and the outputs are correct as we go
+TestMove(1, 1, FALSE);
+// Test that we can move to state 2 and the outputs are correct as we go
+TestMove(2, 2, FALSE);
+// Test that we can interrupt a move to state 3 by dropping bExecute
+TestMove(3, 3, TRUE);
+// Test that we cannot move to an invalid state
+TestBadStates(4);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    fbMove(
+        stMotionStage:=stMotionStage,
+        stPositionState:=stDummyPos,
+        bExecute:=FALSE,
+        bReset:=TRUE,
+    );
+    tonTimer(IN:=FALSE);
+END_IF
+// Use this timer to time out any tests that stall
+tonTimer(
+    IN:=bStatesReady,
+    PT:=T#5s,
+);
+]]></ST>
+    </Implementation>
+    <Method Name="TestBadStates" Id="{879d6a71-af35-4146-a1a6-b64142eb1f2f}">
+      <Declaration><![CDATA[METHOD TestBadStates
+VAR_INPUT
+    nTestIndex: UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(CONCAT('TestInvalid', UINT_TO_STRING(nTestIndex)));
+IF nTestCounter <> nTestIndex THEN
+    RETURN;
+END_IF
+
+AssertFalse(
+    fbMove.bError,
+    'Started with an error',
+);
+
+fbMove(
+    stMotionStage:=stMotionstage,
+    stPositionState:=stInvalid,
+    bExecute:=TRUE,
+);
+
+AssertTrue(
+    fbMove.bError,
+    'Invalid should have given an error',
+);
+
+fbMove(
+    stMotionStage:=stMotionstage,
+    stPositionState:=stInvalid,
+    bExecute:=FALSE,
+    bReset:=TRUE,
+);
+
+AssertFalse(
+    fbMove.bError,
+    'Started with an error',
+);
+
+fbMove(
+    stMotionStage:=stMotionstage,
+    stPositionState:=stNotUpdated,
+    bExecute:=TRUE,
+);
+
+AssertTrue(
+    fbMove.bError,
+    'Not updated should have given an error',
+);
+
+bOneTestDone := TRUE;
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMove" Id="{e32e39d1-d908-4e1d-a77e-6982c23e392d}">
+      <Declaration><![CDATA[METHOD TestMove
+VAR_INPUT
+    nTestIndex: UINT;
+    nStateIndex: UINT;
+    bInterrupt: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(CONCAT('TestMove', UINT_TO_STRING(nTestIndex)));
+IF nTestCounter <> nTestIndex THEN
+    RETURN;
+END_IF
+
+IF NOT fbMove.bExecute THEN
+    // Starting output checks
+    AssertFalse(
+        Condition:=fbMove.bBusy,
+        Message:='Tried to start test with busy motor',
+    );
+    AssertFalse(
+        Condition:=fbMove.bError,
+        Message:='Tried to start test with errored motor',
+    );
+END_IF
+
+fbMove(
+    stMotionStage:=stMotionstage,
+    stPositionState:=astPositionState[nStateIndex],
+    bExecute:=NOT bInterrupt OR (bInterrupt AND NOT fbMove.bBusy),
+);
+IF fbMove.bDone OR tonTimer.Q THEN
+    IF bInterrupt THEN
+        AssertFalse(
+            fbMove.bAtState,
+            Message:='Should have been interrupted, but made it to the goal',
+        );
+    ELSE
+        AssertTrue(
+            fbMove.bAtState,
+            Message:='Did not end at the state',
+        );
+        AssertEquals_LREAL(
+            Expected:=astPositionState[nStateIndex].fPosition,
+            Actual:=stMotionStage.stAxisStatus.fActPosition,
+            Delta:=0.01,
+            Message:='Did not reach the goal state',
+        );
+    END_IF
+    AssertFalse(
+        fbMove.bBusy,
+        Message:='Was busy while done',
+    );
+    AssertFalse(
+        fbMove.bError,
+        Message:='Should not end in error',
+    );
+
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

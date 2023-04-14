@@ -2,6 +2,11 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_PositionStateReadND_Test" Id="{4b592fad-9c2c-4bce-a31b-7960aad2ca81}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Test that FB_PositionStateReadND can be used to read and summarize
+    N-dimensional state positions where multiple motors must move in
+    sync to a shared named state.
+*)
 VAR
     astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
