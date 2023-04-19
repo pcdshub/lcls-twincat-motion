@@ -1,0 +1,203 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_NCErrorFFO_Test" Id="{a14def3e-cd38-464e-aab5-e8acc073b3c5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_NCErrorFFO_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Test the following related FBs:
+    - FB_NCErrorFFO
+    - FB_EncErrorFFO
+
+    These function blocks are designed to trip the beam when there
+    is an NC error reported by stMotionStage.
+*)
+VAR
+    stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStage;
+    fbFFHWO: FB_HardwareFFOutput;
+    fbCauseNCError: FB_CauseNCError;
+
+    fbNCErrorFFO: FB_NCErrorFFO;
+    fbEncErrorFFO: FB_EncErrorFFO;
+
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    tonTimer: TON;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbMotionStage(stMotionStage:=stMotionStage);
+// Limit to drive errors so I can isolate it from the enc error
+fbNCErrorFFO(
+    stMotionStage:=stMotionStage,
+    fbFFHWO:=fbFFHWO,
+    nLowErrorId:=16#4500,
+    nHighErrorId:=16#45FF,
+);
+fbEncErrorFFO(
+    stMotionStage:=stMotionStage,
+    fbFFHWO:=fbFFHWO,
+);
+fbFFHWO(bAutoReset:=TRUE);
+
+TestNC(0);
+TestEnc(1);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    tonTimer(IN:=FALSE);
+    fbCauseNCError(
+        Axis:=stMotionStage.Axis,
+        bExecute:=FALSE,
+    );
+    stMotionStage.bReset := TRUE;
+    fbMotionStage(stMotionStage:=stMotionStage);
+END_IF
+// Use this timer to time out any tests that stall
+tonTimer(
+    IN:=TRUE,
+    PT:=T#5s,
+);]]></ST>
+    </Implementation>
+    <Method Name="TestEnc" Id="{a1e8e2ae-676f-484a-ab92-162f96da52ce}">
+      <Declaration><![CDATA[METHOD TestEnc
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    nState: UINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestEncError');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+CASE nState OF
+    0:
+        // First cycle: no error, no fault
+        AssertFalse(
+            stMotionStage.bError,
+            'Should have had no error before running this test',
+        );
+        AssertFalse(
+            fbFFHWO.q_xFastFaultOut,
+            'Should have had no fault with no error',
+        );
+        nState := 1;
+    1:
+        // Next time: cause an error
+        fbCauseNCError(
+            Axis:=stMotionStage.Axis,
+            bExecute:=TRUE,
+            nErrorCode:=16#4467, // Invalid encoder position data
+        );
+END_CASE
+
+// Wait for the fault or the timeout, then check everything
+IF tonTimer.Q OR fbFFHWO.q_xFastFaultOut THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in test',
+    );
+    AssertTrue(
+        stMotionStage.bError,
+        'Did not get motor error in error test',
+    );
+    AssertEquals_UDINT(
+        Expected:=16#4467,
+        Actual:=stMotionStage.nErrorId,
+        Message:='Error causer is broken',
+    );
+    AssertTrue(
+        fbFFHWO.q_xFastFaultOut,
+        Message:='Did not cause a fast fault',
+    );
+    AssertFalse(
+        fbNCErrorFFO.bTripped,
+        Message:='Drive error FB tripped with an enc error',
+    );
+    AssertTrue(
+        fbEncErrorFFO.bTripped,
+        Message:='Enc error fb did not trip with an enc error',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestNC" Id="{c5dfb7df-a894-4064-9668-ebc3e9b9e3a0}">
+      <Declaration><![CDATA[METHOD TestNC
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    nState: UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestNCError');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+CASE nState OF
+    0:
+        // First cycle: no error, no fault
+        AssertFalse(
+            stMotionStage.bError,
+            'Should have had no error before running this test',
+        );
+        AssertFalse(
+            fbFFHWO.q_xFastFaultOut,
+            'Should have had no fault with no error',
+        );
+        nState := 1;
+    1:
+        // Next time: cause an error
+        fbCauseNCError(
+            Axis:=stMotionStage.Axis,
+            bExecute:=TRUE,
+            nErrorCode:=16#4550, // Position lag monitoring error code
+        );
+END_CASE
+
+// Wait for the fault or the timeout, then check everything
+IF tonTimer.Q OR fbFFHWO.q_xFastFaultOut THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in test',
+    );
+    AssertTrue(
+        stMotionStage.bError,
+        'Did not get motor error in error test',
+    );
+    AssertEquals_UDINT(
+        Expected:=16#4550,
+        Actual:=stMotionStage.nErrorId,
+        Message:='Error causer is broken',
+    );
+    AssertTrue(
+        fbFFHWO.q_xFastFaultOut,
+        Message:='Did not cause a fast fault',
+    );
+    AssertTrue(
+        fbNCErrorFFO.bTripped,
+        Message:='NC error FB did not trip with a drive error',
+    );
+    AssertFalse(
+        fbEncErrorFFO.bTripped,
+        Message:='Enc error tripped with a drive error',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
