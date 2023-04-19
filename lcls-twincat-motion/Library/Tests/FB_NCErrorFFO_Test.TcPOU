@@ -13,7 +13,7 @@
 VAR
     stMotionStage: ST_MotionStage;
     fbMotionStage: FB_MotionStage;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbCauseNCError: FB_CauseNCError;
 
     fbNCErrorFFO: FB_NCErrorFFO;
@@ -38,7 +38,7 @@ fbEncErrorFFO(
     stMotionStage:=stMotionStage,
     fbFFHWO:=fbFFHWO,
 );
-fbFFHWO(bAutoReset:=TRUE);
+fbFFHWO.Execute();
 
 TestNC(0);
 TestEnc(1);

@@ -49,8 +49,6 @@ VAR
     nTripCount: UINT;
     // Increase by 1 whenever there is a fault (rising edge)
     ftTripCount: F_TRIG;
-    ftTripCount2: F_TRIG;
-    ftTripCount3: F_TRIG;
     // Decrease trip count by 1 each timeout
     tonTripCount: TOF;
 END_VAR
@@ -58,7 +56,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[
 ffBeamParamsOk(
-    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stCurrentBeamReq) AND ffDebounce.i_xOK,
+    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stCurrentBeamReq),
     i_xAutoReset:=TRUE,
     i_DevName:=sDeviceName,
     i_Desc:='Beam parameter mismatch',
