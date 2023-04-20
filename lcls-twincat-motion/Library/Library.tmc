@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{F10E4477-4475-3D42-DB86-87F80EC607B2}" GeneratedBy="TwinCAT XAE Plc">
+<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{57E2C134-72A5-A515-0A1D-4AADDF538C9D}" GeneratedBy="TwinCAT XAE Plc">
   <DataTypes>
     <DataType>
       <Name GUID="{18071995-0000-0000-0000-000000000041}" TcBaseType="true" HideSubItems="true" CName="AmsNetId">AMSNETID</Name>
@@ -209,31 +209,31 @@
         <Name>bBusy</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <GetCodeOffs>123937076</GetCodeOffs>
+        <GetCodeOffs>128195988</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>bError</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <GetCodeOffs>123937112</GetCodeOffs>
+        <GetCodeOffs>128196024</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>hrErrorCode</Name>
         <Type GUID="{18071995-0000-0000-0000-000000000019}">HRESULT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>123937120</GetCodeOffs>
+        <GetCodeOffs>128196032</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nStringSize</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>123937100</GetCodeOffs>
+        <GetCodeOffs>128196012</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sResult</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>123937116</GetCodeOffs>
+        <GetCodeOffs>128196028</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name RpcEnable="plc" VTableIndex="0">__getbBusy</Name>
@@ -1472,15 +1472,15 @@
         <Name>nId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>123937016</GetCodeOffs>
-        <SetCodeOffs>123937040</SetCodeOffs>
+        <GetCodeOffs>128195928</GetCodeOffs>
+        <SetCodeOffs>128195952</SetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sName</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>123937056</GetCodeOffs>
-        <SetCodeOffs>123937068</SetCodeOffs>
+        <GetCodeOffs>128195968</GetCodeOffs>
+        <SetCodeOffs>128195980</SetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>ExtendName</Name>
@@ -1726,37 +1726,37 @@
         <Name>eSeverity</Name>
         <Type GUID="{B57D3F4A-0836-49B0-81C3-BED5F4817EC9}">TcEventSeverity</Type>
         <BitSize>16</BitSize>
-        <GetCodeOffs>123937168</GetCodeOffs>
+        <GetCodeOffs>128196080</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>ipSourceInfo</Name>
         <Type Namespace="LCLS_General.Tc3_EventLogger">I_TcSourceInfo</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>123937148</GetCodeOffs>
+        <GetCodeOffs>128196060</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nEventId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>123937236</GetCodeOffs>
+        <GetCodeOffs>128196148</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nUniqueId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>123937240</GetCodeOffs>
+        <GetCodeOffs>128196152</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sEventClassName</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>123937196</GetCodeOffs>
+        <GetCodeOffs>128196108</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sEventText</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>123937244</GetCodeOffs>
+        <GetCodeOffs>128196156</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>EqualsToEventClass</Name>
@@ -2355,7 +2355,7 @@
         <Name>nTimeSent</Name>
         <Type>ULINT</Type>
         <BitSize>64</BitSize>
-        <GetCodeOffs>123937268</GetCodeOffs>
+        <GetCodeOffs>128196180</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>SetJsonAttribute</Name>
@@ -37491,6 +37491,157 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
       </Properties>
     </DataType>
     <DataType>
+      <Name>FB_MotionClearAsserts</Name>
+      <BitSize>224</BitSize>
+      <SubItem>
+        <Name>astDbStateParams</Name>
+        <Type Namespace="PMPS">ST_DbStateParams</Type>
+        <ArrayInfo ReferenceTo="true">
+          <LBound>0</LBound>
+          <Elements>16</Elements>
+        </ArrayInfo>
+        <Comment> All states to deactivate: transition + the static position states</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>32</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>fbArbiter</Name>
+        <Type Namespace="PMPS" ReferenceTo="true">FB_Arbiter</Type>
+        <Comment> The arbiter who made the PMPS assert requests</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>64</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bExecute</Name>
+        <Type>BOOL</Type>
+        <Comment> Clear asserts on rising edge</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>96</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>rtExec</Name>
+        <Type Namespace="Tc2_Standard">R_TRIG</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>128</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nIter</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>192</BitOffs>
+      </SubItem>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
+      <Name>FB_MotionClearAsserts_Test</Name>
+      <BitSize>34066560</BitSize>
+      <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
+      <SubItem>
+        <Name>__TESTBASIC__FBCLEAR</Name>
+        <Type>FB_MotionClearAsserts</Type>
+        <BitSize>224</BitSize>
+        <BitOffs>33551744</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTBASIC__ASTDBSTATEPARAMS</Name>
+        <Type Namespace="PMPS">ST_DbStateParams</Type>
+        <ArrayInfo>
+          <LBound>0</LBound>
+          <Elements>16</Elements>
+        </ArrayInfo>
+        <BitSize>39936</BitSize>
+        <BitOffs>33551968</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTBASIC__FBARBITER</Name>
+        <Type Namespace="PMPS">FB_Arbiter</Type>
+        <BitSize>474624</BitSize>
+        <BitOffs>33591936</BitOffs>
+        <Properties>
+          <Property>
+            <Name>old_input_assignments</Name>
+          </Property>
+        </Properties>
+      </SubItem>
+      <Method>
+        <Name>TestBasic</Name>
+        <Local>
+          <Name>nIter</Name>
+          <Type>UDINT</Type>
+          <BitSize>32</BitSize>
+        </Local>
+        <Local>
+          <Name>fbClear</Name>
+          <Type>FB_MotionClearAsserts</Type>
+          <BitSize>224</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBASIC__FBCLEAR</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>astDbStateParams</Name>
+          <Type Namespace="PMPS">ST_DbStateParams</Type>
+          <ArrayInfo>
+            <LBound>0</LBound>
+            <Elements>16</Elements>
+          </ArrayInfo>
+          <BitSize>39936</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBASIC__ASTDBSTATEPARAMS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbArbiter</Name>
+          <Type Namespace="PMPS">FB_Arbiter</Type>
+          <BitSize>474624</BitSize>
+          <Properties>
+            <Property>
+              <Name>old_input_assignments</Name>
+            </Property>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBASIC__FBARBITER</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
       <Name Namespace="Tc2_Utilities">FB_GetLocalAmsNetId</Name>
       <Comment> Reads the local AmsNetId (local TwinCAT-specific network address) </Comment>
       <BitSize>10848</BitSize>
@@ -41126,7 +41277,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
           <AreaNo AreaType="InputDst" CreateSymbols="true">0</AreaNo>
           <Name>PlcTask Inputs</Name>
           <ContextId>0</ContextId>
-          <ByteSize>124649472</ByteSize>
+          <ByteSize>128909312</ByteSize>
           <Symbol>
             <Name>LCLS_General.DefaultGlobals.stSys.I_EcatMaster1</Name>
             <Comment> AMS Net ID used for FB_EcatDiag, among others </Comment>
@@ -41154,7 +41305,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668232192</BitOffs>
+            <BitOffs>668234560</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -41177,7 +41328,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240192</BitOffs>
+            <BitOffs>668242560</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -41200,7 +41351,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240200</BitOffs>
+            <BitOffs>668242568</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bHome</Name>
@@ -41223,7 +41374,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240208</BitOffs>
+            <BitOffs>668242576</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bHardwareEnable</Name>
@@ -41246,7 +41397,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240224</BitOffs>
+            <BitOffs>668242592</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -41259,7 +41410,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240256</BitOffs>
+            <BitOffs>668242624</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -41272,7 +41423,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240320</BitOffs>
+            <BitOffs>668242688</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.nRawEncoderINT</Name>
@@ -41285,7 +41436,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668240336</BitOffs>
+            <BitOffs>668242704</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -41297,7 +41448,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>668258880</BitOffs>
+            <BitOffs>668261248</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.Axis.NcToPlc</Name>
@@ -41309,7 +41460,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702113408</BitOffs>
+            <BitOffs>702115776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -41332,7 +41483,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121408</BitOffs>
+            <BitOffs>702123776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -41355,7 +41506,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121416</BitOffs>
+            <BitOffs>702123784</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bHome</Name>
@@ -41378,7 +41529,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121424</BitOffs>
+            <BitOffs>702123792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bHardwareEnable</Name>
@@ -41401,7 +41552,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121440</BitOffs>
+            <BitOffs>702123808</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -41414,7 +41565,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121472</BitOffs>
+            <BitOffs>702123840</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -41427,7 +41578,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121536</BitOffs>
+            <BitOffs>702123904</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.nRawEncoderINT</Name>
@@ -41440,7 +41591,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702121552</BitOffs>
+            <BitOffs>702123920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -41452,7 +41603,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>702140096</BitOffs>
+            <BitOffs>702142464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.Axis.NcToPlc</Name>
@@ -41464,7 +41615,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736030720</BitOffs>
+            <BitOffs>736033088</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -41487,7 +41638,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038720</BitOffs>
+            <BitOffs>736041088</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -41510,7 +41661,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038728</BitOffs>
+            <BitOffs>736041096</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bHome</Name>
@@ -41533,7 +41684,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038736</BitOffs>
+            <BitOffs>736041104</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bHardwareEnable</Name>
@@ -41556,7 +41707,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038752</BitOffs>
+            <BitOffs>736041120</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -41569,7 +41720,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038784</BitOffs>
+            <BitOffs>736041152</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -41582,7 +41733,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038848</BitOffs>
+            <BitOffs>736041216</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.nRawEncoderINT</Name>
@@ -41595,7 +41746,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736038864</BitOffs>
+            <BitOffs>736041232</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -41607,7 +41758,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>736057408</BitOffs>
+            <BitOffs>736059776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].Axis.NcToPlc</Name>
@@ -41619,7 +41770,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770012032</BitOffs>
+            <BitOffs>770014400</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bLimitForwardEnable</Name>
@@ -41642,7 +41793,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020032</BitOffs>
+            <BitOffs>770022400</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bLimitBackwardEnable</Name>
@@ -41665,7 +41816,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020040</BitOffs>
+            <BitOffs>770022408</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bHome</Name>
@@ -41688,7 +41839,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020048</BitOffs>
+            <BitOffs>770022416</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bHardwareEnable</Name>
@@ -41711,7 +41862,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020064</BitOffs>
+            <BitOffs>770022432</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].nRawEncoderULINT</Name>
@@ -41724,7 +41875,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020096</BitOffs>
+            <BitOffs>770022464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].nRawEncoderUINT</Name>
@@ -41737,7 +41888,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020160</BitOffs>
+            <BitOffs>770022528</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].nRawEncoderINT</Name>
@@ -41750,7 +41901,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770020176</BitOffs>
+            <BitOffs>770022544</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].Axis.NcToPlc</Name>
@@ -41762,7 +41913,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770037312</BitOffs>
+            <BitOffs>770039680</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bLimitForwardEnable</Name>
@@ -41785,7 +41936,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045312</BitOffs>
+            <BitOffs>770047680</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bLimitBackwardEnable</Name>
@@ -41808,7 +41959,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045320</BitOffs>
+            <BitOffs>770047688</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bHome</Name>
@@ -41831,7 +41982,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045328</BitOffs>
+            <BitOffs>770047696</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bHardwareEnable</Name>
@@ -41854,7 +42005,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045344</BitOffs>
+            <BitOffs>770047712</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].nRawEncoderULINT</Name>
@@ -41867,7 +42018,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045376</BitOffs>
+            <BitOffs>770047744</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].nRawEncoderUINT</Name>
@@ -41880,7 +42031,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045440</BitOffs>
+            <BitOffs>770047808</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].nRawEncoderINT</Name>
@@ -41893,7 +42044,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770045456</BitOffs>
+            <BitOffs>770047824</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].Axis.NcToPlc</Name>
@@ -41905,7 +42056,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770062592</BitOffs>
+            <BitOffs>770064960</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bLimitForwardEnable</Name>
@@ -41928,7 +42079,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070592</BitOffs>
+            <BitOffs>770072960</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bLimitBackwardEnable</Name>
@@ -41951,7 +42102,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070600</BitOffs>
+            <BitOffs>770072968</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bHome</Name>
@@ -41974,7 +42125,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070608</BitOffs>
+            <BitOffs>770072976</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bHardwareEnable</Name>
@@ -41997,7 +42148,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070624</BitOffs>
+            <BitOffs>770072992</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].nRawEncoderULINT</Name>
@@ -42010,7 +42161,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070656</BitOffs>
+            <BitOffs>770073024</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].nRawEncoderUINT</Name>
@@ -42023,7 +42174,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070720</BitOffs>
+            <BitOffs>770073088</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].nRawEncoderINT</Name>
@@ -42036,7 +42187,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770070736</BitOffs>
+            <BitOffs>770073104</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].Axis.NcToPlc</Name>
@@ -42048,7 +42199,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770087872</BitOffs>
+            <BitOffs>770090240</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bLimitForwardEnable</Name>
@@ -42071,7 +42222,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770095872</BitOffs>
+            <BitOffs>770098240</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bLimitBackwardEnable</Name>
@@ -42094,7 +42245,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770095880</BitOffs>
+            <BitOffs>770098248</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bHome</Name>
@@ -42117,7 +42268,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770095888</BitOffs>
+            <BitOffs>770098256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bHardwareEnable</Name>
@@ -42140,7 +42291,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770095904</BitOffs>
+            <BitOffs>770098272</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].nRawEncoderULINT</Name>
@@ -42153,7 +42304,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770095936</BitOffs>
+            <BitOffs>770098304</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].nRawEncoderUINT</Name>
@@ -42166,7 +42317,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770096000</BitOffs>
+            <BitOffs>770098368</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].nRawEncoderINT</Name>
@@ -42179,7 +42330,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770096016</BitOffs>
+            <BitOffs>770098384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].Axis.NcToPlc</Name>
@@ -42191,7 +42342,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770113152</BitOffs>
+            <BitOffs>770115520</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bLimitForwardEnable</Name>
@@ -42214,7 +42365,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121152</BitOffs>
+            <BitOffs>770123520</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bLimitBackwardEnable</Name>
@@ -42237,7 +42388,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121160</BitOffs>
+            <BitOffs>770123528</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bHome</Name>
@@ -42260,7 +42411,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121168</BitOffs>
+            <BitOffs>770123536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bHardwareEnable</Name>
@@ -42283,7 +42434,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121184</BitOffs>
+            <BitOffs>770123552</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].nRawEncoderULINT</Name>
@@ -42296,7 +42447,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121216</BitOffs>
+            <BitOffs>770123584</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].nRawEncoderUINT</Name>
@@ -42309,7 +42460,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121280</BitOffs>
+            <BitOffs>770123648</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].nRawEncoderINT</Name>
@@ -42322,7 +42473,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770121296</BitOffs>
+            <BitOffs>770123664</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -42334,7 +42485,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770139840</BitOffs>
+            <BitOffs>770142208</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -42346,7 +42497,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770439232</BitOffs>
+            <BitOffs>770441600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -42358,7 +42509,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>770738624</BitOffs>
+            <BitOffs>770740992</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.Axis.NcToPlc</Name>
@@ -42370,7 +42521,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804970816</BitOffs>
+            <BitOffs>804973184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -42393,7 +42544,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978816</BitOffs>
+            <BitOffs>804981184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -42416,7 +42567,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978824</BitOffs>
+            <BitOffs>804981192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bHome</Name>
@@ -42439,7 +42590,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978832</BitOffs>
+            <BitOffs>804981200</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bHardwareEnable</Name>
@@ -42462,7 +42613,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978848</BitOffs>
+            <BitOffs>804981216</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -42475,7 +42626,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978880</BitOffs>
+            <BitOffs>804981248</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -42488,7 +42639,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978944</BitOffs>
+            <BitOffs>804981312</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.nRawEncoderINT</Name>
@@ -42501,7 +42652,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804978960</BitOffs>
+            <BitOffs>804981328</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -42513,7 +42664,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>804997504</BitOffs>
+            <BitOffs>804999872</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].Axis.NcToPlc</Name>
@@ -42525,7 +42676,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838953536</BitOffs>
+            <BitOffs>838955904</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bLimitForwardEnable</Name>
@@ -42548,7 +42699,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961536</BitOffs>
+            <BitOffs>838963904</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bLimitBackwardEnable</Name>
@@ -42571,7 +42722,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961544</BitOffs>
+            <BitOffs>838963912</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bHome</Name>
@@ -42594,7 +42745,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961552</BitOffs>
+            <BitOffs>838963920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bHardwareEnable</Name>
@@ -42617,7 +42768,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961568</BitOffs>
+            <BitOffs>838963936</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].nRawEncoderULINT</Name>
@@ -42630,7 +42781,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961600</BitOffs>
+            <BitOffs>838963968</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].nRawEncoderUINT</Name>
@@ -42643,7 +42794,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961664</BitOffs>
+            <BitOffs>838964032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].nRawEncoderINT</Name>
@@ -42656,7 +42807,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838961680</BitOffs>
+            <BitOffs>838964048</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].Axis.NcToPlc</Name>
@@ -42668,7 +42819,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838978816</BitOffs>
+            <BitOffs>838981184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bLimitForwardEnable</Name>
@@ -42691,7 +42842,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986816</BitOffs>
+            <BitOffs>838989184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bLimitBackwardEnable</Name>
@@ -42714,7 +42865,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986824</BitOffs>
+            <BitOffs>838989192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bHome</Name>
@@ -42737,7 +42888,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986832</BitOffs>
+            <BitOffs>838989200</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bHardwareEnable</Name>
@@ -42760,7 +42911,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986848</BitOffs>
+            <BitOffs>838989216</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].nRawEncoderULINT</Name>
@@ -42773,7 +42924,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986880</BitOffs>
+            <BitOffs>838989248</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].nRawEncoderUINT</Name>
@@ -42786,7 +42937,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986944</BitOffs>
+            <BitOffs>838989312</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].nRawEncoderINT</Name>
@@ -42799,7 +42950,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>838986960</BitOffs>
+            <BitOffs>838989328</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].Axis.NcToPlc</Name>
@@ -42811,7 +42962,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839004096</BitOffs>
+            <BitOffs>839006464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bLimitForwardEnable</Name>
@@ -42834,7 +42985,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012096</BitOffs>
+            <BitOffs>839014464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bLimitBackwardEnable</Name>
@@ -42857,7 +43008,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012104</BitOffs>
+            <BitOffs>839014472</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bHome</Name>
@@ -42880,7 +43031,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012112</BitOffs>
+            <BitOffs>839014480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bHardwareEnable</Name>
@@ -42903,7 +43054,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012128</BitOffs>
+            <BitOffs>839014496</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].nRawEncoderULINT</Name>
@@ -42916,7 +43067,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012160</BitOffs>
+            <BitOffs>839014528</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].nRawEncoderUINT</Name>
@@ -42929,7 +43080,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012224</BitOffs>
+            <BitOffs>839014592</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].nRawEncoderINT</Name>
@@ -42942,7 +43093,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839012240</BitOffs>
+            <BitOffs>839014608</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].Axis.NcToPlc</Name>
@@ -42954,7 +43105,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839029376</BitOffs>
+            <BitOffs>839031744</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bLimitForwardEnable</Name>
@@ -42977,7 +43128,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037376</BitOffs>
+            <BitOffs>839039744</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bLimitBackwardEnable</Name>
@@ -43000,7 +43151,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037384</BitOffs>
+            <BitOffs>839039752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bHome</Name>
@@ -43023,7 +43174,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037392</BitOffs>
+            <BitOffs>839039760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bHardwareEnable</Name>
@@ -43046,7 +43197,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037408</BitOffs>
+            <BitOffs>839039776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].nRawEncoderULINT</Name>
@@ -43059,7 +43210,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037440</BitOffs>
+            <BitOffs>839039808</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].nRawEncoderUINT</Name>
@@ -43072,7 +43223,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037504</BitOffs>
+            <BitOffs>839039872</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].nRawEncoderINT</Name>
@@ -43085,7 +43236,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839037520</BitOffs>
+            <BitOffs>839039888</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].Axis.NcToPlc</Name>
@@ -43097,7 +43248,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839054656</BitOffs>
+            <BitOffs>839057024</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bLimitForwardEnable</Name>
@@ -43120,7 +43271,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062656</BitOffs>
+            <BitOffs>839065024</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bLimitBackwardEnable</Name>
@@ -43143,7 +43294,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062664</BitOffs>
+            <BitOffs>839065032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bHome</Name>
@@ -43166,7 +43317,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062672</BitOffs>
+            <BitOffs>839065040</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bHardwareEnable</Name>
@@ -43189,7 +43340,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062688</BitOffs>
+            <BitOffs>839065056</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].nRawEncoderULINT</Name>
@@ -43202,7 +43353,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062720</BitOffs>
+            <BitOffs>839065088</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].nRawEncoderUINT</Name>
@@ -43215,7 +43366,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062784</BitOffs>
+            <BitOffs>839065152</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].nRawEncoderINT</Name>
@@ -43228,7 +43379,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839062800</BitOffs>
+            <BitOffs>839065168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -43240,7 +43391,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839081344</BitOffs>
+            <BitOffs>839083712</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -43252,7 +43403,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839380736</BitOffs>
+            <BitOffs>839383104</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -43264,7 +43415,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>839680128</BitOffs>
+            <BitOffs>839682496</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.Axis.NcToPlc</Name>
@@ -43276,7 +43427,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873603712</BitOffs>
+            <BitOffs>873606080</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.bLimitForwardEnable</Name>
@@ -43299,7 +43450,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611712</BitOffs>
+            <BitOffs>873614080</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.bLimitBackwardEnable</Name>
@@ -43322,7 +43473,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611720</BitOffs>
+            <BitOffs>873614088</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.bHome</Name>
@@ -43345,7 +43496,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611728</BitOffs>
+            <BitOffs>873614096</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.bHardwareEnable</Name>
@@ -43368,7 +43519,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611744</BitOffs>
+            <BitOffs>873614112</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.nRawEncoderULINT</Name>
@@ -43381,7 +43532,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611776</BitOffs>
+            <BitOffs>873614144</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.nRawEncoderUINT</Name>
@@ -43394,7 +43545,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611840</BitOffs>
+            <BitOffs>873614208</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.nRawEncoderINT</Name>
@@ -43407,7 +43558,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873611856</BitOffs>
+            <BitOffs>873614224</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.Axis.NcToPlc</Name>
@@ -43419,7 +43570,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873628992</BitOffs>
+            <BitOffs>873631360</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.bLimitForwardEnable</Name>
@@ -43442,7 +43593,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873636992</BitOffs>
+            <BitOffs>873639360</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.bLimitBackwardEnable</Name>
@@ -43465,7 +43616,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873637000</BitOffs>
+            <BitOffs>873639368</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.bHome</Name>
@@ -43488,7 +43639,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873637008</BitOffs>
+            <BitOffs>873639376</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.bHardwareEnable</Name>
@@ -43511,7 +43662,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873637024</BitOffs>
+            <BitOffs>873639392</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.nRawEncoderULINT</Name>
@@ -43524,7 +43675,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873637056</BitOffs>
+            <BitOffs>873639424</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.nRawEncoderUINT</Name>
@@ -43537,7 +43688,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873637120</BitOffs>
+            <BitOffs>873639488</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.nRawEncoderINT</Name>
@@ -43550,7 +43701,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873637136</BitOffs>
+            <BitOffs>873639504</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.Axis.NcToPlc</Name>
@@ -43562,7 +43713,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873654272</BitOffs>
+            <BitOffs>873656640</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.bLimitForwardEnable</Name>
@@ -43585,7 +43736,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662272</BitOffs>
+            <BitOffs>873664640</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.bLimitBackwardEnable</Name>
@@ -43608,7 +43759,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662280</BitOffs>
+            <BitOffs>873664648</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.bHome</Name>
@@ -43631,7 +43782,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662288</BitOffs>
+            <BitOffs>873664656</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.bHardwareEnable</Name>
@@ -43654,7 +43805,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662304</BitOffs>
+            <BitOffs>873664672</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.nRawEncoderULINT</Name>
@@ -43667,7 +43818,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662336</BitOffs>
+            <BitOffs>873664704</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.nRawEncoderUINT</Name>
@@ -43680,7 +43831,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662400</BitOffs>
+            <BitOffs>873664768</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.nRawEncoderINT</Name>
@@ -43693,7 +43844,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873662416</BitOffs>
+            <BitOffs>873664784</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -43705,7 +43856,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>873958016</BitOffs>
+            <BitOffs>873960384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -43717,7 +43868,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>874257408</BitOffs>
+            <BitOffs>874259776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -43729,7 +43880,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>874556800</BitOffs>
+            <BitOffs>874559168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].Axis.NcToPlc</Name>
@@ -43741,7 +43892,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875803520</BitOffs>
+            <BitOffs>875805888</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].bLimitForwardEnable</Name>
@@ -43764,7 +43915,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811520</BitOffs>
+            <BitOffs>875813888</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].bLimitBackwardEnable</Name>
@@ -43787,7 +43938,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811528</BitOffs>
+            <BitOffs>875813896</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].bHome</Name>
@@ -43810,7 +43961,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811536</BitOffs>
+            <BitOffs>875813904</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].bHardwareEnable</Name>
@@ -43833,7 +43984,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811552</BitOffs>
+            <BitOffs>875813920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].nRawEncoderULINT</Name>
@@ -43846,7 +43997,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811584</BitOffs>
+            <BitOffs>875813952</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].nRawEncoderUINT</Name>
@@ -43859,7 +44010,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811648</BitOffs>
+            <BitOffs>875814016</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].nRawEncoderINT</Name>
@@ -43872,7 +44023,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875811664</BitOffs>
+            <BitOffs>875814032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].Axis.NcToPlc</Name>
@@ -43884,7 +44035,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875828800</BitOffs>
+            <BitOffs>875831168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].bLimitForwardEnable</Name>
@@ -43907,7 +44058,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836800</BitOffs>
+            <BitOffs>875839168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].bLimitBackwardEnable</Name>
@@ -43930,7 +44081,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836808</BitOffs>
+            <BitOffs>875839176</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].bHome</Name>
@@ -43953,7 +44104,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836816</BitOffs>
+            <BitOffs>875839184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].bHardwareEnable</Name>
@@ -43976,7 +44127,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836832</BitOffs>
+            <BitOffs>875839200</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].nRawEncoderULINT</Name>
@@ -43989,7 +44140,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836864</BitOffs>
+            <BitOffs>875839232</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].nRawEncoderUINT</Name>
@@ -44002,7 +44153,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836928</BitOffs>
+            <BitOffs>875839296</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].nRawEncoderINT</Name>
@@ -44015,7 +44166,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875836944</BitOffs>
+            <BitOffs>875839312</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].Axis.NcToPlc</Name>
@@ -44027,7 +44178,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875854080</BitOffs>
+            <BitOffs>875856448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].bLimitForwardEnable</Name>
@@ -44050,7 +44201,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862080</BitOffs>
+            <BitOffs>875864448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].bLimitBackwardEnable</Name>
@@ -44073,7 +44224,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862088</BitOffs>
+            <BitOffs>875864456</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].bHome</Name>
@@ -44096,7 +44247,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862096</BitOffs>
+            <BitOffs>875864464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].bHardwareEnable</Name>
@@ -44119,7 +44270,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862112</BitOffs>
+            <BitOffs>875864480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].nRawEncoderULINT</Name>
@@ -44132,7 +44283,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862144</BitOffs>
+            <BitOffs>875864512</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].nRawEncoderUINT</Name>
@@ -44145,7 +44296,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862208</BitOffs>
+            <BitOffs>875864576</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].nRawEncoderINT</Name>
@@ -44158,7 +44309,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875862224</BitOffs>
+            <BitOffs>875864592</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].Axis.NcToPlc</Name>
@@ -44170,7 +44321,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875879360</BitOffs>
+            <BitOffs>875881728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].bLimitForwardEnable</Name>
@@ -44193,7 +44344,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887360</BitOffs>
+            <BitOffs>875889728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].bLimitBackwardEnable</Name>
@@ -44216,7 +44367,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887368</BitOffs>
+            <BitOffs>875889736</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].bHome</Name>
@@ -44239,7 +44390,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887376</BitOffs>
+            <BitOffs>875889744</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].bHardwareEnable</Name>
@@ -44262,7 +44413,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887392</BitOffs>
+            <BitOffs>875889760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].nRawEncoderULINT</Name>
@@ -44275,7 +44426,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887424</BitOffs>
+            <BitOffs>875889792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].nRawEncoderUINT</Name>
@@ -44288,7 +44439,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887488</BitOffs>
+            <BitOffs>875889856</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].nRawEncoderINT</Name>
@@ -44301,7 +44452,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875887504</BitOffs>
+            <BitOffs>875889872</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].Axis.NcToPlc</Name>
@@ -44313,7 +44464,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875904640</BitOffs>
+            <BitOffs>875907008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].bLimitForwardEnable</Name>
@@ -44336,7 +44487,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912640</BitOffs>
+            <BitOffs>875915008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].bLimitBackwardEnable</Name>
@@ -44359,7 +44510,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912648</BitOffs>
+            <BitOffs>875915016</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].bHome</Name>
@@ -44382,7 +44533,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912656</BitOffs>
+            <BitOffs>875915024</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].bHardwareEnable</Name>
@@ -44405,7 +44556,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912672</BitOffs>
+            <BitOffs>875915040</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].nRawEncoderULINT</Name>
@@ -44418,7 +44569,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912704</BitOffs>
+            <BitOffs>875915072</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].nRawEncoderUINT</Name>
@@ -44431,7 +44582,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912768</BitOffs>
+            <BitOffs>875915136</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].nRawEncoderINT</Name>
@@ -44444,7 +44595,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>875912784</BitOffs>
+            <BitOffs>875915152</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].Axis.NcToPlc</Name>
@@ -44456,7 +44607,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877179520</BitOffs>
+            <BitOffs>877181888</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].bLimitForwardEnable</Name>
@@ -44479,7 +44630,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187520</BitOffs>
+            <BitOffs>877189888</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].bLimitBackwardEnable</Name>
@@ -44502,7 +44653,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187528</BitOffs>
+            <BitOffs>877189896</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].bHome</Name>
@@ -44525,7 +44676,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187536</BitOffs>
+            <BitOffs>877189904</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].bHardwareEnable</Name>
@@ -44548,7 +44699,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187552</BitOffs>
+            <BitOffs>877189920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].nRawEncoderULINT</Name>
@@ -44561,7 +44712,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187584</BitOffs>
+            <BitOffs>877189952</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].nRawEncoderUINT</Name>
@@ -44574,7 +44725,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187648</BitOffs>
+            <BitOffs>877190016</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].nRawEncoderINT</Name>
@@ -44587,7 +44738,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877187664</BitOffs>
+            <BitOffs>877190032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].Axis.NcToPlc</Name>
@@ -44599,7 +44750,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877204800</BitOffs>
+            <BitOffs>877207168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].bLimitForwardEnable</Name>
@@ -44622,7 +44773,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212800</BitOffs>
+            <BitOffs>877215168</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].bLimitBackwardEnable</Name>
@@ -44645,7 +44796,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212808</BitOffs>
+            <BitOffs>877215176</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].bHome</Name>
@@ -44668,7 +44819,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212816</BitOffs>
+            <BitOffs>877215184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].bHardwareEnable</Name>
@@ -44691,7 +44842,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212832</BitOffs>
+            <BitOffs>877215200</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].nRawEncoderULINT</Name>
@@ -44704,7 +44855,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212864</BitOffs>
+            <BitOffs>877215232</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].nRawEncoderUINT</Name>
@@ -44717,7 +44868,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212928</BitOffs>
+            <BitOffs>877215296</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].nRawEncoderINT</Name>
@@ -44730,7 +44881,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877212944</BitOffs>
+            <BitOffs>877215312</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].Axis.NcToPlc</Name>
@@ -44742,7 +44893,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877230080</BitOffs>
+            <BitOffs>877232448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].bLimitForwardEnable</Name>
@@ -44765,7 +44916,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238080</BitOffs>
+            <BitOffs>877240448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].bLimitBackwardEnable</Name>
@@ -44788,7 +44939,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238088</BitOffs>
+            <BitOffs>877240456</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].bHome</Name>
@@ -44811,7 +44962,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238096</BitOffs>
+            <BitOffs>877240464</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].bHardwareEnable</Name>
@@ -44834,7 +44985,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238112</BitOffs>
+            <BitOffs>877240480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].nRawEncoderULINT</Name>
@@ -44847,7 +44998,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238144</BitOffs>
+            <BitOffs>877240512</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].nRawEncoderUINT</Name>
@@ -44860,7 +45011,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238208</BitOffs>
+            <BitOffs>877240576</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].nRawEncoderINT</Name>
@@ -44873,7 +45024,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877238224</BitOffs>
+            <BitOffs>877240592</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].Axis.NcToPlc</Name>
@@ -44885,7 +45036,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877255360</BitOffs>
+            <BitOffs>877257728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].bLimitForwardEnable</Name>
@@ -44908,7 +45059,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263360</BitOffs>
+            <BitOffs>877265728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].bLimitBackwardEnable</Name>
@@ -44931,7 +45082,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263368</BitOffs>
+            <BitOffs>877265736</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].bHome</Name>
@@ -44954,7 +45105,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263376</BitOffs>
+            <BitOffs>877265744</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].bHardwareEnable</Name>
@@ -44977,7 +45128,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263392</BitOffs>
+            <BitOffs>877265760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].nRawEncoderULINT</Name>
@@ -44990,7 +45141,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263424</BitOffs>
+            <BitOffs>877265792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].nRawEncoderUINT</Name>
@@ -45003,7 +45154,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263488</BitOffs>
+            <BitOffs>877265856</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].nRawEncoderINT</Name>
@@ -45016,7 +45167,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877263504</BitOffs>
+            <BitOffs>877265872</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].Axis.NcToPlc</Name>
@@ -45028,7 +45179,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877280640</BitOffs>
+            <BitOffs>877283008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].bLimitForwardEnable</Name>
@@ -45051,7 +45202,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288640</BitOffs>
+            <BitOffs>877291008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].bLimitBackwardEnable</Name>
@@ -45074,7 +45225,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288648</BitOffs>
+            <BitOffs>877291016</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].bHome</Name>
@@ -45097,7 +45248,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288656</BitOffs>
+            <BitOffs>877291024</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].bHardwareEnable</Name>
@@ -45120,7 +45271,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288672</BitOffs>
+            <BitOffs>877291040</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].nRawEncoderULINT</Name>
@@ -45133,7 +45284,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288704</BitOffs>
+            <BitOffs>877291072</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].nRawEncoderUINT</Name>
@@ -45146,7 +45297,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288768</BitOffs>
+            <BitOffs>877291136</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].nRawEncoderINT</Name>
@@ -45159,7 +45310,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>877288784</BitOffs>
+            <BitOffs>877291152</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].Axis.NcToPlc</Name>
@@ -45171,7 +45322,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878573888</BitOffs>
+            <BitOffs>878576256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].bLimitForwardEnable</Name>
@@ -45194,7 +45345,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878581888</BitOffs>
+            <BitOffs>878584256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].bLimitBackwardEnable</Name>
@@ -45217,7 +45368,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878581896</BitOffs>
+            <BitOffs>878584264</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].bHome</Name>
@@ -45240,7 +45391,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878581904</BitOffs>
+            <BitOffs>878584272</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].bHardwareEnable</Name>
@@ -45263,7 +45414,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878581920</BitOffs>
+            <BitOffs>878584288</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].nRawEncoderULINT</Name>
@@ -45276,7 +45427,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878581952</BitOffs>
+            <BitOffs>878584320</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].nRawEncoderUINT</Name>
@@ -45289,7 +45440,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878582016</BitOffs>
+            <BitOffs>878584384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].nRawEncoderINT</Name>
@@ -45302,7 +45453,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878582032</BitOffs>
+            <BitOffs>878584400</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].Axis.NcToPlc</Name>
@@ -45314,7 +45465,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878599168</BitOffs>
+            <BitOffs>878601536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].bLimitForwardEnable</Name>
@@ -45337,7 +45488,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607168</BitOffs>
+            <BitOffs>878609536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].bLimitBackwardEnable</Name>
@@ -45360,7 +45511,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607176</BitOffs>
+            <BitOffs>878609544</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].bHome</Name>
@@ -45383,7 +45534,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607184</BitOffs>
+            <BitOffs>878609552</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].bHardwareEnable</Name>
@@ -45406,7 +45557,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607200</BitOffs>
+            <BitOffs>878609568</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].nRawEncoderULINT</Name>
@@ -45419,7 +45570,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607232</BitOffs>
+            <BitOffs>878609600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].nRawEncoderUINT</Name>
@@ -45432,7 +45583,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607296</BitOffs>
+            <BitOffs>878609664</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].nRawEncoderINT</Name>
@@ -45445,7 +45596,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878607312</BitOffs>
+            <BitOffs>878609680</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].Axis.NcToPlc</Name>
@@ -45457,7 +45608,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878624448</BitOffs>
+            <BitOffs>878626816</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].bLimitForwardEnable</Name>
@@ -45480,7 +45631,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632448</BitOffs>
+            <BitOffs>878634816</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].bLimitBackwardEnable</Name>
@@ -45503,7 +45654,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632456</BitOffs>
+            <BitOffs>878634824</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].bHome</Name>
@@ -45526,7 +45677,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632464</BitOffs>
+            <BitOffs>878634832</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].bHardwareEnable</Name>
@@ -45549,7 +45700,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632480</BitOffs>
+            <BitOffs>878634848</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].nRawEncoderULINT</Name>
@@ -45562,7 +45713,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632512</BitOffs>
+            <BitOffs>878634880</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].nRawEncoderUINT</Name>
@@ -45575,7 +45726,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632576</BitOffs>
+            <BitOffs>878634944</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].nRawEncoderINT</Name>
@@ -45588,7 +45739,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878632592</BitOffs>
+            <BitOffs>878634960</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].Axis.NcToPlc</Name>
@@ -45600,7 +45751,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878649728</BitOffs>
+            <BitOffs>878652096</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].bLimitForwardEnable</Name>
@@ -45623,7 +45774,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657728</BitOffs>
+            <BitOffs>878660096</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].bLimitBackwardEnable</Name>
@@ -45646,7 +45797,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657736</BitOffs>
+            <BitOffs>878660104</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].bHome</Name>
@@ -45669,7 +45820,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657744</BitOffs>
+            <BitOffs>878660112</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].bHardwareEnable</Name>
@@ -45692,7 +45843,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657760</BitOffs>
+            <BitOffs>878660128</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].nRawEncoderULINT</Name>
@@ -45705,7 +45856,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657792</BitOffs>
+            <BitOffs>878660160</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].nRawEncoderUINT</Name>
@@ -45718,7 +45869,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657856</BitOffs>
+            <BitOffs>878660224</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].nRawEncoderINT</Name>
@@ -45731,7 +45882,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878657872</BitOffs>
+            <BitOffs>878660240</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].Axis.NcToPlc</Name>
@@ -45743,7 +45894,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878675008</BitOffs>
+            <BitOffs>878677376</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].bLimitForwardEnable</Name>
@@ -45766,7 +45917,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683008</BitOffs>
+            <BitOffs>878685376</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].bLimitBackwardEnable</Name>
@@ -45789,7 +45940,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683016</BitOffs>
+            <BitOffs>878685384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].bHome</Name>
@@ -45812,7 +45963,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683024</BitOffs>
+            <BitOffs>878685392</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].bHardwareEnable</Name>
@@ -45835,7 +45986,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683040</BitOffs>
+            <BitOffs>878685408</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].nRawEncoderULINT</Name>
@@ -45848,7 +45999,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683072</BitOffs>
+            <BitOffs>878685440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].nRawEncoderUINT</Name>
@@ -45861,7 +46012,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683136</BitOffs>
+            <BitOffs>878685504</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].nRawEncoderINT</Name>
@@ -45874,7 +46025,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>878683152</BitOffs>
+            <BitOffs>878685520</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.Axis.NcToPlc</Name>
@@ -45886,7 +46037,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912544384</BitOffs>
+            <BitOffs>912546752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.bLimitForwardEnable</Name>
@@ -45909,7 +46060,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552384</BitOffs>
+            <BitOffs>912554752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.bLimitBackwardEnable</Name>
@@ -45932,7 +46083,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552392</BitOffs>
+            <BitOffs>912554760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.bHome</Name>
@@ -45955,7 +46106,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552400</BitOffs>
+            <BitOffs>912554768</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.bHardwareEnable</Name>
@@ -45978,7 +46129,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552416</BitOffs>
+            <BitOffs>912554784</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.nRawEncoderULINT</Name>
@@ -45991,7 +46142,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552448</BitOffs>
+            <BitOffs>912554816</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.nRawEncoderUINT</Name>
@@ -46004,7 +46155,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552512</BitOffs>
+            <BitOffs>912554880</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.nRawEncoderINT</Name>
@@ -46017,7 +46168,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912552528</BitOffs>
+            <BitOffs>912554896</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
@@ -46029,7 +46180,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>912571072</BitOffs>
+            <BitOffs>912573440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].Axis.NcToPlc</Name>
@@ -46041,7 +46192,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985898048</BitOffs>
+            <BitOffs>985900416</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].bLimitForwardEnable</Name>
@@ -46064,7 +46215,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906048</BitOffs>
+            <BitOffs>985908416</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].bLimitBackwardEnable</Name>
@@ -46087,7 +46238,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906056</BitOffs>
+            <BitOffs>985908424</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].bHome</Name>
@@ -46110,7 +46261,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906064</BitOffs>
+            <BitOffs>985908432</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].bHardwareEnable</Name>
@@ -46133,7 +46284,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906080</BitOffs>
+            <BitOffs>985908448</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].nRawEncoderULINT</Name>
@@ -46146,7 +46297,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906112</BitOffs>
+            <BitOffs>985908480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].nRawEncoderUINT</Name>
@@ -46159,7 +46310,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906176</BitOffs>
+            <BitOffs>985908544</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].nRawEncoderINT</Name>
@@ -46172,7 +46323,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985906192</BitOffs>
+            <BitOffs>985908560</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].Axis.NcToPlc</Name>
@@ -46184,7 +46335,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985923328</BitOffs>
+            <BitOffs>985925696</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].bLimitForwardEnable</Name>
@@ -46207,7 +46358,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931328</BitOffs>
+            <BitOffs>985933696</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].bLimitBackwardEnable</Name>
@@ -46230,7 +46381,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931336</BitOffs>
+            <BitOffs>985933704</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].bHome</Name>
@@ -46253,7 +46404,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931344</BitOffs>
+            <BitOffs>985933712</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].bHardwareEnable</Name>
@@ -46276,7 +46427,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931360</BitOffs>
+            <BitOffs>985933728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].nRawEncoderULINT</Name>
@@ -46289,7 +46440,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931392</BitOffs>
+            <BitOffs>985933760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].nRawEncoderUINT</Name>
@@ -46302,7 +46453,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931456</BitOffs>
+            <BitOffs>985933824</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].nRawEncoderINT</Name>
@@ -46315,7 +46466,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985931472</BitOffs>
+            <BitOffs>985933840</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].Axis.NcToPlc</Name>
@@ -46327,7 +46478,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985948608</BitOffs>
+            <BitOffs>985950976</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].bLimitForwardEnable</Name>
@@ -46350,7 +46501,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956608</BitOffs>
+            <BitOffs>985958976</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].bLimitBackwardEnable</Name>
@@ -46373,7 +46524,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956616</BitOffs>
+            <BitOffs>985958984</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].bHome</Name>
@@ -46396,7 +46547,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956624</BitOffs>
+            <BitOffs>985958992</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].bHardwareEnable</Name>
@@ -46419,7 +46570,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956640</BitOffs>
+            <BitOffs>985959008</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].nRawEncoderULINT</Name>
@@ -46432,7 +46583,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956672</BitOffs>
+            <BitOffs>985959040</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].nRawEncoderUINT</Name>
@@ -46445,7 +46596,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956736</BitOffs>
+            <BitOffs>985959104</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].nRawEncoderINT</Name>
@@ -46458,7 +46609,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985956752</BitOffs>
+            <BitOffs>985959120</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].Axis.NcToPlc</Name>
@@ -46470,7 +46621,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985973888</BitOffs>
+            <BitOffs>985976256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].bLimitForwardEnable</Name>
@@ -46493,7 +46644,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985981888</BitOffs>
+            <BitOffs>985984256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].bLimitBackwardEnable</Name>
@@ -46516,7 +46667,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985981896</BitOffs>
+            <BitOffs>985984264</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].bHome</Name>
@@ -46539,7 +46690,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985981904</BitOffs>
+            <BitOffs>985984272</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].bHardwareEnable</Name>
@@ -46562,7 +46713,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985981920</BitOffs>
+            <BitOffs>985984288</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].nRawEncoderULINT</Name>
@@ -46575,7 +46726,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985981952</BitOffs>
+            <BitOffs>985984320</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].nRawEncoderUINT</Name>
@@ -46588,7 +46739,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985982016</BitOffs>
+            <BitOffs>985984384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].nRawEncoderINT</Name>
@@ -46601,7 +46752,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985982032</BitOffs>
+            <BitOffs>985984400</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].Axis.NcToPlc</Name>
@@ -46613,7 +46764,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>985999168</BitOffs>
+            <BitOffs>986001536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].bLimitForwardEnable</Name>
@@ -46636,7 +46787,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007168</BitOffs>
+            <BitOffs>986009536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].bLimitBackwardEnable</Name>
@@ -46659,7 +46810,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007176</BitOffs>
+            <BitOffs>986009544</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].bHome</Name>
@@ -46682,7 +46833,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007184</BitOffs>
+            <BitOffs>986009552</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].bHardwareEnable</Name>
@@ -46705,7 +46856,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007200</BitOffs>
+            <BitOffs>986009568</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].nRawEncoderULINT</Name>
@@ -46718,7 +46869,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007232</BitOffs>
+            <BitOffs>986009600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].nRawEncoderUINT</Name>
@@ -46731,7 +46882,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007296</BitOffs>
+            <BitOffs>986009664</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].nRawEncoderINT</Name>
@@ -46744,14 +46895,14 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Input</Value>
               </Property>
             </Properties>
-            <BitOffs>986007312</BitOffs>
+            <BitOffs>986009680</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="OutputSrc" CreateSymbols="true">1</AreaNo>
           <Name>PlcTask Outputs</Name>
           <ContextId>0</ContextId>
-          <ByteSize>124649472</ByteSize>
+          <ByteSize>128909312</ByteSize>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
@@ -46762,7 +46913,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>668231168</BitOffs>
+            <BitOffs>668233536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.bBrakeRelease</Name>
@@ -46785,7 +46936,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>668240216</BitOffs>
+            <BitOffs>668242584</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -46797,7 +46948,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>668257856</BitOffs>
+            <BitOffs>668260224</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.Axis.PlcToNc</Name>
@@ -46809,7 +46960,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>702112384</BitOffs>
+            <BitOffs>702114752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.stMotionStage.bBrakeRelease</Name>
@@ -46832,7 +46983,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>702121432</BitOffs>
+            <BitOffs>702123800</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_AtPositionState_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -46844,7 +46995,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>702139072</BitOffs>
+            <BitOffs>702141440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.Axis.PlcToNc</Name>
@@ -46856,7 +47007,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>736029696</BitOffs>
+            <BitOffs>736032064</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.stMotionStage.bBrakeRelease</Name>
@@ -46879,7 +47030,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>736038744</BitOffs>
+            <BitOffs>736041112</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateRead_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -46891,7 +47042,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>736056384</BitOffs>
+            <BitOffs>736058752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].Axis.PlcToNc</Name>
@@ -46903,7 +47054,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770011008</BitOffs>
+            <BitOffs>770013376</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[1].bBrakeRelease</Name>
@@ -46926,7 +47077,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770020056</BitOffs>
+            <BitOffs>770022424</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].Axis.PlcToNc</Name>
@@ -46938,7 +47089,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770036288</BitOffs>
+            <BitOffs>770038656</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[2].bBrakeRelease</Name>
@@ -46961,7 +47112,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770045336</BitOffs>
+            <BitOffs>770047704</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].Axis.PlcToNc</Name>
@@ -46973,7 +47124,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770061568</BitOffs>
+            <BitOffs>770063936</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[3].bBrakeRelease</Name>
@@ -46996,7 +47147,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770070616</BitOffs>
+            <BitOffs>770072984</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].Axis.PlcToNc</Name>
@@ -47008,7 +47159,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770086848</BitOffs>
+            <BitOffs>770089216</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[4].bBrakeRelease</Name>
@@ -47031,7 +47182,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770095896</BitOffs>
+            <BitOffs>770098264</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].Axis.PlcToNc</Name>
@@ -47043,7 +47194,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770112128</BitOffs>
+            <BitOffs>770114496</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.astMotionStage[5].bBrakeRelease</Name>
@@ -47066,7 +47217,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770121176</BitOffs>
+            <BitOffs>770123544</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47078,7 +47229,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770138816</BitOffs>
+            <BitOffs>770141184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47090,7 +47241,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770438208</BitOffs>
+            <BitOffs>770440576</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateReadND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47102,7 +47253,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>770737600</BitOffs>
+            <BitOffs>770739968</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.Axis.PlcToNc</Name>
@@ -47114,7 +47265,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>804969792</BitOffs>
+            <BitOffs>804972160</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.stMotionStage.bBrakeRelease</Name>
@@ -47137,7 +47288,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>804978840</BitOffs>
+            <BitOffs>804981208</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMove_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47149,7 +47300,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>804996480</BitOffs>
+            <BitOffs>804998848</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].Axis.PlcToNc</Name>
@@ -47161,7 +47312,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>838952512</BitOffs>
+            <BitOffs>838954880</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[1].bBrakeRelease</Name>
@@ -47184,7 +47335,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>838961560</BitOffs>
+            <BitOffs>838963928</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].Axis.PlcToNc</Name>
@@ -47196,7 +47347,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>838977792</BitOffs>
+            <BitOffs>838980160</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[2].bBrakeRelease</Name>
@@ -47219,7 +47370,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>838986840</BitOffs>
+            <BitOffs>838989208</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].Axis.PlcToNc</Name>
@@ -47231,7 +47382,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839003072</BitOffs>
+            <BitOffs>839005440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[3].bBrakeRelease</Name>
@@ -47254,7 +47405,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839012120</BitOffs>
+            <BitOffs>839014488</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].Axis.PlcToNc</Name>
@@ -47266,7 +47417,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839028352</BitOffs>
+            <BitOffs>839030720</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[4].bBrakeRelease</Name>
@@ -47289,7 +47440,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839037400</BitOffs>
+            <BitOffs>839039768</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].Axis.PlcToNc</Name>
@@ -47301,7 +47452,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839053632</BitOffs>
+            <BitOffs>839056000</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.astMotionStage[5].bBrakeRelease</Name>
@@ -47324,7 +47475,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839062680</BitOffs>
+            <BitOffs>839065048</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47336,7 +47487,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839080320</BitOffs>
+            <BitOffs>839082688</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47348,7 +47499,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839379712</BitOffs>
+            <BitOffs>839382080</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionStateMoveND_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47360,7 +47511,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>839679104</BitOffs>
+            <BitOffs>839681472</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.Axis.PlcToNc</Name>
@@ -47372,7 +47523,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873602688</BitOffs>
+            <BitOffs>873605056</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage1.bBrakeRelease</Name>
@@ -47395,7 +47546,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873611736</BitOffs>
+            <BitOffs>873614104</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.Axis.PlcToNc</Name>
@@ -47407,7 +47558,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873627968</BitOffs>
+            <BitOffs>873630336</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage2.bBrakeRelease</Name>
@@ -47430,7 +47581,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873637016</BitOffs>
+            <BitOffs>873639384</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.Axis.PlcToNc</Name>
@@ -47442,7 +47593,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873653248</BitOffs>
+            <BitOffs>873655616</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.stMotionStage3.bBrakeRelease</Name>
@@ -47465,7 +47616,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873662296</BitOffs>
+            <BitOffs>873664664</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.afbMotionStage[1].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47477,7 +47628,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>873956992</BitOffs>
+            <BitOffs>873959360</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.afbMotionStage[2].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47489,7 +47640,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>874256384</BitOffs>
+            <BitOffs>874258752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.afbMotionStage[3].fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -47501,7 +47652,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>874555776</BitOffs>
+            <BitOffs>874558144</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].Axis.PlcToNc</Name>
@@ -47513,7 +47664,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875802496</BitOffs>
+            <BitOffs>875804864</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[1].bBrakeRelease</Name>
@@ -47536,7 +47687,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875811544</BitOffs>
+            <BitOffs>875813912</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].Axis.PlcToNc</Name>
@@ -47548,7 +47699,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875827776</BitOffs>
+            <BitOffs>875830144</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[2].bBrakeRelease</Name>
@@ -47571,7 +47722,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875836824</BitOffs>
+            <BitOffs>875839192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].Axis.PlcToNc</Name>
@@ -47583,7 +47734,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875853056</BitOffs>
+            <BitOffs>875855424</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[3].bBrakeRelease</Name>
@@ -47606,7 +47757,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875862104</BitOffs>
+            <BitOffs>875864472</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].Axis.PlcToNc</Name>
@@ -47618,7 +47769,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875878336</BitOffs>
+            <BitOffs>875880704</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[4].bBrakeRelease</Name>
@@ -47641,7 +47792,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875887384</BitOffs>
+            <BitOffs>875889752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].Axis.PlcToNc</Name>
@@ -47653,7 +47804,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875903616</BitOffs>
+            <BitOffs>875905984</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move1D.astMotionStageMax[5].bBrakeRelease</Name>
@@ -47676,7 +47827,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>875912664</BitOffs>
+            <BitOffs>875915032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].Axis.PlcToNc</Name>
@@ -47688,7 +47839,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877178496</BitOffs>
+            <BitOffs>877180864</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[1].bBrakeRelease</Name>
@@ -47711,7 +47862,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877187544</BitOffs>
+            <BitOffs>877189912</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].Axis.PlcToNc</Name>
@@ -47723,7 +47874,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877203776</BitOffs>
+            <BitOffs>877206144</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[2].bBrakeRelease</Name>
@@ -47746,7 +47897,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877212824</BitOffs>
+            <BitOffs>877215192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].Axis.PlcToNc</Name>
@@ -47758,7 +47909,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877229056</BitOffs>
+            <BitOffs>877231424</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[3].bBrakeRelease</Name>
@@ -47781,7 +47932,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877238104</BitOffs>
+            <BitOffs>877240472</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].Axis.PlcToNc</Name>
@@ -47793,7 +47944,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877254336</BitOffs>
+            <BitOffs>877256704</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[4].bBrakeRelease</Name>
@@ -47816,7 +47967,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877263384</BitOffs>
+            <BitOffs>877265752</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].Axis.PlcToNc</Name>
@@ -47828,7 +47979,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877279616</BitOffs>
+            <BitOffs>877281984</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move2D.astMotionStageMax[5].bBrakeRelease</Name>
@@ -47851,7 +48002,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>877288664</BitOffs>
+            <BitOffs>877291032</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].Axis.PlcToNc</Name>
@@ -47863,7 +48014,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878572864</BitOffs>
+            <BitOffs>878575232</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[1].bBrakeRelease</Name>
@@ -47886,7 +48037,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878581912</BitOffs>
+            <BitOffs>878584280</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].Axis.PlcToNc</Name>
@@ -47898,7 +48049,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878598144</BitOffs>
+            <BitOffs>878600512</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[2].bBrakeRelease</Name>
@@ -47921,7 +48072,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878607192</BitOffs>
+            <BitOffs>878609560</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].Axis.PlcToNc</Name>
@@ -47933,7 +48084,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878623424</BitOffs>
+            <BitOffs>878625792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[3].bBrakeRelease</Name>
@@ -47956,7 +48107,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878632472</BitOffs>
+            <BitOffs>878634840</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].Axis.PlcToNc</Name>
@@ -47968,7 +48119,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878648704</BitOffs>
+            <BitOffs>878651072</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[4].bBrakeRelease</Name>
@@ -47991,7 +48142,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878657752</BitOffs>
+            <BitOffs>878660120</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].Axis.PlcToNc</Name>
@@ -48003,7 +48154,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878673984</BitOffs>
+            <BitOffs>878676352</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_PositionState_Test.fb_Move3D.astMotionStageMax[5].bBrakeRelease</Name>
@@ -48026,7 +48177,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>878683032</BitOffs>
+            <BitOffs>878685400</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.Axis.PlcToNc</Name>
@@ -48038,7 +48189,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>912543360</BitOffs>
+            <BitOffs>912545728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.stMotionStage.bBrakeRelease</Name>
@@ -48061,7 +48212,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>912552408</BitOffs>
+            <BitOffs>912554776</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
@@ -48073,7 +48224,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>912570048</BitOffs>
+            <BitOffs>912572416</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_NCErrorFFO_Test.fbFFHWO.q_xFastFaultOut</Name>
@@ -48093,7 +48244,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>912868232</BitOffs>
+            <BitOffs>912870600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].Axis.PlcToNc</Name>
@@ -48105,7 +48256,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985897024</BitOffs>
+            <BitOffs>985899392</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[1].bBrakeRelease</Name>
@@ -48128,7 +48279,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985906072</BitOffs>
+            <BitOffs>985908440</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].Axis.PlcToNc</Name>
@@ -48140,7 +48291,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985922304</BitOffs>
+            <BitOffs>985924672</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[2].bBrakeRelease</Name>
@@ -48163,7 +48314,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985931352</BitOffs>
+            <BitOffs>985933720</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].Axis.PlcToNc</Name>
@@ -48175,7 +48326,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985947584</BitOffs>
+            <BitOffs>985949952</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[3].bBrakeRelease</Name>
@@ -48198,7 +48349,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985956632</BitOffs>
+            <BitOffs>985959000</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].Axis.PlcToNc</Name>
@@ -48210,7 +48361,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985972864</BitOffs>
+            <BitOffs>985975232</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[4].bBrakeRelease</Name>
@@ -48233,7 +48384,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985981912</BitOffs>
+            <BitOffs>985984280</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].Axis.PlcToNc</Name>
@@ -48245,7 +48396,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>985998144</BitOffs>
+            <BitOffs>986000512</BitOffs>
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MotionBPTM_Test.astMotionStage[5].bBrakeRelease</Name>
@@ -48268,14 +48419,14 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Value>Output</Value>
               </Property>
             </Properties>
-            <BitOffs>986007192</BitOffs>
+            <BitOffs>986009560</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="Internal" CreateSymbols="true">3</AreaNo>
           <Name>PlcTask Internal</Name>
           <ContextId>0</ContextId>
-          <ByteSize>124649472</ByteSize>
+          <ByteSize>128909312</ByteSize>
           <Symbol>
             <Name>DefaultGlobals.stSys</Name>
             <Comment>Included for you</Comment>
@@ -54063,66 +54214,6 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             <BitOffs>634609408</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_TestHelperSetAndMove_Test</Name>
-            <BitSize>33881216</BitSize>
-            <BaseType>FB_TestHelperSetAndMove_Test</BaseType>
-            <BitOffs>634679360</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_AtPositionState_Test</Name>
-            <BitSize>33917312</BitSize>
-            <BaseType>FB_AtPositionState_Test</BaseType>
-            <BitOffs>668560576</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateRead_Test</Name>
-            <BitSize>33981312</BitSize>
-            <BaseType>FB_PositionStateRead_Test</BaseType>
-            <BitOffs>702477888</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateReadND_Test</Name>
-            <BitSize>34958784</BitSize>
-            <BaseType>FB_PositionStateReadND_Test</BaseType>
-            <BitOffs>736459200</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateMove_Test</Name>
-            <BitSize>33982720</BitSize>
-            <BaseType>FB_PositionStateMove_Test</BaseType>
-            <BitOffs>771417984</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionStateMoveND_Test</Name>
-            <BitSize>34650176</BitSize>
-            <BaseType>FB_PositionStateMoveND_Test</BaseType>
-            <BitOffs>805400704</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_PositionState_Test</Name>
-            <BitSize>38940672</BitSize>
-            <BaseType>FB_PositionState_Test</BaseType>
-            <BitOffs>840050880</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_NCErrorFFO_Test</Name>
-            <BitSize>34432000</BitSize>
-            <BaseType>FB_NCErrorFFO_Test</BaseType>
-            <BitOffs>878991552</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_MiscStatesErrorFFO_Test</Name>
-            <BitSize>38921664</BitSize>
-            <BaseType>FB_MiscStatesErrorFFO_Test</BaseType>
-            <BitOffs>913423552</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_MotionBPTM_Test</Name>
-            <BitSize>38014336</BitSize>
-            <BaseType>FB_MotionBPTM_Test</BaseType>
-            <BitOffs>952345216</BitOffs>
-          </Symbol>
-          <Symbol>
             <Name>MotionConstants.MAX_STATE_MOTORS</Name>
             <Comment> Arbitary cap on multidimensional states to simplify statements for the compiler.</Comment>
             <BitSize>16</BitSize>
@@ -54135,7 +54226,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>990360064</BitOffs>
+            <BitOffs>634681696</BitOffs>
           </Symbol>
           <Symbol>
             <Name>GVL_ErrorSystem.cSizeOfErrorData</Name>
@@ -54149,21 +54240,73 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>990360080</BitOffs>
+            <BitOffs>634681712</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>GVL.nHomingError</Name>
-            <BitSize>32</BitSize>
-            <BaseType>UDINT</BaseType>
-            <Default>
-              <Value>85248</Value>
-            </Default>
-            <Properties>
-              <Property>
-                <Name>TcVarGlobal</Name>
-              </Property>
-            </Properties>
-            <BitOffs>990360096</BitOffs>
+            <Name>PRG_TEST.fb_TestHelperSetAndMove_Test</Name>
+            <BitSize>33881216</BitSize>
+            <BaseType>FB_TestHelperSetAndMove_Test</BaseType>
+            <BitOffs>634681728</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_AtPositionState_Test</Name>
+            <BitSize>33917312</BitSize>
+            <BaseType>FB_AtPositionState_Test</BaseType>
+            <BitOffs>668562944</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateRead_Test</Name>
+            <BitSize>33981312</BitSize>
+            <BaseType>FB_PositionStateRead_Test</BaseType>
+            <BitOffs>702480256</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateReadND_Test</Name>
+            <BitSize>34958784</BitSize>
+            <BaseType>FB_PositionStateReadND_Test</BaseType>
+            <BitOffs>736461568</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateMove_Test</Name>
+            <BitSize>33982720</BitSize>
+            <BaseType>FB_PositionStateMove_Test</BaseType>
+            <BitOffs>771420352</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionStateMoveND_Test</Name>
+            <BitSize>34650176</BitSize>
+            <BaseType>FB_PositionStateMoveND_Test</BaseType>
+            <BitOffs>805403072</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_PositionState_Test</Name>
+            <BitSize>38940672</BitSize>
+            <BaseType>FB_PositionState_Test</BaseType>
+            <BitOffs>840053248</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_NCErrorFFO_Test</Name>
+            <BitSize>34432000</BitSize>
+            <BaseType>FB_NCErrorFFO_Test</BaseType>
+            <BitOffs>878993920</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_MiscStatesErrorFFO_Test</Name>
+            <BitSize>38921664</BitSize>
+            <BaseType>FB_MiscStatesErrorFFO_Test</BaseType>
+            <BitOffs>913425920</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_MotionBPTM_Test</Name>
+            <BitSize>38014336</BitSize>
+            <BaseType>FB_MotionBPTM_Test</BaseType>
+            <BitOffs>952347584</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_MotionClearAsserts_Test</Name>
+            <BitSize>34066560</BitSize>
+            <BaseType>FB_MotionClearAsserts_Test</BaseType>
+            <BitOffs>990361920</BitOffs>
           </Symbol>
           <Symbol>
             <Name>MOTION_GVL.fbPmpsFileReader</Name>
@@ -54174,7 +54317,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>990360128</BitOffs>
+            <BitOffs>1024428992</BitOffs>
           </Symbol>
           <Symbol>
             <Name>MOTION_GVL.fbStandardPMPSDB</Name>
@@ -54192,7 +54335,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991288640</BitOffs>
+            <BitOffs>1025357504</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Global_Version.stLibVersion_lcls_twincat_motion</Name>
@@ -54228,7 +54371,21 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316384</BitOffs>
+            <BitOffs>1025385248</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>GVL.nHomingError</Name>
+            <BitSize>32</BitSize>
+            <BaseType>UDINT</BaseType>
+            <Default>
+              <Value>85248</Value>
+            </Default>
+            <Properties>
+              <Property>
+                <Name>TcVarGlobal</Name>
+              </Property>
+            </Properties>
+            <BitOffs>1025385536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bLittleEndian</Name>
@@ -54243,7 +54400,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316680</BitOffs>
+            <BitOffs>1025385576</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.RuntimeVersion</Name>
@@ -54273,7 +54430,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316688</BitOffs>
+            <BitOffs>1025385584</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.CompilerVersion</Name>
@@ -54303,7 +54460,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316752</BitOffs>
+            <BitOffs>1025385648</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bSimulationMode</Name>
@@ -54318,7 +54475,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316816</BitOffs>
+            <BitOffs>1025385712</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bFPUSupport</Name>
@@ -54332,7 +54489,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316824</BitOffs>
+            <BitOffs>1025385720</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.nRegisterSize</Name>
@@ -54347,7 +54504,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316832</BitOffs>
+            <BitOffs>1025385728</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.nPackMode</Name>
@@ -54362,7 +54519,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316848</BitOffs>
+            <BitOffs>1025385744</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.RuntimeVersionNumeric</Name>
@@ -54376,7 +54533,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316864</BitOffs>
+            <BitOffs>1025385760</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.CompilerVersionNumeric</Name>
@@ -54390,7 +54547,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316896</BitOffs>
+            <BitOffs>1025385792</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._AppInfo</Name>
@@ -54404,7 +54561,21 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991316928</BitOffs>
+            <BitOffs>1025385824</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask</Name>
+            <BitSize>32</BitSize>
+            <BaseType GUID="{18071995-0000-0000-0000-00000000000F}">OTCID</BaseType>
+            <Properties>
+              <Property>
+                <Name>no_init</Name>
+              </Property>
+              <Property>
+                <Name>TcVarGlobal</Name>
+              </Property>
+            </Properties>
+            <BitOffs>1025387872</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskInfo</Name>
@@ -54422,21 +54593,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991318976</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask</Name>
-            <BitSize>32</BitSize>
-            <BaseType GUID="{18071995-0000-0000-0000-00000000000F}">OTCID</BaseType>
-            <Properties>
-              <Property>
-                <Name>no_init</Name>
-              </Property>
-              <Property>
-                <Name>TcVarGlobal</Name>
-              </Property>
-            </Properties>
-            <BitOffs>991320000</BitOffs>
+            <BitOffs>1025387904</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskOid_PlcTask</Name>
@@ -54450,7 +54607,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991320032</BitOffs>
+            <BitOffs>1025388928</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList.__PlcTask</Name>
@@ -54471,7 +54628,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991320064</BitOffs>
+            <BitOffs>1025388960</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TC_EVENTS.LCLSGeneralEventClass</Name>
@@ -54494,14 +54651,14 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>991351744</BitOffs>
+            <BitOffs>1025420640</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="RetainSrc" CreateSymbols="true">4</AreaNo>
           <Name>PlcTask Retains</Name>
           <ContextId>0</ContextId>
-          <ByteSize>124649472</ByteSize>
+          <ByteSize>128909312</ByteSize>
           <Symbol>
             <Name>PMPS_GVL.SuccessfulPreemption</Name>
             <Comment> Any time BPTM applies a new BP request which is confirmed</Comment>
@@ -54566,15 +54723,15 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
         </Property>
         <Property>
           <Name>ChangeDate</Name>
-          <Value>2023-04-19T16:40:40</Value>
+          <Value>2023-04-19T17:09:14</Value>
         </Property>
         <Property>
           <Name>GeneratedCodeSize</Name>
-          <Value>638976</Value>
+          <Value>643072</Value>
         </Property>
         <Property>
           <Name>GlobalDataSize</Name>
-          <Value>123490304</Value>
+          <Value>127746048</Value>
         </Property>
       </Properties>
     </Module>

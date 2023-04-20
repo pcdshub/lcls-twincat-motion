@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_MotionClearAsserts_Test" Id="{f92faa2f-544b-4cb5-9f0d-b3d1a8e6ba98}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionClearAsserts_Test EXTENDS TcUnit.FB_TestSuite
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+TestBasic();
+]]></ST>
+    </Implementation>
+    <Method Name="TestBasic" Id="{2219d5cb-d17f-45f4-9105-eb6686b76151}">
+      <Declaration><![CDATA[METHOD TestBasic
+VAR
+    nIter: UDINT;
+END_VAR
+VAR_INST
+    fbClear: FB_MotionClearAsserts;
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
+    fbArbiter: FB_Arbiter(1);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBasic');
+
+FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
+    astDbStateParams[nIter].nRequestAssertionID := 100 + nIter;
+    fbArbiter.AddRequest(
+        nReqID:=nIter,
+        stReqBP:=PMPS_GVL.cstFullBeam,
+        sDevName:='UnitTest',
+    );
+END_FOR
+
+FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
+    AssertTrue(
+        fbArbiter.CheckRequestInPool(100 + nIter),
+        'Expected all states to be in the pool',
+    );
+END_FOR
+
+fbClear(
+    astDbStateParams:=astDbStateParams,
+    fbArbiter:=fbArbiter,
+    bExecute:=TRUE,
+);
+
+FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
+    AssertFalse(
+        fbArbiter.CheckRequestInPool(100 + nIter),
+        'Expected all states to be cleared from the pool',
+    );
+END_FOR
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
