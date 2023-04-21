@@ -16,10 +16,8 @@
     we will assume that the file has been read and we will update the parameters here.
 *)
 VAR_IN_OUT
-    // Each motor's respective position states along its direction
+    // Each motor's respective position states along its direction. These will not be modified.
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    // An uninitialized array of PMPS DB lookups. Indices 1 to the end match the static positions, index 0 is the transition state.
-    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
     // Hardware output to fault to if there is a problem.
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
@@ -34,6 +32,8 @@ END_VAR
 VAR_OUTPUT
     // This will be set to TRUE if there was an error reading from the database.
     bError: BOOL;
+    // The raw lookup results from this FB. Index 0 is the transition beam, the rest of the indices match the state positions.
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
 END_VAR
 VAR
     ffError: FB_FastFault;
@@ -119,7 +119,7 @@ FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
             sLoopPrevKey := astDbStateParams[nIterState].sPmpsState;
             IF sLoopPrevKey = '' OR sLoopPrevKey = sLoopNewKey THEN
                 // No key yet, or exactly the same key (redudant programmer)
-                astDbStateParams[nIterState] := sLoopNewKey;
+                astDbStateParams[nIterState].sPmpsState := sLoopNewKey;
             ELSE
                 // We already had a different key! Don't just override it, have an error!
                 bError := TRUE;
