@@ -28,6 +28,14 @@ VAR_INPUT
     bMaintMode: BOOL;
 END_VAR
 VAR_OUTPUT
+    // Per-motor enable state we send to MC_Power. This is a pass-through from stMotionStage.
+    abEnabled: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Per-motor forward enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
+    abForwardEnabled: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Per-motor backwards enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
+    abBackwardEnabled: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Per-motor TRUE if there is a valid goal position and FALSE otherwise. This makes a fast fault if FALSE.
+    abValidGoal: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
     // Set to TRUE if the arrays have mismatched sizing. For this FB, this means the motor won't ever get an enable.
     bMotorCountError: BOOL;
 END_VAR
@@ -65,6 +73,10 @@ FOR nIter := 1 TO nActiveMotorCount DO
         fbFFHWO:=fbFFHWO,
         bEnable:=NOT bMaintMode,
         nGoalStateIndex:=nGoalStateIndex,
+        bEnabled=>abEnabled[nIter],
+        bForwardEnabled=>abForwardEnabled[nIter],
+        bBackwardEnabled=>abBackwardEnabled[nIter],
+        bValidGoal=>abValidGoal[nIter],
     );
 END_FOR]]></ST>
       </Implementation>
