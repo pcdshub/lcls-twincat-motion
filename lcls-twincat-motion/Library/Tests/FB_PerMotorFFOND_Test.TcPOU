@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PerMotorFFOND_Test" Id="{e88b9963-261b-47d2-82dd-2fce2cf61cac}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PerMotorFFOND_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    FFO if an illogical motor count is passed
+    FFO if any motor has what looks like an encoder error
+       - We'll just simulate this without doing it legit
+       - The legit test is done elsewhere
+    More FFOs may be added later and these will need to be tested too
+*)
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+TestBlankCount();
+TestTwoMotorEncError();
+]]></ST>
+    </Implementation>
+    <Method Name="TestBlankCount" Id="{b592b937-5942-474f-adf1-21d2ac9a86c9}">
+      <Declaration><![CDATA[METHOD TestBlankCount : BOOL
+VAR
+    fbFFO: FB_PerMotorFFOND;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBlankCount');
+
+fbFFHWO.Execute();
+AssertFalse(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault',
+);
+fbFFO(
+    astMotionStage:=astMotionStage,
+    fbFFHWO:=fbFFHWO,
+);
+fbFFHWO.Execute();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Blank count did not fault',
+);
+AssertTrue(
+    fbFFO.bMotorCountError,
+    'Blank count did not error',
+);
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestTwoMotorEncError" Id="{b8fbe696-7ca6-46ad-9906-fdd9389c922a}">
+      <Declaration><![CDATA[METHOD TestTwoMotorEncError : BOOL
+VAR
+    fbFFO: FB_PerMotorFFOND;
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestTwoMotorEncError');
+
+fbFFHWO.Execute();
+AssertFalse(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault',
+);
+astMotionStage[2].bError := TRUE;
+astMotionStage[2].nErrorId := 16#4467; // Invalid encoder position data
+fbFFO(
+    astMotionStage:=astMotionStage,
+    fbFFHWO:=fbFFHWO,
+    nActiveMotorCount:=2,
+);
+fbFFHWO.Execute();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Encoder error did not fault',
+);
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
