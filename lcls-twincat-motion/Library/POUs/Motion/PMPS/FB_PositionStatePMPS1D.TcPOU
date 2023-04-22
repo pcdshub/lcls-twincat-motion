@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
-  <POU Name="FB_PositionStatePMPS2D" Id="{9dffd600-2d32-4e33-bb6b-8aab4cc29ee5}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS2D
+  <POU Name="FB_PositionStatePMPS1D" Id="{56571b82-7366-43ed-8860-8bf7f745d798}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS1D
 (*
-    2-Dimensional position state function block with PMPS.
+    1-Dimensional position state function block with PMPS.
 
     You can use this in your project by defining enums as explained in ST_StateEpicsinput and ST_StateEpicsOutput's docstrings.
     Your "command" enum should write to stEpicsInput.nSetValue and your "readback" enum should read from stEpicsOutput.nGetValue.
@@ -16,20 +16,13 @@
     the transition state input appropriately.
 *)
 VAR_IN_OUT
-    stMotionStage1: ST_MotionStage;
+    stMotionStage: ST_MotionStage;
     {attribute 'pytmc' := '
-        pv: STATES:M1
+        pv: STATES
         io: io
         expand: %.2d
     '}
-    astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    stMotionStage2: ST_MotionStage;
-    {attribute 'pytmc' := '
-        pv: STATES:M2
-        io: io
-        expand: %.2d
-    '}
-    astPositionStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter;
 END_VAR
@@ -51,6 +44,7 @@ END_VAR
 VAR_OUTPUT
     {attribute 'pytmc' := '
         pv: STATES
+        io: i
     '}
     stEpicsOutput: ST_StateEpicsOutput;
     {attribute 'pytmc' := '
@@ -68,10 +62,8 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-astMotionStageMax[1] := stMotionStage1;
-astMotionStageMax[2] := stMotionStage2;
-astPositionStateMax[1] := astPositionStates1;
-astPositionStateMax[2] := astPositionStates2;
+astMotionStageMax[1] := stMotionStage;
+astPositionStateMax[1] := astPositionState;
 
 fbCore(
     astMotionStageMax:=astMotionStageMax,
@@ -79,7 +71,7 @@ fbCore(
     stEpicsInput:=stEpicsInput,
     stEpicsOutput:=stEpicsOutput,
     bEnable:=bEnable,
-    nActiveMotorCount:=2,
+    nActiveMotorCount:=1,
     nCurrGoal=>,
 );
 fbPMPSCore(
@@ -92,16 +84,14 @@ fbPMPSCore(
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
     bEnable:=bEnable,
-    nActiveMotorCount:=2,
+    nActiveMotorCount:=1,
     sDeviceName:=sDeviceName,
     sTransitionKey:=sTransitionKey,
     nCurrGoal:=fbCore.nCurrGoal,
 );
 
-stMotionStage1 := astMotionStageMax[1];
-stMotionStage2 := astMotionStageMax[2];
-astPositionStates1 := astPositionStateMax[1];
-astPositionStates2 := astPositionStateMax[2];
+stMotionStage := astMotionStageMax[1];
+astPositionState := astPositionStateMax[1];
 ]]></ST>
     </Implementation>
   </POU>

@@ -39,51 +39,27 @@ VAR_OUTPUT
     stEpicsOutput: ST_StateEpicsOutput;
 END_VAR
 VAR
-    fbInput: FB_StatesInputHandler;
-    fbInternal: FB_PositionStateInternalND;
-    fbMove: FB_PositionStateMove;
-    fbRead: FB_PositionStateRead;
+    fbCore: FB_PositionStateND_Core;
     astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-fbInput(
-    stUserInput:=stEpicsInput,
-    bMoveBusy:=fbMove.bBusy,
-);
-
 astMotionStageMax[1] := stMotionStage;
 astPositionStateMax[1] := astPositionState;
-fbInternal(
-    astMotionStage:=astMotionStageMax,
-    astPositionState:=astPositionStateMax,
+
+fbCore(
+    astMotionStageMax:=astMotionStageMax,
+    astPositionStateMax:=astPositionStateMax,
+    stEpicsInput:=stEpicsInput,
+    stEpicsOutput:=stEpicsOutput,
+    bEnable:=bEnable,
+    nActiveMotorCount:=1,
 );
+
 stMotionStage := astMotionStageMax[1];
 astPositionState := astPositionStateMax[1];
-
-fbMove(
-    stMotionStage:=stMotionStage,
-    stPositionState:=astPositionState[fbInput.nCurrGoal],
-    bExecute:=fbInput.bExecMove,
-    bReset:=fbInput.bResetMove,
-    enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
-    bAtState=>,
-    bError=>stEpicsOutput.bError,
-    nErrorID=>stEpicsOutput.nErrorID,
-    sErrorMessage=>stEpicsOutput.sErrorMsg,
-    bBusy=>stEpicsOutput.bBusy,
-    bDone=>stEpicsOutput.bDone,
-);
-
-fbRead(
-    stMotionStage:=stMotionStage,
-    astPositionState:=astPositionState,
-    bKnownState=>,
-    bMovingState=>,
-    nPositionIndex=>stEpicsOutput.nGetValue,
-);
 ]]></ST>
     </Implementation>
   </POU>

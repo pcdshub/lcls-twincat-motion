@@ -17,6 +17,8 @@ END_VAR
 VAR_INPUT
     // The bBusy boolean from the motion FB
     bMoveBusy: BOOL;
+    // The starting state number to seed nCurrGoal with
+    nInitGoal: DINT;
 END_VAR
 VAR_OUTPUT
     // The goal index to input to the motion FB. This will be clamped to the range 1..GeneralConstants.MAX_STATES
@@ -43,6 +45,10 @@ END_VAR
 IF NOT bInit THEN
     bInit := TRUE;
     stUserInput.nSetValue := 0;
+    nCurrGoal := nInitGoal;
+    IF nCurrGoal = 0 THEN
+        nCurrGoal := 1;
+    END_IF
 END_IF
 
 bResetMove := stUserInput.bReset;

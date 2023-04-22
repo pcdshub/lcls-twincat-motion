@@ -46,59 +46,25 @@ VAR_OUTPUT
     stEpicsOutput: ST_StateEpicsOutput;
 END_VAR
 VAR
-    fbInput: FB_StatesInputHandler;
-    fbInternal: FB_PositionStateInternalND;
-    fbMove: FB_PositionStateMoveND;
-    fbRead: FB_PositionStateReadND;
+    fbCore: FB_PositionStateND_Core;
     astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    astMoveGoals: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
-    nIterMotor: DINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-fbInput(
-    stUserInput:=stEpicsInput,
-    bMoveBusy:=fbMove.bBusy,
-);
-
 astMotionStageMax[1] := stMotionStage1;
 astMotionStageMax[2] := stMotionStage2;
 astPositionStateMax[1] := astPositionState1;
 astPositionStateMax[2] := astPositionState2;
 
-fbInternal(
-    astMotionStage:=astMotionStageMax,
-    astPositionState:=astPositionStateMax,
-);
-
-FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
-    astMoveGoals[nIterMotor] := astPositionStateMax[nIterMotor][fbInput.nCurrGoal];
-END_FOR
-
-fbMove(
-    astMotionStage:=astMotionStageMax,
-    astPositionState:=astMoveGoals,
-    nActiveMotorCount:=2,
-    bExecute:=fbInput.bExecMove,
-    bReset:=fbInput.bResetMove,
-    enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
-    bAtState=>,
-    bError=>stEpicsOutput.bError,
-    nErrorID=>stEpicsOutput.nErrorID,
-    sErrorMessage=>stEpicsOutput.sErrorMsg,
-    bBusy=>stEpicsOutput.bBusy,
-    bDone=>stEpicsOutput.bDone,
-);
-
-fbRead(
-    astMotionStage:=astMotionStageMax,
-    astPositionState:=astPositionStateMax,
-    nActiveMotorCount:=2,
-    bKnownState=>,
-    bMovingState=>,
-    nPositionIndex=>stEpicsOutput.nGetValue,
+fbCore(
+    astMotionStageMax:=astMotionStageMax,
+    astPositionStateMax:=astPositionStateMax,
+    stEpicsInput:=stEpicsInput,
+    stEpicsOutput:=stEpicsOutput,
+    bEnable:=bEnable,
+    nActiveMotorCount:=1,
 );
 
 stMotionStage1 := astMotionStageMax[1];

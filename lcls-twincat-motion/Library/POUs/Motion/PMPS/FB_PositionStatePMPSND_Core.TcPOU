@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPSND_Core" Id="{9cc56e31-20ab-431f-af71-fce298d8fa94}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPSND_Core
+(*
+    Collection of all core actions shared between all PMPS states FBs
+    This is used in e.g.
+    - FB_PositionStatePMPS1D
+    - FB_PositionStatePMPS2D
+    - ... etc.
+*)
+VAR_IN_OUT
+    astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    stEpicsInput: ST_StateEpicsInput;
+    stPMPSEpicsInput: ST_StatePMPSEpicsInput;
+    stEpicsOutput: ST_StateEpicsOutput;
+    stPMPSEpicsOutput: ST_StatePMPSEpicsOutput;
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter;
+END_VAR
+VAR_INPUT
+    bEnable: BOOL;
+    nActiveMotorCount: UINT;
+    sDeviceName: STRING;
+    sTransitionKey: STRING;
+    nCurrGoal: DINT;
+END_VAR
+VAR
+    fbMotionReadPMPSDB: FB_MotionReadPMPSDBND;
+    fbMotionBPTM: FB_MotionBPTM;
+    fbMotionClearAsserts: FB_MotionClearAsserts;
+    fbStatePMPSLimits: FB_StatePMPSLimitsND;
+    fbMiscStatesErrorFFO: FB_MiscStatesErrorFFO;
+    fbPerMotorFFO: FB_PerMotorFFOND;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbMotionReadPMPSDB(
+    astPositionState:=astPositionStateMax,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:=sTransitionKey,
+    sDeviceName:=sDeviceName,
+    astDbStateParams=>,
+    bError=>,
+);
+
+fbMotionBPTM(
+    astMotionStage:=astMotionStageMax,
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stGoalParams:=fbMotionReadPMPSDB.astDbStateParams[nCurrGoal].stBeamParams,
+    stTransParams:=fbMotionReadPMPSDB.astDbStateParams[0].stBeamParams,
+    nActiveMotorCount:=nActiveMotorCount,
+    bEnable:=stPMPSEpicsInput.bArbiterEnabled,
+    bAtState:=stEpicsOutput.nGetValue = nCurrGoal,
+    sDeviceName:=sDeviceName,
+    bTransitionAuthorized=>,
+    bDone=>,
+    bMotorCountError=>,
+);
+
+fbMotionClearAsserts(
+    astDbStateParams:=fbMotionReadPMPSDB.astDbStateParams,
+    fbArbiter:=fbArbiter,
+    bExecute:=NOT stPMPSEpicsInput.bArbiterEnabled,
+);
+
+fbStatePMPSLimits(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astPositionStateMax,
+    fbFFHWO:=fbFFHWO,
+    nActiveMotorCount:=nActiveMotorCount,
+    nGoalStateIndex:=nCurrGoal,
+    sDeviceName:=sDeviceName,
+    bMaintMode:=stPMPSEpicsInput.bMaintMode,
+    abEnabled=>,
+    abForwardEnabled=>,
+    abBackwardEnabled=>,
+    abValidGoal=>,
+    bMotorCountError=>,
+);
+
+fbMiscStatesErrorFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    sDeviceName:=sDeviceName,
+    stCurrentBeamReq:=fbMotionReadPMPSDB.astDbStateParams[stEpicsOutput.nGetValue].stBeamParams,
+    bKnownState:=stEpicsOutput.nGetValue > 0,
+    nTransitionID:=fbMotionReadPMPSDB.astDbStateParams[0].nRequestAssertionID,
+);
+
+fbPerMotorFFO(
+    astMotionStage:=astMotionStageMax,
+    fbFFHWO:=fbFFHWO,
+    nActiveMotorCount:=nActiveMotorCount,
+    sDeviceName:=sDeviceName,
+    bMotorCountError=>,
+);
+
+stPMPSEpicsOutput.stTransitionDb := fbMotionReadPMPSDB.astDbStateParams[0];
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
