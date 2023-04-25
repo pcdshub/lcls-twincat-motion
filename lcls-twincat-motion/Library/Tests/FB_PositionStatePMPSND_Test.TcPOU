@@ -23,10 +23,7 @@ VAR
     afbInternal: ARRAY[1..3] OF ARRAY[1..3] OF FB_PositionStateInternal;
     afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
 
-    stTransBeam: ST_DbStateParams;
-    stOutBeam: ST_DbStateParams;
-    stT1Beam: ST_DbStateParams;
-    stT2Beam: ST_DbStateParams;
+    astBeam: ARRAY[0..3] OF ST_DbStateParams;
 
     fb_Move1D: FB_PositionStatePMPS1D;
     fb_Move2D: FB_PositionStatePMPS2D;
@@ -76,16 +73,16 @@ afbMotionStage[1](stMotionStage:=stMotionStage1);
 afbMotionStage[2](stMotionStage:=stMotionStage2);
 afbMotionStage[3](stMotionStage:=stMotionStage3);
 
-stTransBeam.stBeamParams := PMPS_GVL.cst0RateBeam;
-stTransBeam.nRequestAssertionID := 1;
-stOutBeam.stBeamParams := PMPS_GVL.cstFullBeam;
-stOutBeam.nRequestAssertionID := 2;
-stT1Beam.stBeamParams := PMPS_GVL.cstFullBeam;
-stT1Beam.stBeamParams.nTran := 0.1;
-stT1Beam.nRequestAssertionID := 3;
-stT2Beam.stBeamParams := PMPS_GVL.cstFullBeam;
-stT2Beam.stBeamParams.nTran := 0.01;
-stT2Beam.nRequestAssertionID := 4;
+astBeam[ENUM_TestStates.Unknown].stBeamParams := PMPS_GVL.cst0RateBeam;
+astBeam[ENUM_TestStates.Unknown].nRequestAssertionID := 1;
+astBeam[ENUM_TestStates.OUT].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[ENUM_TestStates.OUT].nRequestAssertionID := 2;
+astBeam[ENUM_TestStates.TARGET1].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[ENUM_TestStates.TARGET1].stBeamParams.nTran := 0.1;
+astBeam[ENUM_TestStates.TARGET1].nRequestAssertionID := 3;
+astBeam[ENUM_TestStates.TARGET2].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[ENUM_TestStates.TARGET2].stBeamParams.nTran := 0.01;
+astBeam[ENUM_TestStates.TARGET2].nRequestAssertionID := 4;
 
 IF bStatesReady AND nTestCounter = 0 THEN
     // Don't run any tests until the states are ready
@@ -166,6 +163,10 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
+    AssertTrue(
+        fbArbiter.CheckRequestInPool(astBeam[nState].nRequestAssertionID),
+        'Destination bp should have been in the arbiter',
+    );
     fb_Move1D.stEpicsInput.bReset := TRUE;
     fb_Move1D(
         stMotionStage:=stMotionStage1,
@@ -236,6 +237,10 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         Actual:=stMotionStage2.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
+    );
+    AssertTrue(
+        fbArbiter.CheckRequestInPool(astBeam[nState].nRequestAssertionID),
+        'Destination bp should have been in the arbiter',
     );
     fb_Move2D.stEpicsInput.bReset := TRUE;
     fb_Move2D(
@@ -317,6 +322,10 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         Actual:=stMotionStage3.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
+    );
+    AssertTrue(
+        fbArbiter.CheckRequestInPool(astBeam[nState].nRequestAssertionID),
+        'Destination bp should have been in the arbiter',
     );
     fb_Move3D.stEpicsInput.bReset := TRUE;
     fb_Move3D(
