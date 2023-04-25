@@ -1,0 +1,583 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPSND_Test" Id="{5b25afff-6416-405d-b50f-327a73066770}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPSND_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Sanity checks for the following:
+    - FB_PositionStatePMPS1D
+    - FB_PositionStatePMPS2D
+    - FB_PositionStatePMPS3D
+    The internals have already been tested, but we need to make sure that
+    they've been put together at least somewhat sensibly.
+    This FB will simply use each FB to move and check the results.
+    In addition to reaching the goals, we need to check the beam assertions
+    and the pmps limit enables.
+*)
+VAR
+    stMotionStage1: ST_MotionStage;
+    stMotionStage2: ST_MotionStage;
+    stMotionStage3: ST_MotionStage;
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState3: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF ARRAY[1..3] OF FB_PositionStateInternal;
+    afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
+
+    stTransBeam: ST_DbStateParams;
+    stOutBeam: ST_DbStateParams;
+    stT1Beam: ST_DbStateParams;
+    stT2Beam: ST_DbStateParams;
+
+    fb_Move1D: FB_PositionStatePMPS1D;
+    fb_Move2D: FB_PositionStatePMPS2D;
+    fb_Move3D: FB_PositionStatePMPS3D;
+
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
+    nIter: DINT;
+    bStatesReady: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+bStatesReady := TRUE;
+FOR nIter := 1 TO 3 DO;
+    astPositionState1[nIter].fPosition := nIter;
+    astPositionState1[nIter].fDelta := 0.5;
+    astPositionState1[nIter].fVelocity := 100;
+    astPositionState1[nIter].bValid := TRUE;
+    astPositionState2[nIter].fPosition := 10 + nIter;
+    astPositionState2[nIter].fDelta := 0.5;
+    astPositionState2[nIter].fVelocity := 100;
+    astPositionState2[nIter].bValid := TRUE;
+    astPositionState3[nIter].fPosition := 20 + nIter;
+    astPositionState3[nIter].fDelta := 0.5;
+    astPositionState3[nIter].fVelocity := 100;
+    astPositionState3[nIter].bValid := TRUE;
+    afbInternal[nIter][1](
+        stMotionStage:=stMotionStage1,
+        stPositionState:=astPositionState1[nIter],
+    );
+    afbInternal[nIter][2](
+        stMotionStage:=stMotionStage2,
+        stPositionState:=astPositionState2[nIter],
+    );
+    afbInternal[nIter][3](
+        stMotionStage:=stMotionStage3,
+        stPositionState:=astPositionState3[nIter],
+    );
+    bStatesReady := bStatesReady AND astPositionState1[nIter].bUpdated;
+    bStatesReady := bStatesReady AND astPositionState2[nIter].bUpdated;
+    bStatesReady := bStatesReady AND astPositionState3[nIter].bUpdated;
+END_FOR
+afbMotionStage[1](stMotionStage:=stMotionStage1);
+afbMotionStage[2](stMotionStage:=stMotionStage2);
+afbMotionStage[3](stMotionStage:=stMotionStage3);
+
+stTransBeam.stBeamParams := PMPS_GVL.cst0RateBeam;
+stTransBeam.nRequestAssertionID := 1;
+stOutBeam.stBeamParams := PMPS_GVL.cstFullBeam;
+stOutBeam.nRequestAssertionID := 2;
+stT1Beam.stBeamParams := PMPS_GVL.cstFullBeam;
+stT1Beam.stBeamParams.nTran := 0.1;
+stT1Beam.nRequestAssertionID := 3;
+stT2Beam.stBeamParams := PMPS_GVL.cstFullBeam;
+stT2Beam.stBeamParams.nTran := 0.01;
+stT2Beam.nRequestAssertionID := 4;
+
+IF bStatesReady AND nTestCounter = 0 THEN
+    // Don't run any tests until the states are ready
+    nTestCounter := 1;
+END_IF
+
+TestStartup1D(1);
+TestStartup2D(2);
+TestStartup3D(3);
+Test1D(4, ENUM_TestStates.OUT);
+Test1D(5, ENUM_TestStates.TARGET1);
+Test1D(6, ENUM_TestStates.TARGET2);
+Test2D(7, ENUM_TestStates.OUT);
+Test2D(8, ENUM_TestStates.TARGET1);
+Test2D(9, ENUM_TestStates.TARGET2);
+Test3D(10, ENUM_TestStates.OUT);
+Test3D(11, ENUM_TestStates.TARGET1);
+Test3D(12, ENUM_TestStates.TARGET2);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    tonTimer(IN:=FALSE);
+END_IF
+// Use this timer to time out any tests that stall
+tonTimer(
+    IN:=bStatesReady,
+    PT:=T#5s,
+);
+]]></ST>
+    </Implementation>
+    <Method Name="Test1D" Id="{6551b146-aecb-4933-8bfe-0515d13d519c}">
+      <Declaration><![CDATA[METHOD Test1D
+VAR_INPUT
+    nTestID: UINT;
+    nState: DINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter(1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test1D_state', DINT_TO_STRING(nState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move1D.stEpicsInput.nSetValue := nState;
+fb_Move1D(
+    stMotionStage:=stMotionStage1,
+    astPositionState:=astPositionState1,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    bEnable:=TRUE,
+);
+IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_DINT(
+        Expected:=nState,
+        Actual:=fb_Move1D.stEpicsOutput.nGetValue,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[nState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    fb_Move1D.stEpicsInput.bReset := TRUE;
+    fb_Move1D(
+        stMotionStage:=stMotionStage1,
+        astPositionState:=astPositionState1,
+        fbFFHWO:=fbFFHWO,
+        fbArbiter:=fbArbiter,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test2D" Id="{134b433c-bcf0-4f18-831a-5eed3883fc74}">
+      <Declaration><![CDATA[METHOD Test2D
+VAR_INPUT
+    nTestID: UINT;
+    nState: DINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter(1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test2D_state', DINT_TO_STRING(nState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move2D.stEpicsInput.nSetValue := nState;
+fb_Move2D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    astPositionStates1:=astPositionState1,
+    astPositionStates2:=astPositionState2,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    bEnable:=TRUE,
+);
+IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_DINT(
+        Expected:=nState,
+        Actual:=fb_Move2D.stEpicsOutput.nGetValue,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[nState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState2[nState].fPosition,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    fb_Move2D.stEpicsInput.bReset := TRUE;
+    fb_Move2D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        astPositionStates1:=astPositionState1,
+        astPositionStates2:=astPositionState2,
+        fbFFHWO:=fbFFHWO,
+        fbArbiter:=fbArbiter,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test3D" Id="{62ef1eb4-d8ea-4e70-880b-11833e41203d}">
+      <Declaration><![CDATA[METHOD Test3D
+VAR_INPUT
+    nTestID: UINT;
+    nState: DINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter(1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test3D_state', DINT_TO_STRING(nState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move3D.stEpicsInput.nSetValue := nState;
+fb_Move3D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    stMotionStage3:=stMotionStage3,
+    astPositionStates1:=astPositionState1,
+    astPositionStates2:=astPositionState2,
+    astPositionStates3:=astPositionState3,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    bEnable:=TRUE,
+);
+IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_DINT(
+        Expected:=nState,
+        Actual:=fb_Move3D.stEpicsOutput.nGetValue,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[nState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState2[nState].fPosition,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState3[nState].fPosition,
+        Actual:=stMotionStage3.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    fb_Move3D.stEpicsInput.bReset := TRUE;
+    fb_Move3D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        stMotionStage3:=stMotionStage3,
+        astPositionStates1:=astPositionState1,
+        astPositionStates2:=astPositionState2,
+        astPositionStates3:=astPositionState3,
+        fbFFHWO:=fbFFHWO,
+        fbArbiter:=fbArbiter,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStartup1D" Id="{50795fb9-8e60-45c2-9456-13c6cf737ce0}">
+      <Declaration><![CDATA[METHOD TestStartup1D
+(*
+    - On startup, there should be no move request
+    - Starting from (0, 0, 0) all motors should only be allowed to move +
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter(1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestStartup1D');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move1D(
+    stMotionStage:=stMotionStage1,
+    astPositionState:=astPositionState1,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    bEnable:=TRUE,
+);
+
+// We sit in this fb for some timeout number of seconds on purpose, not an error
+IF tonTimer.Q THEN
+    // We should neither be busy nor done (we didn't do anything)
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Message:='Done should be False with no move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Message:='Busy should be False with no move',
+    );
+    // We should still be at 0,0,0
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor1 should have default position',
+    );
+    // We should not be able to move down, only up
+    // Bit 0 is base enable, ignore for now
+    // Bit 1 is feed enable +
+    AssertTrue(
+        (stMotionStage1.Axis.PlcToNc.ControlDWord AND 2#10) <> 0,
+        'Did not have feed enable +',
+    );
+    // Bit 2 is feed enable -
+    AssertTrue(
+        (stMotionStage1.Axis.PlcToNc.ControlDWord AND 2#100) = 0,
+        'Had feed enable - but should not have it',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStartup2D" Id="{b31f116a-0581-48e0-b8ce-3dda16e71cc6}">
+      <Declaration><![CDATA[METHOD TestStartup2D
+(*
+    - On startup, there should be no move request
+    - Starting from (0, 0, 0) all motors should only be allowed to move +
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter(1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestStartup2D');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move2D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    astPositionStates1:=astPositionState1,
+    astPositionStates2:=astPositionState2,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    bEnable:=TRUE,
+);
+
+// We sit in this fb for some timeout number of seconds on purpose, not an error
+IF tonTimer.Q THEN
+    // We should neither be busy nor done (we didn't do anything)
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Message:='Done should be False with no move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Message:='Busy should be False with no move',
+    );
+    // We should still be at 0,0,0
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor1 should have default position',
+    );
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor2 should have default position',
+    );
+    // We should not be able to move down, only up
+    // Bit 0 is base enable, ignore for now
+    // Bit 1 is feed enable +
+    AssertTrue(
+        (stMotionStage1.Axis.PlcToNc.ControlDWord AND 2#10) <> 0,
+        'Did not have feed enable +',
+    );
+    // Bit 2 is feed enable -
+    AssertTrue(
+        (stMotionStage1.Axis.PlcToNc.ControlDWord AND 2#100) = 0,
+        'Had feed enable - but should not have it',
+    );
+    // Bit 1 is feed enable +
+    AssertTrue(
+        (stMotionStage2.Axis.PlcToNc.ControlDWord AND 2#10) <> 0,
+        'Did not have feed enable +',
+    );
+    // Bit 2 is feed enable -
+    AssertTrue(
+        (stMotionStage2.Axis.PlcToNc.ControlDWord AND 2#100) = 0,
+        'Had feed enable - but should not have it',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStartup3D" Id="{560c91d2-232a-4f40-9617-6a5a80e2539f}">
+      <Declaration><![CDATA[METHOD TestStartup3D
+(*
+    - On startup, there should be no move request
+    - Starting from (0, 0, 0) all motors should only be allowed to move +
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter(1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestStartup3D');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move3D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    stMotionStage3:=stMotionStage3,
+    astPositionStates1:=astPositionState1,
+    astPositionStates2:=astPositionState2,
+    astPositionStates3:=astPositionState3,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    bEnable:=TRUE,
+);
+
+// We sit in this fb for some timeout number of seconds on purpose, not an error
+IF tonTimer.Q THEN
+    // We should neither be busy nor done (we didn't do anything)
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Message:='Done should be False with no move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Message:='Busy should be False with no move',
+    );
+    // We should still be at 0,0,0
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor1 should have default position',
+    );
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor2 should have default position',
+    );
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage3.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor3 should have default position',
+    );
+    // We should not be able to move down, only up
+    // Bit 0 is base enable, ignore for now
+    // Bit 1 is feed enable +
+    AssertTrue(
+        (stMotionStage1.Axis.PlcToNc.ControlDWord AND 2#10) <> 0,
+        'Did not have feed enable +',
+    );
+    // Bit 2 is feed enable -
+    AssertTrue(
+        (stMotionStage1.Axis.PlcToNc.ControlDWord AND 2#100) = 0,
+        'Had feed enable - but should not have it',
+    );
+    // Bit 1 is feed enable +
+    AssertTrue(
+        (stMotionStage2.Axis.PlcToNc.ControlDWord AND 2#10) <> 0,
+        'Did not have feed enable +',
+    );
+    // Bit 2 is feed enable -
+    AssertTrue(
+        (stMotionStage2.Axis.PlcToNc.ControlDWord AND 2#100) = 0,
+        'Had feed enable - but should not have it',
+    );
+    // Bit 1 is feed enable +
+    AssertTrue(
+        (stMotionStage3.Axis.PlcToNc.ControlDWord AND 2#10) <> 0,
+        'Did not have feed enable +',
+    );
+    // Bit 2 is feed enable -
+    AssertTrue(
+        (stMotionStage3.Axis.PlcToNc.ControlDWord AND 2#100) = 0,
+        'Had feed enable - but should not have it',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
