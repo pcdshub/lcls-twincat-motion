@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="MotorTestSuite" Id="{62209a82-679e-47f8-9b5a-ad180dcad4e7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK MotorTestSuite EXTENDS TcUnit.FB_TestSuite
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="SetEnables" Id="{9a689027-7edb-4bec-9a75-8e1dc053d941}">
+      <Declaration><![CDATA[METHOD SetEnables
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stMotionStage.bHardwareEnable := TRUE;
+stMotionStage.bLimitBackwardEnable := TRUE;
+stMotionStage.bLimitForwardEnable := TRUE;
+stMotionStage.bPowerSelf := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetGoodState" Id="{b3c6256b-7995-4ca9-aaf3-c136e49e66c8}">
+      <Declaration><![CDATA[METHOD SetGoodState
+VAR_IN_OUT
+    stPositionState: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stPositionState.bMoveOk := TRUE;
+stPositionState.bValid := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
