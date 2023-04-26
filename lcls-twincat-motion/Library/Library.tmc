@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{19774CA2-E505-9383-726A-7FBBFDEC91B5}" GeneratedBy="TwinCAT XAE Plc">
+<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{C88F3804-5964-F244-5219-7C2F251F3507}" GeneratedBy="TwinCAT XAE Plc">
   <DataTypes>
     <DataType>
       <Name GUID="{18071995-0000-0000-0000-000000000041}" TcBaseType="true" HideSubItems="true" CName="AmsNetId">AMSNETID</Name>
@@ -209,31 +209,31 @@
         <Name>bBusy</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <GetCodeOffs>114820820</GetCodeOffs>
+        <GetCodeOffs>114820828</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>bError</Name>
         <Type>BOOL</Type>
         <BitSize>8</BitSize>
-        <GetCodeOffs>114820856</GetCodeOffs>
+        <GetCodeOffs>114820864</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>hrErrorCode</Name>
         <Type GUID="{18071995-0000-0000-0000-000000000019}">HRESULT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>114820864</GetCodeOffs>
+        <GetCodeOffs>114820872</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nStringSize</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>114820844</GetCodeOffs>
+        <GetCodeOffs>114820852</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sResult</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>114820860</GetCodeOffs>
+        <GetCodeOffs>114820868</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name RpcEnable="plc" VTableIndex="0">__getbBusy</Name>
@@ -1472,15 +1472,15 @@
         <Name>nId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>114820760</GetCodeOffs>
-        <SetCodeOffs>114820784</SetCodeOffs>
+        <GetCodeOffs>114820768</GetCodeOffs>
+        <SetCodeOffs>114820792</SetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sName</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>114820800</GetCodeOffs>
-        <SetCodeOffs>114820812</SetCodeOffs>
+        <GetCodeOffs>114820808</GetCodeOffs>
+        <SetCodeOffs>114820820</SetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>ExtendName</Name>
@@ -1726,37 +1726,37 @@
         <Name>eSeverity</Name>
         <Type GUID="{B57D3F4A-0836-49B0-81C3-BED5F4817EC9}">TcEventSeverity</Type>
         <BitSize>16</BitSize>
-        <GetCodeOffs>114820912</GetCodeOffs>
+        <GetCodeOffs>114820920</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>ipSourceInfo</Name>
         <Type Namespace="LCLS_General.Tc3_EventLogger">I_TcSourceInfo</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>114820892</GetCodeOffs>
+        <GetCodeOffs>114820900</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nEventId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>114820980</GetCodeOffs>
+        <GetCodeOffs>114820988</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>nUniqueId</Name>
         <Type>UDINT</Type>
         <BitSize>32</BitSize>
-        <GetCodeOffs>114820984</GetCodeOffs>
+        <GetCodeOffs>114820992</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sEventClassName</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>114820940</GetCodeOffs>
+        <GetCodeOffs>114820948</GetCodeOffs>
       </PropertyItem>
       <PropertyItem>
         <Name>sEventText</Name>
         <Type>STRING(255)</Type>
         <BitSize>2048</BitSize>
-        <GetCodeOffs>114820988</GetCodeOffs>
+        <GetCodeOffs>114820996</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>EqualsToEventClass</Name>
@@ -2355,7 +2355,7 @@
         <Name>nTimeSent</Name>
         <Type>ULINT</Type>
         <BitSize>64</BitSize>
-        <GetCodeOffs>114821012</GetCodeOffs>
+        <GetCodeOffs>114821020</GetCodeOffs>
       </PropertyItem>
       <Method>
         <Name>SetJsonAttribute</Name>
@@ -35516,7 +35516,7 @@ These features efficiently address the addition, removal, and verification of be
     </DataType>
     <DataType>
       <Name>FB_MiscStatesErrorFFO</Name>
-      <BitSize>103328</BitSize>
+      <BitSize>103360</BitSize>
       <SubItem>
         <Name>fbArbiter</Name>
         <Type Namespace="PMPS" ReferenceTo="true">FB_Arbiter</Type>
@@ -35657,10 +35657,20 @@ These features efficiently address the addition, removal, and verification of be
       </SubItem>
       <SubItem>
         <Name>tonTripCount</Name>
-        <Type Namespace="Tc2_Standard">TOF</Type>
+        <Type Namespace="Tc2_Standard">TON</Type>
         <Comment> Decrease trip count by 1 each timeout</Comment>
         <BitSize>224</BitSize>
         <BitOffs>103104</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bFirstCycle</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE on only the first cycle</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>103328</BitOffs>
+        <Default>
+          <Value>1</Value>
+        </Default>
       </SubItem>
       <Properties>
         <Property>
@@ -35671,12 +35681,12 @@ These features efficiently address the addition, removal, and verification of be
     </DataType>
     <DataType>
       <Name>FB_MiscStatesErrorFFO_Test</Name>
-      <BitSize>38921664</BitSize>
+      <BitSize>38921728</BitSize>
       <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
       <SubItem>
         <Name>__TESTBEAMPARAMSNOTOK__FBMISCFFO</Name>
         <Type>FB_MiscStatesErrorFFO</Type>
-        <BitSize>103328</BitSize>
+        <BitSize>103360</BitSize>
         <BitOffs>33551744</BitOffs>
       </SubItem>
       <SubItem>
@@ -35711,14 +35721,14 @@ These features efficiently address the addition, removal, and verification of be
       <SubItem>
         <Name>__TESTDEBOUNCE__FBMISCFFO</Name>
         <Type>FB_MiscStatesErrorFFO</Type>
-        <BitSize>103328</BitSize>
+        <BitSize>103360</BitSize>
         <BitOffs>34626784</BitOffs>
       </SubItem>
       <SubItem>
         <Name>__TESTDEBOUNCE__FBARBITER</Name>
         <Type Namespace="PMPS">FB_Arbiter</Type>
         <BitSize>474624</BitSize>
-        <BitOffs>34730112</BitOffs>
+        <BitOffs>34730176</BitOffs>
         <Properties>
           <Property>
             <Name>old_input_assignments</Name>
@@ -35729,7 +35739,7 @@ These features efficiently address the addition, removal, and verification of be
         <Name>__TESTDEBOUNCE__FBFFHWO</Name>
         <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
         <BitSize>495296</BitSize>
-        <BitOffs>35204736</BitOffs>
+        <BitOffs>35204800</BitOffs>
         <Default>
           <SubItem>
             <Name>.bAutoReset</Name>
@@ -35740,14 +35750,14 @@ These features efficiently address the addition, removal, and verification of be
       <SubItem>
         <Name>__TESTTRANSITIONSTATE__FBMISCFFO</Name>
         <Type>FB_MiscStatesErrorFFO</Type>
-        <BitSize>103328</BitSize>
-        <BitOffs>35700032</BitOffs>
+        <BitSize>103360</BitSize>
+        <BitOffs>35700096</BitOffs>
       </SubItem>
       <SubItem>
         <Name>__TESTTRANSITIONSTATE__FBARBITER</Name>
         <Type Namespace="PMPS">FB_Arbiter</Type>
         <BitSize>474624</BitSize>
-        <BitOffs>35803392</BitOffs>
+        <BitOffs>35803456</BitOffs>
         <Properties>
           <Property>
             <Name>old_input_assignments</Name>
@@ -35758,7 +35768,7 @@ These features efficiently address the addition, removal, and verification of be
         <Name>__TESTTRANSITIONSTATE__FBFFHWO</Name>
         <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
         <BitSize>495296</BitSize>
-        <BitOffs>36278016</BitOffs>
+        <BitOffs>36278080</BitOffs>
         <Default>
           <SubItem>
             <Name>.bAutoReset</Name>
@@ -35769,14 +35779,14 @@ These features efficiently address the addition, removal, and verification of be
       <SubItem>
         <Name>__TESTUNKNOWNSTATE__FBMISCFFO</Name>
         <Type>FB_MiscStatesErrorFFO</Type>
-        <BitSize>103328</BitSize>
-        <BitOffs>36773312</BitOffs>
+        <BitSize>103360</BitSize>
+        <BitOffs>36773376</BitOffs>
       </SubItem>
       <SubItem>
         <Name>__TESTUNKNOWNSTATE__FBARBITER</Name>
         <Type Namespace="PMPS">FB_Arbiter</Type>
         <BitSize>474624</BitSize>
-        <BitOffs>36876672</BitOffs>
+        <BitOffs>36876736</BitOffs>
         <Properties>
           <Property>
             <Name>old_input_assignments</Name>
@@ -35787,7 +35797,7 @@ These features efficiently address the addition, removal, and verification of be
         <Name>__TESTUNKNOWNSTATE__FBFFHWO</Name>
         <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
         <BitSize>495296</BitSize>
-        <BitOffs>37351296</BitOffs>
+        <BitOffs>37351360</BitOffs>
         <Default>
           <SubItem>
             <Name>.bAutoReset</Name>
@@ -35798,14 +35808,14 @@ These features efficiently address the addition, removal, and verification of be
       <SubItem>
         <Name>__TESTZERORATE__FBMISCFFO</Name>
         <Type>FB_MiscStatesErrorFFO</Type>
-        <BitSize>103328</BitSize>
-        <BitOffs>37846592</BitOffs>
+        <BitSize>103360</BitSize>
+        <BitOffs>37846656</BitOffs>
       </SubItem>
       <SubItem>
         <Name>__TESTZERORATE__FBARBITER</Name>
         <Type Namespace="PMPS">FB_Arbiter</Type>
         <BitSize>474624</BitSize>
-        <BitOffs>37949952</BitOffs>
+        <BitOffs>37950016</BitOffs>
         <Properties>
           <Property>
             <Name>old_input_assignments</Name>
@@ -35816,7 +35826,7 @@ These features efficiently address the addition, removal, and verification of be
         <Name>__TESTZERORATE__FBFFHWO</Name>
         <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
         <BitSize>495296</BitSize>
-        <BitOffs>38424576</BitOffs>
+        <BitOffs>38424640</BitOffs>
         <Default>
           <SubItem>
             <Name>.bAutoReset</Name>
@@ -35828,14 +35838,14 @@ These features efficiently address the addition, removal, and verification of be
         <Name>__TESTZERORATE__STNOBEAM</Name>
         <Type Namespace="PMPS">ST_BeamParams</Type>
         <BitSize>1760</BitSize>
-        <BitOffs>38919872</BitOffs>
+        <BitOffs>38919936</BitOffs>
       </SubItem>
       <Method>
         <Name>TestDebounce</Name>
         <Local>
           <Name>fbMiscFFO</Name>
           <Type>FB_MiscStatesErrorFFO</Type>
-          <BitSize>103328</BitSize>
+          <BitSize>103360</BitSize>
           <Properties>
             <Property>
               <Name>uselocation</Name>
@@ -35879,7 +35889,7 @@ These features efficiently address the addition, removal, and verification of be
         <Local>
           <Name>fbMiscFFO</Name>
           <Type>FB_MiscStatesErrorFFO</Type>
-          <BitSize>103328</BitSize>
+          <BitSize>103360</BitSize>
           <Properties>
             <Property>
               <Name>uselocation</Name>
@@ -35929,7 +35939,7 @@ These features efficiently address the addition, removal, and verification of be
         <Local>
           <Name>fbMiscFFO</Name>
           <Type>FB_MiscStatesErrorFFO</Type>
-          <BitSize>103328</BitSize>
+          <BitSize>103360</BitSize>
           <Properties>
             <Property>
               <Name>uselocation</Name>
@@ -35968,7 +35978,7 @@ These features efficiently address the addition, removal, and verification of be
         <Local>
           <Name>fbMiscFFO</Name>
           <Type>FB_MiscStatesErrorFFO</Type>
-          <BitSize>103328</BitSize>
+          <BitSize>103360</BitSize>
           <Properties>
             <Property>
               <Name>uselocation</Name>
@@ -36007,7 +36017,7 @@ These features efficiently address the addition, removal, and verification of be
         <Local>
           <Name>fbMiscFFO</Name>
           <Type>FB_MiscStatesErrorFFO</Type>
-          <BitSize>103328</BitSize>
+          <BitSize>103360</BitSize>
           <Properties>
             <Property>
               <Name>uselocation</Name>
@@ -50894,7 +50904,7 @@ These features efficiently address the addition, removal, and verification of be
           </Symbol>
           <Symbol>
             <Name>PRG_TEST.fb_MiscStatesErrorFFO_Test</Name>
-            <BitSize>38921664</BitSize>
+            <BitSize>38921728</BitSize>
             <BaseType>FB_MiscStatesErrorFFO_Test</BaseType>
             <BitOffs>878511360</BitOffs>
           </Symbol>
@@ -50907,7 +50917,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>917433536</BitOffs>
+            <BitOffs>917433600</BitOffs>
           </Symbol>
           <Symbol>
             <Name>MOTION_GVL.fbStandardPMPSDB</Name>
@@ -50925,7 +50935,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918362048</BitOffs>
+            <BitOffs>918362112</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Global_Version.stLibVersion_lcls_twincat_motion</Name>
@@ -50961,7 +50971,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918389792</BitOffs>
+            <BitOffs>918389856</BitOffs>
           </Symbol>
           <Symbol>
             <Name>GVL.nHomingError</Name>
@@ -50975,7 +50985,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390080</BitOffs>
+            <BitOffs>918390144</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bLittleEndian</Name>
@@ -50990,7 +51000,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390120</BitOffs>
+            <BitOffs>918390184</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.RuntimeVersion</Name>
@@ -51020,7 +51030,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390128</BitOffs>
+            <BitOffs>918390192</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.CompilerVersion</Name>
@@ -51050,7 +51060,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390192</BitOffs>
+            <BitOffs>918390256</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bSimulationMode</Name>
@@ -51065,7 +51075,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390256</BitOffs>
+            <BitOffs>918390320</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.bFPUSupport</Name>
@@ -51079,7 +51089,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390264</BitOffs>
+            <BitOffs>918390328</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.nRegisterSize</Name>
@@ -51094,7 +51104,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390272</BitOffs>
+            <BitOffs>918390336</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.nPackMode</Name>
@@ -51109,7 +51119,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390288</BitOffs>
+            <BitOffs>918390352</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.RuntimeVersionNumeric</Name>
@@ -51123,7 +51133,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390304</BitOffs>
+            <BitOffs>918390368</BitOffs>
           </Symbol>
           <Symbol>
             <Name>Constants.CompilerVersionNumeric</Name>
@@ -51137,7 +51147,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390336</BitOffs>
+            <BitOffs>918390400</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._AppInfo</Name>
@@ -51151,7 +51161,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918390368</BitOffs>
+            <BitOffs>918390432</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskPouOid_PlcTask</Name>
@@ -51165,7 +51175,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918392416</BitOffs>
+            <BitOffs>918392480</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskInfo</Name>
@@ -51183,7 +51193,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918392448</BitOffs>
+            <BitOffs>918392512</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList._TaskOid_PlcTask</Name>
@@ -51197,7 +51207,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918393472</BitOffs>
+            <BitOffs>918393536</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TwinCAT_SystemInfoVarList.__PlcTask</Name>
@@ -51218,7 +51228,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918393504</BitOffs>
+            <BitOffs>918393568</BitOffs>
           </Symbol>
           <Symbol>
             <Name>TC_EVENTS.LCLSGeneralEventClass</Name>
@@ -51241,7 +51251,7 @@ These features efficiently address the addition, removal, and verification of be
                 <Name>TcVarGlobal</Name>
               </Property>
             </Properties>
-            <BitOffs>918425184</BitOffs>
+            <BitOffs>918425248</BitOffs>
           </Symbol>
         </DataArea>
         <DataArea>
@@ -51313,7 +51323,7 @@ These features efficiently address the addition, removal, and verification of be
         </Property>
         <Property>
           <Name>ChangeDate</Name>
-          <Value>2023-04-26T11:51:35</Value>
+          <Value>2023-04-26T15:31:54</Value>
         </Property>
         <Property>
           <Name>GeneratedCodeSize</Name>

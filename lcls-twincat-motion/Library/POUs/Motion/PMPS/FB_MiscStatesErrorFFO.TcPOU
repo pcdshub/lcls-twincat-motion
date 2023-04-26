@@ -50,7 +50,9 @@ VAR
     // Increase by 1 whenever there is a fault (rising edge)
     ftTripCount: F_TRIG;
     // Decrease trip count by 1 each timeout
-    tonTripCount: TOF;
+    tonTripCount: TON;
+    // TRUE on only the first cycle
+    bFirstCycle: BOOL := TRUE;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -104,6 +106,8 @@ IF tonTripCount.Q AND nTripCount > 0 THEN
     nTripCount := nTripCount - 1;
 END_IF
 
+// This is required for non-autoresetting FBs to come up in a beam permitted state
+ffDebounce.i_xReset S= bFirstCycle;
 ffDebounce(
     i_xOK := nTripCount < 5,
     i_xAutoReset := FALSE,
@@ -112,7 +116,8 @@ ffDebounce(
     i_TypeCode := 16#1007,
     io_fbFFHWO := fbFFHWO,
 );
-]]></ST>
+ffDebounce.i_xReset R= bFirstCycle;
+bFirstCycle := FALSE;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
