@@ -31,13 +31,16 @@ fbMotionStage(stMotionStage:=stMotionStage);
 fbNCErrorFFO(
     stMotionStage:=stMotionStage,
     fbFFHWO:=fbFFHWO,
+    bAutoReset:=TRUE,
     nLowErrorId:=16#4500,
     nHighErrorId:=16#45FF,
 );
 fbEncErrorFFO(
     stMotionStage:=stMotionStage,
     fbFFHWO:=fbFFHWO,
+    bAutoReset:=TRUE,
 );
+// Fast fault output is TRUE when there are no issues and FALSE when there is an issue
 fbFFHWO.Execute();
 
 TestNC(0);
@@ -82,7 +85,7 @@ CASE nState OF
             stMotionStage.bError,
             'Should have had no error before running this test',
         );
-        AssertFalse(
+        AssertTrue(
             fbFFHWO.q_xFastFaultOut,
             'Should have had no fault with no error',
         );
@@ -97,7 +100,7 @@ CASE nState OF
 END_CASE
 
 // Wait for the fault or the timeout, then check everything
-IF tonTimer.Q OR fbFFHWO.q_xFastFaultOut THEN
+IF tonTimer.Q OR (NOT fbFFHWO.q_xFastFaultOut AND stMotionStage.nErrorID = 16#4467) THEN
     AssertFalse(
         tonTimer.Q,
         'Timeout in test',
@@ -111,7 +114,7 @@ IF tonTimer.Q OR fbFFHWO.q_xFastFaultOut THEN
         Actual:=stMotionStage.nErrorId,
         Message:='Error causer is broken',
     );
-    AssertTrue(
+    AssertFalse(
         fbFFHWO.q_xFastFaultOut,
         Message:='Did not cause a fast fault',
     );
@@ -153,7 +156,7 @@ CASE nState OF
             stMotionStage.bError,
             'Should have had no error before running this test',
         );
-        AssertFalse(
+        AssertTrue(
             fbFFHWO.q_xFastFaultOut,
             'Should have had no fault with no error',
         );
@@ -168,7 +171,7 @@ CASE nState OF
 END_CASE
 
 // Wait for the fault or the timeout, then check everything
-IF tonTimer.Q OR fbFFHWO.q_xFastFaultOut THEN
+IF tonTimer.Q OR (NOT fbFFHWO.q_xFastFaultOut AND stMotionStage.nErrorId = 16#4550) THEN
     AssertFalse(
         tonTimer.Q,
         'Timeout in test',
@@ -182,7 +185,7 @@ IF tonTimer.Q OR fbFFHWO.q_xFastFaultOut THEN
         Actual:=stMotionStage.nErrorId,
         Message:='Error causer is broken',
     );
-    AssertTrue(
+    AssertFalse(
         fbFFHWO.q_xFastFaultOut,
         Message:='Did not cause a fast fault',
     );
