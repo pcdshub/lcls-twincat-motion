@@ -52,33 +52,34 @@ VAR_OUTPUT
     nErrorTypeCode: UINT;
 END_VAR
 VAR
-    bInit: BOOL := TRUE;
-    bNCError: BOOL;
+    bInit: BOOL;
     stBeamParams: ST_BeamParams;
     fbFF: FB_FastFault;
     rtTrip: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[IF bInit THEN
-    fbFF.i_DevName := stMotionStage.sName;
+      <ST><![CDATA[IF NOT bInit THEN
     fbFF.i_Desc := sDesc;
     IF LEN(stMotionStage.sName) > 0 THEN
-        bInit := FALSE;
+        fbFF.i_DevName := stMotionStage.sName;
+    ELSE
+        fbFF.i_DevName := 'Unnamed Motor';
     END_IF
-ELSE
-    bNCError := stMotionStage.bError AND stMotionStage.nErrorId >= nLowErrorId AND stMotionStage.nErrorId <= nHighErrorId;
-    bTripped := bNCError AND PMPS_GVL.stCurrentBeamParameters.nRate > 0;
-    rtTrip(CLK:=bTripped);
-    IF rtTrip.Q THEN
-        nErrorTypeCode := 16#2000 + UDINT_TO_UINT(SHR(stMotionStage.nErrorId, 8));
-    END_IF
-    fbFF(i_xOK := NOT bTripped,
-         i_xReset := bReset,
-         i_xAutoReset := bAutoReset,
-         i_TypeCode:= nErrorTypeCode,
-         io_fbFFHWO := fbFFHWO);
-END_IF]]></ST>
+    bInit := TRUE;
+END_IF
+
+bTripped := stMotionStage.bError AND stMotionStage.nErrorId >= nLowErrorId AND stMotionStage.nErrorId <= nHighErrorId;
+rtTrip(CLK:=bTripped);
+IF rtTrip.Q THEN
+    nErrorTypeCode := 16#2000 + UDINT_TO_UINT(SHR(stMotionStage.nErrorId, 8));
+END_IF
+fbFF(i_xOK := NOT bTripped,
+     i_xReset := bReset,
+     i_xAutoReset := bAutoReset,
+     i_TypeCode:= nErrorTypeCode,
+     io_fbFFHWO := fbFFHWO);
+]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
