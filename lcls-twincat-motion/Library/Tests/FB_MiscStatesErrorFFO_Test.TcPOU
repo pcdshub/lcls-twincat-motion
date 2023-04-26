@@ -22,7 +22,7 @@ TestDebounce();
 VAR_INST
     fbMiscFFO: FB_MiscStatesErrorFFO;
     fbArbiter: FB_Arbiter(1);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 
     stBeamReq: ST_BeamParams;
 END_VAR
@@ -32,7 +32,7 @@ END_VAR
 TEST('TestBeamParamsNotOk');
 
 fbFFHWO.Execute();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
 );
@@ -51,7 +51,7 @@ fbMiscFFO(
 );
 
 fbFFHWO.Execute();
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Did not fault with bad attenuator state',
 );
@@ -65,7 +65,7 @@ TEST_FINISHED();
 VAR_INST
     fbMiscFFO: FB_MiscStatesErrorFFO;
     fbArbiter: FB_Arbiter(5);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 VAR
     nIter: DINT;
@@ -75,9 +75,23 @@ END_VAR]]></Declaration>
 TEST('TestDebounce');
 
 fbFFHWO.Execute();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
-    'Started with a fault',
+    'Started with a fault prior to first FB run-through',
+);
+// Ask for full beam: there should be no faults of any kind
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=PMPS_GVL.cstFullBeam,
+    bKnownState:=TRUE,
+    nTransitionID:=5,
+);
+fbFFHWO.Execute();
+
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault prior to trip checks',
 );
 
 // Trip and untrip the beam fast fault once, show no fault
@@ -86,7 +100,7 @@ TripUntrip(
     fbArbiter:=fbArbiter,
     fbFFHWO:=fbFFHWO,
 );
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Control group failed: one trip/untrip should not be enough to debounce',
 );
@@ -98,7 +112,7 @@ FOR nIter := 1 TO 10 DO
         fbFFHWO:=fbFFHWO,
     );
 END_FOR
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Debouncer failed to debounce',
 );
@@ -112,14 +126,14 @@ TEST_FINISHED();
 VAR_INST
     fbMiscFFO: FB_MiscStatesErrorFFO;
     fbArbiter: FB_Arbiter(4);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('TestTransitionState');
 
 fbFFHWO.Execute();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
 );
@@ -155,14 +169,14 @@ TEST_FINISHED();
 VAR_INST
     fbMiscFFO: FB_MiscStatesErrorFFO;
     fbArbiter: FB_Arbiter(3);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('TestUnknownState');
 
 fbFFHWO.Execute();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
 );
@@ -179,7 +193,7 @@ fbMiscFFO(
 );
 
 fbFFHWO.Execute();
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Did not fault with unknown state',
 );
@@ -193,7 +207,7 @@ TEST_FINISHED();
 VAR_INST
     fbMiscFFO: FB_MiscStatesErrorFFO;
     fbArbiter: FB_Arbiter(2);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 
     stNoBeam: ST_BeamParams;
 END_VAR
@@ -203,7 +217,7 @@ END_VAR
 TEST('TestBeamZeroRate');
 
 fbFFHWO.Execute();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
 );
@@ -220,7 +234,7 @@ fbMiscFFO(
 );
 
 fbFFHWO.Execute();
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Did not fault with zero rate',
 );
@@ -236,26 +250,31 @@ VAR_IN_OUT
     fbArbiter: FB_Arbiter;
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
-]]></Declaration>
+VAR
+    stBeamReq: ST_BeamParams;
+END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-// Trip
+// Use anything other than 0 rate, which is its own check
+stBeamReq := PMPS_GVL.cstFullBeam;
+stBeamReq.nTran := 0.5;
+// Trip: too much beam!
 PMPS_GVL.stCurrentBeamParameters := PMPS_GVL.cstFullBeam;
 fbMiscFFO(
     fbArbiter:=fbArbiter,
     fbFFHWO:=fbFFHWO,
-    stCurrentBeamReq:=PMPS_GVL.cst0RateBeam,
+    stCurrentBeamReq:=stBeamReq,
     bKnownState:=TRUE,
     nTransitionID:=5,
 );
 fbFFHWO.Execute();
 
-// Untrip
-PMPS_GVL.stCurrentBeamParameters := PMPS_GVL.cst0RateBeam;
+// Untrip: correct beam!
+PMPS_GVL.stCurrentBeamParameters := stBeamReq;
 fbMiscFFO(
     fbArbiter:=fbArbiter,
     fbFFHWO:=fbFFHWO,
-    stCurrentBeamReq:=PMPS_GVL.cst0RateBeam,
+    stCurrentBeamReq:=stBeamReq,
     bKnownState:=TRUE,
     nTransitionID:=5,
 );
