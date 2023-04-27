@@ -52,6 +52,7 @@ VAR
     nIndex: DINT;
 
     bInternalAuth: BOOL;
+    bDoneResetQueued: BOOL;
 
     tonArbiter: TON;
     bArbiterTimeout: BOOL;
@@ -138,11 +139,14 @@ ffBPTMError(
 // Set bDoneMoving if all the motors are done
 bDoneMoving := TRUE;
 FOR nIndex := 1 TO nActiveMotorCount DO
-    bDoneMoving := bDoneMoving AND astMotionStage[nIndex].bDone;
+    bDoneMoving := bDoneMoving AND NOT astMotionStage[nIndex].bBusy AND NOT astMotionStage[nIndex].bExecute;
 END_FOR
 // Reset bDoneMoving if the goal has changed to reset bptm's motor done for an in-place transition
 // This allows us to change to a new beam state without requiring a motor state change
-bDoneMoving R= nPrevID <> stGoalParams.nRequestAssertionID;
+// BPTM only checks for this "done" transition after the transition has been authorized, so we may need to wait
+bDoneResetQueued S= nPrevID <> stGoalParams.nRequestAssertionID;
+bDoneMoving R= bDoneResetQueued AND bptm.q_xTransitionAuthorized;
+bDoneResetQueued R= bptm.q_xTransitionAuthorized;
 nPrevID := stGoalParams.nRequestAssertionID;
 ]]></ST>
       </Implementation>

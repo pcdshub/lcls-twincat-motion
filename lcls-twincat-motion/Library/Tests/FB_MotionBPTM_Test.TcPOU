@@ -7,6 +7,9 @@
     Which is just a bptm wrapped up with a set of n motors.
     We're basically just making sure that we push the done button at the appropriate time.
     Direct tests of BPTM itself are reserved for the pmps library.
+
+    The BPTM takes care of these executions across multiple cycles,
+    so these tests must implement timeouts.
 *)
 VAR
     astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
@@ -20,11 +23,14 @@ END_VAR
       <ST><![CDATA[
 stGoal1.stBeamParams := PMPS_GVL.cstFullBeam;
 stGoal1.nRequestAssertionID := 1;
+stGoal1.sPmpsState := 'stGoal1';
 stGoal2.stBeamParams := PMPS_GVL.cstFullBeam;
 stGoal2.stBeamParams.nTran := 0.5;
 stGoal2.nRequestAssertionID := 2;
+stGoal2.sPmpsState := 'stGoal2';
 stTrans.stBeamParams := PMPS_GVL.cst0RateBeam;
 stTrans.nRequestAssertionID := 3;
+stTrans.sPmpsState := 'stTrans';
 
 // Just put a blanket global no beam so these won't wait for any changes ever
 PMPS_GVL.stCurrentBeamParameters := stNoBeam;
@@ -43,6 +49,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     bInPool: BOOL;
+    sContext: STRING;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -50,12 +57,12 @@ END_VAR
 IF bInPool THEN
     AssertTrue(
         fbArbiter.CheckRequestInPool(stDbStateParams.nRequestAssertionID),
-        'Beam parameters were not in the pool',
+        CONCAT(CONCAT(stDbStateParams.sPmpsState, ' Beam parameters were not in the pool '), sContext),
     );
 ELSE
     AssertFalse(
         fbArbiter.CheckRequestInPool(stDbStateParams.nRequestAssertionID),
-        'Beam parameters unexpectedly found in the pool',
+        CONCAT(CONCAT(stDbStateParams.sPmpsState, ' Beam parameters unexpectedly found in the pool '), sContext),
     );
 END_IF
 ]]></ST>
@@ -120,77 +127,119 @@ astMotionStage[3].bDone := FALSE;
 VAR_INST
     fbBptm: FB_MotionBPTM;
     fbArbiter: FB_Arbiter(2);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbSubSysIO : FB_DummyArbIO;
+
+    nState: UINT;
+    tonTimer: TON;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('Test3DMove');
 
-// Establish baseline at Goal1
-SetMotorStartup();
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal1,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=TRUE,
-    bAtState:=TRUE,
+tonTimer(
+    IN:=TRUE,
+    PT:=T#5s,
 );
-// Request a move
-SetMotorStartup();
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal2,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=TRUE,
-    bAtState:=FALSE,
-);
-// We should have all 3 asserts in
-AssertInPool(fbArbiter, stGoal1, TRUE);
-AssertInPool(fbArbiter, stGoal2, TRUE);
-AssertInPool(fbArbiter, stTrans, TRUE);
+IF tonTimer.Q THEN
+    nState := 4;
+END_IF
 
-// Simulate a move
-SetMotorMoving();
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal2,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=TRUE,
-    bAtState:=FALSE,
-);
-// Dropped the goal 1 assert
-AssertInPool(fbArbiter, stGoal1, FALSE);
-AssertInPool(fbArbiter, stGoal2, TRUE);
-AssertInPool(fbArbiter, stTrans, TRUE);
+CASE nState OF
+    0:
+        // Establish baseline at Goal1
+        SetMotorStartup();
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal1,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=TRUE,
+            bAtState:=TRUE,
+        );
+        IF fbBptm.bDone THEN
+            nState := 1;
+        END_IF
+    1:
+        // Request a move
+        SetMotorStartup();
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal2,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=TRUE,
+            bAtState:=FALSE,
+        );
+        IF fbBptm.bTransitionAuthorized THEN
+            // We should have transition and goal 2 asserts in
+            AssertInPool(fbArbiter, stGoal1, FALSE, 'with trans auth');
+            AssertInPool(fbArbiter, stGoal2, TRUE, 'with trans auth');
+            AssertInPool(fbArbiter, stTrans, TRUE, 'with trans auth');
+            nState := 2;
+        END_IF
+    2:
+        // Simulate a move
+        SetMotorMoving();
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal2,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=TRUE,
+            bAtState:=FALSE,
+        );
+        // Same situation as before
+        AssertInPool(fbArbiter, stGoal1, FALSE, 'after move started');
+        AssertInPool(fbArbiter, stGoal2, TRUE, 'after move started');
+        AssertInPool(fbArbiter, stTrans, TRUE, 'after move started');
+        nState := 3;
+    3:
+        // Move is done
+        SetMotorDone();
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal2,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=TRUE,
+            bAtState:=TRUE,
+        );
+        IF fbBptm.bDone THEN
+            // Dropped the transition assert
+            AssertInPool(fbArbiter, stGoal1, FALSE, 'with move complete');
+            AssertInPool(fbArbiter, stGoal2, TRUE, 'with move complete');
+            AssertInPool(fbArbiter, stTrans, FALSE, 'with move complete');
+            nState := 4;
+        END_IF
+    4:
+        AssertFalse(
+            tonTimer.Q,
+            'Timeout in test',
+        );
+        TEST_FINISHED();
+END_CASE
 
-// Move is done
-SetMotorDone();
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal2,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=TRUE,
-    bAtState:=TRUE,
+fbSubSysIO(
+    LA:=fbArbiter,
+    FFO:=fbFFHWO,
 );
-// Dropped the transition assert
-AssertInPool(fbArbiter, stGoal1, FALSE);
-AssertInPool(fbArbiter, stGoal2, TRUE);
-AssertInPool(fbArbiter, stTrans, FALSE);
 
-TEST_FINISHED();
+
+
+
+
+
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -202,7 +251,9 @@ TEST_FINISHED();
 VAR_INST
     fbBptm: FB_MotionBPTM;
     fbArbiter: FB_Arbiter(1);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+
+    tonWait: TON;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -222,23 +273,34 @@ AssertTrue(
     fbBptm.bMotorCountError,
     'Did not properly error on missing motor count',
 );
-// Should have no arbiter activity at all
-AssertInPool(fbArbiter, stGoal1, FALSE);
-AssertInPool(fbArbiter, stGoal2, FALSE);
-AssertInPool(fbArbiter, stTrans, FALSE);
 
-TEST_FINISHED();]]></ST>
+tonWait(
+    IN:=TRUE,
+    PT:=T#1s,
+);
+IF tonWait.Q THEN
+    // Should have no arbiter activity at all
+    AssertInPool(fbArbiter, stGoal1, FALSE, 'with bad count');
+    AssertInPool(fbArbiter, stGoal2, FALSE, 'with bad count');
+    AssertInPool(fbArbiter, stTrans, FALSE, 'with bad count');
+
+    TEST_FINISHED();
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="TestInit" Id="{aa2dec78-fff0-42b9-a0fa-1c26187b6d46}">
       <Declaration><![CDATA[METHOD TestInit : BOOL
 (*
-    If we initialize with still motors, do we get an arbiter request at the current goal?
+    If we initialize with still motors, do we get an arbiter request at the current goal? Hopefully we do.
 *)
 VAR_INST
     fbBptm: FB_MotionBPTM;
     fbArbiter: FB_Arbiter(1);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbSubSysIO : FB_DummyArbIO;
+
+    tonTimer: TON;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -256,13 +318,28 @@ fbBptm(
     bEnable:=True,
     bAtState:=True,
 );
-// We should have a request in the pool for goal 1 but not for transition
-// If no request are in the pool, we may come up in a no protection state!
-// If both requests are in the pool, we may come up in a too much blocking beam state!
-AssertInPool(fbArbiter, stGoal1, TRUE);
-AssertInPool(fbArbiter, stTrans, FALSE);
+fbSubSysIO(
+    LA:=fbArbiter,
+    FFO:=fbFFHWO,
+);
 
-TEST_FINISHED();
+tonTimer(
+    IN:=TRUE,
+    PT:=T#5s,
+);
+IF tonTimer.Q OR fbBptm.bDone THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in test',
+    );
+    // We should have a request in the pool for goal 1 but not for transition
+    // If no request are in the pool, we may come up in a no protection state!
+    // If both requests are in the pool, we may come up in a too much blocking beam state!
+    AssertInPool(fbArbiter, stGoal1, TRUE, 'at startup');
+    AssertInPool(fbArbiter, stTrans, FALSE, 'at startup');
+
+    TEST_FINISHED();
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -274,7 +351,11 @@ TEST_FINISHED();
 VAR_INST
     fbBptm: FB_MotionBPTM;
     fbArbiter: FB_Arbiter(1);
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbSubSysIO : FB_DummyArbIO;
+
+    nState: UINT;
+    tonTimer: TON;
 END_VAR
 
 ]]></Declaration>
@@ -282,49 +363,82 @@ END_VAR
         <ST><![CDATA[
 TEST('TestNoMove');
 
-SetMotorStartup();
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal1,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=True,
-    bAtState:=True,
+tonTimer(
+    IN:=TRUE,
+    PT:=T#5s,
 );
-// NOTE: we kept bAtState TRUE the whole time, so this should be a completed in-place transition
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal2,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=True,
-    bAtState:=True,
-);
-// Only Goal2 should be in the pool
-AssertInPool(fbArbiter, stGoal1, FALSE);
-AssertInPool(fbArbiter, stGoal2, TRUE);
-AssertInPool(fbArbiter, stTrans, FALSE);
+IF tonTimer.Q THEN
+    nState := 3;
+END_IF
 
-// Repeat from a done position!
-SetMotorDone();
-fbBptm(
-    astMotionStage:=astMotionStage,
-    fbArbiter:=fbArbiter,
-    fbFFHWO:=fbFFHWO,
-    stGoalParams:=stGoal1,
-    stTransParams:=stTrans,
-    nActiveMotorCount:=3,
-    bEnable:=True,
-    bAtState:=True,
-);
-// Only Goal1 should be in the pool
-AssertInPool(fbArbiter, stGoal1, TRUE);
-AssertInPool(fbArbiter, stGoal2, FALSE);
-AssertInPool(fbArbiter, stTrans, FALSE);]]></ST>
+CASE nState OF
+    0:
+        SetMotorStartup();
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal1,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=True,
+            bAtState:=True,
+        );
+        IF fbBptm.bDone THEN
+            nState := 1;
+        END_IF
+    1:
+        SetMotorStartup();
+        // NOTE: we kept bAtState TRUE the whole time, so this should be a completed in-place transition
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal2,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=True,
+            bAtState:=True,
+        );
+        IF fbBptm.bDone THEN
+            // Only Goal2 should be in the pool
+            AssertInPool(fbArbiter, stGoal1, FALSE, 'after switching goals (1)');
+            AssertInPool(fbArbiter, stGoal2, TRUE, 'after switching goals (1)');
+            AssertInPool(fbArbiter, stTrans, FALSE, 'after switching goals (1)');
+            nState := 2;
+        END_IF
+    2:
+        // Repeat from a done position!
+        SetMotorDone();
+        fbBptm(
+            astMotionStage:=astMotionStage,
+            fbArbiter:=fbArbiter,
+            fbFFHWO:=fbFFHWO,
+            stGoalParams:=stGoal1,
+            stTransParams:=stTrans,
+            nActiveMotorCount:=3,
+            bEnable:=True,
+            bAtState:=True,
+        );
+        IF fbBptm.bDone THEN
+            // Only Goal1 should be in the pool
+            AssertInPool(fbArbiter, stGoal1, TRUE, 'after switching goals (2)');
+            AssertInPool(fbArbiter, stGoal2, FALSE, 'after switching goals (2)');
+            AssertInPool(fbArbiter, stTrans, FALSE, 'after switching goals (2)');
+            nState := 3;
+        END_IF
+    3:
+        AssertFalse(
+            tonTimer.Q,
+            'Timeout in test',
+        );
+        TEST_FINISHED();
+END_CASE
+
+fbSubSysIO(
+    LA:=fbArbiter,
+    FFO:=fbFFHWO,
+);]]></ST>
       </Implementation>
     </Method>
   </POU>
