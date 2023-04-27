@@ -245,8 +245,6 @@ VAR
     bReady1: BOOL;
     bReady2: BOOL;
     bReady3: BOOL;
-
-    bTimeout: BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -262,25 +260,16 @@ bReady1 := DoMove(1, nMotor1Case);
 bReady2 := DoMove(2, nMotor2Case);
 bReady3 := DoMove(3, nMotor3Case);
 
-bTimeout := afbTestMove[1].tElapsed > T#5s
-    OR afbTestMove[2].tElapsed > T#5s
-    OR afbTestMove[3].tElapsed > T#5s;
-
-IF bTimeout OR (bReady1 AND bReady2 AND bReady3) THEN
+IF bReady1 AND bReady2 AND bReady3 THEN
     DoRead();
     DoAssert(nMotor1Case, nMotor2Case, nMotor3Case);
     bOneAssertDone := TRUE;
     // The final assert case marks test as finished
-    IF bTimeout OR (nMotor1Case = LAST_TEST AND nMotor2Case = LAST_TEST AND nMotor3Case = LAST_TEST) THEN
-        AssertFalse(
-            bTimeout,
-            'Timeout in test case',
-        );
-        // TODO fill this test in
+    IF nMotor1Case = LAST_TEST AND nMotor2Case = LAST_TEST AND nMotor3Case = LAST_TEST THEN
         AssertEquals_UINT(
-            Expected:=placeholder,
-            Actual:=placeholder,
-            Message:='Make sure all the asserts were run',
+            Expected:=6 * (LAST_TEST + 1) * (LAST_TEST + 1) * (LAST_TEST + 1),
+            Actual:=AssertResults.TotalAsserts,
+            Message:='Some of the asserts were not run',
         );
         TEST_FINISHED();
     END_IF
