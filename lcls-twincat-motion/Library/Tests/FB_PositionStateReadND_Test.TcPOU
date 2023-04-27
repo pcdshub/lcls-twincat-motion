@@ -18,6 +18,10 @@ VAR
     nIter1: UINT;
     nIter2: UINT;
     nIter3: UINT;
+
+    fbMisRead: FB_PositionStateReadND;
+    astGoodStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astGoodStateShape: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 END_VAR
 VAR CONSTANT
     NO_STATE: UINT := 0;
@@ -271,14 +275,12 @@ END_IF
     <Method Name="TestForgot" Id="{8ee66784-0269-4074-a44f-3e9eda7e6735}">
       <Declaration><![CDATA[METHOD PRIVATE TestForgot
 VAR
-    fbMisRead: FB_PositionStateReadND;
-    astGoodStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
-    astGoodStateShape: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('ForgotCount');
+
 fbMisRead(
     astMotionStage:=astGoodStage,
     astPositionState:=astGoodStateShape,
@@ -288,6 +290,7 @@ AssertTrue(
     Condition:=fbMisRead.bMotorCountError,
     Message:='Failed to notice missing count',
 );
+
 TEST_FINISHED();
 ]]></ST>
       </Implementation>
