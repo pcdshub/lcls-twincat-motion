@@ -28,7 +28,7 @@ TEST('TestBasic');
 FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
     astDbStateParams[nIter].nRequestAssertionID := 100 + nIter;
     fbArbiter.AddRequest(
-        nReqID:=nIter,
+        nReqID:=100 + nIter,
         stReqBP:=PMPS_GVL.cstFullBeam,
         sDevName:='UnitTest',
     );
@@ -37,7 +37,7 @@ END_FOR
 FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
     AssertTrue(
         fbArbiter.CheckRequestInPool(100 + nIter),
-        'Expected all states to be in the pool',
+        CONCAT(CONCAT('State ', UDINT_TO_STRING(nIter)), ' was not in the pool'),
     );
 END_FOR
 
@@ -50,7 +50,7 @@ fbClear(
 FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
     AssertFalse(
         fbArbiter.CheckRequestInPool(100 + nIter),
-        'Expected all states to be cleared from the pool',
+        CONCAT(CONCAT('State ', UDINT_TO_STRING(nIter)), ' was not cleared from the pool'),
     );
 END_FOR
 
