@@ -99,6 +99,7 @@ IF bStoppingMotor THEN
         stMotionStage:=stMotionStage,
         bExecute:=FALSE,
     );
+    stMotionStage.bExecute := FALSE;
     bStoppingMotor R= NOT stMotionStage.Axis.Status.ControlLoopClosed AND NOT fbMoveRequest.bBusy;
 ELSIF bExecQueued THEN
     // First exec cycle: bring these to FALSE for later use

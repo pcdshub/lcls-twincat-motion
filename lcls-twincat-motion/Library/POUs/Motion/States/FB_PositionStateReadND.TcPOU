@@ -55,7 +55,7 @@ bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
     <Action Name="CombineOutputs" Id="{4846d43a-1304-4a25-a7f8-7277efded98f}">
       <Implementation>
         <ST><![CDATA[
-// bKnownState is TRUE if ALL motors have known states
+// bKnownState is TRUE if ALL motors have the same known state
 bKnownState := TRUE;
 FOR nIter := 1 TO nActiveMotorCount DO
     bKnownState := bKnownState AND afbPositionStateRead[nIter].bKnownState;
@@ -74,6 +74,9 @@ FOR nIter := 1 TO nActiveMotorCount DO
         nPositionIndex := 0;
     END_IF
 END_FOR
+
+// Position index 0 means different positions
+bKnownState := bKnownState AND nPositionIndex <> 0;
 ]]></ST>
       </Implementation>
     </Action>

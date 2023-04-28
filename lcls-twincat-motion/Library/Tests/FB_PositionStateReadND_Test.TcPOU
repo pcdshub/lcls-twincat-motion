@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_PositionStateReadND_Test" Id="{4b592fad-9c2c-4bce-a31b-7960aad2ca81}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND_Test EXTENDS TcUnit.FB_TestSuite
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND_Test EXTENDS MotorTestSuite
 (*
     Test that FB_PositionStateReadND can be used to read and summarize
     N-dimensional state positions where multiple motors must move in
@@ -31,6 +31,7 @@ VAR CONSTANT
     IN_TWEAK: UINT := 3;
     AWAY: UINT := 4;
     LAST_TEST: UINT := AWAY;
+    TEST_COUNT: UINT := 5;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
@@ -44,7 +45,6 @@ TestForgot();
 TestCombos(nAssertCounter);
 
 IF bOneAssertDone THEN
-    bOneAssertDone := FALSE;
     afbTestMove[1](
         stMotionStage:=astMotionStage[1],
         bExecute:=FALSE,
@@ -57,7 +57,10 @@ IF bOneAssertDone THEN
         stMotionStage:=astMotionStage[3],
         bExecute:=FALSE,
     );
-    nAssertCounter := nAssertCounter + 1;
+    IF afbTestMove[1].bResetDone AND afbTestMove[2].bResetDone AND afbTestMove[3].bResetDone THEN
+        bOneAssertDone := FALSE;
+        nAssertCounter := nAssertCounter + 1;
+    END_IF
 END_IF]]></ST>
     </Implementation>
     <Method Name="DoAssert" Id="{80756ff2-0af2-4418-83af-c425e1ba5c62}">
@@ -66,26 +69,32 @@ VAR_INPUT
     nMotorCase1: UINT;
     nMotorCase2: UINT;
     nMotorCase3: UINT;
+    bReady1: BOOL;
+    bReady2: BOOL;
+    bReady3: BOOL;
 END_VAR
 VAR
     bKnownState: BOOL;
     bMovingState: BOOL;
     nPositionIndex: DINT;
+    sTestCase: STRING;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-AssertFalse(
-    Condition:=afbTestMove[1].tElapsed > T#5s,
-    Message:='Timeout for motor 1',
+sTestCase := CONCAT(CONCAT(UINT_TO_STRING(nMotorCase1), UINT_TO_STRING(nMotorCase2)), UINT_TO_STRING(nMotorCase3));
+
+AssertTrue(
+    Condition:=bReady1,
+    Message:=CONCAT('Timeout for motor 1 during test case ', sTestCase),
 );
-AssertFalse(
-    Condition:=afbTestMove[2].tElapsed > T#5s,
-    Message:='Timeout for motor 2',
+AssertTrue(
+    Condition:=bReady2,
+    Message:=CONCAT('Timeout for motor 2 during test case ', sTestCase),
 );
-AssertFalse(
-    Condition:=afbTestMove[3].tElapsed > T#5s,
-    Message:='Timeout for motor 3',
+AssertTrue(
+    Condition:=bReady3,
+    Message:=CONCAT('Timeout for motor 3 during test case ', sTestCase),
 );
 
 // All at OUT or all at IN should be OUT and IN respectively, even if doing a tweak move
@@ -107,17 +116,17 @@ END_IF
 AssertEquals_BOOL(
     Expected:=bKnownState,
     Actual:=fbRead.bKnownState,
-    Message:='Wrong bKnownState',
+    Message:=CONCAT('Wrong bKnownState for test case ', sTestCase),
 );
 AssertEquals_BOOL(
     Expected:=bMovingState,
     Actual:=fbRead.bMovingState,
-    Message:='Wrong bMovingState',
+    Message:=CONCAT('Wrong bMovingState for test case ', sTestCase),
 );
 AssertEquals_DINT(
     Expected:=nPositionIndex,
     Actual:=fbRead.nPositionIndex,
-    Message:='Wrong nPositionIndex',
+    Message:=CONCAT('Wrong nPositionIndex for test case ', sTestCase),
 );
 ]]></ST>
       </Implementation>
@@ -214,8 +223,8 @@ afbMotionStage[nIndex](stMotionStage:=astMotionStage[nIndex]);
 astPositionState[nIndex][1].sName := 'OUT';
 astPositionState[nIndex][1].fPosition := nIndex * 100 + 10;
 astPositionState[nIndex][1].fDelta := 1;
-astPositionState[nIndex][1].bValid := TRUE;
 astPositionState[nIndex][1].bUseRawCounts := FALSE;
+SetGoodState(astPositionState[nIndex][1]);
 afbInternal[nIndex][1](
     stMotionStage:=astMotionStage[nIndex],
     stPositionState:=astPositionState[nIndex][1],
@@ -224,8 +233,8 @@ afbInternal[nIndex][1](
 astPositionState[nIndex][2].sName := 'IN';
 astPositionState[nIndex][2].fPosition := nIndex * 100 + 20;
 astPositionState[nIndex][2].fDelta := 1;
-astPositionState[nIndex][2].bValid := TRUE;
 astPositionState[nIndex][2].bUseRawCounts := FALSE;
+SetGoodState(astPositionState[nIndex][2]);
 afbInternal[nIndex][2](
     stMotionStage:=astMotionStage[nIndex],
     stPositionState:=astPositionState[nIndex][2],
@@ -246,33 +255,47 @@ VAR
     bReady2: BOOL;
     bReady3: BOOL;
 END_VAR
+VAR_INST
+    tonTimeout: TON;
+END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 // This should be one big test case with 125 asserts
 TEST('TestAllCombos');
 
-nMotor1Case := nAssertID MOD LAST_TEST;
-nMotor2Case := LREAL_TO_UINT(FLOOR(nAssertID / LAST_TEST)) MOD LAST_TEST;
-nMotor3Case := LREAL_TO_UINT(FLOOR(nAssertID / LAST_TEST / LAST_TEST)) MOD LAST_TEST;
+nMotor1Case := nAssertID MOD TEST_COUNT;
+nMotor2Case := LREAL_TO_UINT(FLOOR(nAssertID / TEST_COUNT)) MOD TEST_COUNT;
+nMotor3Case := LREAL_TO_UINT(FLOOR(nAssertID / TEST_COUNT / TEST_COUNT)) MOD TEST_COUNT;
 
 bReady1 := DoMove(1, nMotor1Case);
 bReady2 := DoMove(2, nMotor2Case);
 bReady3 := DoMove(3, nMotor3Case);
 
-IF bReady1 AND bReady2 AND bReady3 THEN
+// There is a 5s timeout at a lower level, but that timeout could fail
+tonTimeout(
+    IN:=TRUE,
+    PT:=T#7s,
+);
+
+IF tonTimeout.Q OR (bReady1 AND bReady2 AND bReady3) THEN
     DoRead();
-    DoAssert(nMotor1Case, nMotor2Case, nMotor3Case);
+    DoAssert(nMotor1Case, nMotor2Case, nMotor3Case, bReady1, bReady2, bReady3);
     bOneAssertDone := TRUE;
     // The final assert case marks test as finished
-    IF nMotor1Case = LAST_TEST AND nMotor2Case = LAST_TEST AND nMotor3Case = LAST_TEST THEN
+    IF tonTimeout.Q OR (nMotor1Case = LAST_TEST AND nMotor2Case = LAST_TEST AND nMotor3Case = LAST_TEST) THEN
         AssertEquals_UINT(
-            Expected:=6 * (LAST_TEST + 1) * (LAST_TEST + 1) * (LAST_TEST + 1),
+            Expected:=6 * TEST_COUNT * TEST_COUNT * TEST_COUNT + 1,
             Actual:=AssertResults.TotalAsserts,
             Message:='Some of the asserts were not run',
         );
+        AssertFalse(
+            tonTimeout.Q,
+            'Level 2 timeout in test',
+        );
         TEST_FINISHED();
     END_IF
+    tonTimeout(IN:=FALSE);
 END_IF
 ]]></ST>
       </Implementation>
