@@ -31,7 +31,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestBeamParamsNotOk');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
@@ -50,7 +50,7 @@ fbMiscFFO(
     nTransitionID:=1,
 );
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Did not fault with bad attenuator state',
@@ -74,7 +74,7 @@ END_VAR]]></Declaration>
         <ST><![CDATA[
 TEST('TestDebounce');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault prior to first FB run-through',
@@ -87,7 +87,7 @@ fbMiscFFO(
     bKnownState:=TRUE,
     nTransitionID:=5,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
@@ -132,7 +132,7 @@ END_VAR]]></Declaration>
         <ST><![CDATA[
 TEST('TestTransitionState');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
@@ -154,7 +154,7 @@ fbMiscFFO(
     nTransitionID:=4,
 );
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Faulted in unknown states even though we were moving normally',
@@ -175,7 +175,7 @@ END_VAR]]></Declaration>
         <ST><![CDATA[
 TEST('TestUnknownState');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
@@ -192,7 +192,7 @@ fbMiscFFO(
     nTransitionID:=3,
 );
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Did not fault with unknown state',
@@ -216,7 +216,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestBeamZeroRate');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
@@ -233,7 +233,7 @@ fbMiscFFO(
     nTransitionID:=2
 );
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Did not fault with zero rate',
@@ -267,7 +267,7 @@ fbMiscFFO(
     bKnownState:=TRUE,
     nTransitionID:=5,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 
 // Untrip: correct beam!
 PMPS_GVL.stCurrentBeamParameters := stBeamReq;
@@ -278,7 +278,7 @@ fbMiscFFO(
     bKnownState:=TRUE,
     nTransitionID:=5,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 ]]></ST>
       </Implementation>
     </Method>

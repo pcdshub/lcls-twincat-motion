@@ -48,7 +48,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestCount');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // No faults please
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
@@ -62,7 +62,7 @@ fbLimits(
     sDeviceName:='TestUnderOverGoals',
     bMaintMode:=FALSE,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // Must fault with bad count
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
@@ -84,7 +84,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestMaint');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // No faults please
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
@@ -99,7 +99,7 @@ fbLimits(
     sDeviceName:='TestUnderOverGoals',
     bMaintMode:=TRUE,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // Must fault in maint mode
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
@@ -146,7 +146,7 @@ fbLimits(
     sDeviceName:='TestUnderOverGoals',
     bMaintMode:=FALSE,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // No faults please
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,

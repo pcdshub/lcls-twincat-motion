@@ -30,7 +30,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestBlankCount');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
@@ -39,7 +39,7 @@ fbFFO(
     astMotionStage:=astMotionStage,
     fbFFHWO:=fbFFHWO,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Blank count did not fault',
@@ -64,7 +64,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestTwoMotorEncError');
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
@@ -76,7 +76,7 @@ fbFFO(
     fbFFHWO:=fbFFHWO,
     nActiveMotorCount:=2,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Encoder error did not fault',

@@ -108,7 +108,7 @@ fbStateLimits(
     bEnable:=TRUE,
     nGoalStateIndex:=nGoalState,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // If we've set the position OR ran out of time to set the position, check the asserts
 IF tonTimer.Q OR fbMove.bSetDone THEN
     AssertFalse(
@@ -177,7 +177,7 @@ fbStateLimits(
     bEnable:=TRUE,
     nGoalStateIndex:=nGoalState,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // If we've set the position OR ran out of time to set the position, check the asserts
 IF tonTimer.Q OR fbMove.bSetDone THEN
     AssertFalse(
@@ -248,7 +248,7 @@ fbStateLimits(
     nGoalStateIndex:=nGoalState,
 );
 bInit := TRUE;
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 // If we've set the position OR ran out of time to set the position, check the asserts
 IF tonTimer.Q OR fbMove.bSetDone THEN
     AssertFalse(
@@ -296,7 +296,7 @@ IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Faulted prior to test',
@@ -309,7 +309,7 @@ fbStateLimits(
     bEnable:=TRUE,
     nGoalStateIndex:=nInvalidState,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Invalid state did not fault',
@@ -337,7 +337,7 @@ IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
 
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Faulted prior to test',
@@ -350,7 +350,7 @@ fbStateLimits(
     bEnable:=TRUE,
     nGoalStateIndex:=nNotUpdatedState,
 );
-fbFFHWO.Execute();
+fbFFHWO.EvaluateOutput();
 AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Not updated state did not fault',
