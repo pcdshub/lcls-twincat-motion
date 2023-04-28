@@ -76,7 +76,7 @@ mc_power(
     This action sets fLowerPos and fUpperPos based on our goal position.
 *)
 IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
-    IF astPositionState[nGoalStateIndex].bValid THEN
+    IF astPositionState[nGoalStateIndex].bValid AND astPositionState[nGoalStateIndex].bUpdated THEN
         bValidGoal := TRUE;
         fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
         fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);

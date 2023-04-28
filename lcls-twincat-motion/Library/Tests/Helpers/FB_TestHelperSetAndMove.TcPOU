@@ -56,6 +56,7 @@ VAR
     rtExec: R_TRIG;
     ftExec: F_TRIG;
     bExecQueued: BOOL;
+    nLatchError: UDINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -138,6 +139,9 @@ mcSetPos(
     Execute:=bResetDone AND bExecute AND NOT bSetDone AND NOT bError,
     Position:=fStartPosition,
 );
+IF mcSetPos.Done OR mcSetPos.Error THEN
+    nLatchError := mcSetPos.ErrorID;
+END_IF
 bSetDone S= mcSetPos.Done AND NOT mcSetPos.Error AND stMotionStage.stAxisStatus.fActPosition = fStartPosition;
 
 // Any sub-error is an error here
