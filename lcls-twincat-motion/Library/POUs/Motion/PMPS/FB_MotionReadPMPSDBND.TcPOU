@@ -43,10 +43,11 @@ VAR
     bReadPmpsDb: BOOL;
     nIterMotor: DINT;
     nIterState: DINT;
+    nIterState2: DINT;
     sLoopNewKey: STRING;
     sLoopPrevKey: STRING;
-END_VAR
-]]></Declaration>
+    abStateError: ARRAY[0..GeneralConstants.MAX_STATES] OF BOOL;
+END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 SelectLookupKeys();
@@ -101,6 +102,7 @@ ffError(
 // Start by emptying any pre-existing values
 FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
     astDbStateParams[nIterState].sPmpsState := '';
+    abStateError[nIterState] := FALSE;
 END_FOR
 
 // Transition key is simple
@@ -123,10 +125,35 @@ FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
             ELSE
                 // We already had a different key! Don't just override it, have an error!
                 bError := TRUE;
+                abStateError[nIterState] := TRUE;
             END_IF
         END_IF
     END_FOR
-END_FOR]]></ST>
+END_FOR
+
+// Check for duplicated sPmpsState strings
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    FOR nIterState2 := 0 TO nIterState DO
+        IF nIterState <> nIterState2 THEN
+            IF astDbStateParams[nIterState].sPmpsState = astDbStateParams[nIterState2].sPmpsState THEN
+                // Duplicated key, we need an error and a placeholder in both spots
+                bError := TRUE;
+                abStateError[nIterState] := TRUE;
+                abStateError[nIterState2] := TRUE;
+            END_IF
+        END_IF
+    END_FOR
+END_FOR
+
+// Clear the erroroneous states so they won't be used as lookups
+IF bError THEN
+    FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+        IF abStateError[nIterState] THEN
+            astDbStateParams[nIterState].sPmpsState := '';
+        END_IF
+    END_FOR
+END_IF
+]]></ST>
       </Implementation>
     </Action>
   </POU>

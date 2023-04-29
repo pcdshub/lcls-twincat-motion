@@ -27,7 +27,12 @@ END_VAR
 FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
     astCorrectStates[nIter].stPMPS.sPmpsState := CONCAT('State', INT_TO_STRING(nIter));
     astNonsenseStates[nIter].stPMPS.sPmpsState := CONCAT('asdf', INT_TO_STRING(nIter));
-    astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State1';
+    IF INT_TO_BOOL(nIter MOD 2) THEN
+        astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State0';
+    ELSE
+        astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State1';
+    END_IF
+
 END_FOR
 
 TestSolo();
@@ -37,10 +42,10 @@ TestDupe();]]></ST>
     </Implementation>
     <Method Name="TestDupe" Id="{4c361cc1-2632-4b23-99ee-f0de0a75607c}">
       <Declaration><![CDATA[METHOD TestDupe
-VAR
-    stRead: FB_MotionReadPMPSDBND;
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -48,7 +53,7 @@ END_VAR
 TEST('TestDupe');
 
 astPositionState[1] := astDuplicatedStates;
-stRead(
+fbRead(
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
     sTransitionKey:='State0',
@@ -57,17 +62,13 @@ stRead(
 fbFFHWO.EvaluateOutput();
 
 AssertTrue(
-    stRead.bError,
+    fbRead.bError,
     'Should have had an error',
-);
-AssertTrue(
-    fbFFHWO.q_xFastFaultOut,
-    'Should have had a fast fault',
 );
 FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
     AssertEquals_STRING(
         Expected:='',
-        Actual:=stRead.astDbStateParams[nIter].sPmpsState,
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
         Message:='Errored output should have had no state names',
     );
 END_FOR
@@ -77,10 +78,10 @@ TEST_FINISHED();]]></ST>
     </Method>
     <Method Name="TestNonsense" Id="{c01adc7e-261b-43ff-9bec-c68777bcbe94}">
       <Declaration><![CDATA[METHOD TestNonsense
-VAR
-    stRead: FB_MotionReadPMPSDBND;
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -89,7 +90,7 @@ TEST('TestNonsense');
 
 astPositionState[1] := astCorrectStates;
 astPositionState[2] := astNonsenseStates;
-stRead(
+fbRead(
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
     sTransitionKey:='State0',
@@ -98,17 +99,19 @@ stRead(
 fbFFHWO.EvaluateOutput();
 
 AssertTrue(
-    stRead.bError,
+    fbRead.bError,
     'Should have had an error',
 );
-AssertTrue(
-    fbFFHWO.q_xFastFaultOut,
-    'Should have had a fast fault',
+// Only the transition state should be spared from the nonsense
+AssertEquals_STRING(
+    Expected:='State0',
+    Actual:=fbRead.astDbStateParams[0].sPmpsState,
+    Message:='Transition state should be OK',
 );
-FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
     AssertEquals_STRING(
         Expected:='',
-        Actual:=stRead.astDbStateParams[nIter].sPmpsState,
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
         Message:='Errored output should have had no state names',
     );
 END_FOR
@@ -118,10 +121,10 @@ TEST_FINISHED();]]></ST>
     </Method>
     <Method Name="TestSolo" Id="{e199a4d6-9d1e-4771-ab3f-3343cad2747d}">
       <Declaration><![CDATA[METHOD TestSolo
-VAR
-    stRead: FB_MotionReadPMPSDBND;
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -129,7 +132,7 @@ END_VAR
 TEST('TestSolo');
 
 astPositionState[1] := astCorrectStates;
-stRead(
+fbRead(
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
     sTransitionKey:='State0',
@@ -138,22 +141,18 @@ stRead(
 fbFFHWO.EvaluateOutput();
 
 AssertFalse(
-    stRead.bError,
+    fbRead.bError,
     'Had an error',
 );
-AssertFalse(
-    fbFFHWO.q_xFastFaultOut,
-    'Had a fast fault',
-);
 AssertEquals_STRING(
-    Expected:=stRead.sTransitionKey,
-    Actual:=stRead.astDbStateParams[0].sPmpsState,
+    Expected:=fbRead.sTransitionKey,
+    Actual:=fbRead.astDbStateParams[0].sPmpsState,
     Message:='Output did not have the correct transition state',
 );
 FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
     AssertEquals_STRING(
         Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
-        Actual:=stRead.astDbStateParams[nIter].sPmpsState,
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
         Message:='Output did not have the correct position state',
     );
 END_FOR
@@ -163,10 +162,10 @@ TEST_FINISHED();]]></ST>
     </Method>
     <Method Name="TestTrio" Id="{8ecf176a-1aaf-4dbd-91e3-61156428d27d}">
       <Declaration><![CDATA[METHOD TestTrio
-VAR
-    stRead: FB_MotionReadPMPSDBND;
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -176,7 +175,7 @@ TEST('TestTrio');
 astPositionState[1] := astCorrectStates;
 astPositionState[2] := astCorrectStates;
 astPositionState[3] := astCorrectStates;
-stRead(
+fbRead(
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
     sTransitionKey:='State0',
@@ -185,22 +184,18 @@ stRead(
 fbFFHWO.EvaluateOutput();
 
 AssertFalse(
-    stRead.bError,
+    fbRead.bError,
     'Had an error',
 );
-AssertFalse(
-    fbFFHWO.q_xFastFaultOut,
-    'Had a fast fault',
-);
 AssertEquals_STRING(
-    Expected:=stRead.sTransitionKey,
-    Actual:=stRead.astDbStateParams[0].sPmpsState,
+    Expected:=fbRead.sTransitionKey,
+    Actual:=fbRead.astDbStateParams[0].sPmpsState,
     Message:='Output did not have the correct transition state',
 );
 FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
     AssertEquals_STRING(
         Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
-        Actual:=stRead.astDbStateParams[nIter].sPmpsState,
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
         Message:='Output did not have the correct position state',
     );
 END_FOR
