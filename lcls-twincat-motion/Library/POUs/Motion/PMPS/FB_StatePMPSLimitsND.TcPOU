@@ -18,6 +18,8 @@ VAR_IN_OUT
     fbFFHWO: FB_HardwareFFOutput;
 END_VAR
 VAR_INPUT
+    // Whether or not to do anything
+    bEnable: BOOL;
     // The number of motors we're actually using
     nActiveMotorCount: UINT;
     // The state that the motors are moving to, along dimension 2 of the position state array. This may be the same as the current state.
@@ -71,7 +73,7 @@ FOR nIter := 1 TO nActiveMotorCount DO
         stMotionStage:=astMotionStage[nIter],
         astPositionState:=astPositionState[nIter],
         fbFFHWO:=fbFFHWO,
-        bEnable:=NOT bMaintMode,
+        bEnable:=bEnable AND NOT bMaintMode,
         nGoalStateIndex:=nGoalStateIndex,
         bEnabled=>abEnabled[nIter],
         bForwardEnabled=>abForwardEnabled[nIter],

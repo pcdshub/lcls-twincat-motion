@@ -20,7 +20,8 @@ VAR_IN_OUT
     fbArbiter: FB_Arbiter;
 END_VAR
 VAR_INPUT
-    bEnable: BOOL;
+    bEnableBeamParams: BOOL;
+    bEnablePositionLimits: BOOL;
     nActiveMotorCount: UINT;
     sDeviceName: STRING;
     sTransitionKey: STRING;
@@ -53,7 +54,7 @@ fbMotionBPTM(
     stGoalParams:=fbMotionReadPMPSDB.astDbStateParams[nCurrGoal],
     stTransParams:=fbMotionReadPMPSDB.astDbStateParams[0],
     nActiveMotorCount:=nActiveMotorCount,
-    bEnable:=stPMPSEpicsInput.bArbiterEnabled,
+    bEnable:=stPMPSEpicsInput.bArbiterEnabled AND bEnableBeamParams,
     bAtState:=stEpicsOutput.nGetValue = nCurrGoal,
     sDeviceName:=sDeviceName,
     bTransitionAuthorized=>,
@@ -64,13 +65,14 @@ fbMotionBPTM(
 fbMotionClearAsserts(
     astDbStateParams:=fbMotionReadPMPSDB.astDbStateParams,
     fbArbiter:=fbArbiter,
-    bExecute:=NOT stPMPSEpicsInput.bArbiterEnabled,
+    bExecute:=NOT fbMotionBPTM.bEnable,
 );
 
 fbStatePMPSLimits(
     astMotionStage:=astMotionStageMax,
     astPositionState:=astPositionStateMax,
     fbFFHWO:=fbFFHWO,
+    bEnable:=bEnablePositionLimits,
     nActiveMotorCount:=nActiveMotorCount,
     nGoalStateIndex:=nCurrGoal,
     sDeviceName:=sDeviceName,
@@ -82,11 +84,15 @@ fbStatePMPSLimits(
     bMotorCountError=>,
 );
 
+IF bEnableBeamParams THEN
+    fbMiscStatesErrorFFO.stCurrentBeamReq := fbMotionReadPMPSDB.astDbStateParams[stEpicsOutput.nGetValue].stBeamParams;
+ELSE
+    fbMiscStatesErrorFFO.stCurrentBeamReq := PMPS_GVL.cstFullBeam;
+END_IF
 fbMiscStatesErrorFFO(
     fbArbiter:=fbArbiter,
     fbFFHWO:=fbFFHWO,
     sDeviceName:=sDeviceName,
-    stCurrentBeamReq:=fbMotionReadPMPSDB.astDbStateParams[stEpicsOutput.nGetValue].stBeamParams,
     bKnownState:=stEpicsOutput.nGetValue > 0,
     nTransitionID:=fbMotionReadPMPSDB.astDbStateParams[0].nRequestAssertionID,
 );

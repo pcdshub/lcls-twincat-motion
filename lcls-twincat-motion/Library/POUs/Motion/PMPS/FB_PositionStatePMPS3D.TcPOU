@@ -41,7 +41,9 @@ VAR_IN_OUT
     fbArbiter: FB_Arbiter;
 END_VAR
 VAR_INPUT
-    bEnable: BOOL;
+    bEnableMotion: BOOL;
+    bEnableBeamParams: BOOL;
+    bEnablePositionLimits: BOOL;
     sDeviceName: STRING;
     sTransitionKey: STRING;
     {attribute 'pytmc' := '
@@ -58,6 +60,7 @@ END_VAR
 VAR_OUTPUT
     {attribute 'pytmc' := '
         pv: STATES
+        io: i
     '}
     stEpicsOutput: ST_StateEpicsOutput;
     {attribute 'pytmc' := '
@@ -87,7 +90,7 @@ fbCore(
     astPositionStateMax:=astPositionStateMax,
     stEpicsInput:=stEpicsInput,
     stEpicsOutput:=stEpicsOutput,
-    bEnable:=bEnable,
+    bEnable:=bEnableMotion,
     nActiveMotorCount:=3,
     nCurrGoal=>,
 );
@@ -100,7 +103,8 @@ fbPMPSCore(
     stPMPSEpicsOutput:=stPMPSEpicsOutput,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=bEnable,
+    bEnableBeamParams:=bEnableBeamParams,
+    bEnablePositionLimits:=bEnablePositionLimits,
     nActiveMotorCount:=3,
     sDeviceName:=sDeviceName,
     sTransitionKey:=sTransitionKey,
