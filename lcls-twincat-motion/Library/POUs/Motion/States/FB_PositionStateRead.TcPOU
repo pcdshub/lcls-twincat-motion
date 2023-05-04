@@ -23,6 +23,8 @@ VAR_OUTPUT
     nPositionIndex: DINT;
     // A copy of the details of the current position state, for convenience. This may be a moving state or an unknown state as a placeholder if we are not at a known state.
     stCurrentPosition: ST_PositionState;
+    // A full description of whether we're at each of our states. This is used in 2D, 3D, etc. to clarify cases where states may overlap in 1D.
+    abAtPosition: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
 END_VAR
 VAR
     nIter: DINT;
@@ -38,6 +40,9 @@ FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
         bKnownState := TRUE;
         nPositionIndex := nIter;
         stCurrentPosition := astPositionState[nIter];
+        abAtPosition[nIter] := TRUE;
+    ELSE
+        abAtPosition[nIter] := FALSE;
     END_IF
 END_FOR
 

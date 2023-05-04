@@ -231,7 +231,12 @@ afbInternal[nIndex][1](
 );
 
 astPositionState[nIndex][2].sName := 'IN';
-astPositionState[nIndex][2].fPosition := nIndex * 100 + 20;
+IF nIndex = 3 THEN
+    // The case where states would be overlapping in 1D, but are not overlapping in 3D
+    astPositionState[nIndex][2].fPosition := nIndex * 100 + 10;
+ELSE
+    astPositionState[nIndex][2].fPosition := nIndex * 100 + 20;
+END_IF
 astPositionState[nIndex][2].fDelta := 1;
 astPositionState[nIndex][2].bUseRawCounts := FALSE;
 SetGoodState(astPositionState[nIndex][2]);

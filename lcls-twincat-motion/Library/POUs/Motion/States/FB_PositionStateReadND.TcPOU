@@ -27,12 +27,15 @@ VAR_OUTPUT
     nPositionIndex: DINT;
     // TRUE if the active motor count was invalid
     bMotorCountError: BOOL;
+    // A full description of whether we're at each of our states. This is used to clarify cases where states may overlap.
+    abAtPosition: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
 END_VAR
 VAR
     // The individual position state reader function blocks
     afbPositionStateRead: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_PositionStateRead;
 
     nIter: DINT;
+    nIter2: DINT;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
@@ -67,11 +70,15 @@ FOR nIter := 1 TO nActiveMotorCount DO
     bMovingState := bMovingState OR afbPositionStateRead[nIter].bMovingState;
 END_FOR
 
-// nPositionIndex MUST be matching across ALL motors, else it should be the invalid number
-nPositionIndex := afbPositionStateRead[1].nPositionIndex;
-FOR nIter := 1 TO nActiveMotorCount DO
-    IF nPositionIndex <> afbPositionStateRead[nIter].nPositionIndex THEN
-        nPositionIndex := 0;
+// To account for redundant 1D states, we need to check the full output arrays.
+nPositionIndex := 0;
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    abAtPosition[nIter] := TRUE;
+    FOR nIter2 := 1 TO nActiveMotorCount DO
+        abAtPosition[nIter] R= NOT afbPositionStateRead[nIter2].abAtPosition[nIter];
+    END_FOR
+    IF abAtPosition[nIter] THEN
+        nPositionIndex := nIter;
     END_IF
 END_FOR
 

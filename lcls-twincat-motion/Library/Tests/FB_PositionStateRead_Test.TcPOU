@@ -43,6 +43,12 @@ astPositionState[3].fDelta := 1;
 astPositionState[3].bValid := TRUE;
 astPositionState[3].bUseRawCounts := FALSE;
 
+astPositionState[4].sName := 'QUATRO';
+astPositionState[4].fPosition := 30;
+astPositionState[4].fDelta := 1;
+astPositionState[4].bValid := FALSE;
+astPositionState[4].bUseRawCounts := FALSE;
+
 bStatesReady := TRUE;
 FOR nIter := 1 TO 3 DO
     afbInternal[nIter](
@@ -117,6 +123,7 @@ TestMovingPosition(
     nPositionIndex:=0,
     stCurrentPosition:=stDummyPos,
 );
+TestDupe(nTestIndex:=6);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -136,6 +143,9 @@ VAR_INPUT
     bMovingState: BOOL;
     nPositionIndex: DINT;
     stCurrentPosition: ST_PositionState;
+END_VAR
+VAR
+    abExpected: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -165,6 +175,16 @@ AssertEquals_DINT(
     Actual:=fbRead.nPositionIndex,
     Message:='Incorrect nPositionIndex',
 );
+IF nPositionIndex > 0 THEN
+    IF nPositionIndex <= GeneralConstants.MAX_STATES THEN
+        abExpected[nPositionIndex] := TRUE;
+    END_IF
+ END_IF
+AssertArrayEquals_BOOL(
+    Expecteds:=abExpected,
+    Actuals:=fbRead.abAtPosition,
+    Message:='Wrong at position array',
+);
 
 IF bKnownState THEN
     AssertEquals_STRING(
@@ -172,6 +192,52 @@ IF bKnownState THEN
         Actual:=fbRead.stCurrentPosition.sName,
         Message:='Did not provide correct current position struct',
     );
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestDupe" Id="{8e062161-194d-4cd6-b414-bf7127fab9cd}">
+      <Declaration><![CDATA[METHOD TestDupe
+VAR_INPUT
+    nTestIndex: DINT;
+END_VAR
+VAR
+    abExpected: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDupe');
+IF nTestIndex <> nTestCounter THEN
+    RETURN;
+END_IF
+
+fbTestMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=TRUE,
+    fStartPosition:=astPositionState[4].fPosition,
+    fGoalPosition:=astPositionState[4].fPosition,
+);
+abExpected[3] := TRUE;
+abExpected[4] := TRUE;
+
+IF fbTestMove.tElapsed > T#1s OR (fbTestMove.bSetDone AND bStatesReady) THEN
+    AssertEquals_BOOL(
+        Expected:=FALSE,
+        Actual:=fbTestMove.tElapsed > T#1s,
+        Message:='Test timed out',
+    );
+    AssertEquals_BOOL(
+        Expected:=TRUE,
+        Actual:=fbRead.bKnownState,
+        Message:='Incorrect bKnownState',
+    );
+    AssertArrayEquals_BOOL(
+        Expecteds:=abExpected,
+        Actuals:=fbRead.abAtPosition,
+        Message:='Wrong at position array',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
 END_IF
 ]]></ST>
       </Implementation>
