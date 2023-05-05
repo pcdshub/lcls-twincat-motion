@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+  <POU Name="FB_PositionStatePMPS2D_InOut" Id="{562c1dac-2687-4ac2-8786-c287d47af06e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS2D_InOut
+(*
+    An example and usable drop-in instance for a 2D state device with just an IN and an OUT state.
+    Note that the outward-facing API is nearly identical to the non-PMPS version
+*)
+VAR_IN_OUT
+    // Include stages that can be passed into the FB
+    stMotionStage1: ST_MotionStage;
+    stMotionStage2: ST_MotionStage;
+    // Simplify the interface, the user just needs to construct and pass in and out position states
+    stIn1: ST_PositionState;
+    stOut1: ST_PositionState;
+    stIn2: ST_PositionState;
+    stOut2: ST_PositionState;
+    // Include PMPS output helpers
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter;
+END_VAR
+VAR_INPUT
+    // Define an ENUM for EPICS to use to set a new value. It is expected this will be written to during one cycle, so don't continually apply a value here in the PLC code.
+    {attribute 'pytmc' := '
+      pv: STATES:SET
+      io: io
+    '}
+    eStateReq: ENUM_EpicsInOut;
+END_VAR
+VAR_OUTPUT
+    // Define an ENUM for EPICS to use to report the new value.
+    {attribute 'pytmc' := '
+      pv: STATES:GET
+      io: io
+    '}
+    eStateGet: ENUM_EpicsInOut;
+END_VAR
+VAR
+    // Include the standard fb with no pv attached
+    {attribute 'pytmc' := '
+      pv:
+      io: io
+    '}
+    fbPositionStatePMPS2D: FB_PositionStatePMPS2D;
+    // The standard fb expects a full array of position states per motor
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// Optional: default state names
+IF stIn1.sName := '' THEN
+    stIn1.sName := 'IN';
+END_IF
+IF stOut1.sName := '' THEN
+    stOut1.sName := 'OUT';
+END_IF
+IF stIn2.sName := '' THEN
+    stIn2.sName := 'IN';
+END_IF
+IF stOut2.sName := '' THEN
+    stOut2.sName := 'OUT';
+END_IF
+
+// Assemble the states arrays, matching the enum values (IN is 1, OUT is 2)
+astPositionState1[1] := stIn1;
+astPositionState1[2] := stOut1;
+astPositionState2[1] := stIn2;
+astPositionState2[2] := stOut2;
+
+// Forward the EPICS value
+fbPositionStatePMPS2D.stEpicsInput.nSetValue := eStateReq;
+// Call the main function block, passing our motors, states, and an enable
+fbPositionStatePMPS2D(
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    stMotionStage1:=stMotionStage1,
+    astPositionStates1:=astPositionState1,
+    stMotionStage2:=stMotionStage2,
+    astPositionStates2:=astPositionState2,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+);
+// Get the new values, including writing back to the set value.
+// By always writing back to the set value, we can tell when the user asks for a new request to the same position.
+eStateReq := fbPositionStatePMPS2D.stEpicsInput.nSetValue;
+eStateGet := fbPositionStatePMPS2D.stEpicsOutput.nGetValue;
+
+// Send back updates made to the array
+stIn1 := astPositionState1[1];
+stOut1 := astPositionState1[2];
+stIn2 := astPositionState2[1];
+stOut2 := astPositionState2[2];]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
