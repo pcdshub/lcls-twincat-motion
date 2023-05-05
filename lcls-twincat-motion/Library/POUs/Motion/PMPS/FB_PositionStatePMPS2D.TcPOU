@@ -22,14 +22,14 @@ VAR_IN_OUT
         io: io
         expand: %.2d
     '}
-    astPositionStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     stMotionStage2: ST_MotionStage;
     {attribute 'pytmc' := '
         pv: STATES:M2
         io: io
         expand: %.2d
     '}
-    astPositionStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter;
 END_VAR
@@ -72,8 +72,8 @@ END_VAR
       <ST><![CDATA[
 astMotionStageMax[1] := stMotionStage1;
 astMotionStageMax[2] := stMotionStage2;
-astPositionStateMax[1] := astPositionStates1;
-astPositionStateMax[2] := astPositionStates2;
+astPositionStateMax[1] := astPositionState1;
+astPositionStateMax[2] := astPositionState2;
 
 fbCore(
     astMotionStageMax:=astMotionStageMax,
@@ -103,8 +103,8 @@ fbPMPSCore(
 
 stMotionStage1 := astMotionStageMax[1];
 stMotionStage2 := astMotionStageMax[2];
-astPositionStates1 := astPositionStateMax[1];
-astPositionStates2 := astPositionStateMax[2];
+astPositionState1 := astPositionStateMax[1];
+astPositionState2 := astPositionStateMax[2];
 ]]></ST>
     </Implementation>
   </POU>
