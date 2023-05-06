@@ -14,6 +14,9 @@
 
     When the global JSON read function block is no longer busy and has no errors,
     we will assume that the file has been read and we will update the parameters here.
+
+    This will also re-read in the event that the input position state keys change in any way,
+    provided that we've read once before.
 *)
 VAR_IN_OUT
     // Each motor's respective position states along its direction. These will not be modified.
@@ -32,6 +35,8 @@ END_VAR
 VAR_OUTPUT
     // The raw lookup results from this FB. Index 0 is the transition beam, the rest of the indices match the state positions.
     astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
+    // TRUE if we've had at least one successful read.
+    bFirstReadDone: BOOL;
     // This will be set to TRUE if there was an error reading from the database.
     bError: BOOL;
 END_VAR
@@ -47,6 +52,9 @@ VAR
     sLoopNewKey: STRING;
     sLoopPrevKey: STRING;
     abStateError: ARRAY[0..GeneralConstants.MAX_STATES] OF BOOL;
+    asLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    asPrevLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    bNewKeys: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
@@ -64,6 +72,7 @@ IF ftDbBusy.Q THEN
     bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
 END_IF
 
+bReadPmpsDb S= bFirstReadDone AND bNewKeys;
 bReadPmpsDb S= bReadNow;
 bReadNow := FALSE;
 
@@ -77,6 +86,7 @@ fbReadPmpsDb(
 bReadPmpsDb R= NOT fbReadPmpsDb.bBusy;
 
 ftRead(CLK:=fbReadPmpsDb.bBusy);
+bFirstReadDone S= ftRead.Q AND NOT fbReadPmpsDb.bError;
 ]]></ST>
       </Implementation>
     </Action>
@@ -101,12 +111,12 @@ ffError(
 
 // Start by emptying any pre-existing values
 FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
-    astDbStateParams[nIterState].sPmpsState := '';
+    asLookupKeys[nIterState] := '';
     abStateError[nIterState] := FALSE;
 END_FOR
 
 // Transition key is simple
-astDbStateParams[0].sPmpsState := sTransitionKey;
+asLookupKeys[0] := sTransitionKey;
 
 // The other keys might be at different points in the astPositionState array.
 // Try all of the posibilities, set error if we end up overwriting something.
@@ -118,10 +128,10 @@ FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
         sLoopNewKey := astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState;
         IF sLoopNewKey <> '' THEN
             // We have a new key, start doing things
-            sLoopPrevKey := astDbStateParams[nIterState].sPmpsState;
+            sLoopPrevKey := asLookupKeys[nIterState];
             IF sLoopPrevKey = '' OR sLoopPrevKey = sLoopNewKey THEN
                 // No key yet, or exactly the same key (redudant programmer)
-                astDbStateParams[nIterState].sPmpsState := sLoopNewKey;
+                asLookupKeys[nIterState] := sLoopNewKey;
             ELSE
                 // We already had a different key! Don't just override it, have an error!
                 bError := TRUE;
@@ -135,7 +145,7 @@ END_FOR
 FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
     FOR nIterState2 := 0 TO nIterState DO
         IF nIterState <> nIterState2 THEN
-            IF astDbStateParams[nIterState].sPmpsState = astDbStateParams[nIterState2].sPmpsState THEN
+            IF asLookupKeys[nIterState] = asLookupKeys[nIterState2] THEN
                 // Duplicated key, we need an error and a placeholder in both spots
                 bError := TRUE;
                 abStateError[nIterState] := TRUE;
@@ -149,10 +159,27 @@ END_FOR
 IF bError THEN
     FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
         IF abStateError[nIterState] THEN
-            astDbStateParams[nIterState].sPmpsState := '';
+            asLookupKeys[nIterState] := '';
         END_IF
     END_FOR
 END_IF
+
+// Copy the keys into the db state params
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    astDbStateParams[nIterState].sPmpsState := asLookupKeys[nIterState];
+END_FOR
+
+// Check if the keys changed from prev cycle
+bNewKeys := FALSE;
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    IF asLookupKeys[nIterState] <> asPrevLookupKeys[nIterState] THEN
+        bNewKeys := TRUE;
+        EXIT;
+    END_IF
+END_FOR
+
+// Save prev keys for next cycle
+asPrevLookupKeys := asLookupKeys;
 ]]></ST>
       </Implementation>
     </Action>
