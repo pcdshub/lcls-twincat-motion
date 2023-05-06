@@ -18,6 +18,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     // Define an ENUM for EPICS to use to set a new value. It is expected this will be written to during one cycle, so don't continually apply a value here in the PLC code.
+    // It is exposed as an input so we can test it using the PLC.
     {attribute 'pytmc' := '
       pv: STATES:SET
       io: io
@@ -57,22 +58,18 @@ END_IF
 astPositionState[1] := stIn;
 astPositionState[2] := stOut;
 
-// Forward the EPICS value
-fbPositionStatePMPS1D.stEpicsInput.nSetValue := eStateReq;
 // Call the main function block, passing our motors, states, and an enable
 fbPositionStatePMPS1D(
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
+    eEnumInput:=eStateReq,
+    eEnumOutput:=eStateGet,
     bEnableMotion:=TRUE,
     bEnableBeamParams:=TRUE,
     bEnablePositionLimits:=TRUE,
 );
-// Get the new values, including writing back to the set value.
-// By always writing back to the set value, we can tell when the user asks for a new request to the same position.
-eStateReq := fbPositionStatePMPS1D.stEpicsInput.nSetValue;
-eStateGet := fbPositionStatePMPS1D.stEpicsOutput.nGetValue;
 
 // Send back updates made to the array
 stIn := astPositionState[1];

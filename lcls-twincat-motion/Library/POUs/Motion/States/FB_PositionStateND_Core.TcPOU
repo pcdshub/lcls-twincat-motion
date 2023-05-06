@@ -17,6 +17,8 @@ VAR_IN_OUT
     astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     stEpicsInput: ST_StateEpicsInput;
     stEpicsOutput: ST_StateEpicsOutput;
+    eEnumInput: DINT;
+    eEnumOutput: DINT;
 END_VAR
 VAR_INPUT
     bEnable: BOOL;
@@ -35,6 +37,8 @@ VAR
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+stEpicsInput.nSetValue := eEnumInput;
+
 fbRead(
     astMotionStage:=astMotionStageMax,
     astPositionState:=astPositionStateMax,
@@ -76,6 +80,9 @@ fbMove(
     bBusy=>stEpicsOutput.bBusy,
     bDone=>stEpicsOutput.bDone,
 );
+
+eEnumInput := stEpicsInput.nSetValue;
+eEnumOutput := stEpicsOutput.nGetValue;
 ]]></ST>
     </Implementation>
   </POU>
