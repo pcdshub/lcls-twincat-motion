@@ -27,6 +27,9 @@ VAR_INPUT
     sTransitionKey: STRING;
     nCurrGoal: DINT;
 END_VAR
+VAR_OUTPUT
+    stDbStateParams: ST_DbStateParams;
+END_VAR
 VAR
     fbMotionReadPMPSDB: FB_MotionReadPMPSDBND;
     fbMotionBPTM: FB_MotionBPTM;
@@ -106,7 +109,7 @@ fbPerMotorFFO(
 );
 
 stPMPSEpicsOutput.stTransitionDb := fbMotionReadPMPSDB.astDbStateParams[0];
-]]></ST>
+stDbStateParams := fbMotionReadPMPSDB.astDbStateParams[stEpicsOutput.nGetValue];]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
