@@ -50,7 +50,7 @@ astPositionState[4].bValid := FALSE;
 astPositionState[4].bUseRawCounts := FALSE;
 
 bStatesReady := TRUE;
-FOR nIter := 1 TO 3 DO
+FOR nIter := 1 TO 4 DO
     afbInternal[nIter](
         stMotionStage:=stMotionStage,
         stPositionState:=astPositionState[nIter],
@@ -211,6 +211,9 @@ IF nTestIndex <> nTestCounter THEN
     RETURN;
 END_IF
 
+// In this test, and only in this test, we must make sure state 4 is valid
+astPositionState[4].bValid := TRUE;
+
 fbTestMove(
     stMotionStage:=stMotionStage,
     bExecute:=TRUE,
@@ -221,6 +224,10 @@ abExpected[3] := TRUE;
 abExpected[4] := TRUE;
 
 IF fbTestMove.tElapsed > T#1s OR (fbTestMove.bSetDone AND bStatesReady) THEN
+    fbRead(
+        stMotionStage:=stMotionStage,
+        astPositionState:=astPositionstate,
+    );
     AssertEquals_BOOL(
         Expected:=FALSE,
         Actual:=fbTestMove.tElapsed > T#1s,

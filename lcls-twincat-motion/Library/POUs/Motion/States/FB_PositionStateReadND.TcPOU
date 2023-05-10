@@ -24,7 +24,7 @@ VAR_OUTPUT
     // TRUE if we're moving, there can be no valid state if we are moving.
     bMovingState: BOOL;
     // If we're at a known state, this will be the state index along the enclosed states arrays. Otherwise, it will be zero, which is below the bounds of the states array.
-    nPositionIndex: DINT;
+    nPositionIndex: UINT;
     // TRUE if the active motor count was invalid
     bMotorCountError: BOOL;
     // A full description of whether we're at each of our states. This is used to clarify cases where states may overlap.
@@ -34,8 +34,8 @@ VAR
     // The individual position state reader function blocks
     afbPositionStateRead: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_PositionStateRead;
 
-    nIter: DINT;
-    nIter2: DINT;
+    nIter: UINT;
+    nIter2: UINT;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[

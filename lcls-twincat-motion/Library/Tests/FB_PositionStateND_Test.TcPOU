@@ -31,6 +31,9 @@ VAR
     tonTimer: TON;
     nIter: DINT;
     bStatesReady: BOOL;
+
+    eSetPos: ENUM_TestStates;
+    eGetPos: ENUM_TestStates;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -79,6 +82,8 @@ IF bStatesReady AND nTestCounter = 0 THEN
     fb_Move1D(
         stMotionStage:=stMotionStage1,
         astPositionState:=astPositionState1,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         bEnable:=TRUE,
     );
     fb_Move2D(
@@ -86,6 +91,8 @@ IF bStatesReady AND nTestCounter = 0 THEN
         stMotionStage2:=stMotionStage2,
         astPositionState1:=astPositionState1,
         astPositionState2:=astPositionState2,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         bEnable:=TRUE,
     );
     fb_Move3D(
@@ -95,6 +102,8 @@ IF bStatesReady AND nTestCounter = 0 THEN
         astPositionState1:=astPositionState1,
         astPositionState2:=astPositionState2,
         astPositionState3:=astPositionState3,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         bEnable:=TRUE,
     );
 END_IF
@@ -125,7 +134,7 @@ tonTimer(
       <Declaration><![CDATA[METHOD Test1D
 VAR_INPUT
     nTestID: UINT;
-    nState: DINT;
+    nState: ENUM_TestStates;
 END_VAR
 VAR_INST
     nLocalInit: BOOL;
@@ -139,13 +148,15 @@ IF nTestCounter <> nTestID THEN
 END_IF
 
 IF NOT nLocalInit THEN
-    fb_Move1D.stEpicsInput.nSetValue := nState;
+    eSetPos := nState;
     nLocalInit := TRUE;
 END_IF
 
 fb_Move1D(
     stMotionStage:=stMotionStage1,
     astPositionState:=astPositionState1,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     bEnable:=TRUE,
 );
 IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
@@ -163,7 +174,7 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
     );
     AssertEquals_DINT(
         Expected:=nState,
-        Actual:=fb_Move1D.stEpicsOutput.nGetValue,
+        Actual:=eGetPos,
         Message:='Did not get to the input state',
     );
     AssertEquals_LREAL(
@@ -176,6 +187,8 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
     fb_Move1D(
         stMotionStage:=stMotionStage1,
         astPositionState:=astPositionState1,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         bEnable:=TRUE,
     );
     bOneTestDone := TRUE;
@@ -189,7 +202,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test2D
 VAR_INPUT
     nTestID: UINT;
-    nState: DINT;
+    nState: ENUM_TestStates;
 END_VAR
 VAR_INST
     nLocalInit: BOOL;
@@ -204,7 +217,7 @@ IF nTestCounter <> nTestID THEN
 END_IF
 
 IF NOT nLocalInit THEN
-    fb_Move2D.stEpicsInput.nSetValue := nState;
+    eSetPos := nState;
     nLocalInit := TRUE;
 END_IF
 
@@ -213,6 +226,8 @@ fb_Move2D(
     stMotionStage2:=stMotionStage2,
     astPositionState1:=astPositionState1,
     astPositionState2:=astPositionState2,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     bEnable:=TRUE,
 );
 IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
@@ -230,7 +245,7 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
     );
     AssertEquals_DINT(
         Expected:=nState,
-        Actual:=fb_Move2D.stEpicsOutput.nGetValue,
+        Actual:=eGetPos,
         Message:='Did not get to the input state',
     );
     AssertEquals_LREAL(
@@ -251,6 +266,8 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         stMotionStage2:=stMotionStage2,
         astPositionState1:=astPositionState1,
         astPositionState2:=astPositionState2,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         bEnable:=TRUE,
     );
     bOneTestDone := TRUE;
@@ -264,7 +281,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test3D
 VAR_INPUT
     nTestID: UINT;
-    nState: DINT;
+    nState: ENUM_TestStates;
 END_VAR
 VAR_INST
     nLocalInit: BOOL;
@@ -278,7 +295,7 @@ IF nTestCounter <> nTestID THEN
 END_IF
 
 IF NOT nLocalInit THEN
-    fb_Move3D.stEpicsInput.nSetValue := nState;
+    eSetPos := nState;
     nLocalInit := TRUE;
 END_IF
 
@@ -289,6 +306,8 @@ fb_Move3D(
     astPositionState1:=astPositionState1,
     astPositionState2:=astPositionState2,
     astPositionState3:=astPositionState3,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     bEnable:=TRUE,
 );
 IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
@@ -306,7 +325,7 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
     );
     AssertEquals_DINT(
         Expected:=nState,
-        Actual:=fb_Move3D.stEpicsOutput.nGetValue,
+        Actual:=eGetPos,
         Message:='Did not get to the input state',
     );
     AssertEquals_LREAL(
@@ -335,6 +354,8 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         astPositionState1:=astPositionState1,
         astPositionState2:=astPositionState2,
         astPositionState3:=astPositionState3,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         bEnable:=TRUE,
     );
     bOneTestDone := TRUE;
