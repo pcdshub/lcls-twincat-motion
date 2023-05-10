@@ -20,10 +20,10 @@ TestTwoMotorEncError();
     </Implementation>
     <Method Name="TestBlankCount" Id="{b592b937-5942-474f-adf1-21d2ac9a86c9}">
       <Declaration><![CDATA[METHOD TestBlankCount : BOOL
-VAR
+VAR_INST
     fbFFO: FB_PerMotorFFOND;
     astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -31,7 +31,7 @@ END_VAR
 TEST('TestBlankCount');
 
 fbFFHWO.EvaluateOutput();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
 );
@@ -40,7 +40,7 @@ fbFFO(
     fbFFHWO:=fbFFHWO,
 );
 fbFFHWO.EvaluateOutput();
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Blank count did not fault',
 );
@@ -54,10 +54,10 @@ TEST_FINISHED();]]></ST>
     </Method>
     <Method Name="TestTwoMotorEncError" Id="{b8fbe696-7ca6-46ad-9906-fdd9389c922a}">
       <Declaration><![CDATA[METHOD TestTwoMotorEncError : BOOL
-VAR
+VAR_INST
     fbFFO: FB_PerMotorFFOND;
     astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -65,7 +65,7 @@ END_VAR
 TEST('TestTwoMotorEncError');
 
 fbFFHWO.EvaluateOutput();
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Started with a fault',
 );
@@ -77,7 +77,7 @@ fbFFO(
     nActiveMotorCount:=2,
 );
 fbFFHWO.EvaluateOutput();
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Encoder error did not fault',
 );
