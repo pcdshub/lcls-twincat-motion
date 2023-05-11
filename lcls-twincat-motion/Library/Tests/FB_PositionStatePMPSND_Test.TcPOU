@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_PositionStatePMPSND_Test" Id="{5b25afff-6416-405d-b50f-327a73066770}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPSND_Test EXTENDS TcUnit.FB_TestSuite
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPSND_Test EXTENDS MotorTestSuite
 (*
     Sanity checks for the following:
     - FB_PositionStatePMPS1D
@@ -35,6 +35,9 @@ VAR
     tonTimer: TON;
     nIter: DINT;
     bStatesReady: BOOL;
+
+    eSetPos: ENUM_TestStates;
+    eGetPos: ENUM_TestStates;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -44,15 +47,15 @@ FOR nIter := 1 TO 3 DO;
     astPositionState1[nIter].fPosition := nIter;
     astPositionState1[nIter].fDelta := 0.5;
     astPositionState1[nIter].fVelocity := 100;
-    astPositionState1[nIter].bValid := TRUE;
+    SetGoodState(astPositionState1[nIter]);
     astPositionState2[nIter].fPosition := 10 + nIter;
     astPositionState2[nIter].fDelta := 0.5;
     astPositionState2[nIter].fVelocity := 100;
-    astPositionState2[nIter].bValid := TRUE;
+    SetGoodState(astPositionState2[nIter]);
     astPositionState3[nIter].fPosition := 20 + nIter;
     astPositionState3[nIter].fDelta := 0.5;
     astPositionState3[nIter].fVelocity := 100;
-    astPositionState3[nIter].bValid := TRUE;
+    SetGoodState(astPositionState3[nIter]);
     afbInternal[nIter][1](
         stMotionStage:=stMotionStage1,
         stPositionState:=astPositionState1[nIter],
@@ -69,6 +72,9 @@ FOR nIter := 1 TO 3 DO;
     bStatesReady := bStatesReady AND astPositionState2[nIter].bUpdated;
     bStatesReady := bStatesReady AND astPositionState3[nIter].bUpdated;
 END_FOR
+SetEnables(stMotionStage1);
+SetEnables(stMotionStage2);
+SetEnables(stMotionStage3);
 afbMotionStage[1](stMotionStage:=stMotionStage1);
 afbMotionStage[2](stMotionStage:=stMotionStage2);
 afbMotionStage[3](stMotionStage:=stMotionStage3);
@@ -118,26 +124,36 @@ tonTimer(
       <Declaration><![CDATA[METHOD Test1D
 VAR_INPUT
     nTestID: UINT;
-    nState: DINT;
+    eState: ENUM_TestStates;
 END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter(1);
+
+    bInit: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST(CONCAT('Test1D_state', DINT_TO_STRING(nState)));
+TEST(CONCAT('Test1D_state', INT_TO_STRING(eState)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
 
-fb_Move1D.stEpicsInput.nSetValue := nState;
+IF NOT bInit THEN
+    eSetPos := eState;
+    bInit := TRUE;
+END_IF
+
 fb_Move1D(
     stMotionStage:=stMotionStage1,
     astPositionState:=astPositionState1,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=TRUE,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
 );
 IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
     AssertTrue(
@@ -152,28 +168,32 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         Condition:=fb_Move1D.stEpicsOutput.bError,
         Message:='Error should be False after move',
     );
-    AssertEquals_DINT(
-        Expected:=nState,
-        Actual:=fb_Move1D.stEpicsOutput.nGetValue,
+    AssertEquals_INT(
+        Expected:=eState,
+        Actual:=eGetPos,
         Message:='Did not get to the input state',
     );
     AssertEquals_LREAL(
-        Expected:=astPositionState1[nState].fPosition,
+        Expected:=astPositionState1[eState].fPosition,
         Actual:=stMotionStage1.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
     AssertTrue(
-        fbArbiter.CheckRequestInPool(astBeam[nState].nRequestAssertionID),
+        fbArbiter.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
     fb_Move1D.stEpicsInput.bReset := TRUE;
     fb_Move1D(
         stMotionStage:=stMotionStage1,
         astPositionState:=astPositionState1,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         fbFFHWO:=fbFFHWO,
         fbArbiter:=fbArbiter,
-        bEnable:=TRUE,
+        bEnableMotion:=TRUE,
+        bEnableBeamParams:=TRUE,
+        bEnablePositionLimits:=TRUE,
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();
@@ -185,28 +205,38 @@ END_IF
       <Declaration><![CDATA[METHOD Test2D
 VAR_INPUT
     nTestID: UINT;
-    nState: DINT;
+    eState: ENUM_TestStates;
 END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter(1);
+
+    bInit: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST(CONCAT('Test2D_state', DINT_TO_STRING(nState)));
+TEST(CONCAT('Test2D_state', INT_TO_STRING(eState)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
 
-fb_Move2D.stEpicsInput.nSetValue := nState;
+IF NOT bInit THEN
+    eSetPos := eState;
+    bInit := TRUE;
+END_IF
+
 fb_Move2D(
     stMotionStage1:=stMotionStage1,
     stMotionStage2:=stMotionStage2,
     astPositionState1:=astPositionState1,
     astPositionState2:=astPositionState2,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=TRUE,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
 );
 IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
     AssertTrue(
@@ -221,25 +251,25 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         Condition:=fb_Move2D.stEpicsOutput.bError,
         Message:='Error should be False after move',
     );
-    AssertEquals_DINT(
-        Expected:=nState,
-        Actual:=fb_Move2D.stEpicsOutput.nGetValue,
+    AssertEquals_INT(
+        Expected:=eState,
+        Actual:=eGetPos,
         Message:='Did not get to the input state',
     );
     AssertEquals_LREAL(
-        Expected:=astPositionState1[nState].fPosition,
+        Expected:=astPositionState1[eState].fPosition,
         Actual:=stMotionStage1.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
     AssertEquals_LREAL(
-        Expected:=astPositionState2[nState].fPosition,
+        Expected:=astPositionState2[eState].fPosition,
         Actual:=stMotionStage2.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
     AssertTrue(
-        fbArbiter.CheckRequestInPool(astBeam[nState].nRequestAssertionID),
+        fbArbiter.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
     fb_Move2D.stEpicsInput.bReset := TRUE;
@@ -248,9 +278,13 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         stMotionStage2:=stMotionStage2,
         astPositionState1:=astPositionState1,
         astPositionState2:=astPositionState2,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         fbFFHWO:=fbFFHWO,
         fbArbiter:=fbArbiter,
-        bEnable:=TRUE,
+        bEnableMotion:=TRUE,
+        bEnableBeamParams:=TRUE,
+        bEnablePositionLimits:=TRUE,
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();
@@ -262,30 +296,40 @@ END_IF
       <Declaration><![CDATA[METHOD Test3D
 VAR_INPUT
     nTestID: UINT;
-    nState: DINT;
+    eState: ENUM_TestStates;
 END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
     fbArbiter: FB_Arbiter(1);
+
+    bInit: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST(CONCAT('Test3D_state', DINT_TO_STRING(nState)));
+TEST(CONCAT('Test3D_state', INT_TO_STRING(eState)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
 
-fb_Move3D.stEpicsInput.nSetValue := nState;
+IF NOT bInit THEN
+    eSetPos := eState;
+    bInit := TRUE;
+END_IF
+
 fb_Move3D(
     stMotionStage1:=stMotionStage1,
     stMotionStage2:=stMotionStage2,
     stMotionStage3:=stMotionStage3,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     astPositionState1:=astPositionState1,
     astPositionState2:=astPositionState2,
     astPositionState3:=astPositionState3,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=TRUE,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
 );
 IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
     AssertTrue(
@@ -300,31 +344,31 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         Condition:=fb_Move3D.stEpicsOutput.bError,
         Message:='Error should be False after move',
     );
-    AssertEquals_DINT(
-        Expected:=nState,
-        Actual:=fb_Move3D.stEpicsOutput.nGetValue,
+    AssertEquals_INT(
+        Expected:=eState,
+        Actual:=eGetPos,
         Message:='Did not get to the input state',
     );
     AssertEquals_LREAL(
-        Expected:=astPositionState1[nState].fPosition,
+        Expected:=astPositionState1[eState].fPosition,
         Actual:=stMotionStage1.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
     AssertEquals_LREAL(
-        Expected:=astPositionState2[nState].fPosition,
+        Expected:=astPositionState2[eState].fPosition,
         Actual:=stMotionStage2.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
     AssertEquals_LREAL(
-        Expected:=astPositionState3[nState].fPosition,
+        Expected:=astPositionState3[eState].fPosition,
         Actual:=stMotionStage3.stAxisStatus.fActPosition,
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
     AssertTrue(
-        fbArbiter.CheckRequestInPool(astBeam[nState].nRequestAssertionID),
+        fbArbiter.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
     fb_Move3D.stEpicsInput.bReset := TRUE;
@@ -335,9 +379,13 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         astPositionState1:=astPositionState1,
         astPositionState2:=astPositionState2,
         astPositionState3:=astPositionState3,
+        eEnumInput:=eSetPos,
+        eEnumOutput:=eGetPos,
         fbFFHWO:=fbFFHWO,
         fbArbiter:=fbArbiter,
-        bEnable:=TRUE,
+        bEnableMotion:=TRUE,
+        bEnableBeamParams:=TRUE,
+        bEnablePositionLimits:=TRUE,
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();
@@ -368,9 +416,13 @@ END_IF
 fb_Move1D(
     stMotionStage:=stMotionStage1,
     astPositionState:=astPositionState1,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=TRUE,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
 );
 
 // We sit in this fb for some timeout number of seconds on purpose, not an error
@@ -433,9 +485,13 @@ fb_Move2D(
     stMotionStage2:=stMotionStage2,
     astPositionState1:=astPositionState1,
     astPositionState2:=astPositionState2,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=TRUE,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
 );
 
 // We sit in this fb for some timeout number of seconds on purpose, not an error
@@ -516,9 +572,13 @@ fb_Move3D(
     astPositionState1:=astPositionState1,
     astPositionState2:=astPositionState2,
     astPositionState3:=astPositionState3,
+    eEnumInput:=eSetPos,
+    eEnumOutput:=eGetPos,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
-    bEnable:=TRUE,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
 );
 
 // We sit in this fb for some timeout number of seconds on purpose, not an error
