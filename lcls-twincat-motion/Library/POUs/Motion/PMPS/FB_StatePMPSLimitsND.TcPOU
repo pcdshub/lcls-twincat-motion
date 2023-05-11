@@ -45,6 +45,7 @@ VAR
     // The individual state limit function blocks
     afbStateLimits: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_StatePMPSLimits;
     ffMaint: FB_FastFault;
+    ffProgrammerError: FB_FastFault;
     nIter: DINT;
 END_VAR
 ]]></Declaration>
@@ -53,8 +54,9 @@ END_VAR
 CheckCount();
 IF NOT bMotorCountError THEN
     DoLimits();
-    RunFastFaults();
-END_IF]]></ST>
+END_IF
+RunFastFaults();
+]]></ST>
     </Implementation>
     <Action Name="CheckCount" Id="{df0115f1-b4f0-450f-a425-72f1ab0b2f35}">
       <Implementation>
@@ -94,7 +96,15 @@ ffMaint(
     i_TypeCode := 16#1004,
     io_fbFFHWO := fbFFHWO,
 );
-]]></ST>
+
+ffProgrammerError(
+    i_xOK:=NOT bMotorCountError,
+    i_xAutoReset:=TRUE,
+    i_DevName:=sDeviceName,
+    i_Desc:='Programmer error picking motor count',
+    i_TypeCode:=16#1009,
+    io_fbFFHWO:=fbFFHWO,
+);]]></ST>
       </Implementation>
     </Action>
   </POU>

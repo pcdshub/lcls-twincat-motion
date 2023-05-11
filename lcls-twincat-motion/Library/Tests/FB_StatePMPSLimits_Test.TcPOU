@@ -58,6 +58,7 @@ TestNotUpdated(2);
 TestBelow(3);
 TestAbove(4);
 TestAt(5);
+TestDisabled(6);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -247,7 +248,7 @@ fbStateLimits(
     bEnable:=bInit,
     nGoalStateIndex:=nGoalState,
 );
-bInit := TRUE;
+
 fbFFHWO.EvaluateOutput();
 // If we've set the position OR ran out of time to set the position, check the asserts
 IF tonTimer.Q OR fbMove.bSetDone THEN
@@ -272,6 +273,77 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
     AssertTrue(
         fbStateLimits.bForwardEnabled,
         'Forward disabled when below goal',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestDisabled" Id="{c7db8114-667b-44b5-9eaa-1b1048940e05}">
+      <Declaration><![CDATA[METHOD TestDisabled
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbStateLimits: FB_StatePMPSLimits;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbMove: FB_TestHelperSetAndMove;
+
+    bInit: BOOL;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDisabled');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+// Set position to be below the goal's range
+fbMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=bInit,
+    fStartPosition:=astPositionState[nGoalState].fPosition - 100 * astPositionState[nGoalState].fDelta,
+    fGoalPosition:=astPositionState[nGoalState].fPosition - 100 * astPositionState[nGoalState].fDelta,
+    fVelocity:=1,
+    bHWEnable:=TRUE,
+);
+bInit := TRUE;
+// Run our FB
+fbStateLimits(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    bEnable:=FALSE,
+    nGoalStateIndex:=nGoalState,
+);
+
+fbFFHWO.EvaluateOutput();
+// If we've set the position OR ran out of time to set the position, check the asserts
+IF tonTimer.Q OR fbMove.bSetDone THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in test',
+    );
+    AssertEquals_LREAL(
+        Expected:=fbMove.fStartPosition,
+        Actual:=fbMove.fActPosition,
+        Delta:=0.0001,
+        Message:='Position was not set correctly',
+    );
+    AssertTrue(
+        fbFFHWO.q_xFastFaultOut,
+        'Fast fault in normal situation',
+    );
+    AssertTrue(
+        fbStateLimits.bBackwardEnabled,
+        'Backward disabled when fb is supposed to be disabled',
+    );
+    AssertTrue(
+        fbStateLimits.bForwardEnabled,
+        'Forward disabled when fb is supposed to be disabled',
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
   <POU Name="FB_StatePMPSLimitsND_Test" Id="{ff910e0c-974f-4a98-85b1-04b7fad065f7}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSLimitsND_Test EXTENDS TcUnit.FB_TestSuite
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSLimitsND_Test EXTENDS MotorTestSuite
 (*
     Unit tests for FB_StatePMPSLimitsND
     I'm confident that FB_StatePMPSLimits was tested in FB_StatePMPSLimits_Test
@@ -16,6 +16,7 @@
 VAR
     astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..2] OF FB_PositionStateInternal;
     nIter: UINT;
 END_VAR
 ]]></Declaration>
@@ -30,8 +31,19 @@ END_FOR
 // Note: the fake motors show as position = 0, so they will be over/under the goals here
 astPositionState[1][1].fPosition := 10;
 astPositionState[1][1].fDelta := 1;
+afbInternal[1](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astPositionState[1][1],
+);
+SetGoodState(astPositionState[1][1]);
+
 astPositionState[2][1].fPosition := -10;
 astPositionState[2][1].fDelta := 1;
+afbInternal[2](
+    stMotionStage:=astMotionStage[2],
+    stPositionState:=astPositionState[2][1],
+);
+SetGoodState(astPositionState[2][1]);
 
 TestUnderOverGoals();
 TestMaint();
@@ -39,9 +51,9 @@ TestCount();]]></ST>
     </Implementation>
     <Method Name="TestCount" Id="{d6400f38-11a7-4492-ab2a-c88608732da8}">
       <Declaration><![CDATA[METHOD TestCount
-VAR
+VAR_INST
     fbLimits: FB_StatePMPSLimitsND;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -50,7 +62,7 @@ TEST('TestCount');
 
 fbFFHWO.EvaluateOutput();
 // No faults please
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Had faults prior to test',
 );
@@ -64,7 +76,7 @@ fbLimits(
 );
 fbFFHWO.EvaluateOutput();
 // Must fault with bad count
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Had no fault with bad count',
 );
@@ -75,9 +87,9 @@ TEST_FINISHED();
     </Method>
     <Method Name="TestMaint" Id="{d1343989-c22d-4197-9f79-b95d14375929}">
       <Declaration><![CDATA[METHOD TestMaint
-VAR
+VAR_INST
     fbLimits: FB_StatePMPSLimitsND;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -86,7 +98,7 @@ TEST('TestMaint');
 
 fbFFHWO.EvaluateOutput();
 // No faults please
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Had faults prior to test',
 );
@@ -101,7 +113,7 @@ fbLimits(
 );
 fbFFHWO.EvaluateOutput();
 // Must fault in maint mode
-AssertTrue(
+AssertFalse(
     fbFFHWO.q_xFastFaultOut,
     'Had no fault in maintenance mode',
 );
@@ -128,19 +140,25 @@ TEST_FINISHED();]]></ST>
     </Method>
     <Method Name="TestUnderOverGoals" Id="{30ac6b2b-0053-4545-8595-c5bfc7395258}">
       <Declaration><![CDATA[METHOD TestUnderOverGoals
-VAR
+VAR_INST
     fbLimits: FB_StatePMPSLimitsND;
-    fbFFHWO: FB_HardwareFFOutput;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('TestUnderOverGoals');
 
+IF NOT astPositionState[1][1].bUpdated OR NOT astPositionState[2][1].bUpdated THEN
+    // Cannot run this test until the one-time-setup runs
+    RETURN;
+END_IF
+
 fbLimits(
     astMotionStage:=astMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
+    bEnable:=TRUE,
     nActiveMotorCount:=2,
     nGoalStateIndex:=1,
     sDeviceName:='TestUnderOverGoals',
@@ -148,7 +166,7 @@ fbLimits(
 );
 fbFFHWO.EvaluateOutput();
 // No faults please
-AssertFalse(
+AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Had faults in normal situation',
 );
@@ -180,12 +198,12 @@ AssertFalse(
     'Motor 1 should not be able to move down away from the goal',
 );
 AssertFalse(
-    fbLimits.abForwardEnabled[1],
-    'Motor 1 should not be able to move up away from the goal',
+    fbLimits.abForwardEnabled[2],
+    'Motor 2 should not be able to move up away from the goal',
 );
 AssertTrue(
-    fbLimits.abBackwardEnabled[1],
-    'Motor 1 should be able to move down to the goal',
+    fbLimits.abBackwardEnabled[2],
+    'Motor 2 should be able to move down to the goal',
 );
 
 TEST_FINISHED();]]></ST>
