@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{523A5A5B-9718-08A2-6E3D-AABD5EFC97E3}" GeneratedBy="TwinCAT XAE Plc">
+<TcModuleClass xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2009/05/TcModuleClass" Hash="{B365FACC-E7C5-F637-8485-14CE2CED55BB}" GeneratedBy="TwinCAT XAE Plc">
   <DataTypes>
     <DataType>
       <Name GUID="{18071995-0000-0000-0000-000000000041}" TcBaseType="true" HideSubItems="true" CName="AmsNetId">AMSNETID</Name>
@@ -28555,7 +28555,7 @@ External Setpoint Generation:
       <BitSize>33551744</BitSize>
       <ExtendsType Namespace="TcUnit">FB_TestSuite</ExtendsType>
       <Method>
-        <Name>SetEnables</Name>
+        <Name>SetEnablesPMPS</Name>
         <Parameter>
           <Name>stMotionStage</Name>
           <Type ReferenceTo="true">ST_MotionStage</Type>
@@ -28573,6 +28573,20 @@ External Setpoint Generation:
         <Parameter>
           <Name>stPositionState</Name>
           <Type ReferenceTo="true">ST_PositionState</Type>
+          <BitSize>32</BitSize>
+          <Properties>
+            <Property>
+              <Name>ItemType</Name>
+              <Value>InOut</Value>
+            </Property>
+          </Properties>
+        </Parameter>
+      </Method>
+      <Method>
+        <Name>SetEnables</Name>
+        <Parameter>
+          <Name>stMotionStage</Name>
+          <Type ReferenceTo="true">ST_MotionStage</Type>
           <BitSize>32</BitSize>
           <Properties>
             <Property>
@@ -38719,711 +38733,6 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
       </Properties>
     </DataType>
     <DataType>
-      <Name>FB_StatePMPSLimits</Name>
-      <BitSize>26304</BitSize>
-      <SubItem>
-        <Name>stMotionStage</Name>
-        <Type ReferenceTo="true">ST_MotionStage</Type>
-        <Comment> The motor with a position state.</Comment>
-        <BitSize>32</BitSize>
-        <BitOffs>32</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>InOut</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>astPositionState</Name>
-        <Type>ST_PositionState</Type>
-        <ArrayInfo ReferenceTo="true">
-          <LBound>1</LBound>
-          <Elements>15</Elements>
-        </ArrayInfo>
-        <Comment> All possible position states for this motor.</Comment>
-        <BitSize>32</BitSize>
-        <BitOffs>64</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>InOut</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>fbFFHWO</Name>
-        <Type Namespace="PMPS" ReferenceTo="true">FB_HardwareFFOutput</Type>
-        <Comment> Hardware output to fault to if there is a problem.</Comment>
-        <BitSize>32</BitSize>
-        <BitOffs>96</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>InOut</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>bEnable</Name>
-        <Type>BOOL</Type>
-        <Comment> If TRUE, do the limits as normal. If FALSE, allow all moves regardless of the limits defined here.</Comment>
-        <BitSize>8</BitSize>
-        <BitOffs>128</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>Input</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>nGoalStateIndex</Name>
-        <Type>DINT</Type>
-        <Comment> The state that the motor is moving to.</Comment>
-        <BitSize>32</BitSize>
-        <BitOffs>160</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>Input</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>bEnabled</Name>
-        <Type>BOOL</Type>
-        <Comment> The enable state we send to MC_Power. This is a pass-through from stMotionStage.</Comment>
-        <BitSize>8</BitSize>
-        <BitOffs>192</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>Output</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>bForwardEnabled</Name>
-        <Type>BOOL</Type>
-        <Comment> The forward enable state we send to MC_Power. This may be a pass-through or an override to FALSE.</Comment>
-        <BitSize>8</BitSize>
-        <BitOffs>200</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>Output</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>bBackwardEnabled</Name>
-        <Type>BOOL</Type>
-        <Comment> The backwards enable state we send to MC_Power. This may be a pass-through or an override to FALSE.</Comment>
-        <BitSize>8</BitSize>
-        <BitOffs>208</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>Output</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>bValidGoal</Name>
-        <Type>BOOL</Type>
-        <Comment> TRUE if there is a valid goal position and FALSE otherwise. This makes a fast fault if FALSE.</Comment>
-        <BitSize>8</BitSize>
-        <BitOffs>216</BitOffs>
-        <Properties>
-          <Property>
-            <Name>ItemType</Name>
-            <Value>Output</Value>
-          </Property>
-        </Properties>
-      </SubItem>
-      <SubItem>
-        <Name>mc_power</Name>
-        <Type Namespace="Tc2_MC2">MC_Power</Type>
-        <BitSize>768</BitSize>
-        <BitOffs>256</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>nPrevStateIndex</Name>
-        <Type>DINT</Type>
-        <BitSize>32</BitSize>
-        <BitOffs>1024</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>fLowerPos</Name>
-        <Type>LREAL</Type>
-        <BitSize>64</BitSize>
-        <BitOffs>1088</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>fUpperPos</Name>
-        <Type>LREAL</Type>
-        <BitSize>64</BitSize>
-        <BitOffs>1152</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>ffNoGoal</Name>
-        <Type Namespace="PMPS">FB_FastFault</Type>
-        <BitSize>25088</BitSize>
-        <BitOffs>1216</BitOffs>
-      </SubItem>
-      <Action>
-        <Name>SetEnables</Name>
-      </Action>
-      <Action>
-        <Name>ApplyEnables</Name>
-      </Action>
-      <Action>
-        <Name>GetBounds</Name>
-      </Action>
-      <Action>
-        <Name>RunFastFaults</Name>
-      </Action>
-      <Properties>
-        <Property>
-          <Name>PouType</Name>
-          <Value>FunctionBlock</Value>
-        </Property>
-      </Properties>
-    </DataType>
-    <DataType>
-      <Name>FB_StatePMPSLimits_Test</Name>
-      <BitSize>37104960</BitSize>
-      <ExtendsType>MotorTestSuite</ExtendsType>
-      <SubItem>
-        <Name>stMotionStage</Name>
-        <Type>ST_MotionStage</Type>
-        <BitSize>25280</BitSize>
-        <BitOffs>33551744</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>fbMotionStage</Name>
-        <Type>FB_MotionStage</Type>
-        <BitSize>299392</BitSize>
-        <BitOffs>33577024</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>astPositionState</Name>
-        <Type>ST_PositionState</Type>
-        <ArrayInfo>
-          <LBound>1</LBound>
-          <Elements>15</Elements>
-        </ArrayInfo>
-        <BitSize>54720</BitSize>
-        <BitOffs>33876416</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>fbInternal1</Name>
-        <Type>FB_PositionStateInternal</Type>
-        <BitSize>12544</BitSize>
-        <BitOffs>33931136</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>fbInternal2</Name>
-        <Type>FB_PositionStateInternal</Type>
-        <BitSize>12544</BitSize>
-        <BitOffs>33943680</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>nInvalidState</Name>
-        <Type>UINT</Type>
-        <BitSize>16</BitSize>
-        <BitOffs>33956224</BitOffs>
-        <Default>
-          <Value>2</Value>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>nGoalState</Name>
-        <Type>UINT</Type>
-        <BitSize>16</BitSize>
-        <BitOffs>33956240</BitOffs>
-        <Default>
-          <Value>4</Value>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>nNotUpdatedState</Name>
-        <Type>UINT</Type>
-        <BitSize>16</BitSize>
-        <BitOffs>33956256</BitOffs>
-        <Default>
-          <Value>6</Value>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>bInit</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>33956272</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>nTestCounter</Name>
-        <Type>UINT</Type>
-        <BitSize>16</BitSize>
-        <BitOffs>33956288</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>bOneTestDone</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>33956304</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>fTestStartPos</Name>
-        <Type>LREAL</Type>
-        <BitSize>64</BitSize>
-        <BitOffs>33956352</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>tonTimer</Name>
-        <Type Namespace="Tc2_Standard">TON</Type>
-        <BitSize>224</BitSize>
-        <BitOffs>33956416</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>bStatesReady</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>33956640</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTABOVE__FBSTATELIMITS</Name>
-        <Type>FB_StatePMPSLimits</Type>
-        <BitSize>26304</BitSize>
-        <BitOffs>33956672</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTABOVE__FBFFHWO</Name>
-        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-        <BitSize>495296</BitSize>
-        <BitOffs>33982976</BitOffs>
-        <Default>
-          <SubItem>
-            <Name>.bAutoReset</Name>
-            <Value>1</Value>
-          </SubItem>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTABOVE__FBMOVE</Name>
-        <Type>FB_TestHelperSetAndMove</Type>
-        <BitSize>4608</BitSize>
-        <BitOffs>34478272</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTABOVE__BINIT</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>34482880</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTAT__FBSTATELIMITS</Name>
-        <Type>FB_StatePMPSLimits</Type>
-        <BitSize>26304</BitSize>
-        <BitOffs>34482944</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTAT__FBFFHWO</Name>
-        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-        <BitSize>495296</BitSize>
-        <BitOffs>34509248</BitOffs>
-        <Default>
-          <SubItem>
-            <Name>.bAutoReset</Name>
-            <Value>1</Value>
-          </SubItem>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTAT__FBMOVE</Name>
-        <Type>FB_TestHelperSetAndMove</Type>
-        <BitSize>4608</BitSize>
-        <BitOffs>35004544</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTAT__BINIT</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>35009152</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTBELOW__FBSTATELIMITS</Name>
-        <Type>FB_StatePMPSLimits</Type>
-        <BitSize>26304</BitSize>
-        <BitOffs>35009216</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTBELOW__FBFFHWO</Name>
-        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-        <BitSize>495296</BitSize>
-        <BitOffs>35035520</BitOffs>
-        <Default>
-          <SubItem>
-            <Name>.bAutoReset</Name>
-            <Value>1</Value>
-          </SubItem>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTBELOW__FBMOVE</Name>
-        <Type>FB_TestHelperSetAndMove</Type>
-        <BitSize>4608</BitSize>
-        <BitOffs>35530816</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTBELOW__BINIT</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>35535424</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTDISABLED__FBSTATELIMITS</Name>
-        <Type>FB_StatePMPSLimits</Type>
-        <BitSize>26304</BitSize>
-        <BitOffs>35535488</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTDISABLED__FBFFHWO</Name>
-        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-        <BitSize>495296</BitSize>
-        <BitOffs>35561792</BitOffs>
-        <Default>
-          <SubItem>
-            <Name>.bAutoReset</Name>
-            <Value>1</Value>
-          </SubItem>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTDISABLED__FBMOVE</Name>
-        <Type>FB_TestHelperSetAndMove</Type>
-        <BitSize>4608</BitSize>
-        <BitOffs>36057088</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTDISABLED__BINIT</Name>
-        <Type>BOOL</Type>
-        <BitSize>8</BitSize>
-        <BitOffs>36061696</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTINVALID__FBSTATELIMITS</Name>
-        <Type>FB_StatePMPSLimits</Type>
-        <BitSize>26304</BitSize>
-        <BitOffs>36061760</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTINVALID__FBFFHWO</Name>
-        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-        <BitSize>495296</BitSize>
-        <BitOffs>36088064</BitOffs>
-        <Default>
-          <SubItem>
-            <Name>.bAutoReset</Name>
-            <Value>1</Value>
-          </SubItem>
-        </Default>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTNOTUPDATED__FBSTATELIMITS</Name>
-        <Type>FB_StatePMPSLimits</Type>
-        <BitSize>26304</BitSize>
-        <BitOffs>36583360</BitOffs>
-      </SubItem>
-      <SubItem>
-        <Name>__TESTNOTUPDATED__FBFFHWO</Name>
-        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-        <BitSize>495296</BitSize>
-        <BitOffs>36609664</BitOffs>
-        <Default>
-          <SubItem>
-            <Name>.bAutoReset</Name>
-            <Value>1</Value>
-          </SubItem>
-        </Default>
-      </SubItem>
-      <Method>
-        <Name>TestInvalid</Name>
-        <Parameter>
-          <Name>nTestID</Name>
-          <Type>UINT</Type>
-          <BitSize>16</BitSize>
-        </Parameter>
-        <Local>
-          <Name>fbStateLimits</Name>
-          <Type>FB_StatePMPSLimits</Type>
-          <BitSize>26304</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTINVALID__FBSTATELIMITS</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbFFHWO</Name>
-          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-          <BitSize>495296</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTINVALID__FBFFHWO</Value>
-            </Property>
-          </Properties>
-        </Local>
-      </Method>
-      <Method>
-        <Name>TestDisabled</Name>
-        <Parameter>
-          <Name>nTestID</Name>
-          <Type>UINT</Type>
-          <BitSize>16</BitSize>
-        </Parameter>
-        <Local>
-          <Name>fbStateLimits</Name>
-          <Type>FB_StatePMPSLimits</Type>
-          <BitSize>26304</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTDISABLED__FBSTATELIMITS</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbFFHWO</Name>
-          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-          <BitSize>495296</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTDISABLED__FBFFHWO</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbMove</Name>
-          <Type>FB_TestHelperSetAndMove</Type>
-          <BitSize>4608</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTDISABLED__FBMOVE</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>bInit</Name>
-          <Type>BOOL</Type>
-          <BitSize>8</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTDISABLED__BINIT</Value>
-            </Property>
-          </Properties>
-        </Local>
-      </Method>
-      <Method>
-        <Name>TestNotUpdated</Name>
-        <Parameter>
-          <Name>nTestID</Name>
-          <Type>UINT</Type>
-          <BitSize>16</BitSize>
-        </Parameter>
-        <Local>
-          <Name>fbStateLimits</Name>
-          <Type>FB_StatePMPSLimits</Type>
-          <BitSize>26304</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTNOTUPDATED__FBSTATELIMITS</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbFFHWO</Name>
-          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-          <BitSize>495296</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTNOTUPDATED__FBFFHWO</Value>
-            </Property>
-          </Properties>
-        </Local>
-      </Method>
-      <Method>
-        <Name>TestAbove</Name>
-        <Parameter>
-          <Name>nTestID</Name>
-          <Type>UINT</Type>
-          <BitSize>16</BitSize>
-        </Parameter>
-        <Local>
-          <Name>fbStateLimits</Name>
-          <Type>FB_StatePMPSLimits</Type>
-          <BitSize>26304</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTABOVE__FBSTATELIMITS</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbFFHWO</Name>
-          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-          <BitSize>495296</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTABOVE__FBFFHWO</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbMove</Name>
-          <Type>FB_TestHelperSetAndMove</Type>
-          <BitSize>4608</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTABOVE__FBMOVE</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>bInit</Name>
-          <Type>BOOL</Type>
-          <BitSize>8</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTABOVE__BINIT</Value>
-            </Property>
-          </Properties>
-        </Local>
-      </Method>
-      <Method>
-        <Name>TestAt</Name>
-        <Parameter>
-          <Name>nTestID</Name>
-          <Type>UINT</Type>
-          <BitSize>16</BitSize>
-        </Parameter>
-        <Local>
-          <Name>fbStateLimits</Name>
-          <Type>FB_StatePMPSLimits</Type>
-          <BitSize>26304</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTAT__FBSTATELIMITS</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbFFHWO</Name>
-          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-          <BitSize>495296</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTAT__FBFFHWO</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbMove</Name>
-          <Type>FB_TestHelperSetAndMove</Type>
-          <BitSize>4608</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTAT__FBMOVE</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>bInit</Name>
-          <Type>BOOL</Type>
-          <BitSize>8</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTAT__BINIT</Value>
-            </Property>
-          </Properties>
-        </Local>
-      </Method>
-      <Method>
-        <Name>TestBelow</Name>
-        <Parameter>
-          <Name>nTestID</Name>
-          <Type>UINT</Type>
-          <BitSize>16</BitSize>
-        </Parameter>
-        <Local>
-          <Name>fbStateLimits</Name>
-          <Type>FB_StatePMPSLimits</Type>
-          <BitSize>26304</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTBELOW__FBSTATELIMITS</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbFFHWO</Name>
-          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
-          <BitSize>495296</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTBELOW__FBFFHWO</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>fbMove</Name>
-          <Type>FB_TestHelperSetAndMove</Type>
-          <BitSize>4608</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTBELOW__FBMOVE</Value>
-            </Property>
-          </Properties>
-        </Local>
-        <Local>
-          <Name>bInit</Name>
-          <Type>BOOL</Type>
-          <BitSize>8</BitSize>
-          <Properties>
-            <Property>
-              <Name>uselocation</Name>
-              <Value>__TESTBELOW__BINIT</Value>
-            </Property>
-          </Properties>
-        </Local>
-      </Method>
-      <Properties>
-        <Property>
-          <Name>PouType</Name>
-          <Value>FunctionBlock</Value>
-        </Property>
-      </Properties>
-    </DataType>
-    <DataType>
       <Name Namespace="Tc3_JsonXml">FB_JsonDomParserBase</Name>
       <BitSize>128</BitSize>
       <SubItem>
@@ -42563,6 +41872,179 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
           </Properties>
         </Local>
       </Method>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
+    <DataType>
+      <Name>FB_StatePMPSLimits</Name>
+      <BitSize>26304</BitSize>
+      <SubItem>
+        <Name>stMotionStage</Name>
+        <Type ReferenceTo="true">ST_MotionStage</Type>
+        <Comment> The motor with a position state.</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>32</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>astPositionState</Name>
+        <Type>ST_PositionState</Type>
+        <ArrayInfo ReferenceTo="true">
+          <LBound>1</LBound>
+          <Elements>15</Elements>
+        </ArrayInfo>
+        <Comment> All possible position states for this motor.</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>64</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>fbFFHWO</Name>
+        <Type Namespace="PMPS" ReferenceTo="true">FB_HardwareFFOutput</Type>
+        <Comment> Hardware output to fault to if there is a problem.</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>96</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>InOut</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bEnable</Name>
+        <Type>BOOL</Type>
+        <Comment> If TRUE, do the limits as normal. If FALSE, allow all moves regardless of the limits defined here.</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>128</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>nGoalStateIndex</Name>
+        <Type>DINT</Type>
+        <Comment> The state that the motor is moving to.</Comment>
+        <BitSize>32</BitSize>
+        <BitOffs>160</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Input</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bEnabled</Name>
+        <Type>BOOL</Type>
+        <Comment> The enable state we send to MC_Power. This is a pass-through from stMotionStage.</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>192</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bForwardEnabled</Name>
+        <Type>BOOL</Type>
+        <Comment> The forward enable state we send to MC_Power. This may be a pass-through or an override to FALSE.</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>200</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bBackwardEnabled</Name>
+        <Type>BOOL</Type>
+        <Comment> The backwards enable state we send to MC_Power. This may be a pass-through or an override to FALSE.</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>208</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>bValidGoal</Name>
+        <Type>BOOL</Type>
+        <Comment> TRUE if there is a valid goal position and FALSE otherwise. This makes a fast fault if FALSE.</Comment>
+        <BitSize>8</BitSize>
+        <BitOffs>216</BitOffs>
+        <Properties>
+          <Property>
+            <Name>ItemType</Name>
+            <Value>Output</Value>
+          </Property>
+        </Properties>
+      </SubItem>
+      <SubItem>
+        <Name>mc_power</Name>
+        <Type Namespace="Tc2_MC2">MC_Power</Type>
+        <BitSize>768</BitSize>
+        <BitOffs>256</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nPrevStateIndex</Name>
+        <Type>DINT</Type>
+        <BitSize>32</BitSize>
+        <BitOffs>1024</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fLowerPos</Name>
+        <Type>LREAL</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>1088</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fUpperPos</Name>
+        <Type>LREAL</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>1152</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>ffNoGoal</Name>
+        <Type Namespace="PMPS">FB_FastFault</Type>
+        <BitSize>25088</BitSize>
+        <BitOffs>1216</BitOffs>
+      </SubItem>
+      <Action>
+        <Name>SetEnables</Name>
+      </Action>
+      <Action>
+        <Name>ApplyEnables</Name>
+      </Action>
+      <Action>
+        <Name>GetBounds</Name>
+      </Action>
+      <Action>
+        <Name>RunFastFaults</Name>
+      </Action>
       <Properties>
         <Property>
           <Name>PouType</Name>
@@ -46387,6 +45869,620 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
         <Hide GUID="{9E76D1D7-D744-4E3D-B111-F6F94B60E6AB}"/>
       </Hides>
     </DataType>
+    <DataType>
+      <Name>FB_StatePMPSLimits_Test</Name>
+      <BitSize>37631232</BitSize>
+      <ExtendsType>MotorTestSuite</ExtendsType>
+      <SubItem>
+        <Name>stMotionStage</Name>
+        <Type>ST_MotionStage</Type>
+        <BitSize>25280</BitSize>
+        <BitOffs>33551744</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbMotionStage</Name>
+        <Type>FB_MotionStage</Type>
+        <BitSize>299392</BitSize>
+        <BitOffs>33577024</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>astPositionState</Name>
+        <Type>ST_PositionState</Type>
+        <ArrayInfo>
+          <LBound>1</LBound>
+          <Elements>15</Elements>
+        </ArrayInfo>
+        <BitSize>54720</BitSize>
+        <BitOffs>33876416</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbInternal1</Name>
+        <Type>FB_PositionStateInternal</Type>
+        <BitSize>12544</BitSize>
+        <BitOffs>33931136</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fbInternal2</Name>
+        <Type>FB_PositionStateInternal</Type>
+        <BitSize>12544</BitSize>
+        <BitOffs>33943680</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nInvalidState</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>33956224</BitOffs>
+        <Default>
+          <Value>2</Value>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>nGoalState</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>33956240</BitOffs>
+        <Default>
+          <Value>4</Value>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>nNotUpdatedState</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>33956256</BitOffs>
+        <Default>
+          <Value>6</Value>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>bInit</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>33956272</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>nTestCounter</Name>
+        <Type>UINT</Type>
+        <BitSize>16</BitSize>
+        <BitOffs>33956288</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bOneTestDone</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>33956304</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>fTestStartPos</Name>
+        <Type>LREAL</Type>
+        <BitSize>64</BitSize>
+        <BitOffs>33956352</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>tonTimer</Name>
+        <Type Namespace="Tc2_Standard">TON</Type>
+        <BitSize>224</BitSize>
+        <BitOffs>33956416</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>bStatesReady</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>33956640</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTABOVE__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>33956672</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTABOVE__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>33982976</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTABOVE__FBMOVE</Name>
+        <Type>FB_TestHelperSetAndMove</Type>
+        <BitSize>4608</BitSize>
+        <BitOffs>34478272</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTABOVE__BINIT</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>34482880</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTAT__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>34482944</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTAT__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>34509248</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTAT__FBMOVE</Name>
+        <Type>FB_TestHelperSetAndMove</Type>
+        <BitSize>4608</BitSize>
+        <BitOffs>35004544</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTAT__BINIT</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>35009152</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTBELOW__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>35009216</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTBELOW__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>35035520</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTBELOW__FBMOVE</Name>
+        <Type>FB_TestHelperSetAndMove</Type>
+        <BitSize>4608</BitSize>
+        <BitOffs>35530816</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTBELOW__BINIT</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>35535424</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTDISABLED__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>35535488</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTDISABLED__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>35561792</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTDISABLED__FBMOVE</Name>
+        <Type>FB_TestHelperSetAndMove</Type>
+        <BitSize>4608</BitSize>
+        <BitOffs>36057088</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTDISABLED__BINIT</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>36061696</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTINVALID__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>36061760</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTINVALID__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>36088064</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTLIMITS__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>36583360</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTLIMITS__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>36609664</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTLIMITS__FBMOVE</Name>
+        <Type>FB_TestHelperSetAndMove</Type>
+        <BitSize>4608</BitSize>
+        <BitOffs>37104960</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTLIMITS__BINIT</Name>
+        <Type>BOOL</Type>
+        <BitSize>8</BitSize>
+        <BitOffs>37109568</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTNOTUPDATED__FBSTATELIMITS</Name>
+        <Type>FB_StatePMPSLimits</Type>
+        <BitSize>26304</BitSize>
+        <BitOffs>37109632</BitOffs>
+      </SubItem>
+      <SubItem>
+        <Name>__TESTNOTUPDATED__FBFFHWO</Name>
+        <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+        <BitSize>495296</BitSize>
+        <BitOffs>37135936</BitOffs>
+        <Default>
+          <SubItem>
+            <Name>.bAutoReset</Name>
+            <Value>1</Value>
+          </SubItem>
+        </Default>
+      </SubItem>
+      <Method>
+        <Name>TestLimits</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTLIMITS__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTLIMITS__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbMove</Name>
+          <Type>FB_TestHelperSetAndMove</Type>
+          <BitSize>4608</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTLIMITS__FBMOVE</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>bInit</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTLIMITS__BINIT</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Method>
+        <Name>TestNotUpdated</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTNOTUPDATED__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTNOTUPDATED__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Method>
+        <Name>TestAbove</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTABOVE__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTABOVE__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbMove</Name>
+          <Type>FB_TestHelperSetAndMove</Type>
+          <BitSize>4608</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTABOVE__FBMOVE</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>bInit</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTABOVE__BINIT</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Method>
+        <Name>TestBelow</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBELOW__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBELOW__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbMove</Name>
+          <Type>FB_TestHelperSetAndMove</Type>
+          <BitSize>4608</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBELOW__FBMOVE</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>bInit</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTBELOW__BINIT</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Method>
+        <Name>TestInvalid</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTINVALID__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTINVALID__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Method>
+        <Name>TestDisabled</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTDISABLED__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTDISABLED__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbMove</Name>
+          <Type>FB_TestHelperSetAndMove</Type>
+          <BitSize>4608</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTDISABLED__FBMOVE</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>bInit</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTDISABLED__BINIT</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Method>
+        <Name>TestAt</Name>
+        <Parameter>
+          <Name>nTestID</Name>
+          <Type>UINT</Type>
+          <BitSize>16</BitSize>
+        </Parameter>
+        <Local>
+          <Name>fbStateLimits</Name>
+          <Type>FB_StatePMPSLimits</Type>
+          <BitSize>26304</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTAT__FBSTATELIMITS</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbFFHWO</Name>
+          <Type Namespace="PMPS">FB_HardwareFFOutput</Type>
+          <BitSize>495296</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTAT__FBFFHWO</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>fbMove</Name>
+          <Type>FB_TestHelperSetAndMove</Type>
+          <BitSize>4608</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTAT__FBMOVE</Value>
+            </Property>
+          </Properties>
+        </Local>
+        <Local>
+          <Name>bInit</Name>
+          <Type>BOOL</Type>
+          <BitSize>8</BitSize>
+          <Properties>
+            <Property>
+              <Name>uselocation</Name>
+              <Value>__TESTAT__BINIT</Value>
+            </Property>
+          </Properties>
+        </Local>
+      </Method>
+      <Properties>
+        <Property>
+          <Name>PouType</Name>
+          <Value>FunctionBlock</Value>
+        </Property>
+      </Properties>
+    </DataType>
   </DataTypes>
   <Modules>
     <Module GUID="{DED1545C-5FCD-48E2-B686-7D2C250A3641}" TcSmClass="TComPlcObjDef">
@@ -46408,7 +46504,7 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
           <AreaNo AreaType="InputDst" CreateSymbols="true">0</AreaNo>
           <Name>PlcTask Inputs</Name>
           <ContextId>0</ContextId>
-          <ByteSize>153419776</ByteSize>
+          <ByteSize>158007296</ByteSize>
           <Symbol>
             <Name>LCLS_General.DefaultGlobals.stSys.I_EcatMaster1</Name>
             <Comment> AMS Net ID used for FB_EcatDiag, among others </Comment>
@@ -53483,161 +53579,6 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             <BitOffs>987628624</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.Axis.NcToPlc</Name>
-            <BitSize>2048</BitSize>
-            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059628288</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bLimitForwardEnable</Name>
-            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitForwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if forward limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636288</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bLimitBackwardEnable</Name>
-            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bLimitBackwardEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC FALSE if reverse limit hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636296</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bHome</Name>
-            <Comment> NO Home Switch: TRUE if at home</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHome
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if at homing switch
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636304</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bHardwareEnable</Name>
-            <Comment> NC STO Input: TRUE if ok to move</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bHardwareEnable
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if STO not hit
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636320</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.nRawEncoderULINT</Name>
-            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
-            <BitSize>64</BitSize>
-            <BaseType>ULINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636352</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.nRawEncoderUINT</Name>
-            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>UINT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636416</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.nRawEncoderINT</Name>
-            <Comment> Raw encoder IO for INT (LVDT)</Comment>
-            <BitSize>16</BitSize>
-            <BaseType>INT</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636432</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
-            <BitSize>2048</BitSize>
-            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Input</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059654976</BitOffs>
-          </Symbol>
-          <Symbol>
             <Name>PRG_TEST.fb_StatePMPSLimitsND_Test.astMotionStage[1].Axis.NcToPlc</Name>
             <BitSize>2048</BitSize>
             <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
@@ -56962,12 +56903,167 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             </Properties>
             <BitOffs>1212929552</BitOffs>
           </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.Axis.NcToPlc</Name>
+            <BitSize>2048</BitSize>
+            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259216512</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bLimitForwardEnable</Name>
+            <Comment> NC Forward Limit Switch: TRUE if ok to move</Comment>
+            <BitSize>8</BitSize>
+            <BaseType>BOOL</BaseType>
+            <Properties>
+              <Property>
+                <Name>pytmc</Name>
+                <Value>
+        pv: PLC:bLimitForwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC FALSE if forward limit hit
+    </Value>
+              </Property>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224512</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bLimitBackwardEnable</Name>
+            <Comment> NC Backward Limit Switch: TRUE if ok to move</Comment>
+            <BitSize>8</BitSize>
+            <BaseType>BOOL</BaseType>
+            <Properties>
+              <Property>
+                <Name>pytmc</Name>
+                <Value>
+        pv: PLC:bLimitBackwardEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC FALSE if reverse limit hit
+    </Value>
+              </Property>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224520</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bHome</Name>
+            <Comment> NO Home Switch: TRUE if at home</Comment>
+            <BitSize>8</BitSize>
+            <BaseType>BOOL</BaseType>
+            <Properties>
+              <Property>
+                <Name>pytmc</Name>
+                <Value>
+        pv: PLC:bHome
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if at homing switch
+    </Value>
+              </Property>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224528</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bHardwareEnable</Name>
+            <Comment> NC STO Input: TRUE if ok to move</Comment>
+            <BitSize>8</BitSize>
+            <BaseType>BOOL</BaseType>
+            <Properties>
+              <Property>
+                <Name>pytmc</Name>
+                <Value>
+        pv: PLC:bHardwareEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if STO not hit
+    </Value>
+              </Property>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224544</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.nRawEncoderULINT</Name>
+            <Comment> Raw encoder IO for ULINT (Biss-C)</Comment>
+            <BitSize>64</BitSize>
+            <BaseType>ULINT</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224576</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.nRawEncoderUINT</Name>
+            <Comment> Raw encoder IO for UINT (Relative Encoders)</Comment>
+            <BitSize>16</BitSize>
+            <BaseType>UINT</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224640</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.nRawEncoderINT</Name>
+            <Comment> Raw encoder IO for INT (LVDT)</Comment>
+            <BitSize>16</BitSize>
+            <BaseType>INT</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224656</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.fbMotionStage.fbDriveVirtual.MasterAxis.NcToPlc</Name>
+            <BitSize>2048</BitSize>
+            <BaseType GUID="{6A65C767-34E5-42BF-AD87-E1A503EAC7BE}">NCTOPLC_AXIS_REF</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Input</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259243200</BitOffs>
+          </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="OutputSrc" CreateSymbols="true">1</AreaNo>
           <Name>PlcTask Outputs</Name>
           <ContextId>0</ContextId>
-          <ByteSize>153419776</ByteSize>
+          <ByteSize>158007296</ByteSize>
           <Symbol>
             <Name>PRG_TEST.fb_TestHelperSetAndMove_Test.stMotionStage.Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
@@ -58861,53 +58957,6 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             <BitOffs>987628504</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.Axis.PlcToNc</Name>
-            <BitSize>1024</BitSize>
-            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059627264</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bBrakeRelease</Name>
-            <Comment> NC Brake Output: TRUE to release brake</Comment>
-            <BitSize>8</BitSize>
-            <BaseType>BOOL</BaseType>
-            <Properties>
-              <Property>
-                <Name>pytmc</Name>
-                <Value>
-        pv: PLC:bBrakeRelease
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if brake released
-    </Value>
-              </Property>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059636312</BitOffs>
-          </Symbol>
-          <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
-            <BitSize>1024</BitSize>
-            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
-            <Properties>
-              <Property>
-                <Name>TcAddressType</Name>
-                <Value>Output</Value>
-              </Property>
-            </Properties>
-            <BitOffs>1059653952</BitOffs>
-          </Symbol>
-          <Symbol>
             <Name>PRG_TEST.fb_StatePMPSLimitsND_Test.astMotionStage[1].Axis.PlcToNc</Name>
             <BitSize>1024</BitSize>
             <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
@@ -59748,12 +59797,59 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             </Properties>
             <BitOffs>1212929432</BitOffs>
           </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.Axis.PlcToNc</Name>
+            <BitSize>1024</BitSize>
+            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Output</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259215488</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.stMotionStage.bBrakeRelease</Name>
+            <Comment> NC Brake Output: TRUE to release brake</Comment>
+            <BitSize>8</BitSize>
+            <BaseType>BOOL</BaseType>
+            <Properties>
+              <Property>
+                <Name>pytmc</Name>
+                <Value>
+        pv: PLC:bBrakeRelease
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if brake released
+    </Value>
+              </Property>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Output</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259224536</BitOffs>
+          </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test.fbMotionStage.fbDriveVirtual.MasterAxis.PlcToNc</Name>
+            <BitSize>1024</BitSize>
+            <BaseType GUID="{63A84524-72E3-41C8-BEAB-4CCE44690A13}">PLCTONC_AXIS_REF</BaseType>
+            <Properties>
+              <Property>
+                <Name>TcAddressType</Name>
+                <Value>Output</Value>
+              </Property>
+            </Properties>
+            <BitOffs>1259242176</BitOffs>
+          </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="Internal" CreateSymbols="true">3</AreaNo>
           <Name>PlcTask Internal</Name>
           <ContextId>0</ContextId>
-          <ByteSize>153419776</ByteSize>
+          <ByteSize>158007296</ByteSize>
           <Symbol>
             <Name>DefaultGlobals.stSys</Name>
             <Comment>Included for you</Comment>
@@ -65636,12 +65732,6 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             <BitOffs>992008896</BitOffs>
           </Symbol>
           <Symbol>
-            <Name>PRG_TEST.fb_StatePMPSLimits_Test</Name>
-            <BitSize>37104960</BitSize>
-            <BaseType>FB_StatePMPSLimits_Test</BaseType>
-            <BitOffs>1026075456</BitOffs>
-          </Symbol>
-          <Symbol>
             <Name>PRG_TEST.fb_MotionReadPMPSDBND_Test</Name>
             <BitSize>37585152</BitSize>
             <BaseType>FB_MotionReadPMPSDBND_Test</BaseType>
@@ -66010,12 +66100,18 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
             </Properties>
             <BitOffs>1220031520</BitOffs>
           </Symbol>
+          <Symbol>
+            <Name>PRG_TEST.fb_StatePMPSLimits_Test</Name>
+            <BitSize>37631232</BitSize>
+            <BaseType>FB_StatePMPSLimits_Test</BaseType>
+            <BitOffs>1225663680</BitOffs>
+          </Symbol>
         </DataArea>
         <DataArea>
           <AreaNo AreaType="RetainSrc" CreateSymbols="true">4</AreaNo>
           <Name>PlcTask Retains</Name>
           <ContextId>0</ContextId>
-          <ByteSize>153419776</ByteSize>
+          <ByteSize>158007296</ByteSize>
           <Symbol>
             <Name>PMPS_GVL.SuccessfulPreemption</Name>
             <Comment> Any time BPTM applies a new BP request which is confirmed</Comment>
@@ -66080,15 +66176,15 @@ The BPTM will throw an error if the arbiter does not have enough space for the t
         </Property>
         <Property>
           <Name>ChangeDate</Name>
-          <Value>2023-05-10T18:04:19</Value>
+          <Value>2023-05-11T17:59:02</Value>
         </Property>
         <Property>
           <Name>GeneratedCodeSize</Name>
-          <Value>757760</Value>
+          <Value>761856</Value>
         </Property>
         <Property>
           <Name>GlobalDataSize</Name>
-          <Value>152084480</Value>
+          <Value>152150016</Value>
         </Property>
       </Properties>
     </Module>

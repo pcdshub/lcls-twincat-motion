@@ -25,6 +25,19 @@ stMotionStage.bLimitForwardEnable := TRUE;
 stMotionStage.bPowerSelf := TRUE;]]></ST>
       </Implementation>
     </Method>
+    <Method Name="SetEnablesPMPS" Id="{29072525-240d-4c4a-8b5e-95863d0109d6}">
+      <Declaration><![CDATA[METHOD SetEnablesPMPS
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+SetEnables(stMotionStage);
+stMotionStage.bPowerSelf := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="SetGoodState" Id="{b3c6256b-7995-4ca9-aaf3-c136e49e66c8}">
       <Declaration><![CDATA[METHOD SetGoodState
 VAR_IN_OUT
