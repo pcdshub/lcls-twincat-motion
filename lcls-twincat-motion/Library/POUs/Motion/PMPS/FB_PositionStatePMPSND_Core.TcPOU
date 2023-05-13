@@ -25,7 +25,8 @@ VAR_INPUT
     nActiveMotorCount: UINT;
     sDeviceName: STRING;
     sTransitionKey: STRING;
-    nCurrGoal: DINT;
+    nCurrGoal: UINT;
+    bReadDBNow: BOOL;
 END_VAR
 VAR_OUTPUT
     stDbStateParams: ST_DbStateParams;
@@ -46,6 +47,7 @@ fbMotionReadPMPSDB(
     fbFFHWO:=fbFFHWO,
     sTransitionKey:=sTransitionKey,
     sDeviceName:=sDeviceName,
+    bReadNow:=bReadDBNow,
     astDbStateParams=>,
     bError=>,
 );
@@ -58,7 +60,7 @@ fbMotionBPTM(
     stTransParams:=fbMotionReadPMPSDB.astDbStateParams[0],
     nActiveMotorCount:=nActiveMotorCount,
     bEnable:=stPMPSEpicsInput.bArbiterEnabled AND bEnableBeamParams,
-    bAtState:=stEpicsOutput.nGetValue = nCurrGoal,
+    bAtState:=stEpicsOutput.nGetValue = nCurrGoal AND nCurrGoal <> 0,
     sDeviceName:=sDeviceName,
     bTransitionAuthorized=>,
     bDone=>,

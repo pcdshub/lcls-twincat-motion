@@ -25,7 +25,7 @@ VAR_INPUT
     nActiveMotorCount: UINT;
 END_VAR
 VAR_OUTPUT
-    nCurrGoal: DINT;
+    nCurrGoal: UINT;
 END_VAR
 VAR
     fbInput: FB_StatesInputHandler;
@@ -33,6 +33,7 @@ VAR
     fbMove: FB_PositionStateMoveND;
     fbRead: FB_PositionStateReadND;
     astMoveGoals: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
+    stInvalidPos: ST_PositionState;
     nIterMotor: DINT;
 END_VAR]]></Declaration>
     <Implementation>
@@ -63,7 +64,11 @@ fbInternal(
 );
 
 FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
-    astMoveGoals[nIterMotor] := astPositionStateMax[nIterMotor][fbInput.nCurrGoal];
+    IF nCurrGoal > 0 THEN
+        astMoveGoals[nIterMotor] := astPositionStateMax[nIterMotor][nCurrGoal];
+    ELSE
+        astMoveGoals[nIterMotor] := stInvalidPos;
+    END_IF
 END_FOR
 
 fbMove(

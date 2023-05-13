@@ -9,6 +9,8 @@
     - When not at our goal state, we cannot move away from our goal state
     - When at our goal state, we must stay within the state bounds
     - When at our goal state, we still obey other constraints like limit switches
+
+    We also include a super basic real move test with our simulator motor to make sure the enables are set properly.
 *)
 VAR
     stMotionStage: ST_MotionStage;
@@ -61,6 +63,7 @@ TestAbove(4);
 TestAt(5);
 TestDisabled(6);
 TestLimits(7);
+TestMove(8);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -215,7 +218,7 @@ END_IF
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="TestBelow" Id="{98c46d12-8b7c-43dd-b3b3-9f3e17c240da}">
+    <Method Name="TestBelow" Id="{28005b43-1e5b-4c6e-8bd7-a817cc2c0eb4}">
       <Declaration><![CDATA[METHOD TestBelow
 VAR_INPUT
     nTestID: UINT;
@@ -474,6 +477,80 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMove" Id="{98c46d12-8b7c-43dd-b3b3-9f3e17c240da}">
+      <Declaration><![CDATA[METHOD TestMove
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbStateLimits: FB_StatePMPSLimits;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbMove: FB_TestHelperSetAndMove;
+
+    bInit: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestMove');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+SetEnablesPMPS(stMotionStage);
+
+// Run our FB which should enable the real move
+fbStateLimits(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    bEnable:=bInit,
+    nGoalStateIndex:=nGoalState,
+);
+
+// Set position to be below the goal's range, and move to the goal
+fbMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=bInit,
+    fStartPosition:=astPositionState[nGoalState].fPosition - 10,
+    fGoalPosition:=astPositionState[nGoalState].fPosition,
+    fVelocity:=5,
+    bHWEnable:=FALSE,
+);
+bInit := TRUE;
+
+fbFFHWO.EvaluateOutput();
+
+// If we've reached the position OR ran out of time to set the position, check the asserts
+IF tonTimer.Q OR fbMove.bMoveDone THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in test',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState[nGoalState].fPosition,
+        Actual:=fbMove.fActPosition,
+        Delta:=0.0001,
+        Message:='Did not reach the goal position',
+    );
+    AssertTrue(
+        fbFFHWO.q_xFastFaultOut,
+        'Fast fault in normal situation',
+    );
+    AssertTrue(
+        fbStateLimits.bBackwardEnabled,
+        'Backward disabled when at goal',
+    );
+    AssertTrue(
+        fbStateLimits.bForwardEnabled,
+        'Forward disabled when at goal',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="TestNotUpdated" Id="{e3e62099-da37-4d9e-b58b-650fd1e6c70e}">
