@@ -63,7 +63,8 @@ TestAbove(4);
 TestAt(5);
 TestDisabled(6);
 TestLimits(7);
-TestMove(8);
+TestMoveTo(8);
+TestMoveAt(9);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -479,8 +480,8 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
 END_IF]]></ST>
       </Implementation>
     </Method>
-    <Method Name="TestMove" Id="{98c46d12-8b7c-43dd-b3b3-9f3e17c240da}">
-      <Declaration><![CDATA[METHOD TestMove
+    <Method Name="TestMoveAt" Id="{4acc0b73-dcdb-41dd-bf32-ed9903ec0f24}">
+      <Declaration><![CDATA[METHOD TestMoveAt
 VAR_INPUT
     nTestID: UINT;
 END_VAR
@@ -494,7 +495,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST('TestMove');
+TEST('TestMoveAt');
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
@@ -508,6 +509,84 @@ fbStateEnables(
     fbFFHWO:=fbFFHWO,
     bEnable:=bInit,
     nGoalStateIndex:=nGoalState,
+    eStatePMPSStatus:=ENUM_StatePMPSStatus.AT_STATE,
+    bTransitionAuthorized:=FALSE,
+);
+
+// Set position to be below the goal's range, and move to the goal
+fbMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=bInit,
+    fStartPosition:=astPositionState[nGoalState].fPosition - astPositionState[nGoalState].fDelta / 2,
+    fGoalPosition:=astPositionState[nGoalState].fPosition + astPositionState[nGoalState].fDelta / 2,
+    fVelocity:=5,
+    bHWEnable:=FALSE,
+);
+bInit := TRUE;
+
+fbFFHWO.EvaluateOutput();
+
+// If we've reached the position OR ran out of time to set the position, check the asserts
+IF tonTimer.Q OR fbMove.bMoveDone THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in test',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState[nGoalState].fPosition + astPositionState[nGoalState].fDelta / 2,
+        Actual:=fbMove.fActPosition,
+        Delta:=0.0001,
+        Message:='Did not reach the goal position',
+    );
+    AssertTrue(
+        fbFFHWO.q_xFastFaultOut,
+        'Fast fault in normal situation',
+    );
+    AssertTrue(
+        fbStateEnables.bBackwardEnabled,
+        'Backward disabled when at goal',
+    );
+    AssertTrue(
+        fbStateEnables.bForwardEnabled,
+        'Forward disabled when at goal',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMoveTo" Id="{98c46d12-8b7c-43dd-b3b3-9f3e17c240da}">
+      <Declaration><![CDATA[METHOD TestMoveTo
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbStateEnables: FB_StatePMPSEnables;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbMove: FB_TestHelperSetAndMove;
+
+    bInit: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestMoveTo');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+SetEnablesPMPS(stMotionStage);
+
+// Run our FB which should enable the real move
+fbStateEnables(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    bEnable:=bInit,
+    nGoalStateIndex:=nGoalState,
+    eStatePMPSStatus:=ENUM_StatePMPSStatus.TRANSITION,
+    bTransitionAuthorized:=TRUE,
 );
 
 // Set position to be below the goal's range, and move to the goal

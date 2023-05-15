@@ -38,10 +38,22 @@ VAR
     fbStatePMPSEnables: FB_StatePMPSEnablesND;
     fbMiscStatesErrorFFO: FB_MiscStatesErrorFFO;
     fbPerMotorFFO: FB_PerMotorFFOND;
+
+    eStatePMPSStatus: ENUM_StatePMPSStatus;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+IF stPMPSEpicsInput.bMaintMode OR NOT stPMPSEpicsInput.bArbiterEnabled THEN
+    eStatePMPSStatus := ENUM_StatePMPSStatus.DISABLED;
+ELSIF stEpicsOutput.nGetValue = 0 AND nCurrGoal = 0 THEN
+    eStatePMPSStatus := ENUM_StatePMPSStatus.UNKNOWN;
+ELSIF stEpicsOutput.nGetValue = nCurrGoal THEN
+    eStatePMPSStatus := ENUM_StatePMPSStatus.AT_STATE;
+ELSE
+    eStatePMPSStatus := ENUM_StatePMPSStatus.TRANSITION;
+END_IF
+
 fbMotionReadPMPSDB(
     astPositionState:=astPositionStateMax,
     fbFFHWO:=fbFFHWO,
@@ -82,6 +94,8 @@ fbStatePMPSEnables(
     nGoalStateIndex:=nCurrGoal,
     sDeviceName:=sDeviceName,
     bMaintMode:=stPMPSEpicsInput.bMaintMode,
+    eStatePMPSStatus:=eStatePMPSStatus,
+    bTransitionAuthorized:=fbMotionBPTM.bTransitionAuthorized,
     abEnabled=>,
     abForwardEnabled=>,
     abBackwardEnabled=>,

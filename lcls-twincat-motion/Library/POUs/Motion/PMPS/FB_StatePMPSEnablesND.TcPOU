@@ -28,6 +28,10 @@ VAR_INPUT
     sDeviceName: STRING;
     // Set to TRUE to put motors into maintenance mode. This allows us to freely move the motors at the cost of a fast fault.
     bMaintMode: BOOL;
+    // The overal PMPS FB state
+    eStatePMPSStatus: ENUM_StatePMPSStatus;
+    // Connect from bptm bTransitionAuthorized
+    bTransitionAuthorized: BOOL;
 END_VAR
 VAR_OUTPUT
     // Per-motor enable state we send to MC_Power. This is a pass-through from stMotionStage.
@@ -77,6 +81,8 @@ FOR nIter := 1 TO nActiveMotorCount DO
         fbFFHWO:=fbFFHWO,
         bEnable:=bEnable AND NOT bMaintMode,
         nGoalStateIndex:=nGoalStateIndex,
+        eStatePMPSStatus:=eStatePMPSStatus,
+        bTransitionAuthorized:=bTransitionAuthorized,
         bEnabled=>abEnabled[nIter],
         bForwardEnabled=>abForwardEnabled[nIter],
         bBackwardEnabled=>abBackwardEnabled[nIter],
