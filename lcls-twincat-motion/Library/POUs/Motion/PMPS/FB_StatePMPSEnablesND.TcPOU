@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
-  <POU Name="FB_StatePMPSLimitsND" Id="{d098ccc9-7db0-41da-97e3-aba758c57f5d}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSLimitsND
+  <POU Name="FB_StatePMPSEnablesND" Id="{d098ccc9-7db0-41da-97e3-aba758c57f5d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSEnablesND
 (*
     Function block to set virtual limit enables using MC_POWER for multidimensional state movers.
     It is a building block not meant for use outside of lcls-twintcat-motion.
@@ -43,7 +43,7 @@ VAR_OUTPUT
 END_VAR
 VAR
     // The individual state limit function blocks
-    afbStateLimits: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_StatePMPSLimits;
+    afbStateEnables: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_StatePMPSEnables;
     ffMaint: FB_FastFault;
     ffProgrammerError: FB_FastFault;
     nIter: DINT;
@@ -71,7 +71,7 @@ bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
       <Implementation>
         <ST><![CDATA[
 FOR nIter := 1 TO nActiveMotorCount DO
-    afbStateLimits[nIter](
+    afbStateEnables[nIter](
         stMotionStage:=astMotionStage[nIter],
         astPositionState:=astPositionState[nIter],
         fbFFHWO:=fbFFHWO,

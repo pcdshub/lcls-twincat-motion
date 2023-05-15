@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
-  <POU Name="FB_StatePMPSLimits_Test" Id="{5c47f34f-d68e-4ecd-b2fb-e45bba741378}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSLimits_Test EXTENDS MotorTestSuite
+  <POU Name="FB_StatePMPSEnables_Test" Id="{5c47f34f-d68e-4ecd-b2fb-e45bba741378}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSEnables_Test EXTENDS MotorTestSuite
 (*
-    Tests for FB_StatePMPSLimits
+    Tests for FB_StatePMPSEnables
 
     This function block ensures that:
     - When not at our goal state, we cannot move away from our goal state
@@ -82,7 +82,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbMove: FB_TestHelperSetAndMove;
 
@@ -109,7 +109,7 @@ fbMove(
 );
 bInit := TRUE;
 // Run our FB
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -134,11 +134,11 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
         'Fast fault in normal situation',
     );
     AssertFalse(
-        fbStateLimits.bForwardEnabled,
+        fbStateEnables.bForwardEnabled,
         'Forward enabled when above goal',
     );
     AssertTrue(
-        fbStateLimits.bBackwardEnabled,
+        fbStateEnables.bBackwardEnabled,
         'Backward disabled when above goal',
     );
     bOneTestDone := TRUE;
@@ -153,7 +153,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbMove: FB_TestHelperSetAndMove;
 
@@ -180,7 +180,7 @@ fbMove(
 );
 bInit := TRUE;
 // Run our FB
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -205,11 +205,11 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
         'Fast fault in normal situation',
     );
     AssertTrue(
-        fbStateLimits.bForwardEnabled,
+        fbStateEnables.bForwardEnabled,
         'Forward disabled when at goal',
     );
     AssertTrue(
-        fbStateLimits.bBackwardEnabled,
+        fbStateEnables.bBackwardEnabled,
         'Backward disabled when at goal',
     );
     bOneTestDone := TRUE;
@@ -224,7 +224,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbMove: FB_TestHelperSetAndMove;
 
@@ -251,7 +251,7 @@ fbMove(
 );
 bInit := TRUE;
 // Run our FB
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -277,11 +277,11 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
         'Fast fault in normal situation',
     );
     AssertFalse(
-        fbStateLimits.bBackwardEnabled,
+        fbStateEnables.bBackwardEnabled,
         'Backward enabled when below goal',
     );
     AssertTrue(
-        fbStateLimits.bForwardEnabled,
+        fbStateEnables.bForwardEnabled,
         'Forward disabled when below goal',
     );
     bOneTestDone := TRUE;
@@ -296,7 +296,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbMove: FB_TestHelperSetAndMove;
 
@@ -324,7 +324,7 @@ fbMove(
 );
 bInit := TRUE;
 // Run our FB
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -350,11 +350,11 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
         'Fast fault in normal situation',
     );
     AssertTrue(
-        fbStateLimits.bBackwardEnabled,
+        fbStateEnables.bBackwardEnabled,
         'Backward disabled when fb is supposed to be disabled',
     );
     AssertTrue(
-        fbStateLimits.bForwardEnabled,
+        fbStateEnables.bForwardEnabled,
         'Forward disabled when fb is supposed to be disabled',
     );
     bOneTestDone := TRUE;
@@ -369,7 +369,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
@@ -388,7 +388,7 @@ AssertTrue(
     'Faulted prior to test',
 );
 // The invalid state should give us a fault
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -412,7 +412,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbMove: FB_TestHelperSetAndMove;
 
@@ -442,7 +442,7 @@ fbMove(
 bInit := TRUE;
 
 // Run our FB
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -467,11 +467,11 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
         'Fast fault in normal situation',
     );
     AssertFalse(
-        fbStateLimits.bForwardEnabled,
+        fbStateEnables.bForwardEnabled,
         'Forward enabled with limit hit',
     );
     AssertFalse(
-        fbStateLimits.bBackwardEnabled,
+        fbStateEnables.bBackwardEnabled,
         'Backward enabled with limit hit',
     );
     bOneTestDone := TRUE;
@@ -485,7 +485,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
     fbMove: FB_TestHelperSetAndMove;
 
@@ -502,7 +502,7 @@ END_IF
 SetEnablesPMPS(stMotionStage);
 
 // Run our FB which should enable the real move
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -540,11 +540,11 @@ IF tonTimer.Q OR fbMove.bMoveDone THEN
         'Fast fault in normal situation',
     );
     AssertTrue(
-        fbStateLimits.bBackwardEnabled,
+        fbStateEnables.bBackwardEnabled,
         'Backward disabled when at goal',
     );
     AssertTrue(
-        fbStateLimits.bForwardEnabled,
+        fbStateEnables.bForwardEnabled,
         'Forward disabled when at goal',
     );
     bOneTestDone := TRUE;
@@ -559,7 +559,7 @@ VAR_INPUT
     nTestID: UINT;
 END_VAR
 VAR_INST
-    fbStateLimits: FB_StatePMPSLimits;
+    fbStateEnables: FB_StatePMPSEnables;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
@@ -578,7 +578,7 @@ AssertTrue(
     'Faulted prior to test',
 );
 // The invalid state should give us a fault
-fbStateLimits(
+fbStateEnables(
     stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,

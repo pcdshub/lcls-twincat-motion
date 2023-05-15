@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
-  <POU Name="FB_StatePMPSLimitsND_Test" Id="{ff910e0c-974f-4a98-85b1-04b7fad065f7}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSLimitsND_Test EXTENDS MotorTestSuite
+  <POU Name="FB_StatePMPSEnablesND_Test" Id="{ff910e0c-974f-4a98-85b1-04b7fad065f7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSEnablesND_Test EXTENDS MotorTestSuite
 (*
-    Unit tests for FB_StatePMPSLimitsND
-    I'm confident that FB_StatePMPSLimits was tested in FB_StatePMPSLimits_Test
+    Unit tests for FB_StatePMPSEnablesND
+    I'm confident that FB_StatePMPSEnables was tested in FB_StatePMPSEnables_Test
     There will be one core functionality check
     Then, the rest will be about the ND feature adds.
     Full checks:
@@ -52,7 +52,7 @@ TestCount();]]></ST>
     <Method Name="TestCount" Id="{d6400f38-11a7-4492-ab2a-c88608732da8}">
       <Declaration><![CDATA[METHOD TestCount
 VAR_INST
-    fbLimits: FB_StatePMPSLimitsND;
+    fbEnables: FB_StatePMPSEnablesND;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
@@ -66,7 +66,7 @@ AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Had faults prior to test',
 );
-fbLimits(
+fbEnables(
     astMotionStage:=astMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -88,7 +88,7 @@ TEST_FINISHED();
     <Method Name="TestMaint" Id="{d1343989-c22d-4197-9f79-b95d14375929}">
       <Declaration><![CDATA[METHOD TestMaint
 VAR_INST
-    fbLimits: FB_StatePMPSLimitsND;
+    fbEnables: FB_StatePMPSEnablesND;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
@@ -102,7 +102,7 @@ AssertTrue(
     fbFFHWO.q_xFastFaultOut,
     'Had faults prior to test',
 );
-fbLimits(
+fbEnables(
     astMotionStage:=astMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -119,19 +119,19 @@ AssertFalse(
 );
 // All overrides should be relaxed
 AssertTrue(
-    fbLimits.abForwardEnabled[1],
+    fbEnables.abForwardEnabled[1],
     'In maintenance mode, we should be able to move anywhere',
 );
 AssertTrue(
-    fbLimits.abBackwardEnabled[1],
+    fbEnables.abBackwardEnabled[1],
     'In maintenance mode, we should be able to move anywhere',
 );
 AssertTrue(
-    fbLimits.abForwardEnabled[1],
+    fbEnables.abForwardEnabled[1],
     'In maintenance mode, we should be able to move anywhere',
 );
 AssertTrue(
-    fbLimits.abBackwardEnabled[1],
+    fbEnables.abBackwardEnabled[1],
     'In maintenance mode, we should be able to move anywhere',
 );
 
@@ -141,7 +141,7 @@ TEST_FINISHED();]]></ST>
     <Method Name="TestUnderOverGoals" Id="{30ac6b2b-0053-4545-8595-c5bfc7395258}">
       <Declaration><![CDATA[METHOD TestUnderOverGoals
 VAR_INST
-    fbLimits: FB_StatePMPSLimitsND;
+    fbEnables: FB_StatePMPSEnablesND;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
 END_VAR
 ]]></Declaration>
@@ -154,7 +154,7 @@ IF NOT astPositionState[1][1].bUpdated OR NOT astPositionState[2][1].bUpdated TH
     RETURN;
 END_IF
 
-fbLimits(
+fbEnables(
     astMotionStage:=astMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
@@ -190,19 +190,19 @@ AssertTrue(
 // But the overrides force us to move toward the goal
 // Motor 1 is below the goal, Motor 2 is above the goal
 AssertTrue(
-    fbLimits.abForwardEnabled[1],
+    fbEnables.abForwardEnabled[1],
     'Motor 1 should be able to move up to the goal',
 );
 AssertFalse(
-    fbLimits.abBackwardEnabled[1],
+    fbEnables.abBackwardEnabled[1],
     'Motor 1 should not be able to move down away from the goal',
 );
 AssertFalse(
-    fbLimits.abForwardEnabled[2],
+    fbEnables.abForwardEnabled[2],
     'Motor 2 should not be able to move up away from the goal',
 );
 AssertTrue(
-    fbLimits.abBackwardEnabled[2],
+    fbEnables.abBackwardEnabled[2],
     'Motor 2 should be able to move down to the goal',
 );
 
