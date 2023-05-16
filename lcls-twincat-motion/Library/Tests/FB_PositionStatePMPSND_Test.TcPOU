@@ -171,7 +171,7 @@ tonTimer(
 ]]></ST>
     </Implementation>
     <Method Name="AssertMotionLims" Id="{022f18ed-834d-4e54-ad88-114f4be5070a}">
-      <Declaration><![CDATA[METHOD AssertMotionLims
+      <Declaration><![CDATA[METHOD AssertMotionLims: BOOL
 VAR_IN_OUT
     stMotionStage: ST_MotionStage;
     astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
@@ -196,11 +196,14 @@ ELSE
     nExpected := 2#101;
 END_IF
 
-AssertEquals_DWORD(
-    Expected:=nExpected,
-    Actual:=stMotionStage.Axis.PlcToNc.ControlDWord,
-    Message:=CONCAT('Wrong control dword in test ', sID),
-);
+IF stMotionStage.Axis.PlcToNc.ControlDWord > 0 THEN
+    AssertEquals_DWORD(
+        Expected:=nExpected,
+        Actual:=stMotionStage.Axis.PlcToNc.ControlDWord,
+        Message:=CONCAT('Wrong control dword in test ', sID),
+    );
+    AssertMotionLims := TRUE;
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -213,6 +216,7 @@ END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
     bInit: BOOL;
+    bLimAsserted: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -245,13 +249,19 @@ fb_Move1D(
     sTransitionKey:='trans',
 );
 
-// First cycle: check that position limits are correct
+// When ready: check that directonal enables are correct
+bLimAsserted S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('1D mot 1 state ', INT_TO_STRING(eState)));
+
+
 IF NOT bInit THEN
-    AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('1D mot 1 state ', INT_TO_STRING(eState)));
     bInit := TRUE;
 END_IF
 
 IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        bLimAsserted,
+        'Skipped limit assert test',
+    );
     AssertTrue(
         Condition:=fb_Move1D.stEpicsOutput.bDone,
         Message:='Done should be True after move',
@@ -291,6 +301,8 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         bEnableBeamParams:=TRUE,
         bEnablePositionLimits:=TRUE,
     );
+    bInit := FALSE;
+    bLimAsserted := FALSE;
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
@@ -306,6 +318,8 @@ END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
     bInit: BOOL;
+    bLimAsserted1: BOOL;
+    bLimAsserted2: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -340,14 +354,19 @@ fb_Move2D(
     sTransitionKey:='trans',
 );
 
-// First cycle: check that position limits are correct
+// When ready: check that directonal enables are correct
+bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('2D mot 1 state ', INT_TO_STRING(eState)));
+bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('2D mot 2 state ', INT_TO_STRING(eState)));
+
 IF NOT bInit THEN
-    AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('2D mot 1 state ', INT_TO_STRING(eState)));
-    AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('2D mot 2 state ', INT_TO_STRING(eState)));
     bInit := TRUE;
 END_IF
 
 IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        bLimAsserted1 AND bLimAsserted2,
+        'Skipped limit assert test',
+    );
     AssertTrue(
         Condition:=fb_Move2D.stEpicsOutput.bDone,
         Message:='Done should be True after move',
@@ -395,6 +414,9 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         bEnableBeamParams:=TRUE,
         bEnablePositionLimits:=TRUE,
     );
+    bInit := FALSE;
+    bLimAsserted1 := FALSE;
+    bLimAsserted2 := FALSE;
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
@@ -410,6 +432,9 @@ END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
     bInit: BOOL;
+    bLimAsserted1: BOOL;
+    bLimAsserted2: BOOL;
+    bLimAsserted3: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
@@ -446,15 +471,20 @@ fb_Move3D(
     sTransitionKey:='trans',
 );
 
-// First cycle: check that position limits are correct
+// When ready: check that directonal enables are correct
+bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('3D mot 1 state ', INT_TO_STRING(eState)));
+bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('3D mot 2 state ', INT_TO_STRING(eState)));
+bLimAsserted3 S= AssertMotionLims(stMotionStage3, astPositionState3, eState, CONCAT('3D mot 3 state ', INT_TO_STRING(eState)));
+
 IF NOT bInit THEN
-    AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('3D mot 1 state ', INT_TO_STRING(eState)));
-    AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('3D mot 2 state ', INT_TO_STRING(eState)));
-    AssertMotionLims(stMotionStage3, astPositionState3, eState, CONCAT('3D mot 3 state ', INT_TO_STRING(eState)));
     bInit := TRUE;
 END_IF
 
 IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        bLimAsserted1 AND bLimAsserted2 AND bLimAsserted3,
+        'Skipped limit assert test',
+    );
     AssertTrue(
         Condition:=fb_Move3D.stEpicsOutput.bDone,
         Message:='Done should be True after move',
@@ -510,6 +540,10 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         bEnableBeamParams:=TRUE,
         bEnablePositionLimits:=TRUE,
     );
+    bInit := FALSE;
+    bLimAsserted1 := FALSE;
+    bLimAsserted2 := FALSE;
+    bLimAsserted3 := FALSE;
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
