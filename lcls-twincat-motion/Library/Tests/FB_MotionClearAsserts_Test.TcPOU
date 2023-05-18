@@ -13,7 +13,7 @@ TestBasic();
     <Method Name="TestBasic" Id="{2219d5cb-d17f-45f4-9105-eb6686b76151}">
       <Declaration><![CDATA[METHOD TestBasic
 VAR
-    nIter: UDINT;
+    nIter: UINT;
 END_VAR
 VAR_INST
     fbClear: FB_MotionClearAsserts;
@@ -25,7 +25,7 @@ END_VAR
         <ST><![CDATA[
 TEST('TestBasic');
 
-FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
+FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
     astDbStateParams[nIter].nRequestAssertionID := 100 + nIter;
     fbArbiter.AddRequest(
         nReqID:=100 + nIter,
@@ -34,7 +34,7 @@ FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
     );
 END_FOR
 
-FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
+FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
     AssertTrue(
         fbArbiter.CheckRequestInPool(100 + nIter),
         CONCAT(CONCAT('State ', UDINT_TO_STRING(nIter)), ' was not in the pool'),
@@ -47,7 +47,7 @@ fbClear(
     bExecute:=TRUE,
 );
 
-FOR nIter := 0 TO INT_TO_UDINT(GeneralConstants.MAX_STATES) DO
+FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
     AssertFalse(
         fbArbiter.CheckRequestInPool(100 + nIter),
         CONCAT(CONCAT('State ', UDINT_TO_STRING(nIter)), ' was not cleared from the pool'),

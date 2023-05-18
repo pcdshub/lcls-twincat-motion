@@ -18,16 +18,16 @@ VAR
     astCorrectStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     astNonsenseStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     astDuplicatedStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
-    nIter: INT;
+    nIter: UINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 // Set up the state arrays that can be used in test methods
 FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
-    astCorrectStates[nIter].stPMPS.sPmpsState := CONCAT('State', INT_TO_STRING(nIter));
-    astNonsenseStates[nIter].stPMPS.sPmpsState := CONCAT('asdf', INT_TO_STRING(nIter));
-    IF INT_TO_BOOL(nIter MOD 2) THEN
+    astCorrectStates[nIter].stPMPS.sPmpsState := CONCAT('State', UINT_TO_STRING(nIter));
+    astNonsenseStates[nIter].stPMPS.sPmpsState := CONCAT('asdf', UINT_TO_STRING(nIter));
+    IF UINT_TO_BOOL(nIter MOD 2) THEN
         astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State0';
     ELSE
         astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State1';
