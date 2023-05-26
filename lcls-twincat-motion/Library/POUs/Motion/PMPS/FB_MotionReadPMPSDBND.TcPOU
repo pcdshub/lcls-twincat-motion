@@ -146,7 +146,7 @@ FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
     FOR nIterState2 := 0 TO nIterState DO
         IF nIterState <> nIterState2 THEN
             IF asLookupKeys[nIterState] = asLookupKeys[nIterState2] THEN
-                // Duplicated key, we need an error and a placeholder in both spots
+                // Duplicated key, we need an error and a flag in both spots
                 bError := TRUE;
                 abStateError[nIterState] := TRUE;
                 abStateError[nIterState2] := TRUE;
@@ -155,7 +155,7 @@ FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
     END_FOR
 END_FOR
 
-// Clear the erroroneous states so they won't be used as lookups
+// Clear the erroneous states so they won't be used as lookups
 IF bError THEN
     FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
         IF abStateError[nIterState] THEN

@@ -5,58 +5,80 @@
 (*
     1-Dimensional position state function block with PMPS.
 
-    You can use this in your project by defining enums as explained in ST_StateEpicsinput and ST_StateEpicsOutput's docstrings.
-    Your "command" enum should write to stEpicsInput.nSetValue and your "readback" enum should read from stEpicsOutput.nGetValue.
+    This allows the user to move a motor among some set of named state positions with PMPS protection.
 
-    This represents one motor moving among named states.
-    When nSetValue changes, a move is made.
-    The motor must already be set up for point-to-point motion for this function block to work properly.
+    To use a states block, you must define enums that match the state options and give them pytmc pragmas.
+    See FB_PositionState1D_InOut for a simple example.
+    These enums must be passed in as the eEnumInput and eEnumOutput VAR_IN_OUT variables.
+    The enum values must match the array indices in astPositionState.
+
+    A move will begin when eEnumInput is set to a nonzero value. eEnumInput will be reset to 0 on every cycle, allowing us
+    to accept a new, possibly conflicting, move request on the next cycle to interrupt the first.
+
+    The motor must already be set up for point-to-point motion via FB_MotionStage, etc., for this function block to work properly.
 
     PMPS handling is done via database lookups by setting sPmpsState on each position state and on
     the transition state input appropriately.
 *)
 VAR_IN_OUT
+    // The motor to move.
     stMotionStage: ST_MotionStage;
+    // All possible position states, including unused/invalid states.
     {attribute 'pytmc' := '
         pv: STATES
         io: io
         expand: %.2d
     '}
     astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
     eEnumInput: INT;
+    // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
     eEnumOutput: INT;
+    // The fast fault output to fault to.
     fbFFHWO: FB_HardwareFFOutput;
+    // The arbiter to request beam conditions from.
     fbArbiter: FB_Arbiter;
 END_VAR
 VAR_INPUT
+    // Set this to TRUE to enable input state moves, or FALSE to disable them.
     bEnableMotion: BOOL;
+    // Set this to TRUE to enable beam parameter checks, or FALSE to disable them.
     bEnableBeamParams: BOOL;
+    // Set this to TRUE to enable position limit checks, or FALSE to disable them.
     bEnablePositionLimits: BOOL;
+    // The name of the device for use in the PMPS DB lookup and diagnostic screens.
     sDeviceName: STRING;
+    // The name of the transition state in the PMPS database.
     sTransitionKey: STRING;
+    // Normal EPICS inputs, gathered into a single struct
     {attribute 'pytmc' := '
         pv: STATES
         io: io
     '}
     stEpicsInput: ST_StateEpicsInput;
+    // PMPS EPICS inputs, gathered into a single struct
     {attribute 'pytmc' := '
         pv: STATES
         io: io
     '}
     stPMPSEpicsInput: ST_StatePMPSEpicsInput;
+    // Set this to TRUE to re-read the loaded database immediately (useful for debug)
     bReadDBNow: BOOL;
 END_VAR
 VAR_OUTPUT
+    // Normal EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := '
         pv: STATES
         io: i
     '}
     stEpicsOutput: ST_StateEpicsOutput;
+    // PMPS EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := '
         pv: STATES
         io: i
     '}
     stPMPSEpicsOutput: ST_StatePMPSEpicsOutput;
+    // The PMPS database lookup associated with the current position state.
     stDbStateParams: ST_DbStateParams;
 END_VAR
 VAR

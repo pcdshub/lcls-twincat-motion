@@ -37,7 +37,7 @@ VAR_OUTPUT
     eStateGet: ENUM_EpicsInOut;
 END_VAR
 VAR
-    // Include the standard fb with no pv attached
+    // Include the standard fb with blank pv pragma
     {attribute 'pytmc' := '
       pv:
       io: io
@@ -85,7 +85,7 @@ fbPositionStatePMPS2D(
     bEnablePositionLimits:=TRUE,
 );
 
-// Send back updates made to the array
+// Send updates made on the array back to the inputs (VAR_IN_OUT) for maximum clarity
 stIn1 := astPositionState1[1];
 stOut1 := astPositionState1[2];
 stIn2 := astPositionState2[1];

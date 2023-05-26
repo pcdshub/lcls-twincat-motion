@@ -4,6 +4,12 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateInternal
 (*
     Routines that must be called on all ST_PositionState
+
+    Currently, this FB:
+    - ensures that a position state has both a proper encoder count
+      and a proper position in engineering units with both of these quantities matching
+    - handles the parameter locking feature, which nominally prevents the user from changing
+      details about a locked state via EPICS
 *)
 VAR_IN_OUT
     stMotionStage: ST_MotionStage;
