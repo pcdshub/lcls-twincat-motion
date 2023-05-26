@@ -9,10 +9,10 @@
 
     To use a states block, you must define enums that match the state options and give them pytmc pragmas.
     See FB_PositionState1D_InOut for a simple example.
-    These enums must be passed in as the eEnumInput and eEnumOutput VAR_IN_OUT variables.
+    These enums must be passed in as the eEnumSet and eEnumGet VAR_IN_OUT variables.
     The enum values must match the array indices in astPositionState.
 
-    A move will begin when eEnumInput is set to a nonzero value. eEnumInput will be reset to 0 on every cycle, allowing us
+    A move will begin when eEnumSet is set to a nonzero value. eEnumSet will be reset to 0 on every cycle, allowing us
     to accept a new, possibly conflicting, move request on the next cycle to interrupt the first.
 
     The motor must already be set up for point-to-point motion via FB_MotionStage, etc., for this function block to work properly.
@@ -30,9 +30,9 @@ VAR_IN_OUT
     '}
     astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
-    eEnumInput: INT;
+    eEnumSet: INT;
     // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
-    eEnumOutput: INT;
+    eEnumGet: INT;
 END_VAR
 VAR_INPUT
     // Set this to TRUE to enable input state moves, or FALSE to disable them.
@@ -68,8 +68,8 @@ fbCore(
     astPositionStateMax:=astPositionStateMax,
     stEpicsInput:=stEpicsInput,
     stEpicsOutput:=stEpicsOutput,
-    eEnumInput:=eEnumInput,
-    eEnumOutput:=eEnumOutput,
+    eEnumSet:=eEnumSet,
+    eEnumGet:=eEnumGet,
     bEnable:=bEnable,
     nActiveMotorCount:=1,
 );
