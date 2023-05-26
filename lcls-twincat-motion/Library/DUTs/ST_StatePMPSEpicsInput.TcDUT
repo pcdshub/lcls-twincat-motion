@@ -6,13 +6,13 @@
     This data structure contains the standard PMPS EPICS connection points for the state movers.
 *)
 STRUCT
-    // TRUE if the arbiter is enabled, FALSE if it is disabled.
+    // User setting: TRUE to enable the arbiter, FALSE to disable it.
     {attribute 'pytmc' := '
         pv: PMPS:ARB:ENABLE
         io: io
     '}
     bArbiterEnabled: BOOL := TRUE;
-    // TRUE if we're in maintenance mode (Fast fault, free motion), FALSE otherwise.
+    // User setting: TRUE to enable maintenance mode (Fast fault, free motion), FALSE to disable it.
     {attribute 'pytmc' := '
         pv: PMPS:MAINT
         io: io

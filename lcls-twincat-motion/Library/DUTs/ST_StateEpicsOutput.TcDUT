@@ -6,25 +6,19 @@
     This data structure contains the standard EPICS connection points for the state movers.
 
     It includes everything except the GET PV, which cannot be included here
-    as it is sourced from enum values unique to the application, and the array PVs,
-    which can be an array of various lengths, so it must be set in the FB that defines the
-    static array size.
+    as it is sourced from enum values unique to the application, and the PMPS PVs, which are
+    gathered in their own data type, ST_StatePMPSEpicsOutput.
 
-    A placeholder for GET is included here, with commented-out pragmas that
-    demonstrate what they would look like if we could include them.
-    This placeholders are actively used by state blocks even though they are not exposed
-    directly to EPICS. You are expected to set your EPICS-linked GET enum
-    using the GET placeholder's output.
+    nGetValue here is actively used by state blocks even though it is not exposed directly
+    to EPICS. It is safe to read this value, but you should avoid modifying it, which may
+    interfere with normal operations of the state function blocks.
+
+    For including your own ENUM input, you should pytmc pragma the PV name to end in "GET",
+    and match the prefix of this FB's "DONE" PV. Then, you can include your enum
+    as the eEnumOutput IN_OUT var and let the EPICS IOC handle it.
 *)
 STRUCT
-    // Get your enum value from this value at the end of the cycle.
-    (*
-    Example of what the pragma would be if we had your enum:
-    {attribute 'pytmc' := '
-        pv: GET
-        io: i
-    '}
-    *)
+    // For internal use only. This holds the current position index as an integer, else it is 0 if we are changing states or not at any particular state.
     nGetValue: UINT;
     // This will be TRUE when we are in an active state move and FALSE otherwise.
     {attribute 'pytmc' := '
