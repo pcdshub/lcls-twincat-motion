@@ -37,6 +37,9 @@ bKnownState := FALSE;
 bMovingState := FALSE;
 
 FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    IF astPositionState[nIter].bValid THEN
+        MOTION_GVL.nMaxStates := MAX(MOTION_GVL.nMaxStates, nIter);
+    END_IF
     IF F_AtPositionState(stMotionStage:=stMotionStage, stPositionState:=astPositionState[nIter]) THEN
         bKnownState := TRUE;
         nPositionIndex := nIter;

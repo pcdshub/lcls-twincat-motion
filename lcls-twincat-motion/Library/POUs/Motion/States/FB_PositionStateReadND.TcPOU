@@ -90,6 +90,7 @@ bKnownState := bKnownState AND nPositionIndex <> 0;
     <Action Name="DoStateReads" Id="{792912d8-47d8-414a-9ac1-60fb2bf5ef46}">
       <Implementation>
         <ST><![CDATA[
+MOTION_GVL.nMaxStateMotorCount := MAX(MOTION_GVL.nMaxStateMotorCount, nActiveMotorCount);
 FOR nIter := 1 TO nActiveMotorCount DO
     afbPositionStateRead[nIter](
         stMotionStage:=astMotionStage[nIter],
