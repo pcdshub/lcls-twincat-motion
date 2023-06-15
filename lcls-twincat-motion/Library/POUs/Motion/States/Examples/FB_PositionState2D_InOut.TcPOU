@@ -19,7 +19,7 @@ VAR_INPUT
     // Define an ENUM for EPICS to use to set a new value. It is expected this will be written to during one cycle, so don't continually apply a value here in the PLC code.
     // It is exposed as an input so we can test it using the PLC.
     {attribute 'pytmc' := '
-      pv: STATES:SET
+      pv: STATE:SET
       io: io
     '}
     eStateSet: ENUM_EpicsInOut;
@@ -27,7 +27,7 @@ END_VAR
 VAR_OUTPUT
     // Define an ENUM for EPICS to use to report the new value.
     {attribute 'pytmc' := '
-      pv: STATES:GET
+      pv: STATE:GET
       io: io
     '}
     eStateGet: ENUM_EpicsInOut;

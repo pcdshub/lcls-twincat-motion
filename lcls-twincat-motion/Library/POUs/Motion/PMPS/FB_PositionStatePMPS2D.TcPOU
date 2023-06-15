@@ -27,14 +27,14 @@ VAR_IN_OUT
     stMotionStage2: ST_MotionStage;
     // All possible position states for motor 1, including unused/invalid states.
     {attribute 'pytmc' := '
-        pv: STATES:M1
+        pv: STATE:M1
         io: io
         expand: :%.2d
     '}
     astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // All possible position states for motor 2, including unused/invalid states.
     {attribute 'pytmc' := '
-        pv: STATES:M2
+        pv: STATE:M2
         io: io
         expand: :%.2d
     '}
@@ -61,13 +61,13 @@ VAR_INPUT
     sTransitionKey: STRING;
     // Normal EPICS inputs, gathered into a single struct
     {attribute 'pytmc' := '
-        pv: STATES
+        pv: STATE
         io: io
     '}
     // PMPS EPICS inputs, gathered into a single struct
     stEpicsInput: ST_StateEpicsInput;
     {attribute 'pytmc' := '
-        pv: STATES
+        pv: STATE
         io: io
     '}
     stPMPSEpicsInput: ST_StatePMPSEpicsInput;
@@ -77,13 +77,13 @@ END_VAR
 VAR_OUTPUT
     // Normal EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := '
-        pv: STATES
+        pv: STATE
         io: i
     '}
     stEpicsOutput: ST_StateEpicsOutput;
     // PMPS EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := '
-        pv: STATES
+        pv: STATE
         io: i
     '}
     stPMPSEpicsOutput: ST_StatePMPSEpicsOutput;
