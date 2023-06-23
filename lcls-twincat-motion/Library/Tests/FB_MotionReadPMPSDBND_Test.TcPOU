@@ -38,8 +38,54 @@ END_FOR
 TestSolo();
 TestTrio();
 TestNonsense();
-TestDupe();]]></ST>
+TestDupe();
+TestBackfill();
+]]></ST>
     </Implementation>
+    <Method Name="TestBackfill" Id="{6760dcd8-2b9b-46e0-8c98-6abb91b3d805}">
+      <Declaration><![CDATA[METHOD TestBackfill
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    stDefaultBP: ST_DbStateParams;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBackfill');
+
+astPositionState[1] := astCorrectStates;
+// Pick a few parameters to drop in
+astPositionState[1][3].stPMPS.stBeamParams.nRate := 999;
+astPositionState[2][1].stPMPS.nRequestAssertionID := 777;
+astPositionState[3][2].stPMPS.bBeamParamsLoaded := NOT stDefaultBP.bBeamParamsLoaded;
+fbRead(
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:='State0',
+    sDeviceName:='TestBackfill',
+);
+// Everything should be cleared to the defaults: the library should let us know what params got loaded (none)
+AssertEquals_UDINT(
+    Expected:=stDefaultBP.stBeamParams.nRate,
+    Actual:=astPositionState[1][3].stPMPS.stBeamParams.nRate,
+    Message:='nRate of motor 1 state 3 not backfilled',
+);
+AssertEquals_UDINT(
+    Expected:=stDefaultBP.nRequestAssertionID,
+    Actual:=astPositionState[2][1].stPMPS.nRequestAssertionID,
+    Message:='nRequestAssertionID of motor 2 state 3 not backfilled',
+);
+AssertEquals_BOOL(
+    Expected:=stDefaultBP.bBeamParamsLoaded,
+    Actual:=astPositionState[3][2].stPMPS.bBeamParamsLoaded,
+    Message:='bBeamParamsLoaded of motor 3 state 2 not backfilled',
+);
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="TestDupe" Id="{4c361cc1-2632-4b23-99ee-f0de0a75607c}">
       <Declaration><![CDATA[METHOD TestDupe
 VAR_INST

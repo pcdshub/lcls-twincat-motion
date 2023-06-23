@@ -55,14 +55,34 @@ VAR
     asLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
     asPrevLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
     bNewKeys: BOOL;
+    sTempBackfill: STRING;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 SelectLookupKeys();
 ReadDatabase();
 RunFastFaults();
+BackfillInfo();
 ]]></ST>
     </Implementation>
+    <Action Name="BackfillInfo" Id="{da77ffc7-a50e-48a0-9b32-806e7f647a44}">
+      <Implementation>
+        <ST><![CDATA[
+// Put the results of the PMPS lookup back to the motion states
+// This is purely for debugging purposes, as only the astDbStateParams output is used by the libraries.
+
+// Copy everything except for the lookup key: avoid clobbering the user's original keys
+// Do it this way instead of one element at a time to be forwards-compatible with any future additions to the db struct
+FOR nIterState := 1 TO GeneralConstants.MAX_STATES DO
+    FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
+        sTempBackfill := astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState;
+        astPositionState[nIterMotor][nIterState].stPMPS := astDbStateParams[nIterState];
+        astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState := sTempBackfill;
+    END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
     <Action Name="ReadDatabase" Id="{2d32dd1e-c552-499a-8dca-6b4b0541920e}">
       <Implementation>
         <ST><![CDATA[
