@@ -220,7 +220,7 @@ VAR_INST
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST(CONCAT('Test1D_state', INT_TO_STRING(eState)));
+TEST(CONCAT('Test1D_state', UINT_TO_STRING(eState)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
@@ -250,7 +250,7 @@ fb_Move1D(
 );
 
 // When ready: check that directonal enables are correct
-bLimAsserted S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('1D mot 1 state ', INT_TO_STRING(eState)));
+bLimAsserted S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('1D mot 1 state ', UINT_TO_STRING(eState)));
 
 
 IF NOT bInit THEN
@@ -274,7 +274,7 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         Condition:=fb_Move1D.stEpicsOutput.bError,
         Message:='Error should be False after move',
     );
-    AssertEquals_INT(
+    AssertEquals_UINT(
         Expected:=eState,
         Actual:=eGetPos,
         Message:='Did not get to the input state',
@@ -323,7 +323,7 @@ VAR_INST
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST(CONCAT('Test2D_state', INT_TO_STRING(eState)));
+TEST(CONCAT('Test2D_state', UINT_TO_STRING(eState)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
@@ -355,8 +355,8 @@ fb_Move2D(
 );
 
 // When ready: check that directonal enables are correct
-bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('2D mot 1 state ', INT_TO_STRING(eState)));
-bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('2D mot 2 state ', INT_TO_STRING(eState)));
+bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('2D mot 1 state ', UINT_TO_STRING(eState)));
+bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('2D mot 2 state ', UINT_TO_STRING(eState)));
 
 IF NOT bInit THEN
     bInit := TRUE;
@@ -379,7 +379,7 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         Condition:=fb_Move2D.stEpicsOutput.bError,
         Message:='Error should be False after move',
     );
-    AssertEquals_INT(
+    AssertEquals_UINT(
         Expected:=eState,
         Actual:=eGetPos,
         Message:='Did not get to the input state',
@@ -438,7 +438,7 @@ VAR_INST
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[
-TEST(CONCAT('Test3D_state', INT_TO_STRING(eState)));
+TEST(CONCAT('Test3D_state', UINT_TO_STRING(eState)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
@@ -472,9 +472,9 @@ fb_Move3D(
 );
 
 // When ready: check that directonal enables are correct
-bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('3D mot 1 state ', INT_TO_STRING(eState)));
-bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('3D mot 2 state ', INT_TO_STRING(eState)));
-bLimAsserted3 S= AssertMotionLims(stMotionStage3, astPositionState3, eState, CONCAT('3D mot 3 state ', INT_TO_STRING(eState)));
+bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('3D mot 1 state ', UINT_TO_STRING(eState)));
+bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('3D mot 2 state ', UINT_TO_STRING(eState)));
+bLimAsserted3 S= AssertMotionLims(stMotionStage3, astPositionState3, eState, CONCAT('3D mot 3 state ', UINT_TO_STRING(eState)));
 
 IF NOT bInit THEN
     bInit := TRUE;
@@ -497,7 +497,7 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         Condition:=fb_Move3D.stEpicsOutput.bError,
         Message:='Error should be False after move',
     );
-    AssertEquals_INT(
+    AssertEquals_UINT(
         Expected:=eState,
         Actual:=eGetPos,
         Message:='Did not get to the input state',

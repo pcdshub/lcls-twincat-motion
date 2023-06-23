@@ -12,7 +12,7 @@
     These enums must be passed in as the eEnumSet and eEnumGet VAR_IN_OUT variables.
     The enum values must match the array indices in astPositionState1, astPositionState2, and astPositionState3.
 
-    A move will begin when eEnumSet is set to a nonzero value. eEnumSet will be reset to 0 on every cycle, allowing us
+    A move will begin when eEnumSet is set to a positive, nonzero value. eEnumSet will be reset to 0 on every cycle, allowing us
     to accept a new, possibly conflicting, move request on the next cycle to interrupt the first.
 
     The motors must already be set up for point-to-point motion via FB_MotionStage, etc., for this function block to work properly.
@@ -49,9 +49,9 @@ VAR_IN_OUT
     '}
     astPositionState3: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
-    eEnumSet: INT;
+    eEnumSet: UINT;
     // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
-    eEnumGet: INT;
+    eEnumGet: UINT;
     // The fast fault output to fault to.
     fbFFHWO: FB_HardwareFFOutput;
     // The arbiter to request beam conditions from.

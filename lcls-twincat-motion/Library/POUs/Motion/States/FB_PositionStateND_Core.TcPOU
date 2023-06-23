@@ -24,9 +24,9 @@ VAR_IN_OUT
     // Normal EPICS outputs, gathered into a single struct
     stEpicsOutput: ST_StateEpicsOutput;
     // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
-    eEnumSet: INT;
+    eEnumSet: UINT;
     // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
-    eEnumGet: INT;
+    eEnumGet: UINT;
 END_VAR
 VAR_INPUT
     // Set this to TRUE to enable input state moves, or FALSE to disable them.
@@ -49,7 +49,7 @@ VAR
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-stEpicsInput.nSetValue := INT_TO_UINT(eEnumSet);
+stEpicsInput.nSetValue := eEnumSet;
 
 fbRead(
     astMotionStage:=astMotionStageMax,
@@ -97,8 +97,8 @@ fbMove(
     bDone=>stEpicsOutput.bDone,
 );
 
-eEnumSet := UINT_TO_INT(stEpicsInput.nSetValue);
-eEnumGet := UINT_TO_INT(stEpicsOutput.nGetValue);
+eEnumSet := stEpicsInput.nSetValue;
+eEnumGet := stEpicsOutput.nGetValue;
 ]]></ST>
     </Implementation>
   </POU>
