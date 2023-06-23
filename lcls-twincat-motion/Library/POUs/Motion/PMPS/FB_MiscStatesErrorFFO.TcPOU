@@ -64,7 +64,7 @@ ffBeamParamsOk(
     i_xAutoReset:=TRUE,
     i_DevName:=sDeviceName,
     i_Desc:='Beam parameter mismatch',
-    i_TypeCode:=16#1000,
+    i_TypeCode:=ENUM_MotionFFType.BP_MISMATCH,
     io_fbFFHWO:=fbFFHWO);
 
 CASE PMPS_GVL.stCurrentBeamParameters.nMachineMode OF
@@ -81,7 +81,7 @@ ffZeroRate(
     i_xAutoReset := TRUE,
     i_DevName := sDeviceName,
     i_Desc := 'Device requesting zero rate',
-    i_TypeCode := 16#1001,
+    i_TypeCode := ENUM_MotionFFType.ZERO_RATE,
     io_fbFFHWO := fbFFHWO,
 );
 
@@ -90,7 +90,7 @@ ffUnknown(
     i_xAutoReset := TRUE,
     i_DevName := sDeviceName,
     i_Desc := 'Unknown position between moves',
-    i_TypeCode := 16#1005,
+    i_TypeCode := ENUM_MotionFFType.NOT_A_STATE,
     io_fbFFHWO := fbFFHWO,
 );
 
@@ -115,7 +115,7 @@ ffDebounce(
     i_xAutoReset := FALSE,
     i_DevName := sDeviceName,
     i_Desc := 'Tripped beam parameter mismatch off/on too many times, hold off',
-    i_TypeCode := 16#1007,
+    i_TypeCode := ENUM_MotionFFType.TOO_MANY_TRIPS,
     io_fbFFHWO := fbFFHWO,
 );
 ffDebounce.i_xReset R= bFirstCycle;
