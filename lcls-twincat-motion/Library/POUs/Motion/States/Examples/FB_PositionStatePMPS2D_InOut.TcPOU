@@ -32,16 +32,13 @@ VAR_OUTPUT
     // Define an ENUM for EPICS to use to report the new value.
     {attribute 'pytmc' := '
       pv: STATE:GET
-      io: io
+      io: i
     '}
     eStateGet: ENUM_EpicsInOut;
 END_VAR
 VAR
     // Include the standard fb with blank pv pragma
-    {attribute 'pytmc' := '
-      pv:
-      io: io
-    '}
+    {attribute 'pytmc' := 'pv:'}
     fbPositionStatePMPS2D: FB_PositionStatePMPS2D;
     // The standard fb expects a full array of position states per motor
     astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;

@@ -166,9 +166,7 @@ VAR
       io: i
     '}
     eStateGet: ENUM_EpicsInOut;
-    {attribute 'pytmc' := '
-      pv: MY:PREFIX
-    '}
+    {attribute 'pytmc' := 'pv: MY:PREFIX'}
     fbPositionState1D: FB_PositionState1D;
 END_VAR
 ```
