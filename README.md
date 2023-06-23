@@ -84,7 +84,7 @@ This library contains support for user moves among named position states. These 
 
 This includes support for EPICS moves between states. The function block will begin a move when the user caputs a new enum value, cancelling a previous move if one was in process.
 
-This also includes support for PMPS using https://github.com/pcdshub/lcls-twincat-motion.
+This also includes support for PMPS using [lcls-twincat-pmps](https://github.com/pcdshub/lcls-twincat-pmps).
 
 ### States Setup
 
@@ -92,11 +92,11 @@ Before doing any states setup, make sure your motor is set up properly using `ST
 
 #### Picking the Right function block
 
-Start by picking the function block that most closely matches your use case (number motors, PMPS or no PMPS). E.g. if you have two motors and you need PMPS, pick `FB_PositionStatePMPS2D`.
+Start by picking the function block that most closely matches your use case (number of motors, PMPS or no PMPS). E.g. if you have two motors and you need PMPS, pick `FB_PositionStatePMPS2D`.
 
-- `FB_PositionStatePMPS1D`
-- `FB_PositionStatePMPS2D`
-- `FB_PositionStatePMPS3D`
+- [`FB_PositionState1D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionState1D.TcPOU)
+- `FB_PositionState2D`
+- `FB_PositionState3D`
 - `FB_PositionStatePMPS1D`
 - `FB_PositionStatePMPS2D`
 - `FB_PositionStatePMPS3D`
@@ -116,7 +116,7 @@ If you aren't using any multidimensional states, feel free to reduce the value o
 
 If you aren't sure about these, leave them alone for now, the defaults are sensible. Later, you can check the values of `MOTION_GVL.nMaxStateMotorCount` and `MOTION_GVL.nMaxStates` if you want to know how many motors per state and how many states your PLC is actually using.
 
-See https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/3470837515.html&id= for information on parameter lists and how to set their values in your project.
+See [here](https://infosys.beckhoff.com/english.php?content=../content/1033/tc3_plc_intro/3470837515.html&id=) for information on parameter lists and how to set their values in your project.
 
 #### Configure Each State Position
 
@@ -133,7 +133,7 @@ Note that, for ND states, you'll match the states by their array position. That 
 | `nEncoderCount` | `UDINT` | The physical position of the state in encoder counts. Either provide `fPosition` or `nEncoderCount`, but not both. | `0` |
 | `bUseRawCounts` | `BOOL` | Set this to `TRUE` to use `nEncoderCount` as the source of truth for positions, instead of the default `fPosition`. | `FALSE` |
 | `bValid` | `BOOL` | Set this to `TRUE` to prove to the PLC that this is a real state. This starts as `FALSE` to make sure that we don't ever consider uninitialized states in any of the function blocks. | `FALSE` |
-| `bMoveOk` | `BOOL` | This must be set to `TRUE` to allow moves to this state. You can set this to `FALSE` during operations to temporarily prevent unsafe moves. For devices like common components this is often set in https://github.com/lcls-twincat-common-components instead of in the project itself. | `FALSE` |
+| `bMoveOk` | `BOOL` | This must be set to `TRUE` to allow moves to this state. You can set this to `FALSE` during operations to temporarily prevent unsafe moves. For devices like common components this is often set in [lcls-twincat-common-components](https://github.com/lcls-twincat-common-components) instead of in the project itself. | `FALSE` |
 | `fDelta` | `LREAL` | The maximum allowed distance between the motor's position in engineering units and the set position where we are still considered to be "at" the state. | `0` |
 | `fVelocity` | `LREAL` | The speed we move toward this state at. | `0` |
 | `fAccel` | `LREAL` | Optional: the acceleration to use for moves to this state | `0` |
@@ -146,9 +146,9 @@ You should leave the unused states uninitialized if you have fewer states than `
 
 #### Enum Setup and PyTMC
 
-It is expected, though not required, to supply an enum to use to control the setpoint and readback as an interface to the EPICS MBBI/MBBO. You need to instantiate one enum for the readback and one enum for the setpoint. This enum must have 0 be the Unknown state and states 1 onward match the state array positions from the earlier steps. In some context, this is what is used to name each state.
+It is expected, though not required, to supply an enum to use to control the setpoint and readback as an interface to the EPICS MBBI/MBBO. You need to instantiate one enum for the readback and one enum for the setpoint. It is *required* to make 0 be the `Unknown` state in this enum and have states 1 onward match the state array positions from the earlier steps. In some contexts, this is what is used to name each state.
 
-For an example valid enum, see https://github.com/pcdshub/lcls-twincat-motion/blob/master/lcls-twincat-motion/Library/DUTs/ENUM_EpicsInOut.TcDUT.
+For an example valid enum, see [ENUM_EpicsInOut.TcDUT](lcls-twincat-motion/Library/DUTs/ENUM_EpicsInOut.TcDUT).
 
 You should avoid writing to this enum from PLC code, and if you do write to this enum from PLC code make sure you only write to it for a single cycle to emulate the EPICS behavior.
 
@@ -168,7 +168,6 @@ VAR
     eStateGet: ENUM_EpicsInOut;
     {attribute 'pytmc' := '
       pv: MY:PREFIX
-      io: io
     '}
     fbPositionState1D: FB_PositionState1D;
 END_VAR
