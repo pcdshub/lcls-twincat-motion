@@ -2,8 +2,18 @@
 <TcPlcObject Version="1.1.0.1">
   <GVL Name="MotionConstants" Id="{82935be4-17a5-42af-bb80-6817aae62409}" ParameterList="True">
     <Declaration><![CDATA[{attribute 'qualified_only'}
+(*
+    Global Configurable Motion Constants
+
+    These are reconfigurable at the project level.
+    When reconfigured they are set prior to compilation and cannot be changed at runtime.
+*)
 VAR_GLOBAL CONSTANT
-    // Arbitary cap on multidimensional states to simplify statements for the compiler.
+    (*
+    Arbitary cap on multidimensional states to simplify statements for the compiler.
+    This is reconfigurable at the project level and should be set to the highest number of motors used in a states block.
+    If you are not sure how many motors are used per state block, check MOTION_GVL.nMaxStateMotorCount
+    *)
     MAX_STATE_MOTORS: UINT := 3;
 END_VAR]]></Declaration>
   </GVL>
