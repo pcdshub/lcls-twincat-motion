@@ -95,11 +95,11 @@ Before doing any states setup, make sure your motor is set up properly using `ST
 Start by picking the function block that most closely matches your use case (number of motors, PMPS or no PMPS). E.g. if you have two motors and you need PMPS, pick `FB_PositionStatePMPS2D`.
 
 - [`FB_PositionState1D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionState1D.TcPOU)
-- `FB_PositionState2D`
-- `FB_PositionState3D`
-- `FB_PositionStatePMPS1D`
-- `FB_PositionStatePMPS2D`
-- `FB_PositionStatePMPS3D`
+- [`FB_PositionState2D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionState2D.TcPOU)
+- [`FB_PositionState3D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionState3D.TcPOU)
+- [`FB_PositionStatePMPS1D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionStatePMPS1D.TcPOU)
+- [`FB_PositionStatePMPS2D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionStatePMPS2D.TcPOU)
+- [`FB_PositionStatePMPS3D`](lcls-twincat-motion/Library/POUs/Motion/States/FB_PositionStatePMPS3D.TcPOU)
 
 In addition, if you only have `IN` and `OUT` states, consider using one of the example function blocks, which have slighly simplified interfaces and can bypass some of the setup steps:
 
@@ -163,7 +163,7 @@ VAR
     eStateSet: ENUM_EpicsInOut;
     {attribute 'pytmc' := '
       pv: MY:PREFIX:STATES:GET
-      io: io
+      io: i
     '}
     eStateGet: ENUM_EpicsInOut;
     {attribute 'pytmc' := '
