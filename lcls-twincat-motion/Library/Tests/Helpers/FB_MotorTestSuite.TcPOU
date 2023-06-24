@@ -1,19 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <POU Name="MotorTestSuite" Id="{62209a82-679e-47f8-9b5a-ad180dcad4e7}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK MotorTestSuite EXTENDS TcUnit.FB_TestSuite
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
-VAR
-END_VAR
+  <POU Name="FB_MotorTestSuite" Id="{62209a82-679e-47f8-9b5a-ad180dcad4e7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotorTestSuite EXTENDS TcUnit.FB_TestSuite
+(*
+    Base class for motion tests.
+
+    Contains some helper methods that would otherwise need to be instantiated many times,
+    but in this form can be accessed quickly and succinctly in the test suite.
+*)
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="SetEnables" Id="{9a689027-7edb-4bec-9a75-8e1dc053d941}">
       <Declaration><![CDATA[METHOD SetEnables
+(*
+    Set a motion stage's enables such that it is fully allowed to move.
+*)
 VAR_IN_OUT
     stMotionStage: ST_MotionStage;
 END_VAR
@@ -27,6 +30,9 @@ stMotionStage.bPowerSelf := TRUE;]]></ST>
     </Method>
     <Method Name="SetEnablesPMPS" Id="{29072525-240d-4c4a-8b5e-95863d0109d6}">
       <Declaration><![CDATA[METHOD SetEnablesPMPS
+(*
+    Set a motion stage's enables such that only PMPS would be preventing a move.
+*)
 VAR_IN_OUT
     stMotionStage: ST_MotionStage;
 END_VAR
@@ -40,6 +46,9 @@ stMotionStage.bPowerSelf := FALSE;
     </Method>
     <Method Name="SetGoodState" Id="{b3c6256b-7995-4ca9-aaf3-c136e49e66c8}">
       <Declaration><![CDATA[METHOD SetGoodState
+(*
+    Mark a state as valid and ready to use.
+*)
 VAR_IN_OUT
     stPositionState: ST_PositionState;
 END_VAR
