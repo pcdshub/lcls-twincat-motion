@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateND_Test" Id="{98dca049-357b-4ac3-80df-9bfcb3a54914}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateND_Test EXTENDS FB_MotorTestSuite
+(*
+    Sanity checks for the following:
+    - FB_PositionState1D
+    - FB_PositionState2D
+    - FB_PositionState3D
+    The internals have already been tested, but we need to make sure that
+    they've been put together at least somewhat sensibly.
+    This FB will simply use each FB to move and check the results.
+*)
+VAR
+    stMotionStage1: ST_MotionStage;
+    stMotionStage2: ST_MotionStage;
+    stMotionStage3: ST_MotionStage;
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState3: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF ARRAY[1..3] OF FB_PositionStateInternal;
+    afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
+
+    fb_Move1D: FB_PositionState1D;
+    fb_Move2D: FB_PositionState2D;
+    fb_Move3D: FB_PositionState3D;
+
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
+    nIter: DINT;
+    bStatesReady: BOOL;
+
+    eSetPos: ENUM_TestStates;
+    eGetPos: ENUM_TestStates;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+bStatesReady := TRUE;
+FOR nIter := 1 TO 3 DO;
+    astPositionState1[nIter].fPosition := nIter;
+    astPositionState1[nIter].fDelta := 1;
+    astPositionState1[nIter].fVelocity := 100;
+    astPositionState2[nIter].fPosition := 10 + nIter;
+    astPositionState2[nIter].fDelta := 1;
+    astPositionState2[nIter].fVelocity := 100;
+    astPositionState3[nIter].fPosition := 20 + nIter;
+    astPositionState3[nIter].fDelta := 1;
+    astPositionState3[nIter].fVelocity := 100;
+    afbInternal[nIter][1](
+        stMotionStage:=stMotionStage1,
+        stPositionState:=astPositionState1[nIter],
+    );
+    afbInternal[nIter][2](
+        stMotionStage:=stMotionStage2,
+        stPositionState:=astPositionState2[nIter],
+    );
+    afbInternal[nIter][3](
+        stMotionStage:=stMotionStage3,
+        stPositionState:=astPositionState3[nIter],
+    );
+    SetGoodState(astPositionState1[nIter]);
+    SetGoodState(astPositionState2[nIter]);
+    SetGoodState(astPositionState3[nIter]);
+    bStatesReady := bStatesReady AND astPositionState1[nIter].bUpdated;
+    bStatesReady := bStatesReady AND astPositionState2[nIter].bUpdated;
+    bStatesReady := bStatesReady AND astPositionState3[nIter].bUpdated;
+END_FOR
+SetEnables(stMotionStage1);
+SetEnables(stMotionStage2);
+SetEnables(stMotionStage3);
+afbMotionStage[1](stMotionStage:=stMotionStage1);
+afbMotionStage[2](stMotionStage:=stMotionStage2);
+afbMotionStage[3](stMotionStage:=stMotionStage3);
+
+IF bStatesReady AND nTestCounter = 0 THEN
+    // Don't run any tests until the states are ready
+    nTestCounter := 1;
+    // Run all the motion FBs for one cycle to warm them up
+    fb_Move1D(
+        stMotionStage:=stMotionStage1,
+        astPositionState:=astPositionState1,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+    fb_Move2D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        astPositionState1:=astPositionState1,
+        astPositionState2:=astPositionState2,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+    fb_Move3D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        stMotionStage3:=stMotionStage3,
+        astPositionState1:=astPositionState1,
+        astPositionState2:=astPositionState2,
+        astPositionState3:=astPositionState3,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+END_IF
+
+Test1D(1, ENUM_TestStates.OUT);
+Test1D(2, ENUM_TestStates.TARGET1);
+Test1D(3, ENUM_TestStates.TARGET2);
+Test2D(4, ENUM_TestStates.OUT);
+Test2D(5, ENUM_TestStates.TARGET1);
+Test2D(6, ENUM_TestStates.TARGET2);
+Test3D(7, ENUM_TestStates.OUT);
+Test3D(8, ENUM_TestStates.TARGET1);
+Test3D(9, ENUM_TestStates.TARGET2);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    tonTimer(IN:=FALSE);
+END_IF
+// Use this timer to time out any tests that stall
+tonTimer(
+    IN:=bStatesReady,
+    PT:=T#5s,
+);
+]]></ST>
+    </Implementation>
+    <Method Name="Test1D" Id="{1ad9fa88-2d5f-4a1e-8b3b-83975d1536fe}">
+      <Declaration><![CDATA[METHOD Test1D
+VAR_INPUT
+    nTestID: UINT;
+    nState: ENUM_TestStates;
+END_VAR
+VAR_INST
+    nLocalInit: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test1D_state', DINT_TO_STRING(nState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+IF NOT nLocalInit THEN
+    eSetPos := nState;
+    nLocalInit := TRUE;
+END_IF
+
+fb_Move1D(
+    stMotionStage:=stMotionStage1,
+    astPositionState:=astPositionState1,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    bEnable:=TRUE,
+);
+IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_DINT(
+        Expected:=nState,
+        Actual:=eGetPos,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[nState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    fb_Move1D.stEpicsInput.bReset := TRUE;
+    fb_Move1D(
+        stMotionStage:=stMotionStage1,
+        astPositionState:=astPositionState1,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    nLocalInit := FALSE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test2D" Id="{88a970d0-4c3a-44db-b8b7-ce387f538563}">
+      <Declaration><![CDATA[METHOD Test2D
+VAR_INPUT
+    nTestID: UINT;
+    nState: ENUM_TestStates;
+END_VAR
+VAR_INST
+    nLocalInit: BOOL;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test2D_state', DINT_TO_STRING(nState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+IF NOT nLocalInit THEN
+    eSetPos := nState;
+    nLocalInit := TRUE;
+END_IF
+
+fb_Move2D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    astPositionState1:=astPositionState1,
+    astPositionState2:=astPositionState2,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    bEnable:=TRUE,
+);
+IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_DINT(
+        Expected:=nState,
+        Actual:=eGetPos,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[nState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position for stage 1',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState2[nState].fPosition,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position for stage 2',
+    );
+    fb_Move2D.stEpicsInput.bReset := TRUE;
+    fb_Move2D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        astPositionState1:=astPositionState1,
+        astPositionState2:=astPositionState2,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    nLocalInit := FALSE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test3D" Id="{4c1ee14f-f08f-4f0e-b71a-a892b64f5701}">
+      <Declaration><![CDATA[METHOD Test3D
+VAR_INPUT
+    nTestID: UINT;
+    nState: ENUM_TestStates;
+END_VAR
+VAR_INST
+    nLocalInit: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test3D_state', DINT_TO_STRING(nState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+IF NOT nLocalInit THEN
+    eSetPos := nState;
+    nLocalInit := TRUE;
+END_IF
+
+fb_Move3D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    stMotionStage3:=stMotionStage3,
+    astPositionState1:=astPositionState1,
+    astPositionState2:=astPositionState2,
+    astPositionState3:=astPositionState3,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    bEnable:=TRUE,
+);
+IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_DINT(
+        Expected:=nState,
+        Actual:=eGetPos,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[nState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position for stage 1',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState2[nState].fPosition,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position for stage 2',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState3[nState].fPosition,
+        Actual:=stMotionStage3.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position for stage 3',
+    );
+    fb_Move3D.stEpicsInput.bReset := TRUE;
+    fb_Move3D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        stMotionStage3:=stMotionStage3,
+        astPositionState1:=astPositionState1,
+        astPositionState2:=astPositionState2,
+        astPositionState3:=astPositionState3,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    nLocalInit := FALSE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_StatesInputHandler" Id="{048f7518-d863-40bd-9997-a5f33bbe686c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatesInputHandler
+(*
+    Handle the state enum EPICS input for any of the ND state function blocks.
+
+    The desired behavior is:
+    - Trigger a move to a new state when the enum PV is written to
+    - Interrupt an ongoing move with a new one if the enum changes mid-move
+    - Stop the move if the enum is set to an invalid value
+*)
+VAR_IN_OUT
+    // The user's inputs from EPICS. This is an IN_OUT variable because we will write values back to this to help us detect when the same value is re-caput
+    stUserInput: ST_StateEpicsInput;
+END_VAR
+VAR_INPUT
+    // The bBusy boolean from the motion FB
+    bMoveBusy: BOOL;
+    // The starting state number to seed nCurrGoal with
+    nInitGoal: UINT;
+END_VAR
+VAR_OUTPUT
+    // The goal index to input to the motion FB. This will be clamped to the range 0..GeneralConstants.MAX_STATES
+    nCurrGoal: UINT;
+    // The bExecute boolean to input to the motion FB
+    bExecMove: BOOL;
+    // The bReset boolean to input to the motion FB
+    bResetMove: BOOL;
+END_VAR
+VAR
+    nState: UINT;
+    bInit: BOOL;
+    nQueuedGoal: UINT;
+    bNewMove: BOOL;
+END_VAR
+VAR CONSTANT
+    IDLE: UINT := 0;
+    GOING: UINT := 1;
+    WAIT_STOP: UINT := 2;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF NOT bInit THEN
+    bInit := TRUE;
+    stUserInput.nSetValue := 0;
+    nCurrGoal := nInitGoal;
+END_IF
+
+bResetMove := stUserInput.bReset;
+
+IF stUserInput.nSetValue <> 0 THEN
+    nQueuedGoal := stUserInput.nSetValue;
+    bNewMove := TRUE;
+END_IF
+
+CASE nState OF
+    IDLE:
+        IF bNewMove AND nQueuedGoal > 0 AND nQueuedGoal <= GeneralConstants.MAX_STATES THEN
+            // New request, currently idle -> ask for a move
+            nCurrGoal := nQueuedGoal;
+            bExecMove := TRUE;
+            bNewMove := FALSE;
+        ELSIF bMoveBusy THEN
+            // We're moving but used to be idle -> switch to GOING
+            nState := GOING;
+        END_IF
+    GOING:
+        IF bNewMove THEN
+            // New request, currently moving -> ask for a stop
+            nState := WAIT_STOP;
+            bExecMove := FALSE;
+        ELSIF NOT bMoveBusy THEN
+            nState := IDLE;
+            nQueuedGoal := 0;
+            bExecMove := FALSE;
+        END_IF
+    WAIT_STOP:
+        IF NOT bMoveBusy THEN
+            nState := IDLE;
+        END_IF
+END_CASE
+
+// Help us detect if there is an EPICS put before the next cycle
+stUserInput.nSetValue := 0;
+stUserInput.bReset := FALSE;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

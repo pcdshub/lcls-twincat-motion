@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_StatePMPSEnables" Id="{66c1f154-c1c4-41f1-978a-cd2e468c0ec0}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSEnables
+(*
+    Function block to set virtual limit enables using MC_POWER for single dimensional state movers.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    Each motor has a virtual "allowed" range of motion based on its goal position.
+    When not at the goal, the motor can only move toward the goal.
+    When at the goal, the motor can move within the position's delta.
+
+    With no goals or other strange states, the motor is permitted to move in either direction
+    to help restore it to a known position.
+*)
+VAR_IN_OUT
+    // The motor with a position state.
+    stMotionStage: ST_MotionStage;
+    // All possible position states for this motor.
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // Hardware output to fault to if there is a problem.
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // If TRUE, do the limits as normal. If FALSE, allow all moves regardless of the limits defined here.
+    bEnable: BOOL;
+    // The state that the motor is moving to.
+    nGoalStateIndex: UINT;
+    // The overal PMPS FB state
+    eStatePMPSStatus: ENUM_StatePMPSStatus;
+    // Connect to the BPTM
+    bTransitionAuthorized: BOOL;
+END_VAR
+VAR_OUTPUT
+    // The enable state we send to MC_Power. This is a pass-through from stMotionStage.
+    bEnabled: BOOL;
+    // The forward enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
+    bForwardEnabled: BOOL;
+    // The backwards enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
+    bBackwardEnabled: BOOL;
+    // TRUE if there is a valid goal position and FALSE otherwise. This makes a fast fault if FALSE.
+    bValidGoal: BOOL;
+END_VAR
+VAR
+    mc_power: MC_POWER;
+    nPrevStateIndex: DINT;
+    fLowerPos: LREAL;
+    fUpperPos: LREAL;
+    ffNoGoal: FB_FastFault;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+GetBounds();
+SetEnables();
+ApplyEnables();
+RunFastFaults();
+]]></ST>
+    </Implementation>
+    <Action Name="ApplyEnables" Id="{b171457a-f455-4e4b-9f24-4b9baf95384f}">
+      <Implementation>
+        <ST><![CDATA[
+(*
+    This action takes runs MC_POWER appropriately
+    given the motor's own enables and the results of this FB's checks.
+*)
+bEnabled := stMotionStage.bAllEnable;
+bForwardEnabled := bForwardEnabled AND stMotionStage.bAllForwardEnable;
+bBackwardEnabled := bBackwardEnabled AND stMotionStage.bAllBackwardEnable;
+
+CASE eStatePMPSStatus OF
+    ENUM_StatePMPSStatus.UNKNOWN:
+        stMotionStage.bSafetyReady := FALSE;
+    ENUM_StatePMPSStatus.TRANSITION:
+        stMotionStage.bSafetyReady := bTransitionAuthorized;
+        bForwardEnabled R= NOT bTransitionAuthorized;
+        bBackwardEnabled R= NOT bTransitionAuthorized;
+    ENUM_StatePMPSStatus.AT_STATE:
+        stMotionStage.bSafetyReady := stMotionStage.bExecute;
+    ENUM_StatePMPSStatus.DISABLED:
+        stMotionStage.bSafetyReady := TRUE;
+END_CASE
+
+mc_power(
+    Axis:=stMotionStage.Axis,
+    Enable:=bEnabled,
+    Enable_Positive:=bForwardEnabled,
+    Enable_Negative:=bBackwardEnabled,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="GetBounds" Id="{1048d160-ec31-4122-a63c-ee8d13aa778a}">
+      <Implementation>
+        <ST><![CDATA[
+(*
+    This action sets fLowerPos and fUpperPos based on our goal position.
+*)
+IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
+    IF astPositionState[nGoalStateIndex].bValid AND astPositionState[nGoalStateIndex].bUpdated THEN
+        bValidGoal := TRUE;
+        fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
+        fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);
+    ELSE
+        bValidGoal := FALSE;
+    END_IF
+ELSE
+    bValidGoal := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RunFastFaults" Id="{11ee33e8-340c-460a-b8fd-d677fe1d0eeb}">
+      <Implementation>
+        <ST><![CDATA[
+ffNoGoal(
+    i_xOK:=bValidGoal,
+    i_xAutoReset:=TRUE,
+    i_DevName:=stMotionStage.sName,
+    i_Desc:='Invalid goal position in state move',
+    i_TypeCode:=ENUM_MotionFFType.INVALID_GOAL,
+    io_fbFFHWO:=fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SetEnables" Id="{2a8d9aef-700f-4659-83f5-7e0078f80d8e}">
+      <Implementation>
+        <ST><![CDATA[
+(*
+    This action sets bForwardEnable and bBackwardEnable based on
+    the current position and the calculated bounds.
+*)
+IF bValidGoal AND bEnable THEN
+    bForwardEnabled := stMotionStage.stAxisStatus.fActPosition < fUpperPos;
+    bBackwardEnabled := stMotionStage.stAxisStatus.fActPosition > fLowerPos;
+ELSE
+    // Either invalid state with a fault or FB not enabled
+    bForwardEnabled := TRUE;
+    bBackwardEnabled := TRUE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

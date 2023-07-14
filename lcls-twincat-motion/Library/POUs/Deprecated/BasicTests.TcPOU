@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="BasicTests" Id="{32c6d46d-3ef9-49e6-91a9-6852b4cc0f44}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'obsolete' := 'Use PRG_TEST's unit tests instead'}
+PROGRAM BasicTests
+VAR
+    Motor: ST_MotionStage;
+    fbMotion: FB_MotionStageSim;
+    fbRequest: FB_MotionRequest;
+
+    bError: BOOL;
+    errState: MC_AxisStates;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbRequest(stMotionStage := Motor);
+fbMotion(stMotionStage := Motor);
+
+CASE Motor.Axis.Status.MotionState OF
+   MC_AXISSTATE_ERRORSTOP,
+   MC_AXISSTATE_STOPPING,
+   MC_AXISSTATE_HOMING,
+   MC_AXISSTATE_DISCRETEMOTION,
+   MC_AXISSTATE_CONTINOUSMOTION,
+   MC_AXISSTATE_SYNCHRONIZEDMOTION:
+        IF NOT Motor.bBrakeRelease THEN
+            bError := TRUE;
+            errState := Motor.Axis.Status.MotionState;
+        END_IF
+END_CASE]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

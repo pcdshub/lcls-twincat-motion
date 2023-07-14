@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionClearAsserts" Id="{26ecf392-a1f3-491b-ac84-9ace07a64d4f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionClearAsserts
+(*
+    Clear all of the PMPS asserts related to a states mover.
+*)
+VAR_IN_OUT
+    // All states to deactivate: transition + the static position states
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
+    // The arbiter who made the PMPS assert requests
+    fbArbiter: FB_ARBITER;
+END_VAR
+VAR_INPUT
+    // Clear asserts on rising edge
+    bExecute: BOOL;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    rtExec: R_TRIG;
+    nIter: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+rtExec(CLK:=bExecute);
+IF rtExec.Q THEN
+    FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
+        fbArbiter.RemoveRequest(astDbStateParams[nIter].nRequestAssertionID);
+    END_FOR
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,13 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+<TcPlcObject Version="1.1.0.1">
   <POU Name="FB_PositionStateInternal" Id="{a4177056-7990-0c0e-2a8a-8d9ac89a1e5e}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateInternal
 (*
-    Routines that must be called on all DUT_PositionState
+    Routines that must be called on all ST_PositionState
+
+    Currently, this FB:
+    - ensures that a position state has both a proper encoder count
+      and a proper position in engineering units with both of these quantities matching
+    - handles the parameter locking feature, which nominally prevents the user from changing
+      details about a locked state via EPICS
 *)
 VAR_IN_OUT
-    stMotionStage: DUT_MotionStage;
-    stPositionState: DUT_PositionState;
+    stMotionStage: ST_MotionStage;
+    stPositionState: ST_PositionState;
 END_VAR
 VAR_OUTPUT
 END_VAR

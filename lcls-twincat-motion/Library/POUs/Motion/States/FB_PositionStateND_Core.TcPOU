@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateND_Core" Id="{be627b84-a239-4e6f-8f4f-59498d92de82}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateND_Core
+(*
+    Collection of all the actions shared between all states FBs
+    This is used in e.g.
+    - FB_PositionState1D
+    - FB_PositionState2D
+    - ... etc.
+    - FB_PositionStatePMPS1D
+    - FB_PositionStatePMPS2D
+    - ... etc.
+
+    This is essentially input handling, position state reading, standard management blocks, and the motion state machine.
+*)
+VAR_IN_OUT
+    // All motors to be used in the states move, including blank/uninitialized structs.
+    astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // All position states for all motors, including unused/invalid states.
+    astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // Normal EPICS inputs, gathered into a single struct
+    stEpicsInput: ST_StateEpicsInput;
+    // Normal EPICS outputs, gathered into a single struct
+    stEpicsOutput: ST_StateEpicsOutput;
+    // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
+    eEnumSet: UINT;
+    // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
+    eEnumGet: UINT;
+END_VAR
+VAR_INPUT
+    // Set this to TRUE to enable input state moves, or FALSE to disable them.
+    bEnable: BOOL;
+    // Set this to the number of motors to be included in astMotionStageMax
+    nActiveMotorCount: UINT;
+END_VAR
+VAR_OUTPUT
+    // The current position index goal, where the motors are supposed to be moving towards.
+    nCurrGoal: UINT;
+END_VAR
+VAR
+    fbInput: FB_StatesInputHandler;
+    fbInternal: FB_PositionStateInternalND;
+    fbMove: FB_PositionStateMoveND;
+    fbRead: FB_PositionStateReadND;
+    astMoveGoals: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
+    stInvalidPos: ST_PositionState;
+    nIterMotor: DINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+stEpicsInput.nSetValue := eEnumSet;
+
+fbRead(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astPositionStateMax,
+    nActiveMotorCount:=nActiveMotorCount,
+    bKnownState=>,
+    bMovingState=>,
+    nPositionIndex=>stEpicsOutput.nGetValue,
+);
+
+fbInput(
+    stUserInput:=stEpicsInput,
+    bMoveBusy:=fbMove.bBusy,
+    nInitGoal:=fbRead.nPositionIndex,
+    nCurrGoal=>nCurrGoal,
+    bExecMove=>,
+    bResetMove=>,
+);
+
+fbInternal(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astPositionStateMax,
+);
+
+FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
+    IF nCurrGoal > 0 THEN
+        astMoveGoals[nIterMotor] := astPositionStateMax[nIterMotor][nCurrGoal];
+    ELSE
+        astMoveGoals[nIterMotor] := stInvalidPos;
+    END_IF
+END_FOR
+
+fbMove(
+    astMotionStage:=astMotionStageMax,
+    astPositionState:=astMoveGoals,
+    nActiveMotorCount:=nActiveMotorCount,
+    bExecute:=fbInput.bExecMove AND bEnable,
+    bReset:=fbInput.bResetMove,
+    enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
+    bAtState=>,
+    bError=>stEpicsOutput.bError,
+    nErrorID=>stEpicsOutput.nErrorID,
+    sErrorMessage=>stEpicsOutput.sErrorMsg,
+    bBusy=>stEpicsOutput.bBusy,
+    bDone=>stEpicsOutput.bDone,
+);
+
+eEnumSet := stEpicsInput.nSetValue;
+eEnumGet := stEpicsOutput.nGetValue;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

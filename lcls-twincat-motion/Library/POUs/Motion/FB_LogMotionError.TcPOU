@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+<TcPlcObject Version="1.1.0.1">
   <POU Name="FB_LogMotionError" Id="{9500aa77-a355-4e4c-85a0-c8788ac59e2a}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_LogMotionError
 (*
@@ -12,7 +12,7 @@
     Includes the motor name and the NC error id in the json blob
 *)
 VAR_IN_OUT
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 END_VAR
 VAR_INPUT
     bEnable: BOOL;
@@ -34,7 +34,7 @@ sPrevErr := stMotionStage.sErrorMessage;
 IF bEnable AND (rtNewError.Q OR bChangedError) THEN
     fbJson.StartObject();
     fbJson.AddKey('schema');
-    fbJson.AddString('DUT_MotionStage.bError');
+    fbJson.AddString('ST_MotionStage.bError');
     fbJson.AddKey('dut_name');
     fbJson.AddString(stMotionStage.sName);
     fbJson.AddKey('axis_name');

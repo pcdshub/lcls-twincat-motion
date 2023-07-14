@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ENUM_StatePMPSStatus" Id="{10e89c1c-df75-452d-9a34-c83d7f2e8d6d}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE ENUM_StatePMPSStatus :
+(
+    // No other enum state describes it
+    UNKNOWN := 0,
+    // Moving toward a known state
+    TRANSITION := 1,
+    // Within a known state, not trying to leave
+    AT_STATE := 2,
+    // PMPS is in some way disabled, either with maint mode or arbiter disable
+    DISABLED := 3
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

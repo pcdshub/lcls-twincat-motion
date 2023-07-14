@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionReadPMPSDBND" Id="{d57cc3a9-6332-4332-bcc7-1d1c0dd5e201}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionReadPMPSDBND
+(*
+    When we read the JSON PMPS database file, update the lookup parameters for one state mover.
+    It is a building block not meant for use outside of lcls-twincat-motion.
+
+    This is intended to support one N-dimensional state motion function block.
+    The keys for the database lookup can be set on any of the motor's position states.
+    Each of them have an allocated state.stPMPS.sPmpsState STRING parameter.
+    If there is a conflict and two of the motors disagree on parameter lookups, that will
+    be a fast fault.
+
+    When the global JSON read function block is no longer busy and has no errors,
+    we will assume that the file has been read and we will update the parameters here.
+
+    This will also re-read in the event that the input position state keys change in any way,
+    provided that we've read once before.
+*)
+VAR_IN_OUT
+    // Each motor's respective position states along its direction. These will not be modified.
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // Hardware output to fault to if there is a problem.
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // The database lookup key for the transition state. This has no corresponding ST_PositionState.
+    sTransitionKey: STRING;
+    // A name to use for fast faults, etc.
+    sDeviceName: STRING;
+    // For debug: set this to TRUE in online mode to read the database immediately.
+    bReadNow: BOOL;
+END_VAR
+VAR_OUTPUT
+    // The raw lookup results from this FB. Index 0 is the transition beam, the rest of the indices match the state positions.
+    astDbStateParams: ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
+    // TRUE if we've had at least one successful read.
+    bFirstReadDone: BOOL;
+    // This will be set to TRUE if there was an error reading from the database.
+    bError: BOOL;
+END_VAR
+VAR
+    ffError: FB_FastFault;
+    fbReadPmpsDb: FB_JsonDocToSafeBP;
+    ftDbBusy: F_TRIG;
+    ftRead: F_TRIG;
+    bReadPmpsDb: BOOL;
+    nIterMotor: DINT;
+    nIterState: DINT;
+    nIterState2: DINT;
+    sLoopNewKey: STRING;
+    sLoopPrevKey: STRING;
+    abStateError: ARRAY[0..GeneralConstants.MAX_STATES] OF BOOL;
+    asLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    asPrevLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    bNewKeys: BOOL;
+    sTempBackfill: STRING;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+SelectLookupKeys();
+ReadDatabase();
+RunFastFaults();
+BackfillInfo();
+]]></ST>
+    </Implementation>
+    <Action Name="BackfillInfo" Id="{da77ffc7-a50e-48a0-9b32-806e7f647a44}">
+      <Implementation>
+        <ST><![CDATA[
+// Put the results of the PMPS lookup back to the motion states
+// This is purely for debugging purposes, as only the astDbStateParams output is used by the libraries.
+
+// Copy everything except for the lookup key: avoid clobbering the user's original keys
+// Do it this way instead of one element at a time to be forwards-compatible with any future additions to the db struct
+FOR nIterState := 1 TO GeneralConstants.MAX_STATES DO
+    FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
+        sTempBackfill := astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState;
+        astPositionState[nIterMotor][nIterState].stPMPS := astDbStateParams[nIterState];
+        astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState := sTempBackfill;
+    END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="ReadDatabase" Id="{2d32dd1e-c552-499a-8dca-6b4b0541920e}">
+      <Implementation>
+        <ST><![CDATA[
+// Read the database at the right timing
+ftDbBusy(CLK:=MOTION_GVL.fbPmpsFileReader.bBusy);
+IF ftDbBusy.Q THEN
+    bReadPmpsDb S= NOT MOTION_GVL.fbPmpsFileReader.bError;
+END_IF
+
+bReadPmpsDb S= bFirstReadDone AND bNewKeys;
+bReadPmpsDb S= bReadNow;
+bReadNow := FALSE;
+
+fbReadPmpsDb(
+    bExecute:=bReadPmpsDb,
+    jsonDoc:=PMPS_GVL.BP_jsonDoc,
+    sDeviceName:=sDeviceName,
+    io_fbFFHWO:=fbFFHWO,
+    arrStates:=astDbStateParams,
+);
+bReadPmpsDb R= NOT fbReadPmpsDb.bBusy;
+
+ftRead(CLK:=fbReadPmpsDb.bBusy);
+bFirstReadDone S= ftRead.Q AND NOT fbReadPmpsDb.bError;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RunFastFaults" Id="{2e7d9fcc-02e3-4e02-b548-1b8dee14dd95}">
+      <Implementation>
+        <ST><![CDATA[
+ffError(
+    i_xOK:=NOT bError,
+    i_xAutoReset:=TRUE,
+    i_DevName:=sDeviceName,
+    i_Desc:='Programmer error selecting state names in ND motion FB',
+    i_TypeCode:=ENUM_MotionFFType.INTERNAL_ERROR,
+    io_fbFFHWO:=fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SelectLookupKeys" Id="{71f0a60e-a81f-4e3a-97ce-0d232ce9e316}">
+      <Implementation>
+        <ST><![CDATA[
+// Fill the lookup key information in astDbStateParams based on the strings from astPositionState and sTransitionKey.
+
+// Start by emptying any pre-existing values
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    asLookupKeys[nIterState] := '';
+    abStateError[nIterState] := FALSE;
+END_FOR
+
+// Transition key is simple
+asLookupKeys[0] := sTransitionKey;
+
+// The other keys might be at different points in the astPositionState array.
+// Try all of the posibilities, set error if we end up overwriting something.
+
+// Outer loop: index of each motor at this position state
+FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
+    // Inner loop: index of each position state for this motor
+    FOR nIterState := 1 TO GeneralConstants.MAX_STATES DO
+        sLoopNewKey := astPositionState[nIterMotor][nIterState].stPMPS.sPmpsState;
+        IF sLoopNewKey <> '' THEN
+            // We have a new key, start doing things
+            sLoopPrevKey := asLookupKeys[nIterState];
+            IF sLoopPrevKey = '' OR sLoopPrevKey = sLoopNewKey THEN
+                // No key yet, or exactly the same key (redudant programmer)
+                asLookupKeys[nIterState] := sLoopNewKey;
+            ELSE
+                // We already had a different key! Don't just override it, have an error!
+                bError := TRUE;
+                abStateError[nIterState] := TRUE;
+            END_IF
+        END_IF
+    END_FOR
+END_FOR
+
+// Check for duplicated sPmpsState strings
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    FOR nIterState2 := 0 TO nIterState DO
+        IF nIterState <> nIterState2 THEN
+            IF asLookupKeys[nIterState] = asLookupKeys[nIterState2] THEN
+                // Duplicated key, we need an error and a flag in both spots
+                bError := TRUE;
+                abStateError[nIterState] := TRUE;
+                abStateError[nIterState2] := TRUE;
+            END_IF
+        END_IF
+    END_FOR
+END_FOR
+
+// Clear the erroneous states so they won't be used as lookups
+IF bError THEN
+    FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+        IF abStateError[nIterState] THEN
+            asLookupKeys[nIterState] := '';
+        END_IF
+    END_FOR
+END_IF
+
+// Copy the keys into the db state params
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    astDbStateParams[nIterState].sPmpsState := asLookupKeys[nIterState];
+END_FOR
+
+// Check if the keys changed from prev cycle
+bNewKeys := FALSE;
+FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
+    IF asLookupKeys[nIterState] <> asPrevLookupKeys[nIterState] THEN
+        bNewKeys := TRUE;
+        EXIT;
+    END_IF
+END_FOR
+
+// Save prev keys for next cycle
+asPrevLookupKeys := asLookupKeys;
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

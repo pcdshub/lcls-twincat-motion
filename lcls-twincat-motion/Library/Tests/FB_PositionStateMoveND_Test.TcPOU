@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateMoveND_Test" Id="{b9c8729d-ba0e-45a6-b763-53e484d22a2a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateMoveND_Test EXTENDS FB_MotorTestSuite
+(*
+    Test that FB_PositionStateMoveND can be used to move motors to named state positions
+    And that the API behaves exactly as described.
+*)
+VAR
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
+    astGoalPositions: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF FB_PositionStateInternal;
+    stDummyPos: ST_PositionState;
+    fbMove: FB_PositionStateMoveND;
+
+    bInit: BOOL;
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
+    nIter: DINT;
+    bStatesReady: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+IF NOT bInit THEN
+    ResetGoals();
+    bInit := TRUE;
+END_IF
+
+bStatesReady := TRUE;
+FOR nIter := 1 TO 3 DO
+    afbInternal[nIter](
+        stMotionStage:=astMotionStage[nIter],
+        stPositionState:=astGoalPositions[nIter],
+    );
+    bStatesReady := bStatesReady AND astGoalPositions[nIter].bUpdated;
+    SetEnables(astMotionStage[nIter]);
+    afbMotionStage[nIter](stMotionStage:=astMotionStage[nIter]);
+END_FOR
+
+IF bStatesReady AND nTestCounter = 0 THEN
+    // Don't run any tests until the states are ready
+    nTestCounter := 1;
+    // Warm up the motion FB with a exec false runthrough
+    fbMove(
+        astMotionStage := astMotionStage,
+        astPositionState := astGoalPositions,
+        nActiveMotorCount := 3,
+        bExecute := FALSE,
+    );
+END_IF
+
+// Move to somewhere
+TestMove(1, 1, 5, 10, FALSE);
+// Somewhere else
+TestMove(2, -10, 0, 5, FALSE);
+// Interrupt on the way to the last place
+TestMove(3, 0, 0, 0, TRUE);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    ResetGoals();
+    fbMove(
+        astMotionStage := astMotionStage,
+        astPositionState := astGoalPositions,
+        nActiveMotorCount := 3,
+        bExecute := FALSE,
+        bReset := TRUE,
+    );
+    tonTimer(IN:=FALSE);
+END_IF
+// Use this timer to time out any tests that stall
+tonTimer(
+    IN:=bStatesReady,
+    PT:=T#5s,
+);]]></ST>
+    </Implementation>
+    <Method Name="ResetGoals" Id="{596670bf-1f3d-4561-9f5d-f06c122e58e6}">
+      <Declaration><![CDATA[METHOD ResetGoals
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+astGoalPositions[1].sName := 'Goal1';
+astGoalPositions[1].fPosition := 0;
+astGoalPositions[1].fDelta := 1;
+astGoalPositions[1].fVelocity := 10;
+astGoalPositions[1].bUseRawCounts := FALSE;
+SetGoodState(astGoalPositions[1]);
+
+astGoalPositions[2].sName := 'Goal2';
+astGoalPositions[2].fPosition := 0;
+astGoalPositions[2].fDelta := 1;
+astGoalPositions[2].fVelocity := 10;
+astGoalPositions[2].bUseRawCounts := FALSE;
+SetGoodState(astGoalPositions[2]);
+
+astGoalPositions[3].sName := 'Goal3';
+astGoalPositions[3].fPosition := 0;
+astGoalPositions[3].fDelta := 1;
+astGoalPositions[3].fVelocity := 10;
+astGoalPositions[3].bUseRawCounts := FALSE;
+SetGoodState(astGoalPositions[3]);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMove" Id="{3180ed3d-87cb-4e20-beff-2be7f8597c71}">
+      <Declaration><![CDATA[METHOD TestMove
+VAR_INPUT
+    nTestIndex: UINT;
+    fMotor1Pos: LREAL;
+    fMotor2Pos: LREAL;
+    fMotor3Pos: LREAL;
+    bInterrupt: BOOL;
+END_VAR
+VAR_INST
+    bLocalInit: BOOL;
+    bInterruptStarted: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(CONCAT('TestMove', UINT_TO_STRING(nTestIndex)));
+IF nTestCounter <> nTestIndex THEN
+    RETURN;
+END_IF
+
+IF NOT bLocalInit THEN
+    // Starting output checks
+    AssertFalse(
+        Condition:=fbMove.bBusy,
+        Message:='Tried to start test with busy motor',
+    );
+    AssertFalse(
+        Condition:=fbMove.bError,
+        Message:='Tried to start test with errored motor',
+    );
+    bLocalInit := TRUE;
+END_IF
+
+astGoalPositions[1].fPosition := fMotor1Pos;
+astGoalPositions[2].fPosition := fMotor2Pos;
+astGoalPositions[3].fPosition := fMotor3Pos;
+
+bInterruptStarted S= bInterrupt AND astMotionStage[1].bBusy AND astMotionStage[2].bBusy AND astMotionStage[3].bBusy;
+fbMove(
+    astMotionStage:=astMotionStage,
+    astPositionState:=astGoalPositions,
+    nActiveMotorCount:=3,
+    bExecute:=NOT bInterruptStarted,
+);
+IF fbMove.bDone OR tonTimer.Q OR (bInterruptStarted AND NOT fbMove.bBusy) THEN
+    IF bInterrupt THEN
+        AssertFalse(
+            fbMove.bAtState,
+            Message:='Should have been interrupted, but made it to the goal',
+        );
+    ELSE
+        AssertTrue(
+            fbMove.bAtState,
+            Message:='Did not end at the state',
+        );
+        FOR nIter := 1 TO 3 DO
+            AssertEquals_LREAL(
+                Expected:=astGoalPositions[nIter].fPosition,
+                Actual:=astMotionStage[nIter].stAxisStatus.fActPosition,
+                Delta:=0.01,
+                Message:='Did not reach the goal state',
+            );
+        END_FOR
+
+    END_IF
+    AssertFalse(
+        fbMove.bBusy,
+        Message:='Was busy while done',
+    );
+    AssertFalse(
+        fbMove.bError,
+        Message:='Should not end in error',
+    );
+
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,253 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionReadPMPSDBND_Test" Id="{768adf5e-3185-4edf-bf49-8d32e494af46}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionReadPMPSDBND_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    We test the actual db read in the pmps lib
+    Here, we test that the correct keys are ready for the read based on the inputs.
+
+    The user submits a transition key and all of their ST_PositionState instances from all of their motors.
+    Any subset of these instances can have lookup keys.
+
+    If only one state at the index has a lookup key, use that key.
+    If more than one state at the index has the same lookup key, use that key.
+    If states at the same index have different keys, that's an error and a fast fault.
+    If states at different indices have the same keys, that's an error and a fast fault.
+*)
+VAR
+    astCorrectStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astNonsenseStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astDuplicatedStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    nIter: UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// Set up the state arrays that can be used in test methods
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    astCorrectStates[nIter].stPMPS.sPmpsState := CONCAT('State', UINT_TO_STRING(nIter));
+    astNonsenseStates[nIter].stPMPS.sPmpsState := CONCAT('asdf', UINT_TO_STRING(nIter));
+    IF UINT_TO_BOOL(nIter MOD 2) THEN
+        astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State0';
+    ELSE
+        astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State1';
+    END_IF
+
+END_FOR
+
+TestSolo();
+TestTrio();
+TestNonsense();
+TestDupe();
+TestBackfill();
+]]></ST>
+    </Implementation>
+    <Method Name="TestBackfill" Id="{6760dcd8-2b9b-46e0-8c98-6abb91b3d805}">
+      <Declaration><![CDATA[METHOD TestBackfill
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    stDefaultBP: ST_DbStateParams;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBackfill');
+
+astPositionState[1] := astCorrectStates;
+// Pick a few parameters to drop in
+astPositionState[1][3].stPMPS.stBeamParams.nRate := 999;
+astPositionState[2][1].stPMPS.nRequestAssertionID := 777;
+astPositionState[3][2].stPMPS.bBeamParamsLoaded := NOT stDefaultBP.bBeamParamsLoaded;
+fbRead(
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:='State0',
+    sDeviceName:='TestBackfill',
+);
+// Everything should be cleared to the defaults: the library should let us know what params got loaded (none)
+AssertEquals_UDINT(
+    Expected:=stDefaultBP.stBeamParams.nRate,
+    Actual:=astPositionState[1][3].stPMPS.stBeamParams.nRate,
+    Message:='nRate of motor 1 state 3 not backfilled',
+);
+AssertEquals_UDINT(
+    Expected:=stDefaultBP.nRequestAssertionID,
+    Actual:=astPositionState[2][1].stPMPS.nRequestAssertionID,
+    Message:='nRequestAssertionID of motor 2 state 3 not backfilled',
+);
+AssertEquals_BOOL(
+    Expected:=stDefaultBP.bBeamParamsLoaded,
+    Actual:=astPositionState[3][2].stPMPS.bBeamParamsLoaded,
+    Message:='bBeamParamsLoaded of motor 3 state 2 not backfilled',
+);
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestDupe" Id="{4c361cc1-2632-4b23-99ee-f0de0a75607c}">
+      <Declaration><![CDATA[METHOD TestDupe
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDupe');
+
+astPositionState[1] := astDuplicatedStates;
+fbRead(
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:='State0',
+    sDeviceName:='TestTrio',
+);
+fbFFHWO.EvaluateOutput();
+
+AssertTrue(
+    fbRead.bError,
+    'Should have had an error',
+);
+FOR nIter := 0 TO GeneralConstants.MAX_STATES DO
+    AssertEquals_STRING(
+        Expected:='',
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
+        Message:='Errored output should have had no state names',
+    );
+END_FOR
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestNonsense" Id="{c01adc7e-261b-43ff-9bec-c68777bcbe94}">
+      <Declaration><![CDATA[METHOD TestNonsense
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestNonsense');
+
+astPositionState[1] := astCorrectStates;
+astPositionState[2] := astNonsenseStates;
+fbRead(
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:='State0',
+    sDeviceName:='TestTrio',
+);
+fbFFHWO.EvaluateOutput();
+
+AssertTrue(
+    fbRead.bError,
+    'Should have had an error',
+);
+// Only the transition state should be spared from the nonsense
+AssertEquals_STRING(
+    Expected:='State0',
+    Actual:=fbRead.astDbStateParams[0].sPmpsState,
+    Message:='Transition state should be OK',
+);
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    AssertEquals_STRING(
+        Expected:='',
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
+        Message:='Errored output should have had no state names',
+    );
+END_FOR
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestSolo" Id="{e199a4d6-9d1e-4771-ab3f-3343cad2747d}">
+      <Declaration><![CDATA[METHOD TestSolo
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestSolo');
+
+astPositionState[1] := astCorrectStates;
+fbRead(
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:='State0',
+    sDeviceName:='TestSolo',
+);
+fbFFHWO.EvaluateOutput();
+
+AssertFalse(
+    fbRead.bError,
+    'Had an error',
+);
+AssertEquals_STRING(
+    Expected:=fbRead.sTransitionKey,
+    Actual:=fbRead.astDbStateParams[0].sPmpsState,
+    Message:='Output did not have the correct transition state',
+);
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    AssertEquals_STRING(
+        Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
+        Message:='Output did not have the correct position state',
+    );
+END_FOR
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestTrio" Id="{8ecf176a-1aaf-4dbd-91e3-61156428d27d}">
+      <Declaration><![CDATA[METHOD TestTrio
+VAR_INST
+    fbRead: FB_MotionReadPMPSDBND;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestTrio');
+
+astPositionState[1] := astCorrectStates;
+astPositionState[2] := astCorrectStates;
+astPositionState[3] := astCorrectStates;
+fbRead(
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    sTransitionKey:='State0',
+    sDeviceName:='TestTrio',
+);
+fbFFHWO.EvaluateOutput();
+
+AssertFalse(
+    fbRead.bError,
+    'Had an error',
+);
+AssertEquals_STRING(
+    Expected:=fbRead.sTransitionKey,
+    Actual:=fbRead.astDbStateParams[0].sPmpsState,
+    Message:='Output did not have the correct transition state',
+);
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    AssertEquals_STRING(
+        Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
+        Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
+        Message:='Output did not have the correct position state',
+    );
+END_FOR
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

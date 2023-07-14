@@ -19,12 +19,14 @@
     <Released>false</Released>
     <Title>lcls-twincat-motion</Title>
     <ProjectVersion>0.0.0</ProjectVersion>
+    <WriteProductVersion>false</WriteProductVersion>
     <!--    <OutputType>Exe</OutputType>
     <RootNamespace>MyApplication</RootNamespace>
     <AssemblyName>MyApplication</AssemblyName>-->
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="DUTs\Deprecated" />
     <Folder Include="GVLs" />
     <Folder Include="POUs\Motion\PMPS" />
     <Folder Include="POUs\Motion\States\Examples" />
@@ -34,7 +36,7 @@
     <Folder Include="POUs\Motion\States" />
     <Folder Include="POUs\ImplicitChecks" />
     <Folder Include="POUs\Deprecated" />
-    <Folder Include="UnitTests" />
+    <Folder Include="Tests" />
     <Folder Include="POUs" />
     <Folder Include="POUs\Motion" />
     <Folder Include="POUs\Motion\Gantry" />
@@ -54,19 +56,50 @@
     <Folder Include="tc_mca_std_lib\POUs\Hardware\Other" />
     <Folder Include="tc_mca_std_lib\POUs\Motion" />
     <Folder Include="tc_mca_std_lib\POUs\Motion\Homing" />
+    <Folder Include="Tests\Helpers" />
     <Folder Include="Version" />
     <Folder Include="tc_mca_std_lib\DUTs" />
     <Folder Include="tc_mca_std_lib\POUs" />
     <Folder Include="tc_mca_std_lib\GVLs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DUTs\DUT_MotionStage.TcDUT">
+    <Compile Include="DUTs\Deprecated\DUT_MotionPneumaticActuator.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\DUT_PositionState.TcDUT">
+    <Compile Include="DUTs\Deprecated\DUT_MotionStage.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\EL5042_Status.TcDUT">
+    <Compile Include="DUTs\Deprecated\DUT_PositionState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Deprecated\EL5042_Status.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Deprecated\ENUM_EpicsInOut_INT.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ENUM_MotionFFType.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ENUM_StatePMPSStatus.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_MotionStage.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_PositionState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_StateEpicsInput.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_StateEpicsOutput.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_StatePMPSEpicsInput.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_EL5042_Status.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ENUM_EpicsHomeCmd.TcDUT">
@@ -87,7 +120,7 @@
     <Compile Include="DUTs\ENUM_StageEnableMode.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\DUT_MotionPneumaticActuator.TcDUT">
+    <Compile Include="DUTs\ST_MotionPneumaticActuator.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ENUM_PnuematicActuatorPositionState.TcDUT">
@@ -97,20 +130,60 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
+    <Compile Include="DUTs\ST_StatePMPSEpicsOutput.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="GVLs\MOTION_GVL.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="GVLs\MotionConstants.TcGVL">
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Deprecated\BasicTests.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Deprecated\FB_EpicsInOut.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateBase.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateBase_WithPMPS.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateBase_WithPMPS_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateInOut.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateInOut_WithPMPS.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStateInOut_WithPMPS_Test.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Deprecated\FB_PositionStateManager.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStatePMPS.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStatePMPS_Base.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\FB_PositionStatePMPS_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\Deprecated\FB_StatePTPMove.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Deprecated\Interactive.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\ImplicitChecks\CheckBounds.TcPOU">
@@ -165,40 +238,82 @@
     <Compile Include="POUs\Motion\PMPS\FB_EncErrorFFO.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_MiscStatesErrorFFO.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_MotionBPTM.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_MotionClearAsserts.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_MotionReadPMPSDBND.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_PerMotorFFOND.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\PMPS\FB_NCErrorFFO.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS_Base.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS1D.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS_Test.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS2D.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPS3D.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\PMPS\FB_PositionStatePMPSND_Core.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\PMPS\FB_Standard_PMPSDB.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\Examples\FB_PositionStateInOut.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_StatePMPSEnables.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\Examples\FB_PositionStateInOut_WithPMPS.TcPOU">
+    <Compile Include="POUs\Motion\PMPS\FB_StatePMPSEnablesND.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\Examples\FB_PositionStateInOut_WithPMPS_Test.TcPOU">
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionState1D_InOut.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\FB_PositionStateBase.TcPOU">
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionStatePMPS2D_InOut.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\FB_PositionStateBase_WithPMPS.TcPOU">
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionStatePMPS1D_InOut.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\States\FB_PositionStateBase_WithPMPS_Test.TcPOU">
+    <Compile Include="POUs\Motion\States\Examples\FB_PositionState2D_InOut.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionState2D.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionState3D.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateND_Core.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\States\FB_PositionStateMove.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionState1D.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateMoveND.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateRead.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_PositionStateReadND.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\FB_StatesInputHandler.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\States\Helpers\FB_RawCountConverter.TcPOU">
@@ -217,6 +332,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\States\Internals\FB_PositionStateInternal.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\States\Internals\FB_PositionStateInternalND.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\States\Internals\FB_PositionStateLock.TcPOU">
@@ -375,10 +493,70 @@
     <Compile Include="tc_mca_std_lib\POUs\Motion\Homing\FB_HomeWriteSoftLimEnable.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="UnitTests\BasicTests.TcPOU">
+    <Compile Include="Tests\FB_AtPositionState_Test.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="UnitTests\Interactive.TcPOU">
+    <Compile Include="Tests\FB_MiscStatesErrorFFO_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_MotionBPTM_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_MotionClearAsserts_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_MotionReadPMPSDBND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_NCErrorFFO_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PerMotorFFOND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PositionStateMoveND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PositionStateMove_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PositionStatePMPSND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PositionStateReadND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PositionStateRead_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_PositionStateND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_StatePMPSEnablesND_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_StatePMPSEnables_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\FB_TestHelperSetAndMove_Test.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\Helpers\ENUM_TestStates.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\Helpers\FB_CauseNCError.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\Helpers\FB_MotorTestSuite.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\Helpers\FB_PMPSJsonTestHelper.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\Helpers\FB_TestHelperSetAndMove.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\PRG_TEST.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Version\Global_Version.TcGVL">
@@ -397,6 +575,12 @@
     <PlaceholderReference Include="Tc2_EtherCAT">
       <DefaultResolution>Tc2_EtherCAT, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_EtherCAT</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Math">
+      <DefaultResolution>Tc2_Math, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Math</Namespace>
+      <HideWhenReferencedAsDependency>true</HideWhenReferencedAsDependency>
+      <Optional>true</Optional>
     </PlaceholderReference>
     <PlaceholderReference Include="Tc2_MC2">
       <DefaultResolution>Tc2_MC2, * (Beckhoff Automation GmbH)</DefaultResolution>
@@ -422,6 +606,12 @@
       <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_Module</Namespace>
     </PlaceholderReference>
+    <PlaceholderReference Include="TcUnit">
+      <DefaultResolution>TcUnit, * (www.tcunit.org)</DefaultResolution>
+      <Namespace>TcUnit</Namespace>
+      <HideWhenReferencedAsDependency>true</HideWhenReferencedAsDependency>
+      <Optional>true</Optional>
+    </PlaceholderReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Library.tmc">
@@ -431,6 +621,9 @@
   <ItemGroup>
     <PlaceholderResolution Include="Tc3_JsonXml">
       <Resolution>Tc3_JsonXml, * (Beckhoff Automation GmbH)</Resolution>
+    </PlaceholderResolution>
+    <PlaceholderResolution Include="TcUnit">
+      <Resolution>TcUnit, * (www.tcunit.org)</Resolution>
     </PlaceholderResolution>
   </ItemGroup>
   <ProjectExtensions>

@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_CauseNCError" Id="{d8a15cf9-c36d-4b61-8d5a-347e8910728f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CauseNCError
+(*
+    Simulate an NC error.
+    This will look like a real NC error for everyone, including TwinCAT itself.
+*)
+VAR_IN_OUT
+    Axis: AXIS_REF;
+END_VAR
+VAR_INPUT
+    bExecute: BOOL;
+    nErrorCode: UDINT;
+END_VAR
+VAR_OUTPUT
+    bBusy: BOOL;
+    bDone: BOOL;
+END_VAR
+VAR
+    rtExec: R_TRIG;
+    adsWrite: ADSWRITE;
+    mcReadDriveAddress: MC_ReadDriveAddress;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+rtExec(CLK:=bExecute);
+IF NOT bExecute THEN
+    bDone := FALSE;
+END_IF
+IF rtExec.Q THEN
+    bBusy := TRUE;
+END_IF
+IF bBusy AND NOT mcReadDriveAddress.Done THEN
+    mcReadDriveAddress(
+        Axis:=Axis,
+        Execute:=TRUE,
+        DriveAddress=>Axis.DriveAddress);
+END_IF
+IF bBusy AND mcReadDriveAddress.Done THEN
+    bBusy := TRUE;
+    adsWrite(
+        PORT:=501,
+        IDXGRP:=16#4200 + Axis.DriveAddress.NcDriveId,
+        IDXOFFS:=16#0019,
+        LEN:=SIZEOF(nErrorCode),
+        SRCADDR:=ADR(nErrorCode),
+        WRITE:=TRUE,
+        BUSY=>bBusy);
+    IF NOT bBusy THEN
+        bDone := TRUE;
+        adsWrite(WRITE:=FALSE);
+    END_IF
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

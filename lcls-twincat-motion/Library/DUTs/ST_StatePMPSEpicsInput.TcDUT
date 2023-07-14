@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_StatePMPSEpicsInput" Id="{fe26de4c-1758-435b-90a9-da23c711b889}">
+    <Declaration><![CDATA[TYPE ST_StatePMPSEpicsInput :
+(*
+    This data structure contains the standard PMPS EPICS connection points for the state movers.
+*)
+STRUCT
+    // User setting: TRUE to enable the arbiter, FALSE to disable it.
+    {attribute 'pytmc' := '
+        pv: PMPS:ARB:ENABLE
+        io: io
+    '}
+    bArbiterEnabled: BOOL := TRUE;
+    // User setting: TRUE to enable maintenance mode (Fast fault, free motion), FALSE to disable it.
+    {attribute 'pytmc' := '
+        pv: PMPS:MAINT
+        io: io
+    '}
+    bMaintMode: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

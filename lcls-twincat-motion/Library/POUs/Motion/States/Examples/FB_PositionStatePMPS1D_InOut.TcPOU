@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStatePMPS1D_InOut" Id="{77746f1a-8f5a-49b7-94c5-980bd0e96927}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPS1D_InOut
+(*
+    An example and usable drop-in instance for a 1D pmps state device with just an IN and an OUT state.
+    Note that the outward-facing API is nearly identical to the non-PMPS version
+*)
+VAR_IN_OUT
+    // Include a stage that can be passed into the FB
+    stMotionStage: ST_MotionStage;
+    // Simplify the interface, the user just needs to construct and pass in and out position states
+    stIn: ST_PositionState;
+    stOut: ST_PositionState;
+    // Include PMPS output helpers
+    fbFFHWO: FB_HardwareFFOutput;
+    fbArbiter: FB_Arbiter;
+END_VAR
+VAR_INPUT
+    // Define an ENUM for EPICS to use to set a new value. It is expected this will be written to during one cycle, so don't continually apply a value here in the PLC code.
+    // It is exposed as an input so we can test it using the PLC.
+    {attribute 'pytmc' := '
+      pv: STATE:SET
+      io: io
+    '}
+    eStateSet: ENUM_EpicsInOut;
+END_VAR
+VAR_OUTPUT
+    // Define an ENUM for EPICS to use to report the new value.
+    {attribute 'pytmc' := '
+      pv: STATE:GET
+      io: i
+    '}
+    eStateGet: ENUM_EpicsInOut;
+END_VAR
+VAR
+    // Include the standard fb with blank pv pragma
+    {attribute 'pytmc' := 'pv:'}
+    fbPositionStatePMPS1D: FB_PositionStatePMPS1D;
+    // The standard fb expects a full array of position states
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+// Optional: default state names
+IF stIn.sName = '' THEN
+    stIn.sName := 'IN';
+END_IF
+IF stOut.sName = '' THEN
+    stOut.sName := 'OUT';
+END_IF
+
+// Assemble the states array, matching the enum values (IN is 1, OUT is 2)
+astPositionState[1] := stIn;
+astPositionState[2] := stOut;
+
+// Call the main function block, passing our motors, states, and an enable
+fbPositionStatePMPS1D(
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter,
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+    eEnumSet:=eStateSet,
+    eEnumGet:=eStateGet,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+);
+
+// Send updates made on the array back to the inputs (VAR_IN_OUT) for maximum clarity
+stIn := astPositionState[1];
+stOut := astPositionState[2];]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

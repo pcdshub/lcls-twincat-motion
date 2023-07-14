@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_StatePMPSEnablesND" Id="{d098ccc9-7db0-41da-97e3-aba758c57f5d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StatePMPSEnablesND
+(*
+    Function block to set virtual limit enables using MC_POWER for multidimensional state movers.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    Each motor has a virtual "allowed" range of motion based on its goal position.
+    Motors can move toward their goal delta ranges or within them, but not away from these ranges.
+*)
+VAR_IN_OUT
+    // The motors with a combined N-dimensional state
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // Each motor's respective position states along its direction
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // Hardware output to fault to if there is a problem.
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // Whether or not to do anything
+    bEnable: BOOL;
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
+    // The state that the motors are moving to, along dimension 2 of the position state array. This may be the same as the current state.
+    nGoalStateIndex: UINT;
+    // A name to use for this state mover in the case of fast faults.
+    sDeviceName: STRING;
+    // Set to TRUE to put motors into maintenance mode. This allows us to freely move the motors at the cost of a fast fault.
+    bMaintMode: BOOL;
+    // The overal PMPS FB state
+    eStatePMPSStatus: ENUM_StatePMPSStatus;
+    // Connect from bptm bTransitionAuthorized
+    bTransitionAuthorized: BOOL;
+END_VAR
+VAR_OUTPUT
+    // Per-motor enable state we send to MC_Power. This is a pass-through from stMotionStage.
+    abEnabled: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Per-motor forward enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
+    abForwardEnabled: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Per-motor backwards enable state we send to MC_Power. This may be a pass-through or an override to FALSE.
+    abBackwardEnabled: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Per-motor TRUE if there is a valid goal position and FALSE otherwise. This makes a fast fault if FALSE.
+    abValidGoal: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
+    // Set to TRUE if the arrays have mismatched sizing. For this FB, this means the motor won't ever get an enable.
+    bMotorCountError: BOOL;
+END_VAR
+VAR
+    // The individual state limit function blocks
+    afbStateEnables: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_StatePMPSEnables;
+    ffMaint: FB_FastFault;
+    ffProgrammerError: FB_FastFault;
+    nIter: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckCount();
+IF NOT bMotorCountError THEN
+    DoLimits();
+END_IF
+RunFastFaults();
+]]></ST>
+    </Implementation>
+    <Action Name="CheckCount" Id="{df0115f1-b4f0-450f-a425-72f1ab0b2f35}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="DoLimits" Id="{15f05e27-5b0c-49f7-878f-6aa0afaa7407}">
+      <Implementation>
+        <ST><![CDATA[
+FOR nIter := 1 TO nActiveMotorCount DO
+    afbStateEnables[nIter](
+        stMotionStage:=astMotionStage[nIter],
+        astPositionState:=astPositionState[nIter],
+        fbFFHWO:=fbFFHWO,
+        bEnable:=bEnable AND NOT bMaintMode,
+        nGoalStateIndex:=nGoalStateIndex,
+        eStatePMPSStatus:=eStatePMPSStatus,
+        bTransitionAuthorized:=bTransitionAuthorized,
+        bEnabled=>abEnabled[nIter],
+        bForwardEnabled=>abForwardEnabled[nIter],
+        bBackwardEnabled=>abBackwardEnabled[nIter],
+        bValidGoal=>abValidGoal[nIter],
+    );
+END_FOR]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RunFastFaults" Id="{6106ff0e-c9c3-479a-9da2-c952ec5198ee}">
+      <Implementation>
+        <ST><![CDATA[
+ffMaint(
+    i_xOK := NOT bMaintMode,
+    i_xAutoReset := TRUE,
+    i_DevName := sDeviceName,
+    i_Desc := 'Device is in maintenance mode',
+    i_TypeCode := ENUM_MotionFFType.MAINT_MODE,
+    io_fbFFHWO := fbFFHWO,
+);
+
+ffProgrammerError(
+    i_xOK:=NOT bMotorCountError,
+    i_xAutoReset:=TRUE,
+    i_DevName:=sDeviceName,
+    i_Desc:='Programmer error picking motor count',
+    i_TypeCode:=ENUM_MotionFFType.INTERNAL_ERROR,
+    io_fbFFHWO:=fbFFHWO,
+);]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

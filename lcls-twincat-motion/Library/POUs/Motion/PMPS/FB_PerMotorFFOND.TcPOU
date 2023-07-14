@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PerMotorFFOND" Id="{63251316-84c1-4557-ae64-15075eeb972a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PerMotorFFOND
+(*
+    PMPS fast faults that must be done per motor, rather than per state, based purely
+    on the motor status and not other PMPS considerations.
+
+    These currently include:
+    - Fault if the encoder has an error. Every other protection is based on the encoder,
+      so we can't trust anything if the encoder is faulting.
+*)
+VAR_IN_OUT
+    // All motors associated with the state mover.
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // Fast fault output to fault to.
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
+    // Identifying name to use in group fast faults
+    sDeviceName: STRING;
+END_VAR
+VAR_OUTPUT
+    // Set to TRUE if the arrays don't have the same bounds. In this FB, that's an automatic fault.
+    bMotorCountError: BOOL;
+END_VAR
+VAR
+    afbEncError: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_EncErrorFFO;
+    ffProgrammerError: FB_FastFault;
+    nIter: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckCount();
+IF NOT bMotorCountError THEN
+    HandleLoops();
+END_IF
+HandleFFO();
+]]></ST>
+    </Implementation>
+    <Action Name="CheckCount" Id="{235dae93-1a14-4907-b10f-6bed99260854}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleFFO" Id="{61cab890-5c77-4c2c-ab73-7d5467037676}">
+      <Implementation>
+        <ST><![CDATA[
+ffProgrammerError(
+    i_xOK:=NOT bMotorCountError,
+    i_xAutoReset:=TRUE,
+    i_DevName:=sDeviceName,
+    i_Desc:='Programmer error picking motor count',
+    i_TypeCode:=ENUM_MotionFFType.INTERNAL_ERROR,
+    io_fbFFHWO:=fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleLoops" Id="{1e2bc2d2-019c-4cea-a7e4-68373d08cb58}">
+      <Implementation>
+        <ST><![CDATA[
+FOR nIter := 1 TO nActiveMotorCount DO
+    afbEncError[nIter](
+        stMotionstage:=astMotionStage[nIter],
+        fbFFHWO:=fbFFHWO,
+        bAutoReset:=TRUE,
+    );
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

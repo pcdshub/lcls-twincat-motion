@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_StateEpicsInput" Id="{233f01d3-5e73-4c09-b009-203daf86cb72}">
+    <Declaration><![CDATA[TYPE ST_StateEpicsInput :
+(*
+    This data structure contains the standard EPICS input connection points for the state movers.
+
+    It includes everything except the SET PV, which cannot be included here
+    as it is sourced from enum values unique to the application, and the PMPS PVs, which are
+    gathered in their own data type, ST_StatePMPSEpicsInput. That actually means that this only
+    holds the RESET PV, for now.
+
+    nSetValue here is actively used by state blocks even though it is not exposed
+    directly to EPICS. You should avoid manually modifying it or else
+    you may interfere with normal operations of the state function blocks.
+
+    For including your own ENUM input, you should pytmc pragma the PV name to end in "SET",
+    and match the prefix of this FB's "RESET" PV. Then, you can include your enum
+    as the eEnumSet IN_OUT var and let the EPICS IOC handle it.
+*)
+STRUCT
+    // For internal use only. This holds new goal positions as an integer, else it is 0 if there is no new state move request. It is written to from the user's input enum.
+    nSetValue: UINT;
+
+    // Set this to TRUE to acknowledge and clear an error.
+    {attribute 'pytmc' := '
+        pv: RESET
+        io: io
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bReset: BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

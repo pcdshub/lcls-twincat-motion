@@ -1,0 +1,337 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateRead_Test" Id="{5aa06afc-15a8-4899-b127-6c473eb50869}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateRead_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Test that FB_PositionStateRead works exactly how it should
+    according to its API during normal and failure states.
+*)
+VAR
+    stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStage;
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF FB_PositionStateInternal;
+    stDummyPos: ST_PositionState;
+    fbTestMove: FB_TestHelperSetAndMove;
+    fbRead: FB_PositionStateRead;
+
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
+    nIter: DINT;
+    bStatesReady: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+astPositionState[1].sName := 'UNO';
+astPositionState[1].fPosition := 10;
+astPositionState[1].fDelta := 1;
+astPositionState[1].bValid := TRUE;
+astPositionState[1].bUseRawCounts := FALSE;
+
+astPositionState[2].sName := 'DOS';
+astPositionState[2].fPosition := 20;
+astPositionState[2].fDelta := 1;
+astPositionState[2].bValid := FALSE;
+astPositionState[2].bUseRawCounts := FALSE;
+
+astPositionState[3].sName := 'TRES';
+astPositionState[3].fPosition := 30;
+astPositionState[3].fDelta := 1;
+astPositionState[3].bValid := TRUE;
+astPositionState[3].bUseRawCounts := FALSE;
+
+astPositionState[4].sName := 'QUATRO';
+astPositionState[4].fPosition := 30;
+astPositionState[4].fDelta := 1;
+astPositionState[4].bValid := FALSE;
+astPositionState[4].bUseRawCounts := FALSE;
+
+bStatesReady := TRUE;
+FOR nIter := 1 TO 4 DO
+    afbInternal[nIter](
+        stMotionStage:=stMotionStage,
+        stPositionState:=astPositionState[nIter],
+    );
+    bStatesReady := bStatesReady AND astPositionState[nIter].bUpdated;
+END_FOR
+fbMotionStage(stMotionStage:=stMotionStage);
+
+// At position 1 check
+TestStaticPosition(
+    nTestIndex:=0,
+    sTestName:='AtPos1',
+    fPosition:=astPositionState[1].fPosition + 0.2 * astPositionState[1].fDelta,
+    bKnownState:=TRUE,
+    bMovingState:=FALSE,
+    nPositionIndex:=1,
+    stCurrentPosition:=astPositionState[1],
+);
+// Outside the deltas check
+TestStaticPosition(
+    nTestIndex:=1,
+    sTestName:='OutsidePos1Delta',
+    fPosition:=astPositionState[1].fPosition + 2 * astPositionState[1].fDelta,
+    bKnownState:=FALSE,
+    bMovingState:=FALSE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+// At invalid state 2 check
+TestStaticPosition(
+    nTestIndex:=2,
+    sTestName:='AtInvalidPos',
+    fPosition:=astPositionState[2].fPosition,
+    bKnownState:=FALSE,
+    bMovingState:=FALSE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+// At position 3 check
+TestStaticPosition(
+    nTestIndex:=3,
+    sTestName:='AtPos3',
+    fPosition:=astPositionState[3].fPosition - 0.5 * astPositionState[3].fDelta,
+    bKnownState:=TRUE,
+    bMovingState:=FALSE,
+    nPositionIndex:=3,
+    stCurrentPosition:=astPositionState[3],
+);
+// At position 3 and moving within bounds check
+TestMovingPosition(
+    nTestIndex:=4,
+    sTestName:='MovingAt3',
+    fStartPosition:=astPositionState[3].fPosition,
+    fGoalPosition:=astPositionState[3].fPosition + 0.9 * astPositionState[3].fDelta,
+    fVelocity:=0.001,
+    bKnownState:=TRUE,
+    bMovingState:=FALSE,
+    nPositionIndex:=3,
+    stCurrentPosition:=astPositionState[3],
+);
+// At position 3 and moving away check
+TestMovingPosition(
+    nTestIndex:=5,
+    sTestName:='MovingFrom3',
+    fStartPosition:=astPositionState[3].fPosition,
+    fGoalPosition:=astPositionState[3].fPosition + 100 * astPositionState[3].fDelta,
+    fVelocity:=0.001,
+    bKnownState:=FALSE,
+    bMovingState:=TRUE,
+    nPositionIndex:=0,
+    stCurrentPosition:=stDummyPos,
+);
+TestDupe(nTestIndex:=6);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    fbTestMove(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
+END_IF
+]]></ST>
+    </Implementation>
+    <Method Name="Asserts" Id="{9a2b93ac-1d78-442c-a37b-5d49647c861f}">
+      <Declaration><![CDATA[METHOD PRIVATE Asserts
+VAR_INPUT
+    tTimeout: TIME;
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    stCurrentPosition: ST_PositionState;
+END_VAR
+VAR
+    abExpected: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbRead(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionstate,
+);
+
+AssertEquals_BOOL(
+    Expected:=FALSE,
+    Actual:=fbTestMove.tElapsed > tTimeout,
+    Message:='Test timed out',
+);
+AssertEquals_BOOL(
+    Expected:=bKnownState,
+    Actual:=fbRead.bKnownState,
+    Message:='Incorrect bKnownState',
+);
+AssertEquals_BOOL(
+    Expected:=bMovingState,
+    Actual:=fbRead.bMovingState,
+    Message:='Incorrect bMovingState',
+);
+AssertEquals_DINT(
+    Expected:=nPositionIndex,
+    Actual:=fbRead.nPositionIndex,
+    Message:='Incorrect nPositionIndex',
+);
+IF nPositionIndex > 0 THEN
+    IF nPositionIndex <= GeneralConstants.MAX_STATES THEN
+        abExpected[nPositionIndex] := TRUE;
+    END_IF
+ END_IF
+AssertArrayEquals_BOOL(
+    Expecteds:=abExpected,
+    Actuals:=fbRead.abAtPosition,
+    Message:='Wrong at position array',
+);
+
+IF bKnownState THEN
+    AssertEquals_STRING(
+        Expected:=stCurrentPosition.sName,
+        Actual:=fbRead.stCurrentPosition.sName,
+        Message:='Did not provide correct current position struct',
+    );
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestDupe" Id="{8e062161-194d-4cd6-b414-bf7127fab9cd}">
+      <Declaration><![CDATA[METHOD TestDupe
+VAR_INPUT
+    nTestIndex: DINT;
+END_VAR
+VAR
+    abExpected: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDupe');
+IF nTestIndex <> nTestCounter THEN
+    RETURN;
+END_IF
+
+// In this test, and only in this test, we must make sure state 4 is valid
+astPositionState[4].bValid := TRUE;
+
+fbTestMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=TRUE,
+    fStartPosition:=astPositionState[4].fPosition,
+    fGoalPosition:=astPositionState[4].fPosition,
+);
+abExpected[3] := TRUE;
+abExpected[4] := TRUE;
+
+IF fbTestMove.tElapsed > T#1s OR (fbTestMove.bSetDone AND bStatesReady) THEN
+    fbRead(
+        stMotionStage:=stMotionStage,
+        astPositionState:=astPositionstate,
+    );
+    AssertEquals_BOOL(
+        Expected:=FALSE,
+        Actual:=fbTestMove.tElapsed > T#1s,
+        Message:='Test timed out',
+    );
+    AssertEquals_BOOL(
+        Expected:=TRUE,
+        Actual:=fbRead.bKnownState,
+        Message:='Incorrect bKnownState',
+    );
+    AssertArrayEquals_BOOL(
+        Expecteds:=abExpected,
+        Actuals:=fbRead.abAtPosition,
+        Message:='Wrong at position array',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMovingPosition" Id="{718d69e0-eec5-43ac-85a7-32e459f1fdac}">
+      <Declaration><![CDATA[METHOD PRIVATE TestMovingPosition
+VAR_INPUT
+    nTestIndex: UINT;
+    sTestName: STRING;
+    fStartPosition: LREAL;
+    fGoalPosition: LREAL;
+    fVelocity: LREAL;
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    stCurrentPosition: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(sTestName);
+IF nTestIndex <> nTestCounter THEN
+    RETURN;
+END_IF
+
+fbTestMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=TRUE,
+    fStartPosition:=fStartPosition,
+    fGoalPosition:=fGoalPosition,
+    fVelocity:=0.001,
+    bHWEnable:=TRUE,
+);
+
+IF fbTestMove.tElapsed > T#5s OR (fbTestMove.bMotionStarted AND bStatesReady) THEN
+    Asserts(
+        tTimeout:=T#5s,
+        bKnownState:=bKnownState,
+        bMovingState:=bMovingState,
+        nPositionIndex:=nPositionIndex,
+        stCurrentPosition:=stCurrentPosition,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStaticPosition" Id="{1757b5fc-f3f6-4976-b181-53e15896a6a6}">
+      <Declaration><![CDATA[METHOD PRIVATE TestStaticPosition
+VAR_INPUT
+    nTestIndex: UINT;
+    sTestName: STRING;
+    fPosition: LREAL;
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    stCurrentPosition: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(sTestName);
+IF nTestIndex <> nTestCounter THEN
+    RETURN;
+END_IF
+
+fbTestMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=TRUE,
+    fStartPosition:=fPosition,
+    fGoalPosition:=fPosition,
+);
+
+IF fbTestMove.tElapsed > T#1s OR (fbTestMove.bSetDone AND bStatesReady) THEN
+    Asserts(
+        tTimeout:=T#1s,
+        bKnownState:=bKnownState,
+        bMovingState:=bMovingState,
+        nPositionIndex:=nPositionIndex,
+        stCurrentPosition:=stCurrentPosition,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

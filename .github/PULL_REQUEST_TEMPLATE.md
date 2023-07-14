@@ -17,6 +17,7 @@
 
 ## Pre-merge checklist
 - [ ] Code works interactively
+- [ ] Test suite passes locally
 - [ ] Code contains descriptive comments
 - [ ] Libraries are set to ``Always Newest`` version (``Library, *``)
 - [ ] Committed with ``pre-commit`` or ran ``pre-commit run --all-files``

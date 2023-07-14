@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_TestHelperSetAndMove" Id="{c3a15660-72b8-4c59-95d3-f594536d1c39}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TestHelperSetAndMove
+(*
+    Set an stMotionStage to a start position, then cause a move.
+    On rising edge of bExecute, errors are cleared, the user enable is set to FALSE, and the position is set.
+    After the position is set, user enable is re-introduced and a move begins.
+
+    The progress of this function block for the purposes of a unit test can be monitored via the outputs.
+
+    The motion stage should have its own FB_MotionStage or some stand-in for it running on outside of the FB.
+
+    This is, in itself, tested in FB_TestHelperSetAndMove_Test.
+*)
+VAR_IN_OUT
+    // The motion state to test with
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_INPUT
+    // Begin on rising edge, stop on falling edge.
+    bExecute: BOOL;
+    // The position to set the motor to
+    fStartPosition: LREAL;
+    // The goal to move the motor towards
+    fGoalPosition: LREAL;
+    // The velocity to move at
+    fVelocity: LREAL;
+    // If TRUE, we'll set all the hardware enable signals. Leave this as FALSE if your testing involves any of the hardware enables.
+    bHWEnable: BOOL;
+END_VAR
+VAR_OUTPUT
+    // Goes to TRUE once the motor has no errors and is deactivated.
+    bResetDone: BOOL;
+    // Goes to TRUE once the set position completes.
+    bSetDone: BOOL;
+    // Goes to TRUE once the motor begins moving.
+    bMotionStarted: BOOL;
+    // Goes to TRUE once the motor reaches its destination.
+    bMoveDone: BOOL;
+    // If bBusy is FALSE, the function block is ready for a new request. Goes to TRUE after bExecute rises and back to FALSE after bMoveDone or bError rises. Also goes to FALSE after the motor stops following bExecute being dropped to FALSE.
+    bBusy: BOOL;
+    // Goes to TRUE in case of an error from FB_MotionRequest
+    bError: BOOL;
+    // Counts up from bExecute's rising trigger. Can be used to implement a timeout.
+    tElapsed: TIME;
+    // Current motor position in case you're looking for it
+    fActPosition: LREAL;
+    // Goes to TRUE if we're trying to stop a move. We'll stop an in-progress move when bExecute goes to FALSE, and we'll make sure the motor fully stops before responding to the next bExecute rising edge.
+    bStoppingMotor: BOOL;
+END_VAR
+VAR
+    fbMoveRequest: FB_MotionRequest;
+    mcSetPos: MC_SetPosition;
+    tonTimeout: TON;
+    rtExec: R_TRIG;
+    ftExec: F_TRIG;
+    bExecQueued: BOOL;
+    nLatchError: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+tonTimeout(
+    IN:=bExecute,
+    PT:=T#1h,
+    ET=>tElapsed,
+);
+rtExec(CLK:=bExecute);
+ftExec(CLK:=bExecute);
+
+// Set the outputs to known values on exec
+bResetDone R= rtExec.Q;
+bSetDone R= rtExec.Q;
+bMotionStarted R= rtExec.Q;
+bMoveDone R= rtExec.Q;
+bBusy S= rtExec.Q;
+bError R= rtExec.Q;
+
+bExecQueued S= rtExec.Q;
+bExecQueued R= ftExec.Q;
+bStoppingMotor S= ftExec.Q;
+
+// Set the hardware enables if asked
+IF bHWEnable THEN
+    stMotionStage.bLimitForwardEnable := TRUE;
+    stMotionStage.bLimitBackwardEnable := TRUE;
+    stMotionStage.bHardwareEnable := TRUE;
+    stMotionStage.bPowerSelf := TRUE;
+END_IF
+
+
+// Note that we only reset if it's needed, e.g. the motor has an error or is enabled or moving etc. etc.
+bResetDone S= stMotionStage.bError = FALSE AND stMotionStage.bBusy = FALSE AND stMotionStage.bAllEnable = FALSE;
+
+// All uses of fbMoveRequest are in this IF/ELSE tree
+IF bStoppingMotor THEN
+    // Continue stopping the motor from previous cycles
+    fbMoveRequest(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+    );
+    stMotionStage.bExecute := FALSE;
+    bStoppingMotor R= NOT stMotionStage.Axis.Status.ControlLoopClosed AND NOT fbMoveRequest.bBusy;
+ELSIF bExecQueued THEN
+    // First exec cycle: bring these to FALSE for later use
+    bExecQueued := FALSE;
+    stMotionStage.bUserEnable := FALSE;
+    fbMoveRequest(
+        stMotionStage:=stMotionStage,
+        bExecute:=FALSE,
+        bReset:=FALSE,
+    );
+ELSIF NOT bResetDone THEN
+    // Other cycles: reset until we're done resetting
+    fbMoveRequest(
+        stMotionStage:=stMotionStage,
+        bReset:=bExecute,
+    );
+ELSIF fStartPosition <> fGoalPosition THEN
+    // Later: do the move
+    // Important to not enable the motor until the set position is done
+    stMotionStage.bUserEnable := bSetDone;
+    fbMoveRequest(
+        stMotionStage:=stMotionStage,
+        bExecute:=bSetDone AND bExecute AND NOT bMoveDone AND NOT bError,
+        bReset:=FALSE,
+        enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
+        fPos:=fGoalPosition,
+        fVel:=fVelocity,
+    );
+    bMotionStarted S= bSetDone AND fbMoveRequest.bExecute AND stMotionStage.bBusy AND stMotionStage.stAxisStatus.fActPosition <> fStartPosition;
+    bMoveDone S= bMotionStarted AND stMotionStage.stAxisStatus.fActPosition = fGoalPosition;
+END_IF
+
+// Set the position prior to the move but after the reset.
+mcSetPos(
+    Axis:=stMotionStage.Axis,
+    Execute:=bResetDone AND bExecute AND NOT bSetDone AND NOT bError,
+    Position:=fStartPosition,
+);
+IF mcSetPos.Done OR mcSetPos.Error THEN
+    nLatchError := mcSetPos.ErrorID;
+END_IF
+bSetDone S= mcSetPos.Done AND NOT mcSetPos.Error AND stMotionStage.stAxisStatus.fActPosition = fStartPosition;
+
+// Any sub-error is an error here
+bError := fbMoveRequest.bError OR mcSetPos.Error;
+
+// Reset bBusy when appropriate
+bBusy R= (bMoveDone AND NOT bStoppingMotor) OR bError OR ftExec.Q;
+
+// Extract the motor position
+fActPosition := stMotionStage.stAxisStatus.fActPosition;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

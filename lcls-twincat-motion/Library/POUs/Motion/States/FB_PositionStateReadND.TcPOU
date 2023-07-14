@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateReadND" Id="{3c302874-e55d-4c41-bc18-ae389049a346}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND
+(*
+    Function block to get the combined N-dimensional state of a group of motors.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    Use FB_PositionStateRead1D, FB_PositionStateRead2D, ... etc. instead
+*)
+VAR_IN_OUT
+    // The motors with a combined N-dimensional state
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // Each motor's respective position states along its direction
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
+END_VAR
+VAR_OUTPUT
+    // TRUE if we're standing still at a known state.
+    bKnownState: BOOL;
+    // TRUE if we're moving, there can be no valid state if we are moving.
+    bMovingState: BOOL;
+    // If we're at a known state, this will be the state index along the enclosed states arrays. Otherwise, it will be zero, which is below the bounds of the states array.
+    nPositionIndex: UINT;
+    // TRUE if the active motor count was invalid
+    bMotorCountError: BOOL;
+    // A full description of whether we're at each of our states. This is used to clarify cases where states may overlap.
+    abAtPosition: ARRAY[1..GeneralConstants.MAX_STATES] OF BOOL;
+END_VAR
+VAR
+    // The individual position state reader function blocks
+    afbPositionStateRead: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_PositionStateRead;
+
+    nIter: UINT;
+    nIter2: UINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckCount();
+IF NOT bMotorCountError THEN
+    DoStateReads();
+    CombineOutputs();
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="CheckCount" Id="{21aece42-11dd-4a43-9ed8-fc6ef8203bcd}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="CombineOutputs" Id="{4846d43a-1304-4a25-a7f8-7277efded98f}">
+      <Implementation>
+        <ST><![CDATA[
+// bKnownState is TRUE if ALL motors have the same known state
+bKnownState := TRUE;
+FOR nIter := 1 TO nActiveMotorCount DO
+    bKnownState := bKnownState AND afbPositionStateRead[nIter].bKnownState;
+END_FOR
+
+// bMovingState is TRUE if ANY motor is moving
+bMovingState := FALSE;
+FOR nIter := 1 TO nActiveMotorCount DO
+    bMovingState := bMovingState OR afbPositionStateRead[nIter].bMovingState;
+END_FOR
+
+// To account for redundant 1D states, we need to check the full output arrays.
+nPositionIndex := 0;
+FOR nIter := 1 TO GeneralConstants.MAX_STATES DO
+    abAtPosition[nIter] := TRUE;
+    FOR nIter2 := 1 TO nActiveMotorCount DO
+        abAtPosition[nIter] R= NOT afbPositionStateRead[nIter2].abAtPosition[nIter];
+    END_FOR
+    IF abAtPosition[nIter] THEN
+        nPositionIndex := nIter;
+    END_IF
+END_FOR
+
+// Position index 0 means different positions
+bKnownState := bKnownState AND nPositionIndex <> 0;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="DoStateReads" Id="{792912d8-47d8-414a-9ac1-60fb2bf5ef46}">
+      <Implementation>
+        <ST><![CDATA[
+MOTION_GVL.nMaxStateMotorCount := MAX(MOTION_GVL.nMaxStateMotorCount, nActiveMotorCount);
+FOR nIter := 1 TO nActiveMotorCount DO
+    afbPositionStateRead[nIter](
+        stMotionStage:=astMotionStage[nIter],
+        astPositionState:=astPositionState[nIter],
+    );
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

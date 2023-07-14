@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PMPSJsonTestHelper" Id="{dc71dc31-2d0b-4062-b2d3-b26324b3473f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PMPSJsonTestHelper
+(*
+    Create a JSON doc in memory to match the input structs
+    Assumes 1 device for simplicity
+    Writes to the global pmps json doc
+*)
+VAR_IN_OUT
+    astBeamParams: ARRAY[*] OF ST_DbStateParams;
+END_VAR
+VAR_INPUT
+    bExecute: BOOL;
+    sDevName: STRING;
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    rtExec: R_TRIG;
+    jsonRoot: SJsonValue;
+    jsonDevice: SJsonValue;
+    ajsonState: ARRAY[0..GeneralConstants.MAX_STATES] OF SJsonValue;
+    fbJson: FB_JsonDomParser;
+
+    nIter: DINT;
+    nId: DINT;
+
+    aseVRange: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    asRate: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    asBCRange: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+    asTran: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+rtExec(CLK:=bExecute);
+IF NOT rtExec.Q THEN
+    RETURN;
+END_IF
+
+jsonRoot := fbJson.NewDocument();
+jsonDevice := fbJson.AddObjectMember(jsonRoot, sDevName);
+FOR nIter := LOWER_BOUND(astBeamParams, 1) TO UPPER_BOUND(astBeamParams, 1) DO
+    ajsonState[nIter] := fbJson.AddObjectMember(jsonDevice, astBeamParams[nIter].sPmpsState);
+
+    nId := nId + 1;
+    fbJson.AddIntMember(
+        v:=ajsonState[nIter],
+        member:='id',
+        value:=nId,
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='beamline',
+        value:='tst',
+    );
+    aseVRange[nIter] := bitmaskToString(astBeamParams[nIter].stBeamParams.neVRange, 32);
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='neVRange',
+        value:=aseVRange[nIter],
+    );
+    asRate[nIter] := UDINT_TO_STRING(astBeamParams[nIter].stBeamParams.nRate);
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='nRate',
+        value:=asRate[nIter],
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='ap_ygap',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='ap_xgap',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='damage_limit',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='notes',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='reactive_temp',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='reactive_pressure',
+        value:='',
+    );
+    asBCRange[nIter] := bitmaskToString(astBeamParams[nIter].stBeamParams.nBCRange, 15);
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='nBeamClassRange',
+        value:=asBCRange[nIter],
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='name',
+        value:=astBeamParams[nIter].sPmpsState,
+    );
+    asTran[nIter] := REAL_TO_STRING(astBeamParams[nIter].stBeamParams.nTran);
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='nTran',
+        value:=asTran[nIter],
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='ap_name',
+        value:='None',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='ap_ycenter',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='ap_xcenter',
+        value:='',
+    );
+    fbJson.AddStringMember(
+        v:=ajsonState[nIter],
+        member:='pulse_energy',
+        value:='',
+    );
+    fbJson.AddBoolMember(
+        v:=ajsonState[nIter],
+        member:='special',
+        value:=FALSE,
+    );
+END_FOR
+
+PMPS_GVL.BP_jsonDoc := jsonRoot;
+]]></ST>
+    </Implementation>
+    <Method Name="bitmaskToString" Id="{a74cbfbf-040a-4efc-a4a9-225eb526d334}">
+      <Declaration><![CDATA[METHOD bitmaskToString : STRING
+VAR_INPUT
+    nBitmask: DWORD;
+    nBits: UINT;
+END_VAR
+VAR
+    nIter: UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+bitmaskToString := '';
+FOR nIter := 1 TO nBits DO
+    bitmaskToString := CONCAT(DWORD_TO_STRING(SHR(nBitmask, nIter - 1) AND 1), bitmaskToString);
+END_FOR]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

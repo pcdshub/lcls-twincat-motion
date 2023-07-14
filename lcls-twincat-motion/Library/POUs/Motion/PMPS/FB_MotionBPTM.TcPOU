@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionBPTM" Id="{f471bde6-e465-403f-9379-def7c3329cbf}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_MotionBPTM
+(*
+    This function block handles the beam parameter transition manager for a group of motors moving together to a destination with shared beam state.
+    stGoalParams and stTransParams are required arguments and must not share IDs with other state parameters in the PLC.
+
+    This is a building block not intended for use outside of lcls-twincat-motion.
+*)
+VAR_IN_OUT
+    // Array of motors that will move for this beam transition
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // The arbiter to request beam states from
+    fbArbiter: FB_Arbiter;
+    // The fast fault output to fault to
+    fbFFHWO: FB_HardwareFFOutput;
+    // The parameters we want to transition to
+    stGoalParams: ST_DbStateParams;
+    // The parameters we want to use during the transition
+    stTransParams: ST_DbStateParams;
+END_VAR
+VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
+    // Set to TRUE to use the BPTM, FALSE to stop using the BPTM.
+    bEnable: BOOL;
+    // TRUE if we're at the physical state that matches the goal parameters
+    bAtState: BOOL;
+    // A device name to use in the GUI
+    sDeviceName: STRING;
+    // How long to wait for parameters before timing out
+    tArbiterTimeout: TIME := T#1s;
+    // Whether to fault and move on timeout (TRUE) or to wait (FALSE)
+    bMoveOnArbiterTimeout: BOOL := TRUE;
+    // Set to TRUE when it is safe to reset the BPTM timeout fast fault, to reset it early.
+    bResetBPTMTimeout: BOOL;
+END_VAR
+VAR_OUTPUT
+    // This becomes TRUE when the motors are allowed to move to their destinations.
+    bTransitionAuthorized: BOOL;
+    // This becomes TRUE once the full beam transition is done.
+    bDone: BOOL;
+    // TRUE if we're using a bad motor count
+    bMotorCountError: BOOL;
+END_VAR
+VAR
+    bptm: BeamParameterTransitionManager;
+    bDoneMoving: BOOL;
+    nPrevID: UDINT;
+    nIndex: DINT;
+
+    bInternalAuth: BOOL;
+    bDoneResetQueued: BOOL;
+
+    tonArbiter: TON;
+    bArbiterTimeout: BOOL;
+    ffBPTMTimeoutAndMove: FB_FastFault;
+    ffBPTMError: FB_FastFault;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckCount();
+IF NOT bMotorCountError THEN
+    SetDoneMoving();
+    IF bEnable THEN
+        RunBPTM();
+        HandleTimeout();
+    END_IF
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="CheckCount" Id="{00ab74a4-e7f5-479a-b541-b15eabe2156b}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="HandleTimeout" Id="{47918ef2-270e-45c7-89d1-13860ad00457}">
+      <Implementation>
+        <ST><![CDATA[
+// Measure the time that the bptm is busy
+tonArbiter(
+    IN:=bptm.bBusy,
+    PT:=tArbiterTimeout,
+    Q=>bArbiterTimeout,
+);
+bTransitionAuthorized := bInternalAuth OR (bArbiterTimeout AND bMoveOnArbiterTimeout);
+
+// Trip the beam for BPTM timeouts if we want to move
+// Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
+ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
+ffBPTMTimeoutAndMove.i_xReset S= bResetBPTMTimeout OR (bptm.bDone AND NOT bptm.bError);
+ffBPTMTimeoutAndMove(
+    i_DevName := sDeviceName,
+    i_Desc := 'BPTM Timeout',
+    i_TypeCode := ENUM_MotionFFType.BPTM_TIMEOUT,
+    io_fbFFHWO := fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="RunBPTM" Id="{2a8eea81-b08c-4171-a9e1-1702d22d9fba}">
+      <Implementation>
+        <ST><![CDATA[
+bptm(
+    fbArbiter:=fbArbiter,
+    i_sDeviceName:=sDeviceName,
+    i_TransitionAssertionID:=stTransParams.nRequestAssertionID,
+    i_stTransitionAssertion:=stTransParams.stBeamParams,
+    i_nRequestedAssertionID:=stGoalParams.nRequestAssertionID,
+    i_stRequestedAssertion:=stGoalParams.stBeamParams,
+    i_xDoneMoving:=bDoneMoving AND bAtState,
+    stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+    q_xTransitionAuthorized=>bInternalAuth,
+    bDone=>bDone,
+);
+
+// Trip the beam for BPTM Errors
+ffBPTMError.i_xOK := NOT bptm.bError;
+ffBPTMError.i_xReset S= bptm.bDone AND NOT bptm.bError;
+ffBPTMError(
+    i_DevName := sDeviceName,
+    i_Desc := 'BPTM error, state transition failed',
+    i_TypeCode := ENUM_MotionFFType.BPTM_ERROR,
+    io_fbFFHWO := fbFFHWO,
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="SetDoneMoving" Id="{87e565bf-89c7-4274-a57e-d0d3644bc8f1}">
+      <Implementation>
+        <ST><![CDATA[
+// Set bDoneMoving if all the motors are done
+bDoneMoving := TRUE;
+FOR nIndex := 1 TO nActiveMotorCount DO
+    bDoneMoving := bDoneMoving AND NOT astMotionStage[nIndex].bBusy AND NOT astMotionStage[nIndex].bExecute;
+END_FOR
+// Reset bDoneMoving if the goal has changed to reset bptm's motor done for an in-place transition
+// This allows us to change to a new beam state without requiring a motor state change
+// BPTM only checks for this "done" transition after the transition has been authorized, so we may need to wait
+bDoneResetQueued S= nPrevID <> stGoalParams.nRequestAssertionID;
+bDoneMoving R= bDoneResetQueued AND bptm.q_xTransitionAuthorized;
+bDoneResetQueued R= bptm.q_xTransitionAuthorized;
+nPrevID := stGoalParams.nRequestAssertionID;
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

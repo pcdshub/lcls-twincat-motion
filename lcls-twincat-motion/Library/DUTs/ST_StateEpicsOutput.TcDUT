@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_StateEpicsOutput" Id="{0bd1a15c-ee9d-44da-ade2-e20a29b11748}">
+    <Declaration><![CDATA[TYPE ST_StateEpicsOutput :
+(*
+    This data structure contains the standard EPICS connection points for the state movers.
+
+    It includes everything except the GET PV, which cannot be included here
+    as it is sourced from enum values unique to the application, and the PMPS PVs, which are
+    gathered in their own data type, ST_StatePMPSEpicsOutput.
+
+    nGetValue here is actively used by state blocks even though it is not exposed directly
+    to EPICS. It is safe to read this value, but you should avoid modifying it, which may
+    interfere with normal operations of the state function blocks.
+
+    For including your own ENUM input, you should pytmc pragma the PV name to end in "GET",
+    and match the prefix of this FB's "DONE" PV. Then, you can include your enum
+    as the eEnumGet IN_OUT var and let the EPICS IOC handle it.
+*)
+STRUCT
+    // For internal use only. This holds the current position index as an integer, else it is 0 if we are changing states or not at any particular state.
+    nGetValue: UINT;
+    // This will be TRUE when we are in an active state move and FALSE otherwise.
+    {attribute 'pytmc' := '
+        pv: BUSY
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bBusy: BOOL;
+    // This will be TRUE after a move completes and FALSE otherwise.
+    {attribute 'pytmc' := '
+        pv: DONE
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bDone: BOOL;
+    // This will be TRUE if the most recent move had an error and FALSE otherwise.
+    {attribute 'pytmc' := '
+        pv: ERR
+        io: i
+        field: ZNAM False
+        field: ONAM True
+    '}
+    bError: BOOL;
+    // This will be set to an NC error code during an error if one exists or left at 0 otherwise.
+    {attribute 'pytmc' := '
+        pv: ERRID
+        io: i
+    '}
+    nErrorID: UDINT;
+    // This will be set to an appropriate error message during an error if one exists or left as an empty string otherwise.
+    {attribute 'pytmc' := '
+        pv: ERRMSG
+        io: i
+    '}
+    sErrorMsg: STRING;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

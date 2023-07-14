@@ -1,0 +1,530 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateReadND_Test" Id="{4b592fad-9c2c-4bce-a31b-7960aad2ca81}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStateReadND_Test EXTENDS FB_MotorTestSuite
+(*
+    Test that FB_PositionStateReadND can be used to read and summarize
+    N-dimensional state positions where multiple motors must move in
+    sync to a shared named state.
+*)
+VAR
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF ARRAY [1..2] OF FB_PositionStateInternal;
+
+    afbTestMove: ARRAY[1..3] OF FB_TestHelperSetAndMove;
+    fbRead: FB_PositionStateReadND;
+    bOneAssertDone: BOOL;
+    nAssertCounter: UINT;
+    nIter1: UINT;
+    nIter2: UINT;
+    nIter3: UINT;
+
+    fbMisRead: FB_PositionStateReadND;
+    astGoodStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astGoodStateShape: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+
+    astSqMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    afbSqMotionStage: ARRAY[1..2] OF FB_MotionStage;
+    astSquareStates: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY [1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbSqInternal: ARRAY[1..2] OF ARRAY[1..4] OF FB_PositionStateInternal;
+
+    afbSqTestMove: ARRAY[1..2] OF FB_TestHelperSetAndMove;
+    fbSqRead: FB_PositionStateReadND;
+    bSqAssertDone: BOOL;
+    nSqAssertCounter: UINT;
+END_VAR
+VAR CONSTANT
+    NO_STATE: UINT := 0;
+    OUT_STATE: UINT := 1;
+    IN_STATE: UINT := 2;
+    IN_TWEAK: UINT := 3;
+    AWAY: UINT := 4;
+    LAST_TEST: UINT := AWAY;
+    TEST_COUNT: UINT := 5;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+PerMotor(1);
+PerMotor(2);
+PerMotor(3);
+SquareSetup();
+
+// First check the case of mismatched arrays
+TestForgot();
+TestCombos(nAssertCounter);
+TestSquare(nSqAssertCounter);
+
+IF bOneAssertDone THEN
+    afbTestMove[1](
+        stMotionStage:=astMotionStage[1],
+        bExecute:=FALSE,
+    );
+    afbTestMove[2](
+        stMotionStage:=astMotionStage[2],
+        bExecute:=FALSE,
+    );
+    afbTestMove[3](
+        stMotionStage:=astMotionStage[3],
+        bExecute:=FALSE,
+    );
+    IF afbTestMove[1].bResetDone AND afbTestMove[2].bResetDone AND afbTestMove[3].bResetDone THEN
+        bOneAssertDone := FALSE;
+        nAssertCounter := nAssertCounter + 1;
+    END_IF
+END_IF
+
+IF bSqAssertDone THEN
+    afbSqTestMove[1](
+        stMotionStage:=astMotionStage[1],
+        bExecute:=FALSE,
+    );
+    afbSqTestMove[2](
+        stMotionStage:=astMotionStage[2],
+        bExecute:=FALSE,
+    );
+    IF afbSqTestMove[1].bResetDone AND afbSqTestMove[2].bResetDone THEN
+        bSqAssertDone := FALSE;
+        nSqAssertCounter := nSqAssertCounter + 1;
+    END_IF
+END_IF]]></ST>
+    </Implementation>
+    <Method Name="DoAssert" Id="{80756ff2-0af2-4418-83af-c425e1ba5c62}">
+      <Declaration><![CDATA[METHOD PRIVATE DoAssert
+VAR_INPUT
+    nMotorCase1: UINT;
+    nMotorCase2: UINT;
+    nMotorCase3: UINT;
+    bReady1: BOOL;
+    bReady2: BOOL;
+    bReady3: BOOL;
+END_VAR
+VAR
+    bKnownState: BOOL;
+    bMovingState: BOOL;
+    nPositionIndex: DINT;
+    sTestCase: STRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+sTestCase := CONCAT(CONCAT(UINT_TO_STRING(nMotorCase1), UINT_TO_STRING(nMotorCase2)), UINT_TO_STRING(nMotorCase3));
+
+AssertTrue(
+    Condition:=bReady1,
+    Message:=CONCAT('Timeout for motor 1 during test case ', sTestCase),
+);
+AssertTrue(
+    Condition:=bReady2,
+    Message:=CONCAT('Timeout for motor 2 during test case ', sTestCase),
+);
+AssertTrue(
+    Condition:=bReady3,
+    Message:=CONCAT('Timeout for motor 3 during test case ', sTestCase),
+);
+
+// All at OUT or all at IN should be OUT and IN respectively, even if doing a tweak move
+// Any other combination is at no state
+IF nMotorCase1 = OUT_STATE AND nMotorCase2 = OUT_STATE AND nMotorCase3 = OUT_STATE THEN
+    bKnownState := TRUE;
+    nPositionIndex := 1;
+ELSIF (nMotorCase1 = IN_STATE OR nMotorCase1 = IN_TWEAK) AND
+      (nMotorCase2 = IN_STATE OR nMotorCase2 = IN_TWEAK) AND
+      (nMotorCase3 = IN_STATE OR nMotorCase3 = IN_TWEAK) THEN
+    bKnownState := TRUE;
+    nPositionIndex := 2;
+END_IF
+// In addition, bMovingState must be set if any is moving away from a state
+IF nMotorCase1 = AWAY OR nMotorCase2 = AWAY OR nMotorCase3 = AWAY THEN
+    bMovingState := TRUE;
+END_IF
+
+AssertEquals_BOOL(
+    Expected:=bKnownState,
+    Actual:=fbRead.bKnownState,
+    Message:=CONCAT('Wrong bKnownState for test case ', sTestCase),
+);
+AssertEquals_BOOL(
+    Expected:=bMovingState,
+    Actual:=fbRead.bMovingState,
+    Message:=CONCAT('Wrong bMovingState for test case ', sTestCase),
+);
+AssertEquals_DINT(
+    Expected:=nPositionIndex,
+    Actual:=fbRead.nPositionIndex,
+    Message:=CONCAT('Wrong nPositionIndex for test case ', sTestCase),
+);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="DoMove" Id="{b2902d75-90e1-4000-aeee-9bd6641cfb93}">
+      <Declaration><![CDATA[METHOD PRIVATE DoMove: BOOL
+VAR_INPUT
+    nMotorIndex: UINT;
+    nMotorCase: UINT;
+END_VAR
+VAR
+    fStartPosition: LREAL;
+    fGoalPosition: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+CASE nMotorCase OF
+    // Somewhere smaller than OUT, static
+    NO_STATE:
+        fStartPosition := astPositionState[nMotorIndex][1].fPosition - 10 * astPositionState[nMotorIndex][1].fDelta;
+        fGoalPosition := fStartPosition;
+    // Exactly at OUT, static
+    OUT_STATE:
+        fStartPosition := astPositionState[nMotorIndex][1].fPosition;
+        fGoalPosition := fStartPosition;
+    // Exactly at IN, static
+    IN_STATE:
+        fStartPosition := astPositionState[nMotorIndex][2].fPosition;
+        fGoalPosition := fStartPosition;
+    // Start at IN, do a small tweak
+    IN_TWEAK:
+        fStartPosition := astPositionState[nMotorIndex][2].fPosition;
+        fGoalPosition := fStartPosition + 0.9 * astPositionState[nMotorIndex][2].fDelta;
+    // Start at IN, move positive a lot
+    AWAY:
+        fStartPosition := astPositionState[nMotorIndex][2].fPosition;
+        fGoalPosition := fStartPosition + 100 * astPositionState[nMotorIndex][2].fDelta;
+END_CASE
+
+afbTestMove[nMotorIndex](
+    stMotionStage:=astMotionStage[nMotorIndex],
+    bExecute:=TRUE,
+    fStartPosition:=fStartPosition,
+    fGoalPosition:=fGoalPosition,
+    fVelocity:=0.001,
+    bHWEnable:=TRUE,
+);
+
+CASE nMotorCase OF
+    // All static states: report ready when set is done
+    NO_STATE:
+        DoMove := afbTestMove[nMotorIndex].bSetDone;
+    OUT_STATE:
+        DoMove := afbTestMove[nMotorIndex].bSetDone;
+    IN_STATE:
+        DoMove := afbTestMove[nMotorIndex].bSetDone;
+    // All moving states: report ready when move starts
+    IN_TWEAK:
+        DoMove := afbTestMove[nMotorIndex].bMotionStarted;
+    AWAY:
+        DoMove := afbTestMove[nMotorIndex].bMotionStarted;
+END_CASE
+// Universal 5s timeout
+DoMove S= afbTestMove[nMotorIndex].tElapsed > T#5s;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="DoRead" Id="{6f669269-657a-4dd2-a5a9-367d17113825}">
+      <Declaration><![CDATA[METHOD PRIVATE DoRead
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbRead(
+    astMotionStage:=astMotionStage,
+    astPositionState:=astPositionState,
+    nActiveMotorCount:=3,
+);
+    ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PerMotor" Id="{f47ebc9f-5057-42b7-ab63-07c822af4c4b}">
+      <Declaration><![CDATA[METHOD PRIVATE PerMotor : BOOL
+VAR_INPUT
+    nIndex: DINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+afbMotionStage[nIndex](stMotionStage:=astMotionStage[nIndex]);
+
+astPositionState[nIndex][1].sName := 'OUT';
+astPositionState[nIndex][1].fPosition := nIndex * 100 + 10;
+astPositionState[nIndex][1].fDelta := 1;
+astPositionState[nIndex][1].bUseRawCounts := FALSE;
+SetGoodState(astPositionState[nIndex][1]);
+afbInternal[nIndex][1](
+    stMotionStage:=astMotionStage[nIndex],
+    stPositionState:=astPositionState[nIndex][1],
+);
+
+astPositionState[nIndex][2].sName := 'IN';
+astPositionState[nIndex][2].fPosition := nIndex * 100 + 20;
+astPositionState[nIndex][2].fDelta := 1;
+astPositionState[nIndex][2].bUseRawCounts := FALSE;
+SetGoodState(astPositionState[nIndex][2]);
+afbInternal[nIndex][2](
+    stMotionStage:=astMotionStage[nIndex],
+    stPositionState:=astPositionState[nIndex][2],
+);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SquareSetup" Id="{84af8424-a19e-4a17-9b41-0e799f55aee2}">
+      <Declaration><![CDATA[METHOD SquareSetup
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// 2 motors, 4 positions per motor, square geometry
+// Motor 1 is X, motor 2 is Y
+// Corners at (10,10), (10, 20), (20, 10), (20, 20)
+// So motor 1 is either LEFT=10 or RIGHT=20
+// motor 2 is either BOT=10 or TOP=20
+
+afbSqMotionStage[1](stMotionStage:=astSqMotionStage[1]);
+afbSqMotionStage[2](stMotionStage:=astSqMotionStage[2]);
+
+astSquareStates[1][1].sName := 'Top Left';
+astSquareStates[1][1].fPosition := 10;
+astSquareStates[1][1].fDelta := 1;
+SetGoodState(astSquareStates[1][1]);
+afbSqInternal[1][1](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[1][1],
+);
+
+astSquareStates[1][2].sName := 'Top Right';
+astSquareStates[1][2].fPosition := 20;
+astSquareStates[1][2].fDelta := 1;
+SetGoodState(astSquareStates[1][2]);
+afbSqInternal[1][2](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[1][2],
+);
+
+astSquareStates[1][3].sName := 'Bot Left';
+astSquareStates[1][3].fPosition := 10;
+astSquareStates[1][3].fDelta := 1;
+SetGoodState(astSquareStates[1][3]);
+afbSqInternal[1][3](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[1][3],
+);
+
+astSquareStates[1][4].sName := 'Bot Right';
+astSquareStates[1][4].fPosition := 20;
+astSquareStates[1][4].fDelta := 1;
+SetGoodState(astSquareStates[1][4]);
+afbSqInternal[1][4](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[1][4],
+);
+
+astSquareStates[2][1].sName := 'Top Left';
+astSquareStates[2][1].fPosition := 20;
+astSquareStates[2][1].fDelta := 1;
+SetGoodState(astSquareStates[2][1]);
+afbSqInternal[2][1](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[2][1],
+);
+
+astSquareStates[2][2].sName := 'Top Right';
+astSquareStates[2][2].fPosition := 20;
+astSquareStates[2][2].fDelta := 1;
+SetGoodState(astSquareStates[2][2]);
+afbSqInternal[2][2](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[2][2],
+);
+
+astSquareStates[2][3].sName := 'Bot Left';
+astSquareStates[2][3].fPosition := 10;
+astSquareStates[2][3].fDelta := 1;
+SetGoodState(astSquareStates[2][3]);
+afbSqInternal[2][3](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[2][3],
+);
+
+astSquareStates[2][4].sName := 'Bot Right';
+astSquareStates[2][4].fPosition := 10;
+astSquareStates[2][4].fDelta := 1;
+SetGoodState(astSquareStates[2][4]);
+afbSqInternal[2][4](
+    stMotionStage:=astMotionStage[1],
+    stPositionState:=astSquareStates[2][4],
+);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestCombos" Id="{481100c9-0915-4b4e-b684-ec082ca225fc}">
+      <Declaration><![CDATA[METHOD PRIVATE TestCombos
+VAR_INPUT
+    nAssertID: UINT;
+END_VAR
+VAR
+    nMotor1Case: UINT;
+    nMotor2Case: UINT;
+    nMotor3Case: UINT;
+    bReady1: BOOL;
+    bReady2: BOOL;
+    bReady3: BOOL;
+END_VAR
+VAR_INST
+    tonTimeout: TON;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// This should be one big test case with 125 asserts
+TEST('TestAllCombos');
+
+nMotor1Case := nAssertID MOD TEST_COUNT;
+nMotor2Case := LREAL_TO_UINT(FLOOR(nAssertID / TEST_COUNT)) MOD TEST_COUNT;
+nMotor3Case := LREAL_TO_UINT(FLOOR(nAssertID / TEST_COUNT / TEST_COUNT)) MOD TEST_COUNT;
+
+bReady1 := DoMove(1, nMotor1Case);
+bReady2 := DoMove(2, nMotor2Case);
+bReady3 := DoMove(3, nMotor3Case);
+
+// There is a 5s timeout at a lower level, but that timeout could fail
+tonTimeout(
+    IN:=TRUE,
+    PT:=T#7s,
+);
+
+IF tonTimeout.Q OR (bReady1 AND bReady2 AND bReady3) THEN
+    DoRead();
+    DoAssert(nMotor1Case, nMotor2Case, nMotor3Case, bReady1, bReady2, bReady3);
+    bOneAssertDone := TRUE;
+    // The final assert case marks test as finished
+    IF tonTimeout.Q OR (nMotor1Case = LAST_TEST AND nMotor2Case = LAST_TEST AND nMotor3Case = LAST_TEST) THEN
+        // 11 extra tests
+        // 1 from TestForgot
+        // 10 (2*5) from TestSquare
+        AssertEquals_UINT(
+            Expected:=6 * TEST_COUNT * TEST_COUNT * TEST_COUNT + 11,
+            Actual:=AssertResults.TotalAsserts,
+            Message:='Some of the asserts were not run',
+        );
+        AssertFalse(
+            tonTimeout.Q,
+            'Level 2 timeout in test',
+        );
+        TEST_FINISHED();
+    END_IF
+    tonTimeout(IN:=FALSE);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestForgot" Id="{8ee66784-0269-4074-a44f-3e9eda7e6735}">
+      <Declaration><![CDATA[METHOD PRIVATE TestForgot
+VAR
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('ForgotCount');
+
+fbMisRead(
+    astMotionStage:=astGoodStage,
+    astPositionState:=astGoodStateShape,
+);
+
+AssertTrue(
+    Condition:=fbMisRead.bMotorCountError,
+    Message:='Failed to notice missing count',
+);
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestSquare" Id="{30e0cb06-d0bf-47b9-9fd8-b45748a4c3db}">
+      <Declaration><![CDATA[METHOD TestSquare
+VAR_INPUT
+    nAssertID: UINT;
+END_VAR
+VAR
+    fMotor1Pos: LREAL;
+    fMotor2Pos: LREAL;
+    nGoal: UINT;
+END_VAR
+VAR_INST
+    tonTimeout: TON;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// We'll do 5 tests, one at each square point and one more in the middle
+Test('TestSquare');
+IF nAssertID > 4 THEN
+    RETURN;
+END_IF
+
+IF nAssertID = 0 THEN
+    fMotor1Pos := 10;
+    fMotor2Pos := 10;
+    nGoal := 3;
+ELSIF nAssertID = 1 THEN
+    fMotor1Pos := 20;
+    fMotor2Pos := 10;
+    nGoal := 4;
+ELSIF nAssertID = 2 THEN
+    fMotor1Pos := 10;
+    fMotor2Pos := 20;
+    nGoal := 1;
+ELSIF nAssertID = 3 THEN
+    fMotor1Pos := 20;
+    fMotor2Pos := 20;
+    nGoal := 2;
+ELSIF nAssertID = 4 THEN
+    fMotor1Pos := 15;
+    fMotor2Pos := 15;
+    nGoal := 0;
+END_IF
+
+afbSqTestMove[1](
+    stMotionStage:=astSqMotionStage[1],
+    bExecute:=TRUE,
+    fStartPosition:=fMotor1Pos,
+    fGoalPosition:=fMotor1Pos,
+);
+afbSqTestMove[2](
+    stMotionStage:=astSqMotionStage[2],
+    bExecute:=TRUE,
+    fStartPosition:=fMotor2Pos,
+    fGoalPosition:=fMotor2Pos,
+);
+
+tonTimeout(
+    IN:=TRUE,
+    PT:=T#5s,
+);
+
+IF tonTimeout.Q OR afbSqTestMove[1].bSetDone AND afbSqTestMove[1].bSetDone THEN
+    fbSqRead(
+        astMotionStage:=astSqMotionStage,
+        astPositionState:=astSquareStates,
+        nActiveMotorCount:=2,
+    );
+    AssertFalse(
+        tonTimeout.Q,
+        CONCAT('Timeout in square test ', UINT_TO_STRING(nAssertID)),
+    );
+    AssertEquals_UINT(
+        Expected:=nGoal,
+        Actual:=fbSqRead.nPositionIndex,
+        Message:=CONCAT('Wrong read in square test ', UINT_TO_STRING(nAssertID)),
+    );
+
+    bSqAssertDone := TRUE;
+    IF nAssertID = 4 THEN
+        TEST_FINISHED();
+    END_IF
+    tonTimeout(IN:=FALSE);
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

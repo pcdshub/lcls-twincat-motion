@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionState3D" Id="{eb582aca-9c78-4511-9c28-b4749e72999a}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionState3D
+(*
+    3-Dimensional position state function block.
+
+    This allows the user to move 3 motors among some set of named state positions.
+
+    To use a states block, you must define enums that match the state options and give them pytmc pragmas.
+    See FB_PositionState1D_InOut for a simple example.
+    These enums must be passed in as the eEnumSet and eEnumGet VAR_IN_OUT variables.
+    The enum values must match the array indices in astPositionState1, astPositionState2, and astPositionState3.
+
+    A move will begin when eEnumSet is set to a positive, nonzero value. eEnumSet will be reset to 0 on every cycle, allowing us
+    to accept a new, possibly conflicting, move request on the next cycle to interrupt the first.
+
+    The motors must already be set up for point-to-point motion via FB_MotionStage, etc., for this function block to work properly.
+
+    With no PMPS handling, this FB basically just links the state names with positions in both directions for set and readback.
+*)
+VAR_IN_OUT
+    // The 1st motor to move
+    stMotionStage1: ST_MotionStage;
+    // The 2nd motor to move
+    stMotionStage2: ST_MotionStage;
+    // The 3rd motor to move
+    stMotionStage3: ST_MotionStage;
+    // All possible position states for motor 1, including unused/invalid states.
+    {attribute 'pytmc' := '
+        pv: STATE:01
+        io: io
+        expand: :%.2d
+    '}
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // All possible position states for motor 2, including unused/invalid states.
+    {attribute 'pytmc' := '
+        pv: STATE:02
+        io: io
+        expand: :%.2d
+    '}
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // All possible position states for motor 3, including unused/invalid states.
+    {attribute 'pytmc' := '
+        pv: STATE:03
+        io: io
+        expand: :%.2d
+    '}
+    astPositionState3: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
+    eEnumSet: UINT;
+    // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
+    eEnumGet: UINT;
+END_VAR
+VAR_INPUT
+    // Set this to TRUE to enable input state moves, or FALSE to disable them.
+    bEnable: BOOL;
+    // Normal EPICS inputs, gathered into a single struct
+    {attribute 'pytmc' := 'pv: STATE'}
+    stEpicsInput: ST_StateEpicsInput;
+END_VAR
+VAR_OUTPUT
+    // Normal EPICS outputs, gathered into a single struct
+    {attribute 'pytmc' := 'pv: STATE'}
+    stEpicsOutput: ST_StateEpicsOutput;
+END_VAR
+VAR
+    fbCore: FB_PositionStateND_Core;
+    astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+astMotionStageMax[1] := stMotionStage1;
+astMotionStageMax[2] := stMotionStage2;
+astMotionStageMax[3] := stMotionStage3;
+astPositionStateMax[1] := astPositionState1;
+astPositionStateMax[2] := astPositionState2;
+astPositionStateMax[3] := astPositionState3;
+
+fbCore(
+    astMotionStageMax:=astMotionStageMax,
+    astPositionStateMax:=astPositionStateMax,
+    stEpicsInput:=stEpicsInput,
+    stEpicsOutput:=stEpicsOutput,
+    eEnumSet:=eEnumSet,
+    eEnumGet:=eEnumGet,
+    bEnable:=bEnable,
+    nActiveMotorCount:=3,
+);
+
+stMotionStage1 := astMotionStageMax[1];
+stMotionStage2 := astMotionStageMax[2];
+stMotionStage3 := astMotionStageMax[3];
+astPositionState1 := astPositionStateMax[1];
+astPositionState2 := astPositionStateMax[2];
+astPositionState3 := astPositionStateMax[3];
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

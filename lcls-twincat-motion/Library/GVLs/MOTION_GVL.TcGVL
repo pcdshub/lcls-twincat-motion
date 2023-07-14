@@ -1,14 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+<TcPlcObject Version="1.1.0.1">
   <GVL Name="MOTION_GVL" Id="{7b3cfad1-1f36-4ed6-b576-62277c19b2b2}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
+    // Global file reader instance, used in fbStandardPMPSDB
     fbPmpsFileReader: FB_JsonFileToJsonDoc;
     {attribute 'pytmc' := '
         pv: @(PREFIX)DB
         io: io
     '}
+    // Global DB handler, Must be called in PLC project to use the PMPS DB for a motion project
     fbStandardPMPSDB: FB_Standard_PMPSDB;
+    // Debug, records the highest number of motors used in an ND states block in the PLC. Can be used to limit MotionConstants.MAX_STATE_MOTORS to save on memory usage and PV count.
+    nMaxStateMotorCount: UINT;
+    // Debug, records the highest state count in the PLC. Can be used to limit GeneralConstants.MAX_STATES to save on memory usage and PV count.
+    nMaxStates: UINT;
 END_VAR
 ]]></Declaration>
   </GVL>

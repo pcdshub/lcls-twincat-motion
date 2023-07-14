@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStateMoveND" Id="{27786e6e-dd37-418c-9b7c-370d3ce7e59f}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_PositionStateMoveND
+(*
+    This function block coordinates multidimensional state moves for groups of motors.
+    It is a building block not meant for use outside of lcls-twintcat-motion.
+
+    Use FB_PositionState1D, FB_PositionState2D, ... etc. instead
+*)
+VAR_IN_OUT
+    // Array of motors to move together
+    astMotionStage: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    // 1D Position states: the current position to send each axis to
+    astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_PositionState;
+END_VAR
+VAR_INPUT
+    // The number of motors we're actually using
+    nActiveMotorCount: UINT;
+    // Start all moves on rising edge, stop all moves on falling edge
+    bExecute: BOOL;
+    // Reset any errors
+    bReset: BOOL;
+    // Define behavior for when a move request is interrupted with a new request
+    enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+END_VAR
+VAR_OUTPUT
+    // TRUE if ALL of the motors are at their goal states
+    bAtState: BOOL;
+    // TRUE if ANY of this FB's moves are in progress
+    bBusy: BOOL;
+    // TRUE if ALL motors have completed the last move request from this FB
+    bDone: BOOL;
+    // TRUE if ANY of this FB's moves had an error
+    bError: BOOL;
+    // How many FBs are erroring
+    nErrorCount: UINT;
+    // Which component is the source of the example/summarized error
+    nShownError: DINT;
+    // One of the error ids
+    nErrorID: UDINT;
+    // The error error message matching the ID
+    sErrorMessage: STRING;
+END_VAR
+VAR
+    // 1D State movers: FBs to move the motors
+    afbPositionStateMove: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF FB_PositionStateMove;
+    nIndex: DINT;
+    bMotorCountError: BOOL;
+    nLowerBound: DINT;
+    nUpperBound: DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+CheckCount();
+IF NOT bMotorCountError THEN
+    DoStateMoves();
+    CombineOutputs();
+END_IF
+]]></ST>
+    </Implementation>
+    <Action Name="CheckCount" Id="{9244b3c0-fac6-4a82-83fe-d3ec9dc81390}">
+      <Implementation>
+        <ST><![CDATA[
+// Make sure the motor count is valid (positive, nonzero, less or equal to the max)
+bMotorCountError S= nActiveMotorCount <= 0;
+bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
+
+IF bMotorCountError THEN
+    bError := TRUE;
+    sErrorMessage := 'Internal Error: invalid motor count';
+END_IF
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="CombineOutputs" Id="{fb280db4-19e3-45d0-a523-0567a14368b1}">
+      <Implementation>
+        <ST><![CDATA[
+// bAtState is TRUE if ALL entries are TRUE
+bAtState := TRUE;
+FOR nIndex := 1 TO nActiveMotorCount DO
+    bAtState := bAtState AND afbPositionStateMove[nIndex].bAtState;
+END_FOR
+
+// bBusy is TRUE if ANY entry is TRUE
+bBusy := FALSE;
+FOR nIndex := 1 TO nActiveMotorCount DO
+    bBusy := bBusy OR afbPositionStateMove[nIndex].bBusy;
+END_FOR
+
+// bDone is TRUE if ALL entries are TRUE
+bDone := TRUE;
+FOR nIndex := 1 TO nActiveMotorCount DO
+    bDone := bDone AND afbPositionStateMove[nIndex].bDone;
+END_FOR
+
+// bError is TRUE if ANY entry is TRUE
+// also set nShownError and increment nErrorCount
+bError := FALSE;
+nErrorCount := 0;
+FOR nIndex := 1 TO nActiveMotorCount DO
+    bError := bError OR afbPositionStateMove[nIndex].bError;
+    IF afbPositionStateMove[nIndex].bError THEN
+        nShownError := nIndex;
+        nErrorCount := nErrorCount + 1;
+    END_IF
+END_FOR
+
+// Pick error id and message using nShownError
+IF bError THEN
+    nErrorID := afbPositionStateMove[nShownError].nErrorID;
+    sErrorMessage := afbPositionStateMove[nShownError].sErrorMessage;
+ELSE
+    nErrorID := 0;
+    sErrorMessage := '';
+END_IF
+]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="DoStateMoves" Id="{d81e9830-b01d-4422-98b3-41033ba5b368}">
+      <Implementation>
+        <ST><![CDATA[
+// Do the individual moves
+FOR nIndex := 1 TO nActiveMotorCount DO
+    afbPositionStateMove[nIndex](
+        stMotionStage:=astMotionStage[nIndex],
+        stPositionState:=astPositionState[nIndex],
+        bExecute:=bExecute,
+        bReset:=bReset,
+        enumMotionRequest:=enumMotionRequest,
+    );
+END_FOR
+]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

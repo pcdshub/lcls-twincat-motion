@@ -1,0 +1,804 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PositionStatePMPSND_Test" Id="{5b25afff-6416-405d-b50f-327a73066770}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PositionStatePMPSND_Test EXTENDS FB_MotorTestSuite
+(*
+    Sanity checks for the following:
+    - FB_PositionStatePMPS1D
+    - FB_PositionStatePMPS2D
+    - FB_PositionStatePMPS3D
+    The internals have already been tested, but we need to make sure that
+    they've been put together at least somewhat sensibly.
+    This FB will simply use each FB to move and check the results.
+    In addition to reaching the goals, we need to check the beam assertions
+    and the pmps limit enables.
+*)
+VAR
+    stMotionStage1: ST_MotionStage;
+    stMotionStage2: ST_MotionStage;
+    stMotionStage3: ST_MotionStage;
+    astPositionState1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astPositionState3: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    afbInternal: ARRAY[1..3] OF ARRAY[1..3] OF FB_PositionStateInternal;
+    afbMotionStage: ARRAY[1..3] OF FB_MotionStage;
+
+    astBeam: ARRAY[0..3] OF ST_DbStateParams;
+
+    fb_Move1D: FB_PositionStatePMPS1D;
+    fb_Move2D: FB_PositionStatePMPS2D;
+    fb_Move3D: FB_PositionStatePMPS3D;
+
+    nTestCounter: UINT;
+    bOneTestDone: BOOL;
+    fTestStartPos: LREAL;
+    tonTimer: TON;
+    nIter: DINT;
+    bStatesReady: BOOL;
+
+    eSetPos: ENUM_TestStates;
+    eGetPos: ENUM_TestStates;
+
+    fbArbiter1D: FB_Arbiter(1);
+    fbArbiter2D: FB_Arbiter(2);
+    fbArbiter3D: FB_Arbiter(3);
+
+    fbSubSysIO1D: FB_DummyArbIO;
+    fbSubSysIO2D: FB_DummyArbIO;
+    fbSubSysIO3D: FB_DummyArbIO;
+
+    jsonHelper: FB_PMPSJsonTestHelper;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+bStatesReady := TRUE;
+FOR nIter := 1 TO 3 DO;
+    astPositionState1[nIter].fPosition := nIter;
+    astPositionState1[nIter].fDelta := 0.5;
+    astPositionState1[nIter].fVelocity := 100;
+    SetGoodState(astPositionState1[nIter]);
+    astPositionState2[nIter].fPosition := 10 + nIter;
+    astPositionState2[nIter].fDelta := 0.5;
+    astPositionState2[nIter].fVelocity := 100;
+    SetGoodState(astPositionState2[nIter]);
+    astPositionState3[nIter].fPosition := 20 + nIter;
+    astPositionState3[nIter].fDelta := 0.5;
+    astPositionState3[nIter].fVelocity := 100;
+    SetGoodState(astPositionState3[nIter]);
+    afbInternal[nIter][1](
+        stMotionStage:=stMotionStage1,
+        stPositionState:=astPositionState1[nIter],
+    );
+    afbInternal[nIter][2](
+        stMotionStage:=stMotionStage2,
+        stPositionState:=astPositionState2[nIter],
+    );
+    afbInternal[nIter][3](
+        stMotionStage:=stMotionStage3,
+        stPositionState:=astPositionState3[nIter],
+    );
+    bStatesReady := bStatesReady AND astPositionState1[nIter].bUpdated;
+    bStatesReady := bStatesReady AND astPositionState2[nIter].bUpdated;
+    bStatesReady := bStatesReady AND astPositionState3[nIter].bUpdated;
+END_FOR
+SetEnablesPMPS(stMotionStage1);
+SetEnablesPMPS(stMotionStage2);
+SetEnablesPMPS(stMotionStage3);
+IF nTestCounter <= 3 THEN
+    // Startup tests, make sure the motor is enabled so we can inspect MC_Power's output
+    // Otherwise we can't snoop on the PlcToNc control DWORD since this is all 0's if disabled
+    // When enabled, some of the other bits go to 1 to represent directional enables
+    stMotionStage1.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    stMotionStage2.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    stMotionStage3.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+ELSE
+    // Otherwise, make sure the most complicated mode (and the default) works
+    stMotionStage1.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+    stMotionStage2.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+    stMotionStage3.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+END_IF
+afbMotionStage[1](stMotionStage:=stMotionStage1);
+afbMotionStage[2](stMotionStage:=stMotionStage2);
+afbMotionStage[3](stMotionStage:=stMotionStage3);
+
+astBeam[ENUM_TestStates.Unknown].stBeamParams := PMPS_GVL.cst0RateBeam;
+astBeam[ENUM_TestStates.Unknown].nRequestAssertionID := 1;
+astBeam[ENUM_TestStates.Unknown].sPmpsState := 'trans';
+astBeam[ENUM_TestStates.OUT].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[ENUM_TestStates.OUT].nRequestAssertionID := 2;
+astBeam[ENUM_TestStates.OUT].sPmpsState := 'out';
+astBeam[ENUM_TestStates.TARGET1].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[ENUM_TestStates.TARGET1].stBeamParams.nTran := 0.1;
+astBeam[ENUM_TestStates.TARGET1].nRequestAssertionID := 3;
+astBeam[ENUM_TestStates.TARGET1].sPmpsState := 'target1';
+astBeam[ENUM_TestStates.TARGET2].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[ENUM_TestStates.TARGET2].stBeamParams.nTran := 0.01;
+astBeam[ENUM_TestStates.TARGET2].nRequestAssertionID := 4;
+astBeam[ENUM_TestStates.TARGET2].sPmpsState := 'target2';
+
+// Assign beam params to states 1
+astPositionState1[ENUM_TestStates.OUT].stPMPS := astBeam[ENUM_TestStates.OUT];
+astPositionState1[ENUM_TestStates.TARGET1].stPMPS := astBeam[ENUM_TestStates.TARGET1];
+astPositionState1[ENUM_TestStates.TARGET2].stPMPS := astBeam[ENUM_TestStates.TARGET2];
+
+// Set some names for maybe help in debug
+astPositionState1[ENUM_TestStates.OUT].sName := 'OUT';
+astPositionState1[ENUM_TestStates.TARGET1].sName := 'TARGET1';
+astPositionState1[ENUM_TestStates.TARGET2].sName := 'TARGET2';
+astPositionState2[ENUM_TestStates.OUT].sName := 'OUT';
+astPositionState2[ENUM_TestStates.TARGET1].sName := 'TARGET1';
+astPositionState2[ENUM_TestStates.TARGET2].sName := 'TARGET2';
+astPositionState3[ENUM_TestStates.OUT].sName := 'OUT';
+astPositionState3[ENUM_TestStates.TARGET1].sName := 'TARGET1';
+astPositionState3[ENUM_TestStates.TARGET2].sName := 'TARGET2';
+
+// Load a fake json doc to be consumed by our FB
+jsonHelper(
+    astBeamParams:=astBeam,
+    bExecute:=TRUE,
+    sDevName:='test',
+);
+
+IF bStatesReady AND nTestCounter = 0 THEN
+    // Don't run any tests until the states are ready
+    nTestCounter := 1;
+END_IF
+
+TestStartup1D(1);
+TestStartup2D(2);
+TestStartup3D(3);
+Test1D(4, ENUM_TestStates.OUT);
+Test1D(5, ENUM_TestStates.TARGET1);
+Test1D(6, ENUM_TestStates.TARGET2);
+Test2D(7, ENUM_TestStates.OUT);
+Test2D(8, ENUM_TestStates.TARGET1);
+Test2D(9, ENUM_TestStates.TARGET2);
+Test3D(10, ENUM_TestStates.OUT);
+Test3D(11, ENUM_TestStates.TARGET1);
+Test3D(12, ENUM_TestStates.TARGET2);
+
+IF bOneTestDone THEN
+    bOneTestDone := FALSE;
+    nTestCounter := nTestCounter + 1;
+    tonTimer(IN:=FALSE);
+END_IF
+// Use this timer to time out any tests that stall
+tonTimer(
+    IN:=bStatesReady,
+    PT:=T#5s,
+);
+]]></ST>
+    </Implementation>
+    <Method Name="AssertMotionLims" Id="{022f18ed-834d-4e54-ad88-114f4be5070a}">
+      <Declaration><![CDATA[METHOD AssertMotionLims: BOOL
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+    astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+VAR_INPUT
+    eState: ENUM_TestStates;
+    sID: STRING;
+END_VAR
+VAR
+    nExpected: DWORD;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF F_AtPositionState(stMotionStage, astPositionState[eState]) THEN
+    // Both allowed
+    nExpected := 2#111;
+ELSIF stMotionStage.stAxisStatus.fActPosition < astPositionState[eState].fPosition THEN
+    // Only + allowed
+    nExpected := 2#011;
+ELSE
+    // Only - allowed
+    nExpected := 2#101;
+END_IF
+
+IF stMotionStage.Axis.PlcToNc.ControlDWord > 0 THEN
+    AssertEquals_DWORD(
+        Expected:=nExpected,
+        Actual:=stMotionStage.Axis.PlcToNc.ControlDWord,
+        Message:=CONCAT('Wrong control dword in test ', sID),
+    );
+    AssertMotionLims := TRUE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test1D" Id="{6551b146-aecb-4933-8bfe-0515d13d519c}">
+      <Declaration><![CDATA[METHOD Test1D
+VAR_INPUT
+    nTestID: UINT;
+    eState: ENUM_TestStates;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    bInit: BOOL;
+    bLimAsserted: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test1D_state', UINT_TO_STRING(eState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+IF NOT bInit THEN
+    eSetPos := eState;
+END_IF
+
+fbSubSysIO1D(
+    LA:=fbArbiter1D,
+    FFO:=fbFFHWO,
+);
+
+fb_Move1D(
+    stMotionStage:=stMotionStage1,
+    astPositionState:=astPositionState1,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter1D,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+    bReadDBNow:=NOT bInit,
+    sDeviceName:='test',
+    sTransitionKey:='trans',
+);
+
+// When ready: check that directonal enables are correct
+bLimAsserted S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('1D mot 1 state ', UINT_TO_STRING(eState)));
+
+
+IF NOT bInit THEN
+    bInit := TRUE;
+END_IF
+
+IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        bLimAsserted,
+        'Skipped limit assert test',
+    );
+    AssertTrue(
+        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_UINT(
+        Expected:=eState,
+        Actual:=eGetPos,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[eState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertTrue(
+        fbArbiter1D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
+        'Destination bp should have been in the arbiter',
+    );
+    fb_Move1D.stEpicsInput.bReset := TRUE;
+    fb_Move1D(
+        stMotionStage:=stMotionStage1,
+        astPositionState:=astPositionState1,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        fbFFHWO:=fbFFHWO,
+        fbArbiter:=fbArbiter1D,
+        bEnableMotion:=TRUE,
+        bEnableBeamParams:=TRUE,
+        bEnablePositionLimits:=TRUE,
+    );
+    bInit := FALSE;
+    bLimAsserted := FALSE;
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test2D" Id="{134b433c-bcf0-4f18-831a-5eed3883fc74}">
+      <Declaration><![CDATA[METHOD Test2D
+VAR_INPUT
+    nTestID: UINT;
+    eState: ENUM_TestStates;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    bInit: BOOL;
+    bLimAsserted1: BOOL;
+    bLimAsserted2: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test2D_state', UINT_TO_STRING(eState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+IF NOT bInit THEN
+    eSetPos := eState;
+END_IF
+
+fbSubSysIO2D(
+    LA:=fbArbiter2D,
+    FFO:=fbFFHWO,
+);
+
+fb_Move2D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    astPositionState1:=astPositionState1,
+    astPositionState2:=astPositionState2,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter2D,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+    bReadDBNow:=NOT bInit,
+    sDeviceName:='test',
+    sTransitionKey:='trans',
+);
+
+// When ready: check that directonal enables are correct
+bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('2D mot 1 state ', UINT_TO_STRING(eState)));
+bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('2D mot 2 state ', UINT_TO_STRING(eState)));
+
+IF NOT bInit THEN
+    bInit := TRUE;
+END_IF
+
+IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        bLimAsserted1 AND bLimAsserted2,
+        'Skipped limit assert test',
+    );
+    AssertTrue(
+        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_UINT(
+        Expected:=eState,
+        Actual:=eGetPos,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[eState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState2[eState].fPosition,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertTrue(
+        fbArbiter2D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
+        'Destination bp should have been in the arbiter',
+    );
+    fb_Move2D.stEpicsInput.bReset := TRUE;
+    fb_Move2D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        astPositionState1:=astPositionState1,
+        astPositionState2:=astPositionState2,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        fbFFHWO:=fbFFHWO,
+        fbArbiter:=fbArbiter2D,
+        bEnableMotion:=TRUE,
+        bEnableBeamParams:=TRUE,
+        bEnablePositionLimits:=TRUE,
+    );
+    bInit := FALSE;
+    bLimAsserted1 := FALSE;
+    bLimAsserted2 := FALSE;
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Test3D" Id="{62ef1eb4-d8ea-4e70-880b-11833e41203d}">
+      <Declaration><![CDATA[METHOD Test3D
+VAR_INPUT
+    nTestID: UINT;
+    eState: ENUM_TestStates;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    bInit: BOOL;
+    bLimAsserted1: BOOL;
+    bLimAsserted2: BOOL;
+    bLimAsserted3: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST(CONCAT('Test3D_state', UINT_TO_STRING(eState)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+IF NOT bInit THEN
+    eSetPos := eState;
+END_IF
+
+fbSubSysIO3D(
+    LA:=fbArbiter3D,
+    FFO:=fbFFHWO,
+);
+
+fb_Move3D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    stMotionStage3:=stMotionStage3,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    astPositionState1:=astPositionState1,
+    astPositionState2:=astPositionState2,
+    astPositionState3:=astPositionState3,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter3D,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+    bReadDBNow:=NOT bInit,
+    sDeviceName:='test',
+    sTransitionKey:='trans',
+);
+
+// When ready: check that directonal enables are correct
+bLimAsserted1 S= AssertMotionLims(stMotionStage1, astPositionState1, eState, CONCAT('3D mot 1 state ', UINT_TO_STRING(eState)));
+bLimAsserted2 S= AssertMotionLims(stMotionStage2, astPositionState2, eState, CONCAT('3D mot 2 state ', UINT_TO_STRING(eState)));
+bLimAsserted3 S= AssertMotionLims(stMotionStage3, astPositionState3, eState, CONCAT('3D mot 3 state ', UINT_TO_STRING(eState)));
+
+IF NOT bInit THEN
+    bInit := TRUE;
+END_IF
+
+IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+    AssertTrue(
+        bLimAsserted1 AND bLimAsserted2 AND bLimAsserted3,
+        'Skipped limit assert test',
+    );
+    AssertTrue(
+        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Message:='Done should be True after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Message:='Busy should be False after move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bError,
+        Message:='Error should be False after move',
+    );
+    AssertEquals_UINT(
+        Expected:=eState,
+        Actual:=eGetPos,
+        Message:='Did not get to the input state',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState1[eState].fPosition,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState2[eState].fPosition,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState3[eState].fPosition,
+        Actual:=stMotionStage3.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Did not get to the input state position',
+    );
+    AssertTrue(
+        fbArbiter3D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
+        'Destination bp should have been in the arbiter',
+    );
+    fb_Move3D.stEpicsInput.bReset := TRUE;
+    fb_Move3D(
+        stMotionStage1:=stMotionStage1,
+        stMotionStage2:=stMotionStage2,
+        stMotionStage3:=stMotionStage3,
+        astPositionState1:=astPositionState1,
+        astPositionState2:=astPositionState2,
+        astPositionState3:=astPositionState3,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        fbFFHWO:=fbFFHWO,
+        fbArbiter:=fbArbiter3D,
+        bEnableMotion:=TRUE,
+        bEnableBeamParams:=TRUE,
+        bEnablePositionLimits:=TRUE,
+    );
+    bInit := FALSE;
+    bLimAsserted1 := FALSE;
+    bLimAsserted2 := FALSE;
+    bLimAsserted3 := FALSE;
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStartup1D" Id="{50795fb9-8e60-45c2-9456-13c6cf737ce0}">
+      <Declaration><![CDATA[METHOD TestStartup1D
+(*
+    - On startup, there should be no move request
+    - In this case, we start in an unknown state since (0, 0, 0) is not matching any state for any motor
+    - Movement should be free but the transition assertion must be active
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    bInit: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestStartup1D');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move1D(
+    stMotionStage:=stMotionStage1,
+    astPositionState:=astPositionState1,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter1D,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+    bReadDBNow:=NOT bInit,
+    sDeviceName:='test',
+    sTransitionKey:='trans',
+);
+
+bInit := TRUE;
+
+// We sit in this fb for some timeout number of seconds on purpose, not an error
+IF tonTimer.Q THEN
+    // We should neither be busy nor done (we didn't do anything)
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Message:='Done should be False with no move',
+    );
+    AssertFalse(
+        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Message:='Busy should be False with no move',
+    );
+    // We should still be at 0,0,0
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor1 should have default position',
+    );
+    // We should be able to move both directions, which is control word 7 (2#111)
+    AssertEquals_DWORD(
+        Expected:=2#111,
+        Actual:=stMotionStage1.Axis.PlcToNc.ControlDWord,
+        Message:='Expected full +/- enables',
+    );
+    AssertTrue(
+        fbArbiter1D.CheckRequestInPool(astBeam[ENUM_TestStates.Unknown].nRequestAssertionID),
+        'Transition assertion ID not in pool',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStartup2D" Id="{b31f116a-0581-48e0-b8ce-3dda16e71cc6}">
+      <Declaration><![CDATA[METHOD TestStartup2D
+(*
+    - On startup, there should be no move request
+    - Starting from (0, 0, 0) all motors should only be allowed to move +
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    bInit: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestStartup2D');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move2D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    astPositionState1:=astPositionState1,
+    astPositionState2:=astPositionState2,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter2D,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+    bReadDBNow:=NOT bInit,
+    sDeviceName:='test',
+    sTransitionKey:='trans',
+);
+
+bInit := TRUE;
+
+// We sit in this fb for some timeout number of seconds on purpose, not an error
+IF tonTimer.Q THEN
+    // We should neither be busy nor done (we didn't do anything)
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Message:='Done should be False with no move',
+    );
+    AssertFalse(
+        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Message:='Busy should be False with no move',
+    );
+    // We should still be at 0,0,0
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor1 should have default position',
+    );
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor2 should have default position',
+    );
+    // We should be able to move both directions, which is control word 7 (2#111)
+    AssertEquals_DWORD(
+        Expected:=2#111,
+        Actual:=stMotionStage1.Axis.PlcToNc.ControlDWord,
+        Message:='Expected full +/- enables',
+    );
+    AssertEquals_DWORD(
+        Expected:=2#111,
+        Actual:=stMotionStage2.Axis.PlcToNc.ControlDWord,
+        Message:='Expected full +/- enables',
+    );
+    AssertTrue(
+        fbArbiter2D.CheckRequestInPool(astBeam[ENUM_TestStates.Unknown].nRequestAssertionID),
+        'Transition assertion ID not in pool',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestStartup3D" Id="{560c91d2-232a-4f40-9617-6a5a80e2539f}">
+      <Declaration><![CDATA[METHOD TestStartup3D
+(*
+    - On startup, there should be no move request
+    - Starting from (0, 0, 0) all motors should only be allowed to move +
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbFFHWO: FB_HardwareFFOutput;
+    bInit: BOOL;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestStartup3D');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+fb_Move3D(
+    stMotionStage1:=stMotionStage1,
+    stMotionStage2:=stMotionStage2,
+    stMotionStage3:=stMotionStage3,
+    astPositionState1:=astPositionState1,
+    astPositionState2:=astPositionState2,
+    astPositionState3:=astPositionState3,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    fbFFHWO:=fbFFHWO,
+    fbArbiter:=fbArbiter3D,
+    bEnableMotion:=TRUE,
+    bEnableBeamParams:=TRUE,
+    bEnablePositionLimits:=TRUE,
+    bReadDBNow:=NOT bInit,
+    sDeviceName:='test',
+    sTransitionKey:='trans',
+);
+
+bInit := TRUE;
+
+// We sit in this fb for some timeout number of seconds on purpose, not an error
+IF tonTimer.Q THEN
+    // We should neither be busy nor done (we didn't do anything)
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Message:='Done should be False with no move',
+    );
+    AssertFalse(
+        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Message:='Busy should be False with no move',
+    );
+    // We should still be at 0,0,0
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage1.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor1 should have default position',
+    );
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage2.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor2 should have default position',
+    );
+    AssertEquals_LREAL(
+        Expected:=0,
+        Actual:=stMotionStage3.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Why did we move? motor3 should have default position',
+    );
+    // We should be able to move both directions, which is control word 7 (2#111)
+    AssertEquals_DWORD(
+        Expected:=2#111,
+        Actual:=stMotionStage1.Axis.PlcToNc.ControlDWord,
+        Message:='Expected full +/- enables',
+    );
+    AssertEquals_DWORD(
+        Expected:=2#111,
+        Actual:=stMotionStage2.Axis.PlcToNc.ControlDWord,
+        Message:='Expected full +/- enables',
+    );
+    AssertEquals_DWORD(
+        Expected:=2#111,
+        Actual:=stMotionStage3.Axis.PlcToNc.ControlDWord,
+        Message:='Expected full +/- enables',
+    );
+    AssertTrue(
+        fbArbiter3D.CheckRequestInPool(astBeam[ENUM_TestStates.Unknown].nRequestAssertionID),
+        'Transition assertion ID not in pool',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

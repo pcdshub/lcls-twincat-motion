@@ -1,0 +1,286 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MiscStatesErrorFFO_Test" Id="{62b9b7b1-5e8a-406a-84af-6143677b8a45}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MiscStatesErrorFFO_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Unit tests for FB_MiscStatesErrorFFO
+*)
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+TestBeamParamsNotOk();
+TestZeroRate();
+TestUnknownState();
+TestTransitionState();
+TestDebounce();
+]]></ST>
+    </Implementation>
+    <Method Name="TestBeamParamsNotOk" Id="{f1cfb5e8-ba9d-45da-8acc-2c32c1d5c1c9}">
+      <Declaration><![CDATA[METHOD TestBeamParamsNotOk
+VAR_INST
+    fbMiscFFO: FB_MiscStatesErrorFFO;
+    fbArbiter: FB_Arbiter(1);
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+
+    stBeamReq: ST_BeamParams;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBeamParamsNotOk');
+
+fbFFHWO.EvaluateOutput();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault',
+);
+
+// Trigger only a beam parameter mismatch
+// Do not trip zero rate, unknown state, or debounce
+PMPS_GVL.stCurrentBeamParameters := PMPS_GVL.cstFullBeam;
+stBeamReq := PMPS_GVL.cstFullBeam;
+stBeamReq.nTran := 0.5;
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=stBeamReq,
+    bKnownState:=TRUE,
+    nTransitionID:=1,
+);
+
+fbFFHWO.EvaluateOutput();
+AssertFalse(
+    fbFFHWO.q_xFastFaultOut,
+    'Did not fault with bad attenuator state',
+);
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestDebounce" Id="{4ef7daf4-89a1-433a-87d9-33c172148158}">
+      <Declaration><![CDATA[METHOD TestDebounce
+VAR_INST
+    fbMiscFFO: FB_MiscStatesErrorFFO;
+    fbArbiter: FB_Arbiter(5);
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR
+VAR
+    nIter: DINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDebounce');
+
+fbFFHWO.EvaluateOutput();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault prior to first FB run-through',
+);
+// Ask for full beam: there should be no faults of any kind
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=PMPS_GVL.cstFullBeam,
+    bKnownState:=TRUE,
+    nTransitionID:=5,
+);
+fbFFHWO.EvaluateOutput();
+
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault prior to trip checks',
+);
+
+// Trip and untrip the beam fast fault once, show no fault
+TripUntrip(
+    fbMiscFFO:=fbMiscFFO,
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+);
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Control group failed: one trip/untrip should not be enough to debounce',
+);
+// Trip and untrip the beam fast fault like 10 times, show fault
+FOR nIter := 1 TO 10 DO
+    TripUntrip(
+        fbMiscFFO:=fbMiscFFO,
+        fbArbiter:=fbArbiter,
+        fbFFHWO:=fbFFHWO,
+    );
+END_FOR
+AssertFalse(
+    fbFFHWO.q_xFastFaultOut,
+    'Debouncer failed to debounce',
+);
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestTransitionState" Id="{4a073a34-f682-4dfe-80d4-4bbdfaaaec17}">
+      <Declaration><![CDATA[METHOD TestTransitionState
+VAR_INST
+    fbMiscFFO: FB_MiscStatesErrorFFO;
+    fbArbiter: FB_Arbiter(4);
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestTransitionState');
+
+fbFFHWO.EvaluateOutput();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault',
+);
+
+// Trigger no faults, we're at an unknown state but it's a transition state
+// Do not trip bad beam, zero rate, or debounce
+fbArbiter.AddRequest(
+    nReqID:=4,
+    stReqBP:=PMPS_GVL.cstFullBeam,
+    sDevName:='UnitTest',
+);
+PMPS_GVL.stCurrentBeamParameters := PMPS_GVL.cstFullBeam;
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=PMPS_GVL.cstFullBeam,
+    bKnownState:=FALSE,
+    nTransitionID:=4,
+);
+
+fbFFHWO.EvaluateOutput();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Faulted in unknown states even though we were moving normally',
+);
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestUnknownState" Id="{a6837703-ce00-4074-ac90-eabb1ef0305f}">
+      <Declaration><![CDATA[METHOD TestUnknownState
+VAR_INST
+    fbMiscFFO: FB_MiscStatesErrorFFO;
+    fbArbiter: FB_Arbiter(3);
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestUnknownState');
+
+fbFFHWO.EvaluateOutput();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault',
+);
+
+// Trigger only an unknown states
+// Do not trip bad beam, zero rate, or debounce
+PMPS_GVL.stCurrentBeamParameters := PMPS_GVL.cstFullBeam;
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=PMPS_GVL.cstFullBeam,
+    bKnownState:=FALSE,
+    nTransitionID:=3,
+);
+
+fbFFHWO.EvaluateOutput();
+AssertFalse(
+    fbFFHWO.q_xFastFaultOut,
+    'Did not fault with unknown state',
+);
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestZeroRate" Id="{25080cfd-4ca1-4705-bb10-aae5fb40f972}">
+      <Declaration><![CDATA[METHOD TestZeroRate
+VAR_INST
+    fbMiscFFO: FB_MiscStatesErrorFFO;
+    fbArbiter: FB_Arbiter(2);
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+
+    stNoBeam: ST_BeamParams;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBeamZeroRate');
+
+fbFFHWO.EvaluateOutput();
+AssertTrue(
+    fbFFHWO.q_xFastFaultOut,
+    'Started with a fault',
+);
+
+// Trigger only a zero rate
+// Do not trip beam parameter mismatch, unknown state, or debounce
+PMPS_GVL.stCurrentBeamParameters := stNoBeam;
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=PMPS_GVL.cst0RateBeam,
+    bKnownState:=TRUE,
+    nTransitionID:=2
+);
+
+fbFFHWO.EvaluateOutput();
+AssertFalse(
+    fbFFHWO.q_xFastFaultOut,
+    'Did not fault with zero rate',
+);
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TripUntrip" Id="{62cd100d-f41b-48f3-9beb-e7c867c272e3}">
+      <Declaration><![CDATA[METHOD TripUntrip
+VAR_IN_OUT
+    fbMiscFFO: FB_MiscStatesErrorFFO;
+    fbArbiter: FB_Arbiter;
+    fbFFHWO: FB_HardwareFFOutput;
+END_VAR
+VAR
+    stBeamReq: ST_BeamParams;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// Use anything other than 0 rate, which is its own check
+stBeamReq := PMPS_GVL.cstFullBeam;
+stBeamReq.nTran := 0.5;
+// Trip: too much beam!
+PMPS_GVL.stCurrentBeamParameters := PMPS_GVL.cstFullBeam;
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=stBeamReq,
+    bKnownState:=TRUE,
+    nTransitionID:=5,
+);
+fbFFHWO.EvaluateOutput();
+
+// Untrip: correct beam!
+PMPS_GVL.stCurrentBeamParameters := stBeamReq;
+fbMiscFFO(
+    fbArbiter:=fbArbiter,
+    fbFFHWO:=fbFFHWO,
+    stCurrentBeamReq:=stBeamReq,
+    bKnownState:=TRUE,
+    nTransitionID:=5,
+);
+fbFFHWO.EvaluateOutput();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
