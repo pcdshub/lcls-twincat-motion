@@ -32,8 +32,8 @@ VAR
     nIter: DINT;
     bStatesReady: BOOL;
 
-    eSetPos: ENUM_TestStates;
-    eGetPos: ENUM_TestStates;
+    eSetPos: E_TestStates;
+    eGetPos: E_TestStates;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -108,15 +108,15 @@ IF bStatesReady AND nTestCounter = 0 THEN
     );
 END_IF
 
-Test1D(1, ENUM_TestStates.OUT);
-Test1D(2, ENUM_TestStates.TARGET1);
-Test1D(3, ENUM_TestStates.TARGET2);
-Test2D(4, ENUM_TestStates.OUT);
-Test2D(5, ENUM_TestStates.TARGET1);
-Test2D(6, ENUM_TestStates.TARGET2);
-Test3D(7, ENUM_TestStates.OUT);
-Test3D(8, ENUM_TestStates.TARGET1);
-Test3D(9, ENUM_TestStates.TARGET2);
+Test1D(1, E_TestStates.OUT);
+Test1D(2, E_TestStates.TARGET1);
+Test1D(3, E_TestStates.TARGET2);
+Test2D(4, E_TestStates.OUT);
+Test2D(5, E_TestStates.TARGET1);
+Test2D(6, E_TestStates.TARGET2);
+Test3D(7, E_TestStates.OUT);
+Test3D(8, E_TestStates.TARGET1);
+Test3D(9, E_TestStates.TARGET2);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -134,7 +134,7 @@ tonTimer(
       <Declaration><![CDATA[METHOD Test1D
 VAR_INPUT
     nTestID: UINT;
-    nState: ENUM_TestStates;
+    nState: E_TestStates;
 END_VAR
 VAR_INST
     nLocalInit: BOOL;
@@ -202,7 +202,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test2D
 VAR_INPUT
     nTestID: UINT;
-    nState: ENUM_TestStates;
+    nState: E_TestStates;
 END_VAR
 VAR_INST
     nLocalInit: BOOL;
@@ -281,7 +281,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test3D
 VAR_INPUT
     nTestID: UINT;
-    nState: ENUM_TestStates;
+    nState: E_TestStates;
 END_VAR
 VAR_INST
     nLocalInit: BOOL;
