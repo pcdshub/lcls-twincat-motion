@@ -89,14 +89,14 @@ IF nTestCounter <= 3 THEN
     // Startup tests, make sure the motor is enabled so we can inspect MC_Power's output
     // Otherwise we can't snoop on the PlcToNc control DWORD since this is all 0's if disabled
     // When enabled, some of the other bits go to 1 to represent directional enables
-    stMotionStage1.nEnableMode := ENUM_StageEnableMode.ALWAYS;
-    stMotionStage2.nEnableMode := ENUM_StageEnableMode.ALWAYS;
-    stMotionStage3.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    stMotionStage1.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStage2.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStage3.nEnableMode := E_StageEnableMode.ALWAYS;
 ELSE
     // Otherwise, make sure the most complicated mode (and the default) works
-    stMotionStage1.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
-    stMotionStage2.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
-    stMotionStage3.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+    stMotionStage1.nEnableMode := E_StageEnableMode.DURING_MOTION;
+    stMotionStage2.nEnableMode := E_StageEnableMode.DURING_MOTION;
+    stMotionStage3.nEnableMode := E_StageEnableMode.DURING_MOTION;
 END_IF
 afbMotionStage[1](stMotionStage:=stMotionStage1);
 afbMotionStage[2](stMotionStage:=stMotionStage2);

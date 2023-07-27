@@ -57,19 +57,19 @@ VAR
     fbMiscStatesErrorFFO: FB_MiscStatesErrorFFO;
     fbPerMotorFFO: FB_PerMotorFFOND;
 
-    eStatePMPSStatus: ENUM_StatePMPSStatus;
+    eStatePMPSStatus: E_StatePMPSStatus;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 IF stPMPSEpicsToPlc.bMaintMode OR NOT stPMPSEpicsToPlc.bArbiterEnabled THEN
-    eStatePMPSStatus := ENUM_StatePMPSStatus.DISABLED;
+    eStatePMPSStatus := E_StatePMPSStatus.DISABLED;
 ELSIF stPlcToEpics.nGetValue = 0 AND nCurrGoal = 0 THEN
-    eStatePMPSStatus := ENUM_StatePMPSStatus.UNKNOWN;
+    eStatePMPSStatus := E_StatePMPSStatus.UNKNOWN;
 ELSIF stPlcToEpics.nGetValue = nCurrGoal THEN
-    eStatePMPSStatus := ENUM_StatePMPSStatus.AT_STATE;
+    eStatePMPSStatus := E_StatePMPSStatus.AT_STATE;
 ELSE
-    eStatePMPSStatus := ENUM_StatePMPSStatus.TRANSITION;
+    eStatePMPSStatus := E_StatePMPSStatus.TRANSITION;
 END_IF
 
 fbMotionReadPMPSDB(

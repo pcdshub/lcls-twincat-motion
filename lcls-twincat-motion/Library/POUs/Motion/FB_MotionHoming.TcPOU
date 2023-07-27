@@ -61,23 +61,23 @@ IF NOT bError THEN
 END_IF
 
 CASE stMotionStage.nHomingMode OF
-    ENUM_EpicsHomeCmd.LOW_LIMIT:
+    E_EpicsHomeCmd.LOW_LIMIT:
         bFirstDirection := FALSE;
         bAtHome := NOT stMotionStage.bLimitBackwardEnable;
         bMove := TRUE;
-    ENUM_EpicsHomeCmd.HIGH_LIMIT:
+    E_EpicsHomeCmd.HIGH_LIMIT:
         bFirstDirection := TRUE;
         bAtHome := NOT stMotionStage.bLimitForwardEnable;
         bMove := TRUE;
-    ENUM_EpicsHomeCmd.HOME_VIA_LOW:
+    E_EpicsHomeCmd.HOME_VIA_LOW:
         bFirstDirection := FALSE;
         bAtHome := stMotionStage.bHome;
         bMove := TRUE;
-    ENUM_EpicsHomeCmd.HOME_VIA_HIGH:
+    E_EpicsHomeCmd.HOME_VIA_HIGH:
         bFirstDirection := TRUE;
         bAtHome := stMotionStage.bHome;
         bMove := TRUE;
-    ENUM_EpicsHomeCmd.ABSOLUTE_SET:
+    E_EpicsHomeCmd.ABSOLUTE_SET:
         fbSetPos(
             Axis:=stMotionStage.Axis,
             Execute:=bExecute,
@@ -85,7 +85,7 @@ CASE stMotionStage.nHomingMode OF
         bBusy := rtExec.Q;
         bDone := NOT rtExec.Q;
         bMove := FALSE;
-    ENUM_EpicsHomeCmd.NONE:
+    E_EpicsHomeCmd.NONE:
         bMove := FALSE;
         bBusy := rtExec.Q;
         bDone := NOT rtExec.Q;

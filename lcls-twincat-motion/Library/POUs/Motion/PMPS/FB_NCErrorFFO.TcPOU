@@ -72,8 +72,8 @@ END_IF
 bTripped := stMotionStage.bError AND stMotionStage.nErrorId >= nLowErrorId AND stMotionStage.nErrorId <= nHighErrorId;
 rtTrip(CLK:=bTripped);
 IF rtTrip.Q THEN
-    nErrorTypeCode := ENUM_MotionFFType.LOW_RESERVED_NC + UDINT_TO_UINT(SHR(stMotionStage.nErrorId, 8));
-    nErrorTypeCode := MIN(nErrorTypeCode, ENUM_MotionFFType.HIGH_RESERVED_NC);
+    nErrorTypeCode := E_MotionFFType.LOW_RESERVED_NC + UDINT_TO_UINT(SHR(stMotionStage.nErrorId, 8));
+    nErrorTypeCode := MIN(nErrorTypeCode, E_MotionFFType.HIGH_RESERVED_NC);
 END_IF
 fbFF(i_xOK := NOT bTripped,
      i_xReset := bReset,

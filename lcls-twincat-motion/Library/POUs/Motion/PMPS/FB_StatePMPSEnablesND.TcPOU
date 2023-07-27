@@ -29,7 +29,7 @@ VAR_INPUT
     // Set to TRUE to put motors into maintenance mode. This allows us to freely move the motors at the cost of a fast fault.
     bMaintMode: BOOL;
     // The overal PMPS FB state
-    eStatePMPSStatus: ENUM_StatePMPSStatus;
+    eStatePMPSStatus: E_StatePMPSStatus;
     // Connect from bptm bTransitionAuthorized
     bTransitionAuthorized: BOOL;
 END_VAR
@@ -99,7 +99,7 @@ ffMaint(
     i_xAutoReset := TRUE,
     i_DevName := sDeviceName,
     i_Desc := 'Device is in maintenance mode',
-    i_TypeCode := ENUM_MotionFFType.MAINT_MODE,
+    i_TypeCode := E_MotionFFType.MAINT_MODE,
     io_fbFFHWO := fbFFHWO,
 );
 
@@ -108,7 +108,7 @@ ffProgrammerError(
     i_xAutoReset:=TRUE,
     i_DevName:=sDeviceName,
     i_Desc:='Programmer error picking motor count',
-    i_TypeCode:=ENUM_MotionFFType.INTERNAL_ERROR,
+    i_TypeCode:=E_MotionFFType.INTERNAL_ERROR,
     io_fbFFHWO:=fbFFHWO,
 );]]></ST>
       </Implementation>
