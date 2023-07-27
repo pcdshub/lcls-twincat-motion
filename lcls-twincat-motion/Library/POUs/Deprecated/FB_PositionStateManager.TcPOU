@@ -10,7 +10,7 @@ FUNCTION_BLOCK FB_PositionStateManager
 *)
 VAR_IN_OUT
     // Motor to move
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 
     // Allocated space for 15 states besides Unknown (16 is the max for an EPICS MBBI)
     {attribute 'pytmc' := '
@@ -18,7 +18,7 @@ VAR_IN_OUT
         io: io
         expand: %.2d
     '}
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
+    arrStates: ARRAY[1..15] OF ST_PositionState;
 
     // Corresponding arrStates index to move to, or 0 if no move selected
     setState: INT;
@@ -80,8 +80,8 @@ VAR_OUTPUT
 END_VAR
 VAR
     bInit: BOOL;
-    stUnknown: DUT_PositionState;
-    stGoal: DUT_PositionState;
+    stUnknown: ST_PositionState;
+    stGoal: ST_PositionState;
     fbStateMove: FB_PositionStateMove;
     fbStateInternal: ARRAY[1..15] OF FB_PositionStateInternal;
     nIndex: INT;

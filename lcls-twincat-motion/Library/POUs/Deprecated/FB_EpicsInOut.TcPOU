@@ -7,11 +7,11 @@ FUNCTION_BLOCK FB_EpicsInOut
 // Also usable as a drop-in for these cases (no need to roll your own in/out)
 VAR_IN_OUT
     // Motor to apply states to
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
     // Information about the OUT position
-    stOut: DUT_PositionState; // NOTE: Do not pragma these, let it happen in the manager.
+    stOut: ST_PositionState; // NOTE: Do not pragma these, let it happen in the manager.
     // Information about the IN parameter
-    stIn: DUT_PositionState;
+    stIn: ST_PositionState;
 END_VAR
 VAR_INPUT
     // If TRUE, the motor will be moved when enumSet is changed
@@ -43,7 +43,7 @@ VAR_OUTPUT
 END_VAR
 VAR
     bInit: BOOL;
-    arrStates: ARRAY[1..15] OF DUT_PositionState;
+    arrStates: ARRAY[1..15] OF ST_PositionState;
 
     {attribute 'pytmc' := '
         pv:

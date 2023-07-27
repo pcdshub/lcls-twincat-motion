@@ -9,8 +9,8 @@ FUNCTION_BLOCK FB_PositionStatePMPS_Base
     This allows me to test most of the code without an arbiter plc setup
 *)
 VAR_IN_OUT
-    stMotionStage: DUT_MotionStage;
-    arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    stMotionStage: ST_MotionStage;
+    arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 END_VAR
 VAR_INPUT
     bArbiterEnabled: BOOL := TRUE;
@@ -39,7 +39,7 @@ VAR
     '}
     stTransitionDb: ST_DbStateParams;
     stTransitionBeam: ST_BeamParams := PMPS_GVL.cst0RateBeam;
-    stTransitionState: DUT_PositionState;
+    stTransitionState: ST_PositionState;
     bInit: BOOL := TRUE;
     bTransDone: BOOL;
     rtTransReq: R_TRIG;
@@ -49,12 +49,12 @@ VAR
     rtTransDone: R_TRIG;
     rtDoLateFinish: R_TRIG;
     tonDone: TON;
-    stStateReq: DUT_PositionState;
+    stStateReq: ST_PositionState;
     mcPower: MC_POWER;
     fUpperBound: LREAL;
     fLowerBound: LREAL;
     nGoalState: INT;
-    stGoalState: DUT_PositionState;
+    stGoalState: ST_PositionState;
     fActPos: LREAL;
     fReqPos: LREAL;
     bInTransition: BOOL;
@@ -208,7 +208,7 @@ VAR_INPUT
     nState: INT;
 END_VAR
 VAR
-    stState: DUT_PositionState;
+    stState: ST_PositionState;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -231,7 +231,7 @@ END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetStateStruct" Id="{fd5be017-4792-4f22-a98a-6c401c8e2c66}">
-      <Declaration><![CDATA[METHOD GetStateStruct : DUT_PositionState
+      <Declaration><![CDATA[METHOD GetStateStruct : ST_PositionState
 VAR_INPUT
     nState: INT;
 END_VAR
