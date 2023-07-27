@@ -17,13 +17,13 @@ VAR_IN_OUT
     // All position states for all motors, including unused/invalid states.
     astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // Normal EPICS inputs, gathered into a single struct
-    stEpicsInput: ST_StateEpicsInput;
+    stEpicsToPlc: ST_StateEpicsToPlc;
     // PMPS EPICS inputs, gathered into a single struct
-    stPMPSEpicsInput: ST_StatePMPSEpicsInput;
+    stPMPSEpicsToPlc: ST_StatePMPSEpicsToPlc;
     // Normal EPICS outputs, gathered into a single struct
-    stEpicsOutput: ST_StateEpicsOutput;
+    stPlcToEpics: ST_StatePlcToEpics;
     // PMPS EPICS outputs, gathered into a single struct
-    stPMPSEpicsOutput: ST_StatePMPSEpicsOutput;
+    stPMPSPlcToEpics: ST_StatePMPSPlcToEpics;
     // The fast fault output to fault to.
     fbFFHWO: FB_HardwareFFOutput;
     // The arbiter to request beam conditions from.
@@ -62,11 +62,11 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-IF stPMPSEpicsInput.bMaintMode OR NOT stPMPSEpicsInput.bArbiterEnabled THEN
+IF stPMPSEpicsToPlc.bMaintMode OR NOT stPMPSEpicsToPlc.bArbiterEnabled THEN
     eStatePMPSStatus := ENUM_StatePMPSStatus.DISABLED;
-ELSIF stEpicsOutput.nGetValue = 0 AND nCurrGoal = 0 THEN
+ELSIF stPlcToEpics.nGetValue = 0 AND nCurrGoal = 0 THEN
     eStatePMPSStatus := ENUM_StatePMPSStatus.UNKNOWN;
-ELSIF stEpicsOutput.nGetValue = nCurrGoal THEN
+ELSIF stPlcToEpics.nGetValue = nCurrGoal THEN
     eStatePMPSStatus := ENUM_StatePMPSStatus.AT_STATE;
 ELSE
     eStatePMPSStatus := ENUM_StatePMPSStatus.TRANSITION;
@@ -89,8 +89,8 @@ fbMotionBPTM(
     stGoalParams:=fbMotionReadPMPSDB.astDbStateParams[nCurrGoal],
     stTransParams:=fbMotionReadPMPSDB.astDbStateParams[0],
     nActiveMotorCount:=nActiveMotorCount,
-    bEnable:=stPMPSEpicsInput.bArbiterEnabled AND bEnableBeamParams,
-    bAtState:=stEpicsOutput.nGetValue = nCurrGoal AND nCurrGoal <> 0,
+    bEnable:=stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams,
+    bAtState:=stPlcToEpics.nGetValue = nCurrGoal AND nCurrGoal <> 0,
     sDeviceName:=sDeviceName,
     bTransitionAuthorized=>,
     bDone=>,
@@ -111,7 +111,7 @@ fbStatePMPSEnables(
     nActiveMotorCount:=nActiveMotorCount,
     nGoalStateIndex:=nCurrGoal,
     sDeviceName:=sDeviceName,
-    bMaintMode:=stPMPSEpicsInput.bMaintMode,
+    bMaintMode:=stPMPSEpicsToPlc.bMaintMode,
     eStatePMPSStatus:=eStatePMPSStatus,
     bTransitionAuthorized:=fbMotionBPTM.bTransitionAuthorized,
     abEnabled=>,
@@ -122,7 +122,7 @@ fbStatePMPSEnables(
 );
 
 IF bEnableBeamParams THEN
-    fbMiscStatesErrorFFO.stCurrentBeamReq := fbMotionReadPMPSDB.astDbStateParams[stEpicsOutput.nGetValue].stBeamParams;
+    fbMiscStatesErrorFFO.stCurrentBeamReq := fbMotionReadPMPSDB.astDbStateParams[stPlcToEpics.nGetValue].stBeamParams;
 ELSE
     fbMiscStatesErrorFFO.stCurrentBeamReq := PMPS_GVL.cstFullBeam;
 END_IF
@@ -130,7 +130,7 @@ fbMiscStatesErrorFFO(
     fbArbiter:=fbArbiter,
     fbFFHWO:=fbFFHWO,
     sDeviceName:=sDeviceName,
-    bKnownState:=stEpicsOutput.nGetValue > 0,
+    bKnownState:=stPlcToEpics.nGetValue > 0,
     nTransitionID:=fbMotionReadPMPSDB.astDbStateParams[0].nRequestAssertionID,
 );
 
@@ -142,8 +142,8 @@ fbPerMotorFFO(
     bMotorCountError=>,
 );
 
-stPMPSEpicsOutput.stTransitionDb := fbMotionReadPMPSDB.astDbStateParams[0];
-stDbStateParams := fbMotionReadPMPSDB.astDbStateParams[stEpicsOutput.nGetValue];]]></ST>
+stPMPSPlcToEpics.stTransitionDb := fbMotionReadPMPSDB.astDbStateParams[0];
+stDbStateParams := fbMotionReadPMPSDB.astDbStateParams[stPlcToEpics.nGetValue];]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

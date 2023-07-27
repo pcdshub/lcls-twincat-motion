@@ -159,17 +159,17 @@ fb_Move1D(
     eEnumGet:=eGetPos,
     bEnable:=TRUE,
 );
-IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move1D.stPlcToEpics.bDone THEN
     AssertTrue(
-        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Condition:=fb_Move1D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Condition:=fb_Move1D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bError,
+        Condition:=fb_Move1D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_DINT(
@@ -183,7 +183,7 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         Delta:=0.1,
         Message:='Did not get to the input state position',
     );
-    fb_Move1D.stEpicsInput.bReset := TRUE;
+    fb_Move1D.stEpicsToPlc.bReset := TRUE;
     fb_Move1D(
         stMotionStage:=stMotionStage1,
         astPositionState:=astPositionState1,
@@ -230,17 +230,17 @@ fb_Move2D(
     eEnumGet:=eGetPos,
     bEnable:=TRUE,
 );
-IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move2D.stPlcToEpics.bDone THEN
     AssertTrue(
-        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Condition:=fb_Move2D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Condition:=fb_Move2D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bError,
+        Condition:=fb_Move2D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_DINT(
@@ -260,7 +260,7 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         Delta:=0.1,
         Message:='Did not get to the input state position for stage 2',
     );
-    fb_Move2D.stEpicsInput.bReset := TRUE;
+    fb_Move2D.stEpicsToPlc.bReset := TRUE;
     fb_Move2D(
         stMotionStage1:=stMotionStage1,
         stMotionStage2:=stMotionStage2,
@@ -310,17 +310,17 @@ fb_Move3D(
     eEnumGet:=eGetPos,
     bEnable:=TRUE,
 );
-IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move3D.stPlcToEpics.bDone THEN
     AssertTrue(
-        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Condition:=fb_Move3D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Condition:=fb_Move3D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bError,
+        Condition:=fb_Move3D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_DINT(
@@ -346,7 +346,7 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         Delta:=0.1,
         Message:='Did not get to the input state position for stage 3',
     );
-    fb_Move3D.stEpicsInput.bReset := TRUE;
+    fb_Move3D.stEpicsToPlc.bReset := TRUE;
     fb_Move3D(
         stMotionStage1:=stMotionStage1,
         stMotionStage2:=stMotionStage2,

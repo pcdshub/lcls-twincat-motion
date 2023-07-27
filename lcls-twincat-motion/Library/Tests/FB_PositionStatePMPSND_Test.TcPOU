@@ -257,21 +257,21 @@ IF NOT bInit THEN
     bInit := TRUE;
 END_IF
 
-IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move1D.stPlcToEpics.bDone THEN
     AssertTrue(
         bLimAsserted,
         'Skipped limit assert test',
     );
     AssertTrue(
-        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Condition:=fb_Move1D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Condition:=fb_Move1D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bError,
+        Condition:=fb_Move1D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_UINT(
@@ -289,7 +289,7 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         fbArbiter1D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
-    fb_Move1D.stEpicsInput.bReset := TRUE;
+    fb_Move1D.stEpicsToPlc.bReset := TRUE;
     fb_Move1D(
         stMotionStage:=stMotionStage1,
         astPositionState:=astPositionState1,
@@ -362,21 +362,21 @@ IF NOT bInit THEN
     bInit := TRUE;
 END_IF
 
-IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move2D.stPlcToEpics.bDone THEN
     AssertTrue(
         bLimAsserted1 AND bLimAsserted2,
         'Skipped limit assert test',
     );
     AssertTrue(
-        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Condition:=fb_Move2D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Condition:=fb_Move2D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bError,
+        Condition:=fb_Move2D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_UINT(
@@ -400,7 +400,7 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         fbArbiter2D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
-    fb_Move2D.stEpicsInput.bReset := TRUE;
+    fb_Move2D.stEpicsToPlc.bReset := TRUE;
     fb_Move2D(
         stMotionStage1:=stMotionStage1,
         stMotionStage2:=stMotionStage2,
@@ -480,21 +480,21 @@ IF NOT bInit THEN
     bInit := TRUE;
 END_IF
 
-IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move3D.stPlcToEpics.bDone THEN
     AssertTrue(
         bLimAsserted1 AND bLimAsserted2 AND bLimAsserted3,
         'Skipped limit assert test',
     );
     AssertTrue(
-        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Condition:=fb_Move3D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Condition:=fb_Move3D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bError,
+        Condition:=fb_Move3D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_UINT(
@@ -524,7 +524,7 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         fbArbiter3D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
-    fb_Move3D.stEpicsInput.bReset := TRUE;
+    fb_Move3D.stEpicsToPlc.bReset := TRUE;
     fb_Move3D(
         stMotionStage1:=stMotionStage1,
         stMotionStage2:=stMotionStage2,
@@ -592,11 +592,11 @@ bInit := TRUE;
 IF tonTimer.Q THEN
     // We should neither be busy nor done (we didn't do anything)
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Condition:=fb_Move1D.stPlcToEpics.bDone,
         Message:='Done should be False with no move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Condition:=fb_Move1D.stPlcToEpics.bBusy,
         Message:='Busy should be False with no move',
     );
     // We should still be at 0,0,0
@@ -664,11 +664,11 @@ bInit := TRUE;
 IF tonTimer.Q THEN
     // We should neither be busy nor done (we didn't do anything)
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Condition:=fb_Move2D.stPlcToEpics.bDone,
         Message:='Done should be False with no move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Condition:=fb_Move2D.stPlcToEpics.bBusy,
         Message:='Busy should be False with no move',
     );
     // We should still be at 0,0,0
@@ -749,11 +749,11 @@ bInit := TRUE;
 IF tonTimer.Q THEN
     // We should neither be busy nor done (we didn't do anything)
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Condition:=fb_Move3D.stPlcToEpics.bDone,
         Message:='Done should be False with no move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Condition:=fb_Move3D.stPlcToEpics.bBusy,
         Message:='Busy should be False with no move',
     );
     // We should still be at 0,0,0
