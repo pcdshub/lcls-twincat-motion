@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_StateSetupHelper" Id="{802f49f0-571f-413b-bf0f-1cf473b320d9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StateSetupHelper
+(*
+    This is a helper for setting up large numbers of ST_PositionState instances.
+
+    This is typically difficult to do by hand in the normal ways and can be error-prone.
+    For each field, we will pick values with the following priority:
+    1. The value used in the function block call.
+    2. The value used in the most recent SetDefaults method call.
+    3. The default value as defined on ST_PositionState
+
+    Example expected usage:
+    VAR
+        fbStateSetup: FB_StateSetupHelper;
+        astStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+        astStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+        astStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    END_VAR
+
+    fbStateSetup.setDefaults(
+        fDelta := 0.5,
+        fVelocity := 10,
+        bMoveOk := TRUE,
+        bValid := TRUE,
+    );
+    fbStateSetup(stPositionState:=astStates1[1], sName:='OUT', fPosition:=10);
+    fbStateSetup(stPositionState:=astStates1[2], sName:='YAG', fPosition:=20);
+    fbStateSetup(stPositionState:=astStates1[3], sName:='TT', fPosition:=30);
+    fbStateSetup(stPositionState:=astStates2[1], sName:='OUT', fPosition:=-30);
+    fbStateSetup(stPositionState:=astStates2[2], sName:='YAG', fPosition:=35);
+    fbStateSetup(stPositionState:=astStates2[3], sName:='TT', fPosition:=70);
+    fbStateSetup(stPositionState:=astStates3[1], sName:='OUT', fPosition:=0.4, fDelta:=0.1);
+    fbStateSetup(stPositionState:=astStates3[2], sName:='YAG', fPosition:=2.3, fDelta:=0.1);
+    fbStateSetup(stPositionState:=astStates3[3], sName:='TT', fPosition:=5.6, fDelta:=0.1;
+*)
+VAR_IN_OUT
+    stPositionState: ST_PositionState;
+END_VAR
+VAR_INPUT
+    sName: STRING;
+    fPosition: LREAL;
+    nEncoderCount: UDINT;
+    fDelta: LREAL;
+    fVelocity: LREAL;
+    fAccel: LREAL;
+    fDecel: LREAL;
+    bMoveOk: BOOL;
+    bLocked: BOOL;
+    bValid: BOOL;
+    bUseRawCounts: BOOL;
+    sPmpsState: STRING;
+END_VAR
+VAR
+    stDefault: ST_PositionState;
+    stOriginal: ST_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+stPositionState.sName := sName;
+stPositionState.fPosition := fPosition;
+stPositionState.nEncoderCount := nEncoderCount;
+stPositionState.fDelta := fDelta;
+stPositionState.fVelocity := fVelocity;
+stPositionState.fAccel := fAccel;
+stPositionState.fDecel := fDecel;
+stPositionState.bMoveOk := bMoveOk;
+stPositionState.bLocked := bLocked;
+stPositionState.bValid := bValid;
+stPositionState.bUseRawCounts := bUseRawCounts;
+stPositionState.stPMPS.sPmpsState := sPmpsState;
+
+// Reset the inputs
+_InternalDefaultInit();
+]]></ST>
+    </Implementation>
+    <Action Name="_InternalDefaultInit" Id="{d6adfd4e-d299-4073-be2d-d70d90a830ad}">
+      <Implementation>
+        <ST><![CDATA[
+// Write to the input args so that unset args are the defaults
+sName := stDefault.sName;
+fPosition := stDefault.fPosition;
+nEncoderCount := stDefault.nEncoderCount;
+fDelta := stDefault.nEncoderCount;
+fVelocity := stDefault.fVelocity;
+fAccel := stDefault.fVelocity;
+fDecel := stDefault.fDecel;
+bMoveOk := stDefault.bMoveOk;
+bLocked := stDefault.bLocked;
+bValid := stDefault.bLocked;
+bUseRawCounts := stDefault.bUseRawCounts;
+sPmpsState := stDefault.stPMPS.sPmpsState;
+]]></ST>
+      </Implementation>
+    </Action>
+    <Method Name="SetDefaults" Id="{ab1fe879-b9f2-4856-9ace-45f4c987c4a7}">
+      <Declaration><![CDATA[METHOD SetDefaults : BOOL
+(* Call this to initialize the FB defaults *)
+VAR_INPUT
+    sName: STRING := 'Unnamed';
+    fPosition: LREAL;
+    nEncoderCount: UDINT;
+    fDelta: LREAL;
+    fVelocity: LREAL;
+    fAccel: LREAL;
+    fDecel: LREAL;
+    bMoveOk: BOOL;
+    bLocked: BOOL;
+    bValid: BOOL;
+    bUseRawCounts: BOOL;
+    sPmpsState: STRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+stDefault.sName := sName;
+stDefault.fPosition := fPosition;
+stDefault.nEncoderCount := nEncoderCount;
+stDefault.fDelta := fDelta;
+stDefault.fVelocity := fVelocity;
+stDefault.fAccel := fAccel;
+stDefault.fDecel := fDecel;
+stDefault.bMoveOk := bMoveOk;
+stDefault.bLocked := bLocked;
+stDefault.bValid := bValid;
+stDefault.bUseRawCounts := bUseRawCounts;
+stDefault.stPMPS.sPmpsState := sPmpsState;
+
+_InternalDefaultInit();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
