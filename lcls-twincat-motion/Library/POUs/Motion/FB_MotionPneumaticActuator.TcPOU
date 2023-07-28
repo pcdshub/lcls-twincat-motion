@@ -43,7 +43,7 @@ VAR
     fbFF    :    FB_FastFault :=(
         i_DevName := 'MPA',
         i_Desc := 'Fault occurs when the device is moving',
-        i_TypeCode := ENUM_MotionFFType.PNEUMATIC_MOVE);
+        i_TypeCode := E_MotionFFType.PNEUMATIC_MOVE);
 
     (*Init*)
     xFirstPass    :    BOOL;
@@ -60,7 +60,7 @@ VAR
 
     (*Logging*)
     fbLogger : FB_LogMessage := (eSubsystem:=E_SubSystem.MOTION);
-    ePrevState : ENUM_PnuematicActuatorPositionState;
+    ePrevState : E_PnuematicActuatorPositionState;
     tAction : R_TRIG; // Primary action of this device (Insert_DO, Retract_DO, etc.)
     tOverrideActivated : R_TRIG;
 
@@ -79,7 +79,7 @@ END_VAR
 (*Initialize*)
 fbFSInit( CLK := TRUE, Q => xFirstPass);
 IF xFirstPass THEN
-    stPneumaticActuator.eState := ENUM_PnuematicActuatorPositionState.INVALID;
+    stPneumaticActuator.eState := E_PnuematicActuatorPositionState.INVALID;
     stPneumaticActuator.bRetract_SW := FALSE;
     stPneumaticActuator.bInsert_SW := FALSE;
 END_IF
@@ -89,25 +89,25 @@ ACT_IO();
 
 (* Manage States*)
 IF stPneumaticActuator.i_bInLimitSwitch AND  stPneumaticActuator.i_bOutLimitSwitch THEN
-    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INVALID;
+    stPneumaticActuator.eState:=E_PnuematicActuatorPositionState.INVALID;
 ELSIF NOT stPneumaticActuator.i_bInLimitSwitch AND stPneumaticActuator.i_bOutLimitSwitch THEN
-    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.RETRACTED;
+    stPneumaticActuator.eState:=E_PnuematicActuatorPositionState.RETRACTED;
 ELSIF stPneumaticActuator.i_bInLimitSwitch AND NOT stPneumaticActuator.i_bOutLimitSwitch THEN
-    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INSERTED;
+    stPneumaticActuator.eState:=E_PnuematicActuatorPositionState.INSERTED;
 ELSIF NOT stPneumaticActuator.i_bInLimitSwitch AND NOT stPneumaticActuator.i_bOutLimitSwitch THEN
-    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.MOVING;
+    stPneumaticActuator.eState:=E_PnuematicActuatorPositionState.MOVING;
 ELSE
-    stPneumaticActuator.eState:=ENUM_PnuematicActuatorPositionState.INVALID ;
+    stPneumaticActuator.eState:=E_PnuematicActuatorPositionState.INVALID ;
 END_IF
 
 (*Set the Done/Busy signal*)
-stPneumaticActuator.bDone := (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.RETRACTED)
-                            OR (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.INSERTED);
-stPneumaticActuator.bBusy := (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.eState<>ENUM_PnuematicActuatorPositionState.RETRACTED)
-                            OR (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.eState<>ENUM_PnuematicActuatorPositionState.INSERTED);
+stPneumaticActuator.bDone := (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.eState=E_PnuematicActuatorPositionState.RETRACTED)
+                            OR (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.eState=E_PnuematicActuatorPositionState.INSERTED);
+stPneumaticActuator.bBusy := (stPneumaticActuator.bRetract_SW AND stPneumaticActuator.eState<>E_PnuematicActuatorPositionState.RETRACTED)
+                            OR (stPneumaticActuator.bInsert_SW AND stPneumaticActuator.eState<>E_PnuematicActuatorPositionState.INSERTED);
 (*MPS FAULT*)
 (* MPS Faults when the actuator is in motion*)
-xMPS_OK := (stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.RETRACTED) OR (stPneumaticActuator.eState=ENUM_PnuematicActuatorPositionState.INSERTED);
+xMPS_OK := (stPneumaticActuator.eState=E_PnuematicActuatorPositionState.RETRACTED) OR (stPneumaticActuator.eState=E_PnuematicActuatorPositionState.INSERTED);
 (*PMPS PERMISSION*)
 // yet to be implemented
 
@@ -196,13 +196,13 @@ END_IF
 // State Logging
 IF ePrevState <> stPneumaticActuator.eState THEN
       CASE stPneumaticActuator.eState OF
-        ENUM_PnuematicActuatorPositionState.INVALID:
+        E_PnuematicActuatorPositionState.INVALID:
             fbLogger(sMsg:='Actuator invalid position.', eSevr:=TcEventSeverity.Critical);
-          ENUM_PnuematicActuatorPositionState.MOVING:
+          E_PnuematicActuatorPositionState.MOVING:
             fbLogger(sMsg:='Actuator moving', eSevr:=TcEventSeverity.Warning);
-        ENUM_PnuematicActuatorPositionState.RETRACTED:
+        E_PnuematicActuatorPositionState.RETRACTED:
             fbLogger(sMsg:='Actuator Retracted.', eSevr:=TcEventSeverity.Info);
-        ENUM_PnuematicActuatorPositionState.INSERTED:
+        E_PnuematicActuatorPositionState.INSERTED:
             fbLogger(sMsg:='Actuator Inserted.', eSevr:=TcEventSeverity.Info);
       END_CASE
       ePrevState := stPneumaticActuator.eState;

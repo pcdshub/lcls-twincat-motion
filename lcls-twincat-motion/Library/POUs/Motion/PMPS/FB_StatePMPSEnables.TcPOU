@@ -27,7 +27,7 @@ VAR_INPUT
     // The state that the motor is moving to.
     nGoalStateIndex: UINT;
     // The overal PMPS FB state
-    eStatePMPSStatus: ENUM_StatePMPSStatus;
+    eStatePMPSStatus: E_StatePMPSStatus;
     // Connect to the BPTM
     bTransitionAuthorized: BOOL;
 END_VAR
@@ -68,15 +68,15 @@ bForwardEnabled := bForwardEnabled AND stMotionStage.bAllForwardEnable;
 bBackwardEnabled := bBackwardEnabled AND stMotionStage.bAllBackwardEnable;
 
 CASE eStatePMPSStatus OF
-    ENUM_StatePMPSStatus.UNKNOWN:
+    E_StatePMPSStatus.UNKNOWN:
         stMotionStage.bSafetyReady := FALSE;
-    ENUM_StatePMPSStatus.TRANSITION:
+    E_StatePMPSStatus.TRANSITION:
         stMotionStage.bSafetyReady := bTransitionAuthorized;
         bForwardEnabled R= NOT bTransitionAuthorized;
         bBackwardEnabled R= NOT bTransitionAuthorized;
-    ENUM_StatePMPSStatus.AT_STATE:
+    E_StatePMPSStatus.AT_STATE:
         stMotionStage.bSafetyReady := stMotionStage.bExecute;
-    ENUM_StatePMPSStatus.DISABLED:
+    E_StatePMPSStatus.DISABLED:
         stMotionStage.bSafetyReady := TRUE;
 END_CASE
 
@@ -116,7 +116,7 @@ ffNoGoal(
     i_xAutoReset:=TRUE,
     i_DevName:=stMotionStage.sName,
     i_Desc:='Invalid goal position in state move',
-    i_TypeCode:=ENUM_MotionFFType.INVALID_GOAL,
+    i_TypeCode:=E_MotionFFType.INVALID_GOAL,
     io_fbFFHWO:=fbFFHWO,
 );
 ]]></ST>

@@ -36,8 +36,8 @@ VAR
     nIter: DINT;
     bStatesReady: BOOL;
 
-    eSetPos: ENUM_TestStates;
-    eGetPos: ENUM_TestStates;
+    eSetPos: E_TestStates;
+    eGetPos: E_TestStates;
 
     fbArbiter1D: FB_Arbiter(1);
     fbArbiter2D: FB_Arbiter(2);
@@ -89,49 +89,49 @@ IF nTestCounter <= 3 THEN
     // Startup tests, make sure the motor is enabled so we can inspect MC_Power's output
     // Otherwise we can't snoop on the PlcToNc control DWORD since this is all 0's if disabled
     // When enabled, some of the other bits go to 1 to represent directional enables
-    stMotionStage1.nEnableMode := ENUM_StageEnableMode.ALWAYS;
-    stMotionStage2.nEnableMode := ENUM_StageEnableMode.ALWAYS;
-    stMotionStage3.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+    stMotionStage1.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStage2.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStage3.nEnableMode := E_StageEnableMode.ALWAYS;
 ELSE
     // Otherwise, make sure the most complicated mode (and the default) works
-    stMotionStage1.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
-    stMotionStage2.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
-    stMotionStage3.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+    stMotionStage1.nEnableMode := E_StageEnableMode.DURING_MOTION;
+    stMotionStage2.nEnableMode := E_StageEnableMode.DURING_MOTION;
+    stMotionStage3.nEnableMode := E_StageEnableMode.DURING_MOTION;
 END_IF
 afbMotionStage[1](stMotionStage:=stMotionStage1);
 afbMotionStage[2](stMotionStage:=stMotionStage2);
 afbMotionStage[3](stMotionStage:=stMotionStage3);
 
-astBeam[ENUM_TestStates.Unknown].stBeamParams := PMPS_GVL.cst0RateBeam;
-astBeam[ENUM_TestStates.Unknown].nRequestAssertionID := 1;
-astBeam[ENUM_TestStates.Unknown].sPmpsState := 'trans';
-astBeam[ENUM_TestStates.OUT].stBeamParams := PMPS_GVL.cstFullBeam;
-astBeam[ENUM_TestStates.OUT].nRequestAssertionID := 2;
-astBeam[ENUM_TestStates.OUT].sPmpsState := 'out';
-astBeam[ENUM_TestStates.TARGET1].stBeamParams := PMPS_GVL.cstFullBeam;
-astBeam[ENUM_TestStates.TARGET1].stBeamParams.nTran := 0.1;
-astBeam[ENUM_TestStates.TARGET1].nRequestAssertionID := 3;
-astBeam[ENUM_TestStates.TARGET1].sPmpsState := 'target1';
-astBeam[ENUM_TestStates.TARGET2].stBeamParams := PMPS_GVL.cstFullBeam;
-astBeam[ENUM_TestStates.TARGET2].stBeamParams.nTran := 0.01;
-astBeam[ENUM_TestStates.TARGET2].nRequestAssertionID := 4;
-astBeam[ENUM_TestStates.TARGET2].sPmpsState := 'target2';
+astBeam[E_TestStates.Unknown].stBeamParams := PMPS_GVL.cst0RateBeam;
+astBeam[E_TestStates.Unknown].nRequestAssertionID := 1;
+astBeam[E_TestStates.Unknown].sPmpsState := 'trans';
+astBeam[E_TestStates.OUT].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[E_TestStates.OUT].nRequestAssertionID := 2;
+astBeam[E_TestStates.OUT].sPmpsState := 'out';
+astBeam[E_TestStates.TARGET1].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[E_TestStates.TARGET1].stBeamParams.nTran := 0.1;
+astBeam[E_TestStates.TARGET1].nRequestAssertionID := 3;
+astBeam[E_TestStates.TARGET1].sPmpsState := 'target1';
+astBeam[E_TestStates.TARGET2].stBeamParams := PMPS_GVL.cstFullBeam;
+astBeam[E_TestStates.TARGET2].stBeamParams.nTran := 0.01;
+astBeam[E_TestStates.TARGET2].nRequestAssertionID := 4;
+astBeam[E_TestStates.TARGET2].sPmpsState := 'target2';
 
 // Assign beam params to states 1
-astPositionState1[ENUM_TestStates.OUT].stPMPS := astBeam[ENUM_TestStates.OUT];
-astPositionState1[ENUM_TestStates.TARGET1].stPMPS := astBeam[ENUM_TestStates.TARGET1];
-astPositionState1[ENUM_TestStates.TARGET2].stPMPS := astBeam[ENUM_TestStates.TARGET2];
+astPositionState1[E_TestStates.OUT].stPMPS := astBeam[E_TestStates.OUT];
+astPositionState1[E_TestStates.TARGET1].stPMPS := astBeam[E_TestStates.TARGET1];
+astPositionState1[E_TestStates.TARGET2].stPMPS := astBeam[E_TestStates.TARGET2];
 
 // Set some names for maybe help in debug
-astPositionState1[ENUM_TestStates.OUT].sName := 'OUT';
-astPositionState1[ENUM_TestStates.TARGET1].sName := 'TARGET1';
-astPositionState1[ENUM_TestStates.TARGET2].sName := 'TARGET2';
-astPositionState2[ENUM_TestStates.OUT].sName := 'OUT';
-astPositionState2[ENUM_TestStates.TARGET1].sName := 'TARGET1';
-astPositionState2[ENUM_TestStates.TARGET2].sName := 'TARGET2';
-astPositionState3[ENUM_TestStates.OUT].sName := 'OUT';
-astPositionState3[ENUM_TestStates.TARGET1].sName := 'TARGET1';
-astPositionState3[ENUM_TestStates.TARGET2].sName := 'TARGET2';
+astPositionState1[E_TestStates.OUT].sName := 'OUT';
+astPositionState1[E_TestStates.TARGET1].sName := 'TARGET1';
+astPositionState1[E_TestStates.TARGET2].sName := 'TARGET2';
+astPositionState2[E_TestStates.OUT].sName := 'OUT';
+astPositionState2[E_TestStates.TARGET1].sName := 'TARGET1';
+astPositionState2[E_TestStates.TARGET2].sName := 'TARGET2';
+astPositionState3[E_TestStates.OUT].sName := 'OUT';
+astPositionState3[E_TestStates.TARGET1].sName := 'TARGET1';
+astPositionState3[E_TestStates.TARGET2].sName := 'TARGET2';
 
 // Load a fake json doc to be consumed by our FB
 jsonHelper(
@@ -148,15 +148,15 @@ END_IF
 TestStartup1D(1);
 TestStartup2D(2);
 TestStartup3D(3);
-Test1D(4, ENUM_TestStates.OUT);
-Test1D(5, ENUM_TestStates.TARGET1);
-Test1D(6, ENUM_TestStates.TARGET2);
-Test2D(7, ENUM_TestStates.OUT);
-Test2D(8, ENUM_TestStates.TARGET1);
-Test2D(9, ENUM_TestStates.TARGET2);
-Test3D(10, ENUM_TestStates.OUT);
-Test3D(11, ENUM_TestStates.TARGET1);
-Test3D(12, ENUM_TestStates.TARGET2);
+Test1D(4, E_TestStates.OUT);
+Test1D(5, E_TestStates.TARGET1);
+Test1D(6, E_TestStates.TARGET2);
+Test2D(7, E_TestStates.OUT);
+Test2D(8, E_TestStates.TARGET1);
+Test2D(9, E_TestStates.TARGET2);
+Test3D(10, E_TestStates.OUT);
+Test3D(11, E_TestStates.TARGET1);
+Test3D(12, E_TestStates.TARGET2);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -177,7 +177,7 @@ VAR_IN_OUT
     astPositionState: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 END_VAR
 VAR_INPUT
-    eState: ENUM_TestStates;
+    eState: E_TestStates;
     sID: STRING;
 END_VAR
 VAR
@@ -211,7 +211,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test1D
 VAR_INPUT
     nTestID: UINT;
-    eState: ENUM_TestStates;
+    eState: E_TestStates;
 END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
@@ -257,21 +257,21 @@ IF NOT bInit THEN
     bInit := TRUE;
 END_IF
 
-IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move1D.stPlcToEpics.bDone THEN
     AssertTrue(
         bLimAsserted,
         'Skipped limit assert test',
     );
     AssertTrue(
-        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Condition:=fb_Move1D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Condition:=fb_Move1D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bError,
+        Condition:=fb_Move1D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_UINT(
@@ -289,7 +289,7 @@ IF tonTimer.Q OR fb_Move1D.stEpicsOutput.bDone THEN
         fbArbiter1D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
-    fb_Move1D.stEpicsInput.bReset := TRUE;
+    fb_Move1D.stEpicsToPlc.bReset := TRUE;
     fb_Move1D(
         stMotionStage:=stMotionStage1,
         astPositionState:=astPositionState1,
@@ -313,7 +313,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test2D
 VAR_INPUT
     nTestID: UINT;
-    eState: ENUM_TestStates;
+    eState: E_TestStates;
 END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
@@ -362,21 +362,21 @@ IF NOT bInit THEN
     bInit := TRUE;
 END_IF
 
-IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move2D.stPlcToEpics.bDone THEN
     AssertTrue(
         bLimAsserted1 AND bLimAsserted2,
         'Skipped limit assert test',
     );
     AssertTrue(
-        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Condition:=fb_Move2D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Condition:=fb_Move2D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bError,
+        Condition:=fb_Move2D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_UINT(
@@ -400,7 +400,7 @@ IF tonTimer.Q OR fb_Move2D.stEpicsOutput.bDone THEN
         fbArbiter2D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
-    fb_Move2D.stEpicsInput.bReset := TRUE;
+    fb_Move2D.stEpicsToPlc.bReset := TRUE;
     fb_Move2D(
         stMotionStage1:=stMotionStage1,
         stMotionStage2:=stMotionStage2,
@@ -427,7 +427,7 @@ END_IF
       <Declaration><![CDATA[METHOD Test3D
 VAR_INPUT
     nTestID: UINT;
-    eState: ENUM_TestStates;
+    eState: E_TestStates;
 END_VAR
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
@@ -480,21 +480,21 @@ IF NOT bInit THEN
     bInit := TRUE;
 END_IF
 
-IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
+IF tonTimer.Q OR fb_Move3D.stPlcToEpics.bDone THEN
     AssertTrue(
         bLimAsserted1 AND bLimAsserted2 AND bLimAsserted3,
         'Skipped limit assert test',
     );
     AssertTrue(
-        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Condition:=fb_Move3D.stPlcToEpics.bDone,
         Message:='Done should be True after move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Condition:=fb_Move3D.stPlcToEpics.bBusy,
         Message:='Busy should be False after move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bError,
+        Condition:=fb_Move3D.stPlcToEpics.bError,
         Message:='Error should be False after move',
     );
     AssertEquals_UINT(
@@ -524,7 +524,7 @@ IF tonTimer.Q OR fb_Move3D.stEpicsOutput.bDone THEN
         fbArbiter3D.CheckRequestInPool(astBeam[eState].nRequestAssertionID),
         'Destination bp should have been in the arbiter',
     );
-    fb_Move3D.stEpicsInput.bReset := TRUE;
+    fb_Move3D.stEpicsToPlc.bReset := TRUE;
     fb_Move3D(
         stMotionStage1:=stMotionStage1,
         stMotionStage2:=stMotionStage2,
@@ -592,11 +592,11 @@ bInit := TRUE;
 IF tonTimer.Q THEN
     // We should neither be busy nor done (we didn't do anything)
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bDone,
+        Condition:=fb_Move1D.stPlcToEpics.bDone,
         Message:='Done should be False with no move',
     );
     AssertFalse(
-        Condition:=fb_Move1D.stEpicsOutput.bBusy,
+        Condition:=fb_Move1D.stPlcToEpics.bBusy,
         Message:='Busy should be False with no move',
     );
     // We should still be at 0,0,0
@@ -613,7 +613,7 @@ IF tonTimer.Q THEN
         Message:='Expected full +/- enables',
     );
     AssertTrue(
-        fbArbiter1D.CheckRequestInPool(astBeam[ENUM_TestStates.Unknown].nRequestAssertionID),
+        fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.Unknown].nRequestAssertionID),
         'Transition assertion ID not in pool',
     );
     bOneTestDone := TRUE;
@@ -664,11 +664,11 @@ bInit := TRUE;
 IF tonTimer.Q THEN
     // We should neither be busy nor done (we didn't do anything)
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bDone,
+        Condition:=fb_Move2D.stPlcToEpics.bDone,
         Message:='Done should be False with no move',
     );
     AssertFalse(
-        Condition:=fb_Move2D.stEpicsOutput.bBusy,
+        Condition:=fb_Move2D.stPlcToEpics.bBusy,
         Message:='Busy should be False with no move',
     );
     // We should still be at 0,0,0
@@ -696,7 +696,7 @@ IF tonTimer.Q THEN
         Message:='Expected full +/- enables',
     );
     AssertTrue(
-        fbArbiter2D.CheckRequestInPool(astBeam[ENUM_TestStates.Unknown].nRequestAssertionID),
+        fbArbiter2D.CheckRequestInPool(astBeam[E_TestStates.Unknown].nRequestAssertionID),
         'Transition assertion ID not in pool',
     );
     bOneTestDone := TRUE;
@@ -749,11 +749,11 @@ bInit := TRUE;
 IF tonTimer.Q THEN
     // We should neither be busy nor done (we didn't do anything)
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bDone,
+        Condition:=fb_Move3D.stPlcToEpics.bDone,
         Message:='Done should be False with no move',
     );
     AssertFalse(
-        Condition:=fb_Move3D.stEpicsOutput.bBusy,
+        Condition:=fb_Move3D.stPlcToEpics.bBusy,
         Message:='Busy should be False with no move',
     );
     // We should still be at 0,0,0
@@ -792,7 +792,7 @@ IF tonTimer.Q THEN
         Message:='Expected full +/- enables',
     );
     AssertTrue(
-        fbArbiter3D.CheckRequestInPool(astBeam[ENUM_TestStates.Unknown].nRequestAssertionID),
+        fbArbiter3D.CheckRequestInPool(astBeam[E_TestStates.Unknown].nRequestAssertionID),
         'Transition assertion ID not in pool',
     );
     bOneTestDone := TRUE;

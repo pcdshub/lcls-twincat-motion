@@ -8,7 +8,7 @@ VAR_INPUT
     {attribute 'pytmc' := '
         pv:
     '}
-    stPositionState: DUT_PositionState;
+    stPositionState: ST_PositionState;
 
     {attribute 'pytmc' := '
         pv: GO
@@ -21,7 +21,7 @@ VAR_INPUT
     bMoveOk: BOOL;
 END_VAR
 VAR_IN_OUT
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 END_VAR
 VAR_OUTPUT
     {attribute 'pytmc' := '
@@ -75,7 +75,7 @@ END_VAR
 IF bExecTrig.Q AND bMoveOk THEN
     IF NOT stMotionStage.bBusy AND NOT stMotionStage.bError THEN
         stMotionStage.bExecute := TRUE;
-        stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+        stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
         stMotionStage.fPosition := stPositionState.fPosition;
         stMotionStage.fVelocity := stPositionState.fVelocity;
         stMotionStage.fAcceleration := stPositionState.fAccel;

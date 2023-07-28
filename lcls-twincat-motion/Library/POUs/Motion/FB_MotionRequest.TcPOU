@@ -18,7 +18,7 @@ VAR_INPUT
     // Reset errors on rising edge
     bReset: BOOL;
     // Define behavior for when the motor is already moving
-    enumMotionRequest: ENUM_MotionRequest := ENUM_MotionRequest.WAIT;
+    enumMotionRequest: E_MotionRequest := E_MotionRequest.WAIT;
     // Goal position
     fPos: LREAL;
     // Move velocity
@@ -97,11 +97,11 @@ CASE nState OF
     PICK_REQUEST:
         IF stMotionStage.bBusy THEN
             CASE enumMotionRequest OF
-                ENUM_MotionRequest.WAIT:
+                E_MotionRequest.WAIT:
                     nState := WAIT_OTHER_MOVE;
-                ENUM_MotionRequest.INTERRUPT:
+                E_MotionRequest.INTERRUPT:
                     nState := STOP_OTHER_MOVE;
-                ENUM_MotionRequest.ABORT:
+                E_MotionRequest.ABORT:
                     nState := ERROR;
                     bError := TRUE;
                     nErrorId := 16#7900;
@@ -125,7 +125,7 @@ CASE nState OF
     START_MOVE:
         bMyMove := TRUE;
         stMotionStage.bExecute := TRUE;
-        stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+        stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
         stMotionStage.fPosition := fPos;
         stMotionStage.fVelocity := fVel;
         stMotionStage.fAcceleration := fAcc;

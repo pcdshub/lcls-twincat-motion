@@ -20,9 +20,9 @@ VAR_IN_OUT
     // All position states for all motors, including unused/invalid states.
     astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
     // Normal EPICS inputs, gathered into a single struct
-    stEpicsInput: ST_StateEpicsInput;
+    stEpicsToPlc: ST_StateEpicsToPlc;
     // Normal EPICS outputs, gathered into a single struct
-    stEpicsOutput: ST_StateEpicsOutput;
+    stPlcToEpics: ST_StatePlcToEpics;
     // Set this to a nonzero value to request a new move. It will be reset to zero every cycle. This should be hooked up to a user's EPICS enum input.
     eEnumSet: UINT;
     // The current state index, or zero if we are not at a state. This should be hooked up to a user's EPICS enum output.
@@ -49,7 +49,7 @@ VAR
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-stEpicsInput.nSetValue := eEnumSet;
+stEpicsToPlc.nSetValue := eEnumSet;
 
 fbRead(
     astMotionStage:=astMotionStageMax,
@@ -57,13 +57,13 @@ fbRead(
     nActiveMotorCount:=nActiveMotorCount,
     bKnownState=>,
     bMovingState=>,
-    nPositionIndex=>stEpicsOutput.nGetValue,
+    nPositionIndex=>stPlcToEpics.nGetValue,
 );
 
 fbInput(
-    stUserInput:=stEpicsInput,
+    stUserInput:=stEpicsToPlc,
     bMoveBusy:=fbMove.bBusy,
-    nInitGoal:=fbRead.nPositionIndex,
+    nStartingState:=fbRead.nPositionIndex,
     nCurrGoal=>nCurrGoal,
     bExecMove=>,
     bResetMove=>,
@@ -88,17 +88,17 @@ fbMove(
     nActiveMotorCount:=nActiveMotorCount,
     bExecute:=fbInput.bExecMove AND bEnable,
     bReset:=fbInput.bResetMove,
-    enumMotionRequest:=ENUM_MotionRequest.INTERRUPT,
+    enumMotionRequest:=E_MotionRequest.INTERRUPT,
     bAtState=>,
-    bError=>stEpicsOutput.bError,
-    nErrorID=>stEpicsOutput.nErrorID,
-    sErrorMessage=>stEpicsOutput.sErrorMsg,
-    bBusy=>stEpicsOutput.bBusy,
-    bDone=>stEpicsOutput.bDone,
+    bError=>stPlcToEpics.bError,
+    nErrorID=>stPlcToEpics.nErrorID,
+    sErrorMessage=>stPlcToEpics.sErrorMsg,
+    bBusy=>stPlcToEpics.bBusy,
+    bDone=>stPlcToEpics.bDone,
 );
 
-eEnumSet := stEpicsInput.nSetValue;
-eEnumGet := stEpicsOutput.nGetValue;
+eEnumSet := stEpicsToPlc.nSetValue;
+eEnumGet := stPlcToEpics.nGetValue;
 ]]></ST>
     </Implementation>
   </POU>

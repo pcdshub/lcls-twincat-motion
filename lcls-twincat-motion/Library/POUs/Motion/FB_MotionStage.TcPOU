@@ -48,10 +48,10 @@ rtHomeCmdShortcut(CLK:=stMotionStage.bHomeCmd);
 // Execute on rising edge
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
-    stMotionStage.nCommand := ENUM_EpicsMotorCmd.MOVE_ABSOLUTE;
+    stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
-    stMotionStage.nCommand := ENUM_EpicsMotorCmd.HOME;
+    stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
 END_IF
 // Always reset, even if not rising edge, so command can be issued again
 IF stMotionStage.bMoveCmd OR stMotionStage.bHomeCmd THEN
@@ -60,14 +60,14 @@ IF stMotionStage.bMoveCmd OR stMotionStage.bHomeCmd THEN
 END_IF
 
 // Automatically fill the correct nCmdData for homing
-IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
+IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
     stMotionStage.nCmdData := stMotionStage.nHomingMode;
 END_IF
 
 // Check if the command wants to cause a move
-bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.ABSOLUTE_SET;
-bMoveCmd R= stMotionStage.nCmdData = ENUM_EpicsHomeCmd.NONE;
-bMoveCmd S= stMotionStage.nCommand <> ENUM_EpicsMotorCmd.HOME;
+bMoveCmd R= stMotionStage.nCmdData = E_EpicsHomeCmd.ABSOLUTE_SET;
+bMoveCmd R= stMotionStage.nCmdData = E_EpicsHomeCmd.NONE;
+bMoveCmd S= stMotionStage.nCommand <> E_EpicsMotorCmd.HOME;
 
 // Handle main execs
 rtUserExec(CLK := stMotionStage.bExecute);
@@ -83,11 +83,11 @@ stMotionStage.bSafetyReady S= stMotionStage.bPowerSelf;
 
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
-    ENUM_StageEnableMode.ALWAYS:
+    E_StageEnableMode.ALWAYS:
         stMotionStage.bEnable := TRUE;
-    ENUM_StageEnableMode.DURING_MOTION:
+    E_StageEnableMode.DURING_MOTION:
         IF bNewMoveReq THEN
-            IF stMotionStage.nCommand = ENUM_EpicsMotorCmd.HOME THEN
+            IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
                 stMotionStage.bEnable := stMotionStage.bSafetyReady;
             ELSIF bPosGoal THEN
                 IF stMotionStage.bAllForwardEnable THEN
@@ -235,7 +235,7 @@ IF ftExec.Q OR rtTarget.Q OR rtHomed.Q THEN
 END_IF
 
 // Handle auto-disable timing
-bPrepareDisable S= stMotionStage.nEnableMode = ENUM_StageEnableMode.DURING_MOTION AND ftExec.Q;
+bPrepareDisable S= stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION AND ftExec.Q;
 // Delay the disable until we reach standstill, else brake issues or other race conditions
 IF bPrepareDisable AND stMotionStage.Axis.Status.MotionState = MC_AXISSTATE_STANDSTILL THEN
     bPrepareDisable := FALSE;
@@ -252,14 +252,14 @@ CASE stMotionStage.Axis.Status.MotionState OF
 END_CASE
 
 // Handle the brake. TRUE means brake disabled/released
-IF stMotionStage.nBrakeMode <> ENUM_StageBrakeMode.NO_BRAKE THEN
+IF stMotionStage.nBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
     CASE stMotionStage.Axis.Status.MotionState OF
         MC_AXISSTATE_UNDEFINED,
         MC_AXISSTATE_DISABLED,
         MC_AXISSTATE_ERRORSTOP:
             stMotionStage.bBrakeRelease := FALSE;
         MC_AXISSTATE_STANDSTILL:
-            IF stMotionStage.nBrakeMode = ENUM_StageBrakeMode.IF_MOVING THEN
+            IF stMotionStage.nBrakeMode = E_StageBrakeMode.IF_MOVING THEN
                 stMotionStage.bBrakeRelease := FALSE;
             ELSE
                 stMotionStage.bBrakeRelease := TRUE;
@@ -303,7 +303,7 @@ fbNCParams(
 // Save and restore as long as not an absolute encoder
 fbSaveRestore(
     stMotionStage:=stMotionStage,
-    bEnable:=stMotionStage.nHomingMode <> ENUM_EpicsHomeCmd.NONE);]]></ST>
+    bEnable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

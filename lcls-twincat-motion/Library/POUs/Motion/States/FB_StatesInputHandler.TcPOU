@@ -12,13 +12,13 @@
 *)
 VAR_IN_OUT
     // The user's inputs from EPICS. This is an IN_OUT variable because we will write values back to this to help us detect when the same value is re-caput
-    stUserInput: ST_StateEpicsInput;
+    stUserInput: ST_StateEpicsToPlc;
 END_VAR
 VAR_INPUT
     // The bBusy boolean from the motion FB
     bMoveBusy: BOOL;
     // The starting state number to seed nCurrGoal with
-    nInitGoal: UINT;
+    nStartingState: UINT;
 END_VAR
 VAR_OUTPUT
     // The goal index to input to the motion FB. This will be clamped to the range 0..GeneralConstants.MAX_STATES
@@ -45,7 +45,7 @@ END_VAR
 IF NOT bInit THEN
     bInit := TRUE;
     stUserInput.nSetValue := 0;
-    nCurrGoal := nInitGoal;
+    nCurrGoal := nStartingState;
 END_IF
 
 bResetMove := stUserInput.bReset;

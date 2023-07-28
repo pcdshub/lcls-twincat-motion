@@ -57,12 +57,12 @@ VAR_INPUT
     bEnable: BOOL;
     // Normal EPICS inputs, gathered into a single struct
     {attribute 'pytmc' := 'pv: STATE'}
-    stEpicsInput: ST_StateEpicsInput;
+    stEpicsToPlc: ST_StateEpicsToPlc;
 END_VAR
 VAR_OUTPUT
     // Normal EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := 'pv: STATE'}
-    stEpicsOutput: ST_StateEpicsOutput;
+    stPlcToEpics: ST_StatePlcToEpics;
 END_VAR
 VAR
     fbCore: FB_PositionStateND_Core;
@@ -82,8 +82,8 @@ astPositionStateMax[3] := astPositionState3;
 fbCore(
     astMotionStageMax:=astMotionStageMax,
     astPositionStateMax:=astPositionStateMax,
-    stEpicsInput:=stEpicsInput,
-    stEpicsOutput:=stEpicsOutput,
+    stEpicsToPlc:=stEpicsToPlc,
+    stPlcToEpics:=stPlcToEpics,
     eEnumSet:=eEnumSet,
     eEnumGet:=eEnumGet,
     bEnable:=bEnable,

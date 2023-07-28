@@ -10,7 +10,7 @@ FUNCTION_BLOCK FB_PositionStateBase
 *)
 VAR_IN_OUT
     // Motor to move
-    stMotionStage: DUT_MotionStage;
+    stMotionStage: ST_MotionStage;
 END_VAR
 VAR_INPUT
     // If TRUE, start a move when setState transitions to a nonzero number
@@ -69,7 +69,7 @@ VAR
         io: io
         expand: %.2d
     '}
-    arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF DUT_PositionState;
+    arrStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 
     // Corresponding arrStates index to move to, or 0 if no move selected
     setState: INT;
@@ -79,8 +79,8 @@ VAR
     getState: INT;
 
     bInit: BOOL;
-    stUnknown: DUT_PositionState;
-    stGoal: DUT_PositionState;
+    stUnknown: ST_PositionState;
+    stGoal: ST_PositionState;
     fbStateMove: FB_PositionStateMove;
     fbStateInternal: ARRAY[1..GeneralConstants.MAX_STATES] OF FB_PositionStateInternal;
     nIndex: INT;
@@ -183,7 +183,7 @@ fbStateMove(
     stPositionState := stGoal,
     bExecute := bInnerExec,
     bReset := bInnerReset,
-    enumMotionRequest := ENUM_MotionRequest.INTERRUPT,
+    enumMotionRequest := E_MotionRequest.INTERRUPT,
     bBusy => bBusy);
 
 // Only pass up bDone information if this FB is active

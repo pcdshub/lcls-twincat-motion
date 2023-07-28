@@ -71,19 +71,19 @@ VAR_INPUT
     // Normal EPICS inputs, gathered into a single struct
     {attribute 'pytmc' := 'pv: STATE'}
     // PMPS EPICS inputs, gathered into a single struct
-    stEpicsInput: ST_StateEpicsInput;
+    stEpicsToPlc: ST_StateEpicsToPlc;
     {attribute 'pytmc' := 'pv: STATE'}
-    stPMPSEpicsInput: ST_StatePMPSEpicsInput;
+    stPMPSEpicsToPlc: ST_StatePMPSEpicsToPlc;
     // Set this to TRUE to re-read the loaded database immediately (useful for debug)
     bReadDBNow: BOOL;
 END_VAR
 VAR_OUTPUT
     // Normal EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := 'pv: STATE'}
-    stEpicsOutput: ST_StateEpicsOutput;
+    stPlcToEpics: ST_StatePlcToEpics;
     // PMPS EPICS outputs, gathered into a single struct
     {attribute 'pytmc' := 'pv: STATE'}
-    stPMPSEpicsOutput: ST_StatePMPSEpicsOutput;
+    stPMPSPlcToEpics: ST_StatePMPSPlcToEpics;
     // The PMPS database lookup associated with the current position state.
     stDbStateParams: ST_DbStateParams;
 END_VAR
@@ -106,8 +106,8 @@ astPositionStateMax[3] := astPositionState3;
 fbCore(
     astMotionStageMax:=astMotionStageMax,
     astPositionStateMax:=astPositionStateMax,
-    stEpicsInput:=stEpicsInput,
-    stEpicsOutput:=stEpicsOutput,
+    stEpicsToPlc:=stEpicsToPlc,
+    stPlcToEpics:=stPlcToEpics,
     eEnumSet:=eEnumSet,
     eEnumGet:=eEnumGet,
     bEnable:=bEnableMotion,
@@ -117,10 +117,10 @@ fbCore(
 fbPMPSCore(
     astMotionStageMax:=astMotionStageMax,
     astPositionStateMax:=astPositionStateMax,
-    stEpicsInput:=stEpicsInput,
-    stPMPSEpicsInput:=stPMPSEpicsInput,
-    stEpicsOutput:=stEpicsOutput,
-    stPMPSEpicsOutput:=stPMPSEpicsOutput,
+    stEpicsToPlc:=stEpicsToPlc,
+    stPMPSEpicsToPlc:=stPMPSEpicsToPlc,
+    stPlcToEpics:=stPlcToEpics,
+    stPMPSPlcToEpics:=stPMPSPlcToEpics,
     fbFFHWO:=fbFFHWO,
     fbArbiter:=fbArbiter,
     bEnableBeamParams:=bEnableBeamParams,
