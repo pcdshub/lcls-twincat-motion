@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_StateSetupHelper_Test" Id="{eec1b428-2489-44ca-a8ea-53e83a82b6b9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StateSetupHelper_Test EXTENDS FB_TestSuite
+VAR
+    astStates: ARRAY[1..10] OF ST_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+TestNormalCase();
+TestDefaultOnly();
+TestManyOverrides();
+]]></ST>
+    </Implementation>
+    <Method Name="TestDefaultOnly" Id="{fa5e35af-a5df-4ee3-a779-8e79f01348ac}">
+      <Declaration><![CDATA[METHOD TestDefaultOnly
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDefaultOnly');
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestManyOverrides" Id="{a0d9370e-aeec-4fba-9010-fb66e02a6c9c}">
+      <Declaration><![CDATA[METHOD TestManyOverrides
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestManyOverrides');
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestNormalCase" Id="{6b63706c-018d-4836-a8e2-365a463ab059}">
+      <Declaration><![CDATA[METHOD TestNormalCase
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestNormalCase');
+// Mimic what I might do in a real project
+fbStateSetup.SetDefaults(
+    fDelta := 0.5,
+    fVelocity := 10,
+    bMoveOk := TRUE,
+    bValid := TRUE,
+);
+fbStateSetup(stPositionState:=astStates[1], sName:='OUT', fPosition:=10);
+fbStateSetup(stPositionState:=astStates[2], sName:='YAG', fPosition:=20);
+fbStateSetup(stPositionState:=astStates[3], sName:='TT', fPosition:=30);
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
