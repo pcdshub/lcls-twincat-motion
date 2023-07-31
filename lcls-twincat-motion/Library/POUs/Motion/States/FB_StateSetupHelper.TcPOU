@@ -20,6 +20,15 @@
        call with bSetDefault:=TRUE
     3. The original default value as defined on ST_PositionState
 
+    For ease of use, to enable EPICS writes if unlocked, and to avoid repeated
+    self-overwrites in the encoder count use case, this function block will not
+    reapply the values to the same state again after the state has been fully
+    initialized by the states function blocks, as determined by the bUpdated struct
+    member. If you want to force the function block to reapply every cycle you can
+    set bForceUpdate to TRUE, but it is not recommended. Without this feature,
+    you would be required to wrap this function block in a guard to make sure it
+    was only called once per state, which is fairly annoying.
+
     Example expected usage:
     VAR
         fbStateSetup: FB_StateSetupHelper;
@@ -53,6 +62,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     bSetDefault: BOOL;
+    bForceUpdate: BOOL;
     sName: STRING;
     fPosition: LREAL;
     nEncoderCount: UDINT;
@@ -79,7 +89,7 @@ IF bSetDefault THEN
     bSetDefault := FALSE;
     bHasDefault := TRUE;
     stDefault := stPositionState;
-ELSE
+ELSIF bForceUpdate OR NOT stPositionState.bUpdated THEN
     stPositionState.sName := sName;
     stPositionState.fPosition := fPosition;
     stPositionState.nEncoderCount := nEncoderCount;

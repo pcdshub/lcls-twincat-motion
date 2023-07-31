@@ -13,6 +13,7 @@ TestNormalCase();
 TestDefaultOnly();
 TestManyOverrides();
 TestNoDefault();
+TestOnlyOnce();
 ]]></ST>
     </Implementation>
     <Method Name="TestDefaultOnly" Id="{fa5e35af-a5df-4ee3-a779-8e79f01348ac}">
@@ -210,6 +211,39 @@ AssertEquals_STRING('FAKE_TT', astStates[3].stPMPS.sPmpsState, 'Wrong sPmpsState
 TEST_FINISHED();
 
 ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestOnlyOnce" Id="{9a81d898-6374-4f9b-9d5f-d80e1591e51c}">
+      <Declaration><![CDATA[METHOD TestOnlyOnce
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState;
+    stTarget: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestOnlyOnce');
+
+// Required call, even though we don't need anything here
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+// Start with no position
+AssertEquals_LREAL(stTarget.fPosition, 0, 0, 'Start position sanity check failed');
+// Apply a new position
+fbStateSetup(stPositionState:=stTarget, fPosition:=10);
+AssertEquals_LREAL(stTarget.fPosition, 10, 0, 'Basic set position failed');
+// Simulate the position state being used and updated via EPICS or otherwise
+stTarget.bUpdated := TRUE; // Set by FB_PositionStateInternal
+stTarget.fPosition := 12; // Someone tweaked the value in EPICS
+// Run through the state setup again
+fbStateSetup(stPositionState:=stTarget, fPosition:=10);
+// But we should still be at position 12
+AssertEquals_LREAL(stTarget.fPosition, 12, 0, 'FB_StateSetupHelper ran twice!');
+// Unless we override the behavior
+fbStateSetup(stPositionState:=stTarget, bForceUpdate:=TRUE, fPosition:=10);
+AssertEquals_LREAL(stTarget.fPosition, 10, 0, 'bForceUpdate failed');
+
+TEST_FINISHED();]]></ST>
       </Implementation>
     </Method>
   </POU>
