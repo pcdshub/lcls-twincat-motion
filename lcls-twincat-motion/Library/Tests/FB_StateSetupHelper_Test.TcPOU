@@ -12,6 +12,7 @@ END_VAR
 TestNormalCase();
 TestDefaultOnly();
 TestManyOverrides();
+TestNoDefault();
 ]]></ST>
     </Implementation>
     <Method Name="TestDefaultOnly" Id="{fa5e35af-a5df-4ee3-a779-8e79f01348ac}">
@@ -116,6 +117,26 @@ AssertEquals_STRING(stDefaultDefault.stPMPS.sPmpsState, stTwo.stPMPS.sPmpsState,
 
 TEST_FINISHED();
 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestNoDefault" Id="{8b0f8cbe-c302-43d7-8865-0bd56710a180}">
+      <Declaration><![CDATA[METHOD TestNoDefault
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stTarget: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestNoDefault');
+// No default = invalid state + warning log message
+
+fbStateSetup(stPositionState:=stTarget, bValid:=TRUE);
+// Only bValid matters, it must not be valid!
+AssertFalse(stTarget.bValid, 'bValid should be FALSE with no default set.');
+
+TEST_FINISHED();
 ]]></ST>
       </Implementation>
     </Method>

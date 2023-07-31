@@ -9,6 +9,8 @@
 
     Calling with bSetDefault:=TRUE will set the default values to all the values
     from the input stPositionState. Note that the other args will be ignored in this case.
+    This must be done at least once. If you forget to do this, there will be a warning and
+    bValid will be set to FALSE, making it so we cannot move to that state.
 
     Calling without bSetDefault or with it set to FALSE will apply values to the
     input stPositionState with the following priority order:
@@ -66,12 +68,16 @@ VAR_INPUT
 END_VAR
 VAR
     stDefault: ST_PositionState;
+    fbWarning: FB_LogMessage;
+    bHasDefault: BOOL;
+    bHasWarned: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 IF bSetDefault THEN
     bSetDefault := FALSE;
+    bHasDefault := TRUE;
     stDefault := stPositionState;
 ELSE
     stPositionState.sName := sName;
@@ -86,6 +92,17 @@ ELSE
     stPositionState.bValid := bValid;
     stPositionState.bUseRawCounts := bUseRawCounts;
     stPositionState.stPMPS.sPmpsState := sPmpsState;
+    IF NOT bHasDefault THEN
+        stPositionState.bValid := FALSE;
+        IF NOT bHasWarned THEN
+            bHasWarned := TRUE;
+            fbWarning(
+                sMsg:='Did not initialize any defaults in FB_StateSetupHelper! Some states are disabled, check your code!',
+                eSevr:=TcEventSeverity.Warning,
+                eSubSystem:=E_Subsystem.MOTION,
+            );
+        END_IF
+    END_IF
 END_IF
 
 // Overwrite the input args so that unset args are the defaults in the next call
