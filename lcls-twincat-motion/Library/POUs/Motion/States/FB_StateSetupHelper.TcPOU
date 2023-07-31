@@ -81,6 +81,7 @@ VAR
     fbWarning: FB_LogMessage;
     bHasDefault: BOOL;
     bHasWarned: BOOL;
+    sJson: STRING;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -106,10 +107,12 @@ ELSIF bForceUpdate OR NOT stPositionState.bUpdated THEN
         stPositionState.bValid := FALSE;
         IF NOT bHasWarned THEN
             bHasWarned := TRUE;
+            sJson := CONCAT(CONCAT(CONCAT(CONCAT('{"sName": "', sName), '", "sPmpsState": "'), sPmpsState), '"}');
             fbWarning(
-                sMsg:='Did not initialize any defaults in FB_StateSetupHelper! Some states are disabled, check your code!',
+                sMsg:=CONCAT('Did not initialize any defaults in FB_StateSetupHelper! Some states are disabled, check your code! ', sJson),
                 eSevr:=TcEventSeverity.Warning,
                 eSubSystem:=E_Subsystem.MOTION,
+                sJson:=sJson,
             );
         END_IF
     END_IF
