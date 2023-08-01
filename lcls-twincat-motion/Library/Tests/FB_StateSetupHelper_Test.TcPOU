@@ -1,0 +1,250 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_StateSetupHelper_Test" Id="{eec1b428-2489-44ca-a8ea-53e83a82b6b9}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StateSetupHelper_Test EXTENDS FB_TestSuite
+VAR
+    astStates: ARRAY[1..10] OF ST_PositionState;
+    stDefaultDefault: ST_PositionState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+TestNormalCase();
+TestDefaultOnly();
+TestManyOverrides();
+TestNoDefault();
+TestOnlyOnce();
+]]></ST>
+    </Implementation>
+    <Method Name="TestDefaultOnly" Id="{fa5e35af-a5df-4ee3-a779-8e79f01348ac}">
+      <Declaration><![CDATA[METHOD TestDefaultOnly
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState := (
+        sName := 'DEFAULT',
+        fPosition := 100,
+        nEncoderCount := 200,
+        fDelta := 0.5,
+        fVelocity := 10,
+        fAccel := 12,
+        fDecel := 24,
+        bMoveOk := TRUE,
+        bLocked := TRUE,
+        bValid := TRUE,
+        bUseRawCounts := TRUE
+    );
+    stOriginal: ST_PositionState;
+    stTarget: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestDefaultOnly');
+
+// Add a pmps key
+stDefault.stPMPS.sPmpsState := 'KEY';
+// Cache the defaults to use as the check in case stDefault gets mutated by a bug
+stOriginal := stDefault;
+// Apply only defaults
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+fbStateSetup(stPositionState:=stTarget);
+// Check everything
+AssertEquals_STRING(stOriginal.sName, stTarget.sName, 'Wrong sName');
+AssertEquals_LREAL(stOriginal.fPosition, stTarget.fPosition, 0, 'Wrong fPosition');
+AssertEquals_UDINT(stOriginal.nEncoderCount, stTarget.nEncoderCount, 'Wrong nEncoderCount');
+AssertEquals_LREAL(stOriginal.fDelta, stTarget.fDelta, 0, 'Wrong fDelta');
+AssertEquals_LREAL(stOriginal.fVelocity, stTarget.fVelocity, 0, 'Wrong fVelocity');
+AssertEquals_LREAL(stOriginal.fAccel, stTarget.fAccel, 0, 'Wrong fAccel');
+AssertEquals_LREAL(stOriginal.fDecel, stTarget.fDecel, 0, 'Wrong fDecel');
+AssertEquals_BOOL(stOriginal.bMoveOk, stTarget.bMoveOk, 'Wrong bMoveOk');
+AssertEquals_BOOL(stOriginal.bLocked, stTarget.bLocked, 'Wrong bLocked');
+AssertEquals_BOOL(stOriginal.bValid, stTarget.bValid, 'Wrong bValid');
+AssertEquals_BOOL(stOriginal.bUseRawCounts, stTarget.bUseRawCounts, 'Wrong bUseRawCounts');
+AssertEquals_STRING(stOriginal.stPMPS.sPmpsState, stTarget.stPMPS.sPmpsState, 'Wrong sPmpsState');
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestManyOverrides" Id="{a0d9370e-aeec-4fba-9010-fb66e02a6c9c}">
+      <Declaration><![CDATA[METHOD TestManyOverrides
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState := (
+        sName := 'POTATO',
+        fPosition := 23,
+        fDelta := 0.5,
+        fVelocity := 10
+    );
+    stOne: ST_PositionState;
+    stTwo: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestManyOverrides');
+// This is the case where the defaults are always overriden
+
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+fbStateSetup(stPositionState:=stOne, sName:='ONE', fPosition:=10, fDelta:=0.1, fVelocity:=20);
+fbStateSetup(stPositionState:=stTWO, sName:='TWO', fPosition:=30, fDelta:=0.23, fVelocity:=4);
+
+// Check Everything
+AssertEquals_STRING('ONE', stOne.sName, 'Wrong sName in state 1');
+AssertEquals_LREAL(10, stOne.fPosition, 0, 'Wrong fPosition in state 1');
+AssertEquals_UDINT(stDefaultDefault.nEncoderCount, stOne.nEncoderCount, 'Wrong nEncoderCount in state 1');
+AssertEquals_LREAL(0.1, stOne.fDelta, 0, 'Wrong fDelta in state 1');
+AssertEquals_LREAL(20, stOne.fVelocity, 0, 'Wrong fVelocity in state 1');
+AssertEquals_LREAL(stDefaultDefault.fAccel, stOne.fAccel, 0, 'Wrong fAccel in state 1');
+AssertEquals_LREAL(stDefaultDefault.fDecel, stOne.fDecel, 0, 'Wrong fDecel in state 1');
+AssertEquals_BOOL(stDefaultDefault.bMoveOk, stOne.bMoveOk, 'Wrong bMoveOk in state 1');
+AssertEquals_BOOL(stDefaultDefault.bLocked, stOne.bLocked, 'Wrong bLocked in state 1');
+AssertEquals_BOOL(stDefaultDefault.bValid, stOne.bValid, 'Wrong bValid in state 1');
+AssertEquals_BOOL(stDefaultDefault.bUseRawCounts, stOne.bUseRawCounts, 'Wrong bUseRawCounts in state 1');
+AssertEquals_STRING(stDefaultDefault.stPMPS.sPmpsState, stOne.stPMPS.sPmpsState, 'Wrong sPmpsState in state 1');
+
+AssertEquals_STRING('TWO', stTwo.sName, 'Wrong sName in state 2');
+AssertEquals_LREAL(30, stTwo.fPosition, 0, 'Wrong fPosition in state 2');
+AssertEquals_UDINT(stDefaultDefault.nEncoderCount, stTwo.nEncoderCount, 'Wrong nEncoderCount in state 2');
+AssertEquals_LREAL(0.23, stTwo.fDelta, 0, 'Wrong fDelta in state 2');
+AssertEquals_LREAL(4, stTwo.fVelocity, 0, 'Wrong fVelocity in state 2');
+AssertEquals_LREAL(stDefaultDefault.fAccel, stTwo.fAccel, 0, 'Wrong fAccel in state 2');
+AssertEquals_LREAL(stDefaultDefault.fDecel, stTwo.fDecel, 0, 'Wrong fDecel in state 2');
+AssertEquals_BOOL(stDefaultDefault.bMoveOk, stTwo.bMoveOk, 'Wrong bMoveOk in state 2');
+AssertEquals_BOOL(stDefaultDefault.bLocked, stTwo.bLocked, 'Wrong bLocked in state 2');
+AssertEquals_BOOL(stDefaultDefault.bValid, stTwo.bValid, 'Wrong bValid in state 2');
+AssertEquals_BOOL(stDefaultDefault.bUseRawCounts, stTwo.bUseRawCounts, 'Wrong bUseRawCounts in state 2');
+AssertEquals_STRING(stDefaultDefault.stPMPS.sPmpsState, stTwo.stPMPS.sPmpsState, 'Wrong sPmpsState in state 2');
+
+TEST_FINISHED();
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestNoDefault" Id="{8b0f8cbe-c302-43d7-8865-0bd56710a180}">
+      <Declaration><![CDATA[METHOD TestNoDefault
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stTarget: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestNoDefault');
+// No default = invalid state + warning log message
+
+fbStateSetup(stPositionState:=stTarget, sName:='TestNoDefault', sPmpsState:='TestPMPS', bValid:=TRUE);
+// Only bValid matters, it must not be valid!
+AssertFalse(stTarget.bValid, 'bValid should be FALSE with no default set.');
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestNormalCase" Id="{6b63706c-018d-4836-a8e2-365a463ab059}">
+      <Declaration><![CDATA[METHOD TestNormalCase
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState;
+END_VAR
+VAR CONSTANT
+    cDelta: LREAL := 0.5;
+    cVelocity: LREAL := 10;
+    cMoveOk: BOOL := TRUE;
+    cValid: BOOL := TRUE;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestNormalCase');
+// Mimic what I might do in a real project
+
+stDefault.fDelta := cDelta;
+stDefault.fVelocity := cVelocity;
+stDefault.bMoveOk := cMoveOk;
+stDefault.bValid := cValid;
+
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+fbStateSetup(stPositionState:=astStates[1], sName:='OUT', fPosition:=10, sPmpsState:='FAKE_OUT');
+fbStateSetup(stPositionState:=astStates[2], sName:='YAG', fPosition:=20, sPmpsState:='FAKE_YAG');
+fbStateSetup(stPositionState:=astStates[3], sName:='TT', fPosition:=30, sPmpsState:='FAKE_TT');
+
+// Check everything
+AssertEquals_STRING('OUT', astStates[1].sName, 'Wrong sName in state 1');
+AssertEquals_LREAL(10, astStates[1].fPosition, 0, 'Wrong fPosition in state 1');
+AssertEquals_UDINT(stDefaultDefault.nEncoderCount, astStates[1].nEncoderCount, 'Wrong nEncoderCount in state 1');
+AssertEquals_LREAL(cDelta, astStates[1].fDelta, 0, 'Wrong fDelta in state 1');
+AssertEquals_LREAL(cVelocity, astStates[1].fVelocity, 0, 'Wrong fVelocity in state 1');
+AssertEquals_LREAL(stDefaultDefault.fAccel, astStates[1].fAccel, 0, 'Wrong fAccel in state 1');
+AssertEquals_LREAL(stDefaultDefault.fDecel, astStates[1].fDecel, 0, 'Wrong fDecel in state 1');
+AssertEquals_BOOL(cMoveOk, astStates[1].bMoveOk, 'Wrong bMoveOk in state 1');
+AssertEquals_BOOL(stDefaultDefault.bLocked, astStates[1].bLocked, 'Wrong bLocked in state 1');
+AssertEquals_BOOL(cValid, astStates[1].bValid, 'Wrong bValid in state 1');
+AssertEquals_BOOL(stDefaultDefault.bUseRawCounts, astStates[1].bUseRawCounts, 'Wrong bUseRawCounts in state 1');
+AssertEquals_STRING('FAKE_OUT', astStates[1].stPMPS.sPmpsState, 'Wrong sPmpsState in state 1');
+
+AssertEquals_STRING('YAG', astStates[2].sName, 'Wrong sName in state 2');
+AssertEquals_LREAL(20, astStates[2].fPosition, 0, 'Wrong fPosition in state 2');
+AssertEquals_UDINT(stDefaultDefault.nEncoderCount, astStates[2].nEncoderCount, 'Wrong nEncoderCount in state 2');
+AssertEquals_LREAL(cDelta, astStates[2].fDelta, 0, 'Wrong fDelta in state 2');
+AssertEquals_LREAL(cVelocity, astStates[2].fVelocity, 0, 'Wrong fVelocity in state 2');
+AssertEquals_LREAL(stDefaultDefault.fAccel, astStates[2].fAccel, 0, 'Wrong fAccel in state 2');
+AssertEquals_LREAL(stDefaultDefault.fDecel, astStates[2].fDecel, 0, 'Wrong fDecel in state 2');
+AssertEquals_BOOL(cMoveOk, astStates[2].bMoveOk, 'Wrong bMoveOk in state 2');
+AssertEquals_BOOL(stDefaultDefault.bLocked, astStates[2].bLocked, 'Wrong bLocked in state 2');
+AssertEquals_BOOL(cValid, astStates[2].bValid, 'Wrong bValid in state 2');
+AssertEquals_BOOL(stDefaultDefault.bUseRawCounts, astStates[2].bUseRawCounts, 'Wrong bUseRawCounts in state 2');
+AssertEquals_STRING('FAKE_YAG', astStates[2].stPMPS.sPmpsState, 'Wrong sPmpsState in state 2');
+
+AssertEquals_STRING('TT', astStates[3].sName, 'Wrong sName in state 3');
+AssertEquals_LREAL(30, astStates[3].fPosition, 0, 'Wrong fPosition in state 3');
+AssertEquals_UDINT(stDefaultDefault.nEncoderCount, astStates[3].nEncoderCount, 'Wrong nEncoderCount in state 3');
+AssertEquals_LREAL(cDelta, astStates[3].fDelta, 0, 'Wrong fDelta in state 3');
+AssertEquals_LREAL(cVelocity, astStates[3].fVelocity, 0, 'Wrong fVelocity in state 3');
+AssertEquals_LREAL(stDefaultDefault.fAccel, astStates[3].fAccel, 0, 'Wrong fAccel in state 3');
+AssertEquals_LREAL(stDefaultDefault.fDecel, astStates[3].fDecel, 0, 'Wrong fDecel in state 3');
+AssertEquals_BOOL(cMoveOk, astStates[3].bMoveOk, 'Wrong bMoveOk in state 3');
+AssertEquals_BOOL(stDefaultDefault.bLocked, astStates[3].bLocked, 'Wrong bLocked in state 3');
+AssertEquals_BOOL(cValid, astStates[3].bValid, 'Wrong bValid in state 3');
+AssertEquals_BOOL(stDefaultDefault.bUseRawCounts, astStates[3].bUseRawCounts, 'Wrong bUseRawCounts in state 3');
+AssertEquals_STRING('FAKE_TT', astStates[3].stPMPS.sPmpsState, 'Wrong sPmpsState in state 3');
+
+TEST_FINISHED();
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestOnlyOnce" Id="{9a81d898-6374-4f9b-9d5f-d80e1591e51c}">
+      <Declaration><![CDATA[METHOD TestOnlyOnce
+VAR
+    fbStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState;
+    stTarget: ST_PositionState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestOnlyOnce');
+
+// Required call, even though we don't need anything here
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+// Start with no position
+AssertEquals_LREAL(stTarget.fPosition, 0, 0, 'Start position sanity check failed');
+// Apply a new position
+fbStateSetup(stPositionState:=stTarget, fPosition:=10);
+AssertEquals_LREAL(stTarget.fPosition, 10, 0, 'Basic set position failed');
+// Simulate the position state being used and updated via EPICS or otherwise
+stTarget.bUpdated := TRUE; // Set by FB_PositionStateInternal
+stTarget.fPosition := 12; // Someone tweaked the value in EPICS
+// Run through the state setup again
+fbStateSetup(stPositionState:=stTarget, fPosition:=10);
+// But we should still be at position 12
+AssertEquals_LREAL(stTarget.fPosition, 12, 0, 'FB_StateSetupHelper ran twice!');
+// Unless we override the behavior
+fbStateSetup(stPositionState:=stTarget, bForceUpdate:=TRUE, fPosition:=10);
+AssertEquals_LREAL(stTarget.fPosition, 10, 0, 'bForceUpdate failed');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

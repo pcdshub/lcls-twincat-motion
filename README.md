@@ -143,6 +143,37 @@ Note that, for ND states, you'll match the states by their array position. That 
 
 You should leave the unused states uninitialized if you have fewer states than `GeneralConstants.MAX_STATES`.
 
+Doing this configuration by hand in a line-by-line matter would be tedious and error-prone. A helper function block is provided to help you set up the states in a way that is less tedious and easier to audit by eye. You do this by setting default values for common fields and then applying state-specific fields in a series of one-line calls that end up looking like a table. See the following example:
+
+```
+VAR
+    bStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState := (
+        fDelta := 0.5,
+        fVelocity := 10,
+        bMoveOk := TRUE,
+        bValid := TRUE
+    );
+    astStates1: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+    astStates2: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+END_VAR
+
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+
+fbStateSetup(stPositionState:=astStates1[1], sName:='OUT', fPosition:=10);
+fbStateSetup(stPositionState:=astStates1[2], sName:='YAG', fPosition:=20);
+fbStateSetup(stPositionState:=astStates1[3], sName:='TT', fPosition:=30);
+
+fbStateSetup(stPositionState:=astStates2[1], sName:='OUT', fPosition:=-30);
+fbStateSetup(stPositionState:=astStates2[2], sName:='YAG', fPosition:=35);
+fbStateSetup(stPositionState:=astStates2[3], sName:='TT', fPosition:=70);
+
+fbStateSetup(stPositionState:=astStates3[1], sName:='OUT', fPosition:=0.4, fDelta:=0.1);
+fbStateSetup(stPositionState:=astStates3[2], sName:='YAG', fPosition:=2.3, fDelta:=0.1);
+fbStateSetup(stPositionState:=astStates3[3], sName:='TT', fPosition:=5.6, fDelta:=0.1;
+```
+
 
 #### Enum Setup and PyTMC
 
