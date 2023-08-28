@@ -28,12 +28,6 @@ STRUCT
     nEncoderCount: UDINT;
 
     // Maximum allowable deviation from fPosition while at the state
-    {attribute 'pytmc' := '
-        pv: DELTA
-        io: io
-        field: DRVL 0.0
-        field: DESC Max deviation from position at this state
-    '}
     fDelta: LREAL;
 
     // Speed at which to move to this state
@@ -45,19 +39,9 @@ STRUCT
     fVelocity: LREAL;
 
     // (optional) Acceleration to use for moves to this state
-    {attribute 'pytmc' := '
-        pv: ACCL
-        io: io
-        field: DESC Acceleration to use for moves to this state
-    '}
     fAccel: LREAL;
 
     // (optional) Deceleration to use for moves to this state
-    {attribute 'pytmc' := '
-        pv: DCCL
-        io: io
-        field: DESC Deceleration to use for moves to this state
-    '}
     fDecel: LREAL;
 
     // Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
@@ -71,23 +55,9 @@ STRUCT
     bMoveOk: BOOL;
 
     // Signifies to FB_PositionStateLock that this state should be immutable
-    {attribute 'pytmc' := '
-        pv: LOCKED
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if state is immutable
-    '}
     bLocked: BOOL;
 
     // Set this to TRUE when you make your state. This defaults to FALSE so that uninitialized states can never be moved to
-    {attribute 'pytmc' := '
-        pv: VALID
-        io: i
-        field: ZNAM FALSE
-        field: ONAM TRUE
-        field: DESC TRUE if this is a real state
-    '}
     bValid: BOOL;
 
     // Set this to TRUE when you want to use the raw encoder counts to define the state
@@ -97,9 +67,6 @@ STRUCT
     bUpdated: BOOL;
 
     // We give this a state name and it is used to load parameters from the pmps database.
-    {attribute 'pytmc' := '
-        pv:
-    '}
     stPMPS: ST_DbStateParams;
 END_STRUCT
 END_TYPE]]></Declaration>
