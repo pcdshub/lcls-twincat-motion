@@ -765,40 +765,12 @@ ST_MotionStage
         // PLC Axis Reference
         Axis: AXIS_REF;
         // NC Forward Limit Switch: TRUE if ok to move
-        {attribute 'pytmc' := '
-            pv: PLC:bLimitForwardEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC FALSE if forward limit hit
-        '}
         bLimitForwardEnable AT %I*: BOOL;
         // NC Backward Limit Switch: TRUE if ok to move
-        {attribute 'pytmc' := '
-            pv: PLC:bLimitBackwardEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC FALSE if reverse limit hit
-        '}
         bLimitBackwardEnable AT %I*: BOOL;
         // NO Home Switch: TRUE if at home
-        {attribute 'pytmc' := '
-            pv: PLC:bHome
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if at homing switch
-        '}
         bHome AT %I*: BOOL;
         // NC Brake Output: TRUE to release brake
-        {attribute 'pytmc' := '
-            pv: PLC:bBrakeRelease
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if brake released
-        '}
         bBrakeRelease AT %Q*: BOOL;
         // NC STO Input: TRUE if ok to move
         {attribute 'pytmc' := '
@@ -820,49 +792,14 @@ ST_MotionStage
         (* Psuedo-hardware *)
 
         // Forward enable EPS summary
-        {attribute 'pytmc' := '
-            pv: PLC:bAllForwardEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC Summary of axis permission to move forward
-        '}
         bAllForwardEnable: BOOL:=FALSE;
         // Backward enable EPS summary
-        {attribute 'pytmc' := '
-            pv: PLC:bAllBackwardEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC Summary of axis permission to move backward
-        '}
         bAllBackwardEnable: BOOL:=FALSE;
         // Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
-        {attribute 'pytmc' := '
-            pv: PLC:bAllEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC Summary of axis permission to have power
-        '}
         bAllEnable: BOOL:=FALSE;
         // Forward virtual gantry limit switch
-        {attribute 'pytmc' := '
-            pv: PLC:bGantryForwardEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if gantry ok to move forward
-        '}
         bGantryForwardEnable: BOOL:=FALSE;
         // Backward virtual gantry limit switch
-        {attribute 'pytmc' := '
-            pv: PLC:bGantryBackwardEnable
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if gantry ok to move backward
-        '}
         bGantryBackwardEnable: BOOL:=FALSE;
         // Encoder count summary, if linked above
         {attribute 'pytmc' := '
@@ -895,50 +832,16 @@ ST_MotionStage
 
         (* Settings *)
         // Name to use for log messages, fast faults, etc.
-        {attribute 'pytmc' := '
-            pv: PLC:sName
-            io: i
-            field: DESC PLC program name
-        '}
         sName: STRING;
         // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
-        {attribute 'pytmc' := '
-            pv: PLC:bPowerSelf
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC FALSE if axis is in PMPS
-        '}
         bPowerSelf: BOOL:=FALSE;
         // Determines when we automatically enable the motor
-        {attribute 'pytmc' := '
-            pv: PLC:nEnableMode
-            io: i
-            field: DESC Describes when the axis will automatically get power
-        '}
         nEnableMode: E_StageEnableMode:=E_StageEnableMode.DURING_MOTION;
         // Determines when we automatically disengage the brake
-        {attribute 'pytmc' := '
-            pv: PLC:nBrakeMode
-            io: i
-            field: DESC Describes when the brake will be released
-        '}
         nBrakeMode: E_StageBrakeMode:=E_StageBrakeMode.IF_ENABLED;
         // Determines our encoder homing strategy
-        {attribute 'pytmc' := '
-            pv: PLC:nHomingMode
-            io: i
-            field: DESC Describes our homing strategy
-        '}
         nHomingMode: E_EpicsHomeCmd:=E_EpicsHomeCmd.NONE;
         // Set true to activate gantry EPS
-        {attribute 'pytmc' := '
-            pv: PLC:bGantryAxis
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if gantry EPS active
-        '}
         bGantryAxis: BOOL:=FALSE;
 
         // Set to gantry difference tolerance
@@ -949,13 +852,6 @@ ST_MotionStage
 
         (* Commands *)
         // Used internally to request enables
-        {attribute 'pytmc' := '
-            pv: PLC:bEnable
-            io: io
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC Used internally to request enables
-        '}
         bEnable: BOOL;
         // Used internally to reset errors and other state
         {attribute 'pytmc' := '
@@ -967,13 +863,6 @@ ST_MotionStage
         '}
         bReset: BOOL;
         // Used internally and by the IOC to start or stop a move
-        {attribute 'pytmc' := '
-            pv: PLC:bExecute
-            io: io
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC Used internally and by the IOC to start or stop
-        '}
         bExecute: BOOL;
         // Used by the IOC to disable an axis
         {attribute 'pytmc' := '
@@ -987,11 +876,6 @@ ST_MotionStage
 
         (* Shortcut Commands *)
         // Start a move to fPosition with fVelocity
-        {attribute 'pytmc' := '
-            pv: PLC:bMoveCmd
-            io: io
-            field: DESC Start a move
-        '}
         bMoveCmd: BOOL;
         // Start the homing routine
         {attribute 'pytmc' := '
@@ -1003,46 +887,16 @@ ST_MotionStage
 
         (* Command Args *)
         // Used internally and by the IOC to pick what kind of move to do
-        {attribute 'pytmc' := '
-            pv: PLC:nCommand
-            io: io
-            field: DESC Used internally and by the IOC to pick move type
-        '}
         nCommand: INT;
         // Used internally and by the IOC to pass additional data to some commands
-        {attribute 'pytmc' := '
-            pv: PLC:nCmdData
-            io: io
-            field: DESC Used internally and by the IOC to pass extra args
-        '}
         nCmdData: INT;
         // Used internally and by the IOC to pick a destination for the move
-        {attribute 'pytmc' := '
-            pv: PLC:fPosition
-            io: io
-            field: DESC Used internally and by the IOC as the set position
-        '}
         fPosition: LREAL;
         // Used internally and by the IOC to pick a move velocity
-        {attribute 'pytmc' := '
-            pv: PLC:fVelocity
-            io: io
-            field: DESC Used internally and by the IOC to set velocity
-        '}
         fVelocity: LREAL;
         // Used internally and by the IOC to pick a move acceleration
-        {attribute 'pytmc' := '
-            pv: PLC:fAcceleration
-            io: io
-            field: DESC Used internally and by the IOC to set acceleration
-        '}
         fAcceleration: LREAL;
         // Used internally and by the IOC to pick a move deceleration
-        {attribute 'pytmc' := '
-            pv: PLC:fDeceleration
-            io: io
-            field: DESC Used internally and by the IOC to set deceleration
-        '}
         fDeceleration: LREAL;
         // Used internally and by the IOC to pick a home position
         {attribute 'pytmc' := '
@@ -1054,56 +908,18 @@ ST_MotionStage
 
         (* Info *)
         // Unique ID assigned to each axis in the NC
-        {attribute 'pytmc' := '
-            pv: PLC:nMotionAxisID
-            io: i
-            field: DESC Unique ID assigned to each axis in the NC
-        '}
         nMotionAxisID: UDINT:=0;
 
         (* Returns *)
         // TRUE if done enabling
-        {attribute 'pytmc' := '
-            pv: PLC:bEnableDone
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if done enabling
-        '}
         bEnableDone: BOOL;
         // TRUE if in the middle of a command
-        {attribute 'pytmc' := '
-            pv: PLC:bBusy
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if in the middle of a command
-        '}
         bBusy: BOOL;
         // TRUE if we've done a command and it has finished
-        {attribute 'pytmc' := '
-            pv: PLC:bDone
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if command finished successfully
-        '}
         bDone: BOOL;
         // TRUE if the motor has been homed, or does not need to be homed
-        {attribute 'pytmc' := '
-            pv: PLC:bHomed
-            io: i
-            field: DESC TRUE if the motor has been homed
-        '}
         bHomed: BOOL;
         // TRUE if we have safety permission to move
-        {attribute 'pytmc' := '
-            pv: PLC:bSafetyReady
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if safe to start a move
-        '}
         bSafetyReady: BOOL;
         // TRUE if we're in an error state
         {attribute 'pytmc' := '
@@ -1192,12 +1008,6 @@ ST_PositionState
         nEncoderCount: UDINT;
 
         // Maximum allowable deviation from fPosition while at the state
-        {attribute 'pytmc' := '
-            pv: DELTA
-            io: io
-            field: DRVL 0.0
-            field: DESC Max deviation from position at this state
-        '}
         fDelta: LREAL;
 
         // Speed at which to move to this state
@@ -1209,19 +1019,9 @@ ST_PositionState
         fVelocity: LREAL;
 
         // (optional) Acceleration to use for moves to this state
-        {attribute 'pytmc' := '
-            pv: ACCL
-            io: io
-            field: DESC Acceleration to use for moves to this state
-        '}
         fAccel: LREAL;
 
         // (optional) Deceleration to use for moves to this state
-        {attribute 'pytmc' := '
-            pv: DCCL
-            io: io
-            field: DESC Deceleration to use for moves to this state
-        '}
         fDecel: LREAL;
 
         // Safety parameter. This must be set to TRUE by the PLC program to allow moves to this state. This is expected to change as conditions change.
@@ -1235,23 +1035,9 @@ ST_PositionState
         bMoveOk: BOOL;
 
         // Signifies to FB_PositionStateLock that this state should be immutable
-        {attribute 'pytmc' := '
-            pv: LOCKED
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if state is immutable
-        '}
         bLocked: BOOL;
 
         // Set this to TRUE when you make your state. This defaults to FALSE so that uninitialized states can never be moved to
-        {attribute 'pytmc' := '
-            pv: VALID
-            io: i
-            field: ZNAM FALSE
-            field: ONAM TRUE
-            field: DESC TRUE if this is a real state
-        '}
         bValid: BOOL;
 
         // Set this to TRUE when you want to use the raw encoder counts to define the state
@@ -1261,9 +1047,6 @@ ST_PositionState
         bUpdated: BOOL;
 
         // We give this a state name and it is used to load parameters from the pmps database.
-        {attribute 'pytmc' := '
-            pv:
-        '}
         stPMPS: ST_DbStateParams;
     END_STRUCT
     END_TYPE
