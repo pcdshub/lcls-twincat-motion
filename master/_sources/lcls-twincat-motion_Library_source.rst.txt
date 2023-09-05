@@ -7558,13 +7558,11 @@ FB_MotionReadPMPSDBND
     // Check for duplicated sPmpsState strings
     FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
         FOR nIterState2 := 0 TO nIterState DO
-            IF nIterState <> nIterState2 THEN
-                IF asLookupKeys[nIterState] = asLookupKeys[nIterState2] THEN
-                    // Duplicated key, we need an error and a flag in both spots
-                    bError := TRUE;
-                    abStateError[nIterState] := TRUE;
-                    abStateError[nIterState2] := TRUE;
-                END_IF
+            IF nIterState <> nIterState2 AND asLookupKeys[nIterState] = asLookupKeys[nIterState2] AND asLookupKeys[nIterState] <> '' THEN
+                // Duplicated key, we need an error and a flag in both spots
+                bError := TRUE;
+                abStateError[nIterState] := TRUE;
+                abStateError[nIterState2] := TRUE;
             END_IF
         END_FOR
     END_FOR
@@ -7626,6 +7624,7 @@ FB_MotionReadPMPSDBND_Test
         astCorrectStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
         astNonsenseStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
         astDuplicatedStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+        astHalfFullStates: ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
         nIter: UINT;
     END_VAR
     // Set up the state arrays that can be used in test methods
@@ -7637,7 +7636,9 @@ FB_MotionReadPMPSDBND_Test
         ELSE
             astDuplicatedStates[nIter].stPMPS.sPmpsState := 'State1';
         END_IF
-
+        IF nIter <= GeneralConstants.MAX_STATES / 2 THEN
+            astHalfFullStates[nIter].stPMPS.sPmpsState := CONCAT('State', UINT_TO_STRING(nIter));
+        END_IF
     END_FOR
 
     TestSolo();
@@ -7645,6 +7646,7 @@ FB_MotionReadPMPSDBND_Test
     TestNonsense();
     TestDupe();
     TestBackfill();
+    TestHalfFull();
 
     END_FUNCTION_BLOCK
 
@@ -7713,7 +7715,44 @@ FB_MotionReadPMPSDBND_Test
         AssertEquals_STRING(
             Expected:='',
             Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
-            Message:='Errored output should have had no state names',
+            Message:=CONCAT('Errored output should have had no state names: ', UINT_TO_STRING(nIter)),
+        );
+    END_FOR
+
+    TEST_FINISHED();
+    END_METHOD
+
+    METHOD TestHalfFull
+    VAR_INST
+        fbRead: FB_MotionReadPMPSDBND;
+        astPositionState: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+        fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    END_VAR
+    TEST('TestHalfFull');
+
+    astPositionState[1] := astHalfFullStates;
+    fbRead(
+        astPositionState:=astPositionState,
+        fbFFHWO:=fbFFHWO,
+        sTransitionKey:='State0',
+        sDeviceName:='TestHalfFull',
+    );
+    fbFFHWO.EvaluateOutput();
+
+    AssertFalse(
+        fbRead.bError,
+        'Had an error',
+    );
+    AssertEquals_STRING(
+        Expected:=fbRead.sTransitionKey,
+        Actual:=fbRead.astDbStateParams[0].sPmpsState,
+        Message:='Output did not have the correct transition state',
+    );
+    FOR nIter := 1 TO GeneralConstants.MAX_STATES / 2 DO
+        AssertEquals_STRING(
+            Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
+            Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
+            Message:=CONCAT('Output did not have the correct position state: ', UINT_TO_STRING(nIter)),
         );
     END_FOR
 
@@ -7752,7 +7791,7 @@ FB_MotionReadPMPSDBND_Test
         AssertEquals_STRING(
             Expected:='',
             Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
-            Message:='Errored output should have had no state names',
+            Message:=CONCAT('Errored output should have had no state names: ', UINT_TO_STRING(nIter)),
         );
     END_FOR
 
@@ -7789,7 +7828,7 @@ FB_MotionReadPMPSDBND_Test
         AssertEquals_STRING(
             Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
             Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
-            Message:='Output did not have the correct position state',
+            Message:=CONCAT('Output did not have the correct position state: ', UINT_TO_STRING(nIter)),
         );
     END_FOR
 
@@ -7828,7 +7867,7 @@ FB_MotionReadPMPSDBND_Test
         AssertEquals_STRING(
             Expected:=astCorrectStates[nIter].stPMPS.sPmpsState,
             Actual:=fbRead.astDbStateParams[nIter].sPmpsState,
-            Message:='Output did not have the correct position state',
+            Message:=CONCAT('Output did not have the correct position state: ', UINT_TO_STRING(nIter)),
         );
     END_FOR
 

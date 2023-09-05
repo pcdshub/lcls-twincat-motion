@@ -7697,13 +7697,11 @@ END_FOR
 // Check for duplicated sPmpsState strings
 FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
     FOR nIterState2 := 0 TO nIterState DO
-        IF nIterState &lt;&gt; nIterState2 THEN
-            IF asLookupKeys[nIterState] = asLookupKeys[nIterState2] THEN
-                // Duplicated key, we need an error and a flag in both spots
-                bError := TRUE;
-                abStateError[nIterState] := TRUE;
-                abStateError[nIterState2] := TRUE;
-            END_IF
+        IF nIterState &lt;&gt; nIterState2 AND asLookupKeys[nIterState] = asLookupKeys[nIterState2] AND asLookupKeys[nIterState] &lt;&gt; &#39;&#39; THEN
+            // Duplicated key, we need an error and a flag in both spots
+            bError := TRUE;
+            abStateError[nIterState] := TRUE;
+            abStateError[nIterState2] := TRUE;
         END_IF
     END_FOR
 END_FOR
@@ -7765,6 +7763,7 @@ END_ACTION
     <span class="n">astCorrectStates</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_PositionState</span><span class="p">;</span>
     <span class="n">astNonsenseStates</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_PositionState</span><span class="p">;</span>
     <span class="n">astDuplicatedStates</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_PositionState</span><span class="p">;</span>
+    <span class="n">astHalfFullStates</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_PositionState</span><span class="p">;</span>
     <span class="n">nIter</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="o">//</span> <span class="n">Set</span> <span class="n">up</span> <span class="n">the</span> <span class="n">state</span> <span class="n">arrays</span> <span class="n">that</span> <span class="n">can</span> <span class="n">be</span> <span class="n">used</span> <span class="ow">in</span> <span class="n">test</span> <span class="n">methods</span>
@@ -7776,7 +7775,9 @@ END_ACTION
     <span class="n">ELSE</span>
         <span class="n">astDuplicatedStates</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">stPMPS</span><span class="o">.</span><span class="n">sPmpsState</span> <span class="o">:=</span> <span class="s1">&#39;State1&#39;</span><span class="p">;</span>
     <span class="n">END_IF</span>
-
+    <span class="n">IF</span> <span class="n">nIter</span> <span class="o">&lt;=</span> <span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span> <span class="o">/</span> <span class="mi">2</span> <span class="n">THEN</span>
+        <span class="n">astHalfFullStates</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">stPMPS</span><span class="o">.</span><span class="n">sPmpsState</span> <span class="o">:=</span> <span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;State&#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nIter</span><span class="p">));</span>
+    <span class="n">END_IF</span>
 <span class="n">END_FOR</span>
 
 <span class="n">TestSolo</span><span class="p">();</span>
@@ -7784,6 +7785,7 @@ END_ACTION
 <span class="n">TestNonsense</span><span class="p">();</span>
 <span class="n">TestDupe</span><span class="p">();</span>
 <span class="n">TestBackfill</span><span class="p">();</span>
+<span class="n">TestHalfFull</span><span class="p">();</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 
@@ -7852,7 +7854,44 @@ END_ACTION
     <span class="n">AssertEquals_STRING</span><span class="p">(</span>
         <span class="n">Expected</span><span class="o">:=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
         <span class="n">Actual</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
-        <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Errored output should have had no state names&#39;</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;Errored output should have had no state names: &#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nIter</span><span class="p">)),</span>
+    <span class="p">);</span>
+<span class="n">END_FOR</span>
+
+<span class="n">TEST_FINISHED</span><span class="p">();</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">TestHalfFull</span>
+<span class="n">VAR_INST</span>
+    <span class="n">fbRead</span><span class="p">:</span> <span class="n">FB_MotionReadPMPSDBND</span><span class="p">;</span>
+    <span class="n">astPositionState</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">MotionConstants</span><span class="o">.</span><span class="n">MAX_STATE_MOTORS</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_PositionState</span><span class="p">;</span>
+    <span class="n">fbFFHWO</span><span class="p">:</span> <span class="n">FB_HardwareFFOutput</span> <span class="o">:=</span> <span class="p">(</span><span class="n">bAutoReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestHalfFull&#39;</span><span class="p">);</span>
+
+<span class="n">astPositionState</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">astHalfFullStates</span><span class="p">;</span>
+<span class="n">fbRead</span><span class="p">(</span>
+    <span class="n">astPositionState</span><span class="o">:=</span><span class="n">astPositionState</span><span class="p">,</span>
+    <span class="n">fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
+    <span class="n">sTransitionKey</span><span class="o">:=</span><span class="s1">&#39;State0&#39;</span><span class="p">,</span>
+    <span class="n">sDeviceName</span><span class="o">:=</span><span class="s1">&#39;TestHalfFull&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+<span class="n">fbFFHWO</span><span class="o">.</span><span class="n">EvaluateOutput</span><span class="p">();</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">fbRead</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="s1">&#39;Had an error&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+<span class="n">AssertEquals_STRING</span><span class="p">(</span>
+    <span class="n">Expected</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">sTransitionKey</span><span class="p">,</span>
+    <span class="n">Actual</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
+    <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Output did not have the correct transition state&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+<span class="n">FOR</span> <span class="n">nIter</span> <span class="o">:=</span> <span class="mi">1</span> <span class="n">TO</span> <span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span> <span class="o">/</span> <span class="mi">2</span> <span class="n">DO</span>
+    <span class="n">AssertEquals_STRING</span><span class="p">(</span>
+        <span class="n">Expected</span><span class="o">:=</span><span class="n">astCorrectStates</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">stPMPS</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
+        <span class="n">Actual</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;Output did not have the correct position state: &#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nIter</span><span class="p">)),</span>
     <span class="p">);</span>
 <span class="n">END_FOR</span>
 
@@ -7891,7 +7930,7 @@ END_ACTION
     <span class="n">AssertEquals_STRING</span><span class="p">(</span>
         <span class="n">Expected</span><span class="o">:=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
         <span class="n">Actual</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
-        <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Errored output should have had no state names&#39;</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;Errored output should have had no state names: &#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nIter</span><span class="p">)),</span>
     <span class="p">);</span>
 <span class="n">END_FOR</span>
 
@@ -7928,7 +7967,7 @@ END_ACTION
     <span class="n">AssertEquals_STRING</span><span class="p">(</span>
         <span class="n">Expected</span><span class="o">:=</span><span class="n">astCorrectStates</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">stPMPS</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
         <span class="n">Actual</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
-        <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Output did not have the correct position state&#39;</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;Output did not have the correct position state: &#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nIter</span><span class="p">)),</span>
     <span class="p">);</span>
 <span class="n">END_FOR</span>
 
@@ -7967,7 +8006,7 @@ END_ACTION
     <span class="n">AssertEquals_STRING</span><span class="p">(</span>
         <span class="n">Expected</span><span class="o">:=</span><span class="n">astCorrectStates</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">stPMPS</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
         <span class="n">Actual</span><span class="o">:=</span><span class="n">fbRead</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="n">nIter</span><span class="p">]</span><span class="o">.</span><span class="n">sPmpsState</span><span class="p">,</span>
-        <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Output did not have the correct position state&#39;</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;Output did not have the correct position state: &#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nIter</span><span class="p">)),</span>
     <span class="p">);</span>
 <span class="n">END_FOR</span>
 
