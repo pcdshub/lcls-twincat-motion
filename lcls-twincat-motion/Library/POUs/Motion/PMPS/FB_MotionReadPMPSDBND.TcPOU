@@ -164,13 +164,11 @@ END_FOR
 // Check for duplicated sPmpsState strings
 FOR nIterState := 0 TO GeneralConstants.MAX_STATES DO
     FOR nIterState2 := 0 TO nIterState DO
-        IF nIterState <> nIterState2 THEN
-            IF asLookupKeys[nIterState] = asLookupKeys[nIterState2] THEN
-                // Duplicated key, we need an error and a flag in both spots
-                bError := TRUE;
-                abStateError[nIterState] := TRUE;
-                abStateError[nIterState2] := TRUE;
-            END_IF
+        IF nIterState <> nIterState2 AND asLookupKeys[nIterState] = asLookupKeys[nIterState2] AND asLookupKeys[nIterState] <> '' THEN
+            // Duplicated key, we need an error and a flag in both spots
+            bError := TRUE;
+            abStateError[nIterState] := TRUE;
+            abStateError[nIterState2] := TRUE;
         END_IF
     END_FOR
 END_FOR
