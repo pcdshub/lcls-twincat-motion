@@ -10,6 +10,9 @@
     The internals have already been tested, but we need to make sure that
     they've been put together at least somewhat sensibly.
     This FB will simply use each FB to move and check the results.
+
+    Additional tests:
+    - Regression test for issue #197 (input deadlock)
 *)
 VAR
     stMotionStage1: ST_MotionStage;
@@ -117,6 +120,7 @@ Test2D(6, E_TestStates.TARGET2);
 Test3D(7, E_TestStates.OUT);
 Test3D(8, E_TestStates.TARGET1);
 Test3D(9, E_TestStates.TARGET2);
+TestInputDeadlock(10);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -130,6 +134,11 @@ tonTimer(
 );
 ]]></ST>
     </Implementation>
+    <Action Name="MoveSomewhere" Id="{b90f716d-c484-4948-9e78-2546a48d2bbf}">
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Action>
     <Method Name="Test1D" Id="{1ad9fa88-2d5f-4a1e-8b3b-83975d1536fe}">
       <Declaration><![CDATA[METHOD Test1D
 VAR_INPUT
@@ -363,6 +372,114 @@ IF tonTimer.Q OR fb_Move3D.stPlcToEpics.bDone THEN
     TEST_FINISHED();
 END_IF
 ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestInputDeadlock" Id="{e699bbce-7f94-40ff-b107-4c33f7aef928}">
+      <Declaration><![CDATA[METHOD TestInputDeadlock
+(*
+    Regression test for issue #197
+
+    How to reproduce the issue:
+    1. Get the function block into any motion error
+    2. Ask for a move while in the error state
+
+    Then, the state mover never moves again.
+
+    To test we will follow steps 1 and 2, then reset the error, then move.
+
+    With our fix, our second attempt at the move (after an error reset) will succeed.
+    Our first attempt will fail regardless, since you cannot move a motor that is in an error state.
+
+    Without our fix, the motor could never be moved ever again and this move will time out.
+*)
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    nTestStep: UINT := 1;
+    eNewGoal: E_TestStates;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestInputDeadlock');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+CASE nTestStep OF
+    // Step 1: Normal move
+    1:
+        // Normal move: pick any other state
+        IF eGetPos = E_TestStates.OUT THEN
+            eNewGoal := E_TestStates.TARGET1;
+        ELSE
+            eNewGoal := E_TestStates.OUT;
+        END_IF
+        eSetPos := eNewGoal;
+        nTestStep := 2;
+    // Step 2: Cause a motion error. Easiest is to just set bError to TRUE during a move.
+    2:
+        // Cause the error if it's time
+        IF stMotionStage1.bBusy THEN
+            stMotionStage1.bError := TRUE;
+            stMotionStage1.nErrorId := 16#4FFF;
+        ELSIF stMotionStage1.bError THEN
+            nTestStep := 3;
+        END_IF
+     // Step 3: another normal move. This should get us into the potential bugged state.
+     3:
+        eSetPos := eNewGoal;
+        nTestStep := 4;
+    // Step 4: reset the error, which will allow fixed versions of the code to resume normal operations.
+    4:
+        fb_Move1D.stEpicsToPlc.bReset := TRUE;
+        IF NOT stMotionStage1.bError THEN
+            nTestStep := 5;
+        END_IF
+    // Step 5: last normal move, which will succeed if we fixed the bug.
+    5:
+        eSetPos := eNewGoal;
+        IF eGetPos = E_TestStates.Unknown THEN
+            nTestStep := 6;
+        END_IF
+    // Step 6: wait for the move to finish
+    6:
+        IF eGetPos = eNewGoal THEN
+            nTestStep := 7;
+        END_IF
+END_CASE
+
+fb_Move1D(
+    stMotionStage:=stMotionStage1,
+    astPositionState:=astPositionState1,
+    eEnumSet:=eSetPos,
+    eEnumGet:=eGetPos,
+    bEnable:=TRUE,
+);
+
+// Timeout and checks
+IF tonTimer.Q OR nTestStep = 7 THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Timeout in deadlock test',
+    );
+    AssertEquals_UINT(
+        Expected:=eNewGoal,
+        Actual:=eGetPos,
+        'Did not reach a goal state in deadlock test',
+    );
+    fb_Move1D.stEpicsToPlc.bReset := TRUE;
+    fb_Move1D(
+        stMotionStage:=stMotionStage1,
+        astPositionState:=astPositionState1,
+        eEnumSet:=eSetPos,
+        eEnumGet:=eGetPos,
+        bEnable:=TRUE,
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
       </Implementation>
     </Method>
   </POU>
