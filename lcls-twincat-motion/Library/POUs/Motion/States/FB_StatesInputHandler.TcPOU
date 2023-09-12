@@ -42,13 +42,15 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-IF NOT bInit THEN
+bResetMove := stUserInput.bReset;
+IF bResetMove OR NOT bInit THEN
     bInit := TRUE;
     stUserInput.nSetValue := 0;
     nCurrGoal := nStartingState;
+    bExecMove := FALSE;
+    nState := IDLE;
+    bNewMove := FALSE;
 END_IF
-
-bResetMove := stUserInput.bReset;
 
 IF stUserInput.nSetValue <> 0 THEN
     nQueuedGoal := stUserInput.nSetValue;
