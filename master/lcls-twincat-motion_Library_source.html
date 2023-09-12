@@ -3216,8 +3216,10 @@
     <span class="mi">16</span><span class="c1">#4223: msg:=&#39;No enable for controller and/or feed&#39;;</span>
     <span class="mi">16</span><span class="c1">#4225: msg:=&#39;Drive not ready during axis start&#39;;</span>
     <span class="mi">16</span><span class="c1">#4260: msg:=&#39;Drive disabled&#39;;</span>
+    <span class="mi">16</span><span class="c1">#42A0: msg:=&#39;Coupled axis error&#39;;</span>
     <span class="mi">16</span><span class="c1">#4357: msg:=&#39;Negative limit hit&#39;;</span>
     <span class="mi">16</span><span class="c1">#4358: msg:=&#39;Positive limit hit&#39;;</span>
+    <span class="mi">16</span><span class="c1">#4395: msg:=&#39;Set velocity not allowed&#39;;</span>
     <span class="mi">16</span><span class="c1">#4550: msg:=&#39;Stall: position lag monitoring error&#39;;</span>
     <span class="mi">16</span><span class="c1">#4650: msg:=&#39;Drive hardware not ready to operate&#39;;</span>
     <span class="mi">16</span><span class="c1">#4655: msg:=&#39;Invalid IO data&#39;;</span>
@@ -3229,6 +3231,7 @@
     <span class="mi">16</span><span class="c1">#7900: msg:=&#39;Aborted move request with active move in progress&#39;;</span>
     <span class="mi">16</span><span class="c1">#7901: msg:=&#39;Position state unsafe&#39;;</span>
     <span class="mi">16</span><span class="c1">#7902: msg:=&#39;Position state invalid&#39;;</span>
+    <span class="mi">16</span><span class="c1">#FFFF: msg:=&#39;Fake testing error&#39;;</span>
 
     <span class="o">//</span> <span class="n">Fallbacks</span>
     <span class="mi">0</span><span class="p">:</span> <span class="n">msg</span><span class="o">:=</span><span class="s1">&#39;&#39;</span><span class="p">;</span>
@@ -11594,6 +11597,9 @@ END_ACTION
     <span class="n">The</span> <span class="n">internals</span> <span class="n">have</span> <span class="n">already</span> <span class="n">been</span> <span class="n">tested</span><span class="p">,</span> <span class="n">but</span> <span class="n">we</span> <span class="n">need</span> <span class="n">to</span> <span class="n">make</span> <span class="n">sure</span> <span class="n">that</span>
     <span class="n">they</span><span class="s1">&#39;ve been put together at least somewhat sensibly.</span>
     <span class="n">This</span> <span class="n">FB</span> <span class="n">will</span> <span class="n">simply</span> <span class="n">use</span> <span class="n">each</span> <span class="n">FB</span> <span class="n">to</span> <span class="n">move</span> <span class="ow">and</span> <span class="n">check</span> <span class="n">the</span> <span class="n">results</span><span class="o">.</span>
+
+    <span class="n">Additional</span> <span class="n">tests</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">Regression</span> <span class="n">test</span> <span class="k">for</span> <span class="n">issue</span> <span class="c1">#197 (input deadlock)</span>
 <span class="o">*</span><span class="p">)</span>
 <span class="n">VAR</span>
     <span class="n">stMotionStage1</span><span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
@@ -11698,6 +11704,7 @@ END_ACTION
 <span class="n">Test3D</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">OUT</span><span class="p">);</span>
 <span class="n">Test3D</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET1</span><span class="p">);</span>
 <span class="n">Test3D</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET2</span><span class="p">);</span>
+<span class="n">TestInputDeadlock</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 
 <span class="n">IF</span> <span class="n">bOneTestDone</span> <span class="n">THEN</span>
     <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
@@ -11927,6 +11934,110 @@ END_ACTION
     <span class="p">);</span>
     <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">nLocalInit</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+<span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">TestInputDeadlock</span>
+<span class="p">(</span><span class="o">*</span>
+    <span class="n">Regression</span> <span class="n">test</span> <span class="k">for</span> <span class="n">issue</span> <span class="c1">#197</span>
+
+    <span class="n">How</span> <span class="n">to</span> <span class="n">reproduce</span> <span class="n">the</span> <span class="n">issue</span><span class="p">:</span>
+    <span class="mf">1.</span> <span class="n">Get</span> <span class="n">the</span> <span class="n">function</span> <span class="n">block</span> <span class="n">into</span> <span class="nb">any</span> <span class="n">motion</span> <span class="n">error</span>
+    <span class="mf">2.</span> <span class="n">Ask</span> <span class="k">for</span> <span class="n">a</span> <span class="n">move</span> <span class="k">while</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">error</span> <span class="n">state</span>
+
+    <span class="n">Then</span><span class="p">,</span> <span class="n">the</span> <span class="n">state</span> <span class="n">mover</span> <span class="n">never</span> <span class="n">moves</span> <span class="n">again</span><span class="o">.</span>
+
+    <span class="n">To</span> <span class="n">test</span> <span class="n">we</span> <span class="n">will</span> <span class="n">follow</span> <span class="n">steps</span> <span class="mi">1</span> <span class="ow">and</span> <span class="mi">2</span><span class="p">,</span> <span class="n">then</span> <span class="n">reset</span> <span class="n">the</span> <span class="n">error</span><span class="p">,</span> <span class="n">then</span> <span class="n">move</span><span class="o">.</span>
+
+    <span class="n">With</span> <span class="n">our</span> <span class="n">fix</span><span class="p">,</span> <span class="n">our</span> <span class="n">second</span> <span class="n">attempt</span> <span class="n">at</span> <span class="n">the</span> <span class="n">move</span> <span class="p">(</span><span class="n">after</span> <span class="n">an</span> <span class="n">error</span> <span class="n">reset</span><span class="p">)</span> <span class="n">will</span> <span class="n">succeed</span><span class="o">.</span>
+    <span class="n">Our</span> <span class="n">first</span> <span class="n">attempt</span> <span class="n">will</span> <span class="n">fail</span> <span class="n">regardless</span><span class="p">,</span> <span class="n">since</span> <span class="n">you</span> <span class="n">cannot</span> <span class="n">move</span> <span class="n">a</span> <span class="n">motor</span> <span class="n">that</span> <span class="ow">is</span> <span class="ow">in</span> <span class="n">an</span> <span class="n">error</span> <span class="n">state</span><span class="o">.</span>
+
+    <span class="n">Without</span> <span class="n">our</span> <span class="n">fix</span><span class="p">,</span> <span class="n">the</span> <span class="n">motor</span> <span class="n">could</span> <span class="n">never</span> <span class="n">be</span> <span class="n">moved</span> <span class="n">ever</span> <span class="n">again</span> <span class="ow">and</span> <span class="n">this</span> <span class="n">move</span> <span class="n">will</span> <span class="n">time</span> <span class="n">out</span><span class="o">.</span>
+<span class="o">*</span><span class="p">)</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nTestID</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INST</span>
+    <span class="n">nTestStep</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">eNewGoal</span><span class="p">:</span> <span class="n">E_TestStates</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestInputDeadlock&#39;</span><span class="p">);</span>
+<span class="n">IF</span> <span class="n">nTestCounter</span> <span class="o">&lt;&gt;</span> <span class="n">nTestID</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">CASE</span> <span class="n">nTestStep</span> <span class="n">OF</span>
+    <span class="o">//</span> <span class="n">Step</span> <span class="mi">1</span><span class="p">:</span> <span class="n">Normal</span> <span class="n">move</span>
+    <span class="mi">1</span><span class="p">:</span>
+        <span class="o">//</span> <span class="n">Normal</span> <span class="n">move</span><span class="p">:</span> <span class="n">pick</span> <span class="nb">any</span> <span class="n">other</span> <span class="n">state</span>
+        <span class="n">IF</span> <span class="n">eGetPos</span> <span class="o">=</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">OUT</span> <span class="n">THEN</span>
+            <span class="n">eNewGoal</span> <span class="o">:=</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET1</span><span class="p">;</span>
+        <span class="n">ELSE</span>
+            <span class="n">eNewGoal</span> <span class="o">:=</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">OUT</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+        <span class="n">eSetPos</span> <span class="o">:=</span> <span class="n">eNewGoal</span><span class="p">;</span>
+        <span class="n">nTestStep</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">Step</span> <span class="mi">2</span><span class="p">:</span> <span class="n">Cause</span> <span class="n">a</span> <span class="n">motion</span> <span class="n">error</span><span class="o">.</span> <span class="n">Easiest</span> <span class="ow">is</span> <span class="n">to</span> <span class="n">just</span> <span class="nb">set</span> <span class="n">bError</span> <span class="n">to</span> <span class="n">TRUE</span> <span class="n">during</span> <span class="n">a</span> <span class="n">move</span><span class="o">.</span>
+    <span class="mi">2</span><span class="p">:</span>
+        <span class="o">//</span> <span class="n">Cause</span> <span class="n">the</span> <span class="n">error</span> <span class="k">if</span> <span class="n">it</span><span class="s1">&#39;s time</span>
+        <span class="n">IF</span> <span class="n">stMotionStage1</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+            <span class="n">stMotionStage1</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+            <span class="n">stMotionStage1</span><span class="o">.</span><span class="n">nErrorId</span> <span class="o">:=</span> <span class="mi">16</span><span class="c1">#4FFF;</span>
+        <span class="n">ELSIF</span> <span class="n">stMotionStage1</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
+            <span class="n">nTestStep</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+     <span class="o">//</span> <span class="n">Step</span> <span class="mi">3</span><span class="p">:</span> <span class="n">another</span> <span class="n">normal</span> <span class="n">move</span><span class="o">.</span> <span class="n">This</span> <span class="n">should</span> <span class="n">get</span> <span class="n">us</span> <span class="n">into</span> <span class="n">the</span> <span class="n">potential</span> <span class="n">bugged</span> <span class="n">state</span><span class="o">.</span>
+     <span class="mi">3</span><span class="p">:</span>
+        <span class="n">eSetPos</span> <span class="o">:=</span> <span class="n">eNewGoal</span><span class="p">;</span>
+        <span class="n">nTestStep</span> <span class="o">:=</span> <span class="mi">4</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">Step</span> <span class="mi">4</span><span class="p">:</span> <span class="n">reset</span> <span class="n">the</span> <span class="n">error</span><span class="p">,</span> <span class="n">which</span> <span class="n">will</span> <span class="n">allow</span> <span class="n">fixed</span> <span class="n">versions</span> <span class="n">of</span> <span class="n">the</span> <span class="n">code</span> <span class="n">to</span> <span class="n">resume</span> <span class="n">normal</span> <span class="n">operations</span><span class="o">.</span>
+    <span class="mi">4</span><span class="p">:</span>
+        <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">stEpicsToPlc</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">IF</span> <span class="n">NOT</span> <span class="n">stMotionStage1</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
+            <span class="n">nTestStep</span> <span class="o">:=</span> <span class="mi">5</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="o">//</span> <span class="n">Step</span> <span class="mi">5</span><span class="p">:</span> <span class="n">last</span> <span class="n">normal</span> <span class="n">move</span><span class="p">,</span> <span class="n">which</span> <span class="n">will</span> <span class="n">succeed</span> <span class="k">if</span> <span class="n">we</span> <span class="n">fixed</span> <span class="n">the</span> <span class="n">bug</span><span class="o">.</span>
+    <span class="mi">5</span><span class="p">:</span>
+        <span class="n">eSetPos</span> <span class="o">:=</span> <span class="n">eNewGoal</span><span class="p">;</span>
+        <span class="n">IF</span> <span class="n">eGetPos</span> <span class="o">=</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">Unknown</span> <span class="n">THEN</span>
+            <span class="n">nTestStep</span> <span class="o">:=</span> <span class="mi">6</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="o">//</span> <span class="n">Step</span> <span class="mi">6</span><span class="p">:</span> <span class="n">wait</span> <span class="k">for</span> <span class="n">the</span> <span class="n">move</span> <span class="n">to</span> <span class="n">finish</span>
+    <span class="mi">6</span><span class="p">:</span>
+        <span class="n">IF</span> <span class="n">eGetPos</span> <span class="o">=</span> <span class="n">eNewGoal</span> <span class="n">THEN</span>
+            <span class="n">nTestStep</span> <span class="o">:=</span> <span class="mi">7</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+<span class="n">END_CASE</span>
+
+<span class="n">fb_Move1D</span><span class="p">(</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage1</span><span class="p">,</span>
+    <span class="n">astPositionState</span><span class="o">:=</span><span class="n">astPositionState1</span><span class="p">,</span>
+    <span class="n">eEnumSet</span><span class="o">:=</span><span class="n">eSetPos</span><span class="p">,</span>
+    <span class="n">eEnumGet</span><span class="o">:=</span><span class="n">eGetPos</span><span class="p">,</span>
+    <span class="n">bEnable</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Timeout</span> <span class="ow">and</span> <span class="n">checks</span>
+<span class="n">IF</span> <span class="n">tonTimer</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">nTestStep</span> <span class="o">=</span> <span class="mi">7</span> <span class="n">THEN</span>
+    <span class="n">AssertFalse</span><span class="p">(</span>
+        <span class="n">tonTimer</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+        <span class="s1">&#39;Timeout in deadlock test&#39;</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+        <span class="n">Expected</span><span class="o">:=</span><span class="n">eNewGoal</span><span class="p">,</span>
+        <span class="n">Actual</span><span class="o">:=</span><span class="n">eGetPos</span><span class="p">,</span>
+        <span class="s1">&#39;Did not reach a goal state in deadlock test&#39;</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">stEpicsToPlc</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">fb_Move1D</span><span class="p">(</span>
+        <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage1</span><span class="p">,</span>
+        <span class="n">astPositionState</span><span class="o">:=</span><span class="n">astPositionState1</span><span class="p">,</span>
+        <span class="n">eEnumSet</span><span class="o">:=</span><span class="n">eSetPos</span><span class="p">,</span>
+        <span class="n">eEnumGet</span><span class="o">:=</span><span class="n">eGetPos</span><span class="p">,</span>
+        <span class="n">bEnable</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">TEST_FINISHED</span><span class="p">();</span>
 <span class="n">END_IF</span>
 <span class="n">END_METHOD</span>
@@ -17044,13 +17155,15 @@ END_METHOD
     <span class="n">GOING</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
     <span class="n">WAIT_STOP</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
 <span class="n">END_VAR</span>
-<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+<span class="n">bResetMove</span> <span class="o">:=</span> <span class="n">stUserInput</span><span class="o">.</span><span class="n">bReset</span><span class="p">;</span>
+<span class="n">IF</span> <span class="n">bResetMove</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
     <span class="n">bInit</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">stUserInput</span><span class="o">.</span><span class="n">nSetValue</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
     <span class="n">nCurrGoal</span> <span class="o">:=</span> <span class="n">nStartingState</span><span class="p">;</span>
+    <span class="n">bExecMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">nState</span> <span class="o">:=</span> <span class="n">IDLE</span><span class="p">;</span>
+    <span class="n">bNewMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
-
-<span class="n">bResetMove</span> <span class="o">:=</span> <span class="n">stUserInput</span><span class="o">.</span><span class="n">bReset</span><span class="p">;</span>
 
 <span class="n">IF</span> <span class="n">stUserInput</span><span class="o">.</span><span class="n">nSetValue</span> <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">THEN</span>
     <span class="n">nQueuedGoal</span> <span class="o">:=</span> <span class="n">stUserInput</span><span class="o">.</span><span class="n">nSetValue</span><span class="p">;</span>
