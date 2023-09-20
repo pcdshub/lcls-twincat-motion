@@ -11383,6 +11383,11 @@ FB_PositionStateND_Core
     END_VAR
     stEpicsToPlc.nSetValue := eEnumSet;
 
+    fbInternal(
+        astMotionStage:=astMotionStageMax,
+        astPositionState:=astPositionStateMax,
+    );
+
     fbRead(
         astMotionStage:=astMotionStageMax,
         astPositionState:=astPositionStateMax,
@@ -11399,11 +11404,6 @@ FB_PositionStateND_Core
         nCurrGoal=>nCurrGoal,
         bExecMove=>,
         bResetMove=>,
-    );
-
-    fbInternal(
-        astMotionStage:=astMotionStageMax,
-        astPositionState:=astPositionStateMax,
     );
 
     FOR nIterMotor := 1 TO MotionConstants.MAX_STATE_MOTORS DO
