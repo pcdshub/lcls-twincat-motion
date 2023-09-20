@@ -6368,6 +6368,7 @@ FB_MotionBPTM
     // Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
     ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
     ffBPTMTimeoutAndMove.i_xReset S= bResetBPTMTimeout OR (bptm.bDone AND NOT bptm.bError);
+    ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
     ffBPTMTimeoutAndMove(
         i_DevName := sDeviceName,
         i_Desc := 'BPTM Timeout',
@@ -6392,7 +6393,8 @@ FB_MotionBPTM
 
     // Trip the beam for BPTM Errors
     ffBPTMError.i_xOK := NOT bptm.bError;
-    ffBPTMError.i_xReset S= bptm.bDone AND NOT bptm.bError;
+    ffBPTMError.i_xReset S= bptm.bDone AND ffBPTMError.i_xOK;
+    ffBPTMError.i_xReset R= NOT ffBPTMError.i_xOK;
     ffBPTMError(
         i_DevName := sDeviceName,
         i_Desc := 'BPTM error, state transition failed',
