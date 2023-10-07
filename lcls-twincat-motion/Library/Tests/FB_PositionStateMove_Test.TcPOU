@@ -284,12 +284,13 @@ VAR_INST
         fDelta:=0.5,
         fVelocity:=1,
         bValid:=TRUE,
-        bMoveOk:=FALSE
+        bMoveOk:=FALSE,
+        bUpdated:=TRUE
     );
     tonInternal: TON;
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[TEST(CONCAT('TestInvalid', UINT_TO_STRING(nTestIndex)));
+        <ST><![CDATA[TEST('TestMoveOk');
 IF nTestCounter <> nTestIndex THEN
     RETURN;
 END_IF
@@ -388,7 +389,7 @@ CASE nStep OF
             stPositionState:=stState,
             bExecute:=TRUE,
         );
-        tonInternal(IN:=TRUE, PT:=T#100ms);
+        tonInternal(IN:=TRUE, PT:=T#200ms);
         IF tonInternal.Q THEN
             tonInternal(IN:=FALSE);
             nStep := 7;
