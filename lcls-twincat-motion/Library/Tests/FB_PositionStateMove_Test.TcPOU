@@ -280,7 +280,7 @@ VAR_INST
     fStartPos: LREAL;
     stState: ST_PositionState := (
         sName:='GOAL',
-        fPosition:=235,
+        fPosition:=135,
         fDelta:=0.5,
         fVelocity:=1,
         bValid:=TRUE,
@@ -384,14 +384,15 @@ CASE nStep OF
         nStep := 6;
     // We should be able to start a move via bExecute now
     6:
+        stState.fVelocity := 2000;
+        stState.fAccel := 15000;
+        stState.fDecel := 15000;
         fbMove(
             stMotionStage:=stMotionStage,
             stPositionState:=stState,
             bExecute:=TRUE,
         );
-        tonInternal(IN:=TRUE, PT:=T#200ms);
-        IF tonInternal.Q THEN
-            tonInternal(IN:=FALSE);
+        IF fbMove.bAtState AND stMotionStage.bDone THEN
             nStep := 7;
         END_IF
 END_CASE
@@ -401,9 +402,12 @@ IF nStep = 7 OR tonTimer.Q THEN
         tonTimer.Q,
         'Test timed out',
     );
-    AssertTrue(
-        fbMove.bBusy,
-        'Motor was not moving at end of test',
+    // Check that we've reached the goal
+    AssertEquals_LREAL(
+        Expected:=stState.fPosition,
+        Actual:=stMotionStage.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Motor did not reach the goal.',
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();
