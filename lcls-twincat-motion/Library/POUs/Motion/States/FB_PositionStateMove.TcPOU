@@ -133,9 +133,9 @@ IF nLatchAllowErrorID <> 0 OR (bExecute AND NOT bAllowMove) THEN
     IF nLatchAllowErrorID <> 0 THEN
         nErrorID := nLatchAllowErrorID;
     ELSIF stPositionState.bValid THEN
-        nErrorID := 16#7901;
+        nErrorID := E_LCLSMotionError.UNSAFE;
     ELSE
-        nErrorID := 16#7902;
+        nErrorID := E_LCLSMotionError.INVALID;
     END_IF
     // Keep error latched until it is cleared, otherwise it can be lost early
     nLatchAllowErrorID := nErrorID;
