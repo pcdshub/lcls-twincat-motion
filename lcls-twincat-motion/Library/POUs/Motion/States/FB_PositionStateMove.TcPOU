@@ -103,7 +103,7 @@ END_VAR
 bAllowMove := stPositionState.bMoveOk AND stPositionState.bValid AND stPositionState.bUpdated;
 
 rtExec(CLK:=bExecute);
-bInnerExec S= rtExec.Q AND bAllowMove;
+bInnerExec S= rtExec.Q AND bAllowMove AND NOT bError;
 bInnerExec R= NOT bExecute;
 
 // Do the move
