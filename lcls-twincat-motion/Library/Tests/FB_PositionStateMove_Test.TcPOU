@@ -21,6 +21,7 @@ VAR
     bOneTestDone: BOOL;
     fTestStartPos: LREAL;
     tonTimer: TON;
+    tonCleanup: TON;
     nIter: DINT;
     bStatesReady: BOOL;
 END_VAR
@@ -85,23 +86,43 @@ TestMove(2, 2, FALSE);
 TestMove(3, 3, TRUE);
 // Test that we cannot move to an invalid state
 TestBadStates(4);
+// Test that we need a new bExecute to start a new move if a move goes from unsafe to safe
+TestMoveOk(5);
 
-IF bOneTestDone THEN
-    bOneTestDone := FALSE;
-    nTestCounter := nTestCounter + 1;
-    fbMove(
-        stMotionStage:=stMotionStage,
-        stPositionState:=stDummyPos,
-        bExecute:=FALSE,
-        bReset:=TRUE,
-    );
-    fbMove(
-        stMotionStage:=stMotionStage,
-        stPositionState:=stDummyPos,
-        bExecute:=FALSE,
-        bReset:=FALSE,
-    );
-    tonTimer(IN:=FALSE);
+// Wait a few cycles for remaining errors to propagate
+tonCleanup(IN:=bOneTestDone, PT:=T#1s);
+IF tonCleanup.Q THEN
+    IF fbMove.bBusy THEN
+        fbMove(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stDummyPos,
+            bExecute:=FALSE,
+            bReset:=FALSE,
+        );
+    ELSIF stMotionStage.bBusy THEN
+        stMotionStage.bExecute := FALSE;
+    ELSIF fbMove.bError THEN
+        fbMove(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stDummyPos,
+            bExecute:=FALSE,
+            bReset:=TRUE,
+        );
+    ELSIF stMotionStage.bError THEN
+       stMotionStage.bReset := TRUE;
+    ELSE
+        fbMove(
+            stMotionStage:=stMotionStage,
+            stPositionState:=stDummyPos,
+            bExecute:=FALSE,
+            bReset:=FALSE,
+        );
+        stMotionStage.bReset := FALSE;
+
+        bOneTestDone := FALSE;
+        nTestCounter := nTestCounter + 1;
+        tonTimer(IN:=FALSE);
+    END_IF
 END_IF
 // Use this timer to time out any tests that stall
 tonTimer(
@@ -118,7 +139,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[TEST(CONCAT('TestInvalid', UINT_TO_STRING(nTestIndex)));
-IF nTestCounter <> nTestIndex THEN
+IF nTestCounter <> nTestIndex OR bOneTestDone THEN
     RETURN;
 END_IF
 
@@ -201,11 +222,12 @@ END_VAR
 VAR_INST
     bLocalInit: BOOL;
     bInterruptStarted: BOOL;
+    tonBusy: TON;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[TEST(CONCAT('TestMove', UINT_TO_STRING(nTestIndex)));
-IF nTestCounter <> nTestIndex THEN
+IF nTestCounter <> nTestIndex OR bOneTestDone THEN
     RETURN;
 END_IF
 
@@ -222,7 +244,10 @@ IF NOT bLocalInit THEN
     bLocalInit := TRUE;
 END_IF
 
-bInterruptStarted S= bInterrupt AND stMotionStage.bBusy;
+// Simulate waiting a moment before stopping
+tonBusy(IN:=stMotionStage.bBusy, PT:=T#100ms);
+bInterruptStarted S= bInterrupt AND tonBusy.Q;
+
 fbMove(
     stMotionStage:=stMotionstage,
     stPositionState:=astPositionState[nStateIndex],
@@ -266,6 +291,146 @@ IF fbMove.bDone OR tonTimer.Q OR (bInterruptStarted AND NOT fbMove.bBusy) THEN
     TEST_FINISHED();
 END_IF
 ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestMoveOk" Id="{0a0e07ec-6039-465c-88e5-a08bb2253266}">
+      <Declaration><![CDATA[METHOD TestMoveOk
+VAR_INPUT
+    nTestIndex: UINT;
+END_VAR
+VAR_INST
+    nStep: UINT;
+    fStartPos: LREAL;
+    stState: ST_PositionState := (
+        sName:='GOAL',
+        fPosition:=135,
+        fDelta:=0.5,
+        fVelocity:=1,
+        bValid:=TRUE,
+        bMoveOk:=FALSE,
+        bUpdated:=TRUE
+    );
+    tonInternal: TON;
+    bLocalExec: BOOL;
+    bLocalReset: BOOL;
+END_VAR
+VAR CONSTANT
+    END: UINT := 999;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('TestMoveOk');
+IF nTestCounter <> nTestIndex OR bOneTestDone THEN
+    RETURN;
+END_IF
+
+CASE nStep OF
+    // Initial setup and checks
+    0:
+        fStartPos := stMotionStage.stAxisStatus.fActPosition;
+        AssertFalse(
+            fbMove.bError,
+            'Started with a fbMove error',
+        );
+        AssertFalse(
+            stMotionStage.bError,
+            'Started with a motor error',
+        );
+        bLocalExec := FALSE;
+        bLocalReset := FALSE;
+        nStep := nStep + 1;
+    // Move to a state that is bad
+    1:
+        stState.bMoveOk := FALSE;
+        bLocalExec := TRUE;
+        nStep := nStep + 1;
+    // The move should have failed with an error on the FB that never propagated to the motor itself- we shouldn't have attempted the move at all
+    2:
+        AssertTrue(
+            fbMove.bError,
+            'Did not have the expected move not ok error',
+        );
+        AssertFalse(
+            stMotionStage.bError,
+            'Had a motion error, but we never should have asked for a move?',
+        );
+        nStep := nStep + 1;
+    // Make the state no longer bad, and wait a bit
+    3:
+        stState.bMoveOk := TRUE;
+        tonInternal(IN:=TRUE, PT:=T#500ms);
+        IF tonInternal.Q THEN
+            tonInternal(IN:=FALSE);
+            nStep := nStep + 1;
+        END_IF
+    // There should be no movement still
+    4:
+        AssertEquals_LREAL(
+            Expected:=fStartPos,
+            Actual:=stMotionStage.stAxisStatus.fActPosition,
+            Delta:=0.1,
+            Message:='Motor moved without bReset or a new bExecute!',
+        );
+        // Reset the error (rising edge)
+        bLocalReset := TRUE;
+        nStep := nStep + 1;
+    // After we reset the error, wait a bit
+    5:
+        // Drop for rising edges later
+        bLocalReset := FALSE;
+        tonInternal(IN:=TRUE, PT:=T#500ms);
+        IF tonInternal.Q THEN
+            tonInternal(IN:=FALSE);
+            nStep := nStep + 1;
+        END_IF
+    // There should be no error, and STILL be no movement
+    6:
+        AssertFalse(
+            fbMove.bError,
+            'The error should be reset',
+        );
+        AssertEquals_LREAL(
+            Expected:=fStartPos,
+            Actual:=stMotionStage.stAxisStatus.fActPosition,
+            Delta:=0.1,
+            Message:='Motor moved without a new bExecute!',
+        );
+        // Set bExecute to FALSE for an upcoming rising edge. It should be TRUE at this point.
+        bLocalExec := FALSE;
+        nStep := nStep + 1;
+    // We should be able to start a move via bExecute now
+    7:
+        stState.fVelocity := 2000;
+        stState.fAccel := 15000;
+        stState.fDecel := 15000;
+        bLocalExec := TRUE;
+        IF fbMove.bAtState AND stMotionStage.bDone THEN
+            nStep := END;
+        END_IF
+END_CASE
+
+// Run fbMove exactly once every cycle no matter what
+fbMove(
+    stMotionStage:=stMotionStage,
+    stPositionState:=stState,
+    bExecute:=bLocalExec,
+    bReset:=bLocalReset,
+);
+
+IF nStep = END OR tonTimer.Q THEN
+    AssertFalse(
+        tonTimer.Q,
+        'Test timed out',
+    );
+    // Check that we've reached the goal
+    AssertEquals_LREAL(
+        Expected:=stState.fPosition,
+        Actual:=stMotionStage.stAxisStatus.fActPosition,
+        Delta:=0.1,
+        Message:='Motor did not reach the goal.',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF]]></ST>
       </Implementation>
     </Method>
   </POU>

@@ -19,6 +19,8 @@ VAR_INPUT
     bMoveBusy: BOOL;
     // The starting state number to seed nCurrGoal with
     nStartingState: UINT;
+    // TRUE if we have a move error, to prevent moves
+    bMoveError: BOOL;
 END_VAR
 VAR_OUTPUT
     // The goal index to input to the motion FB. This will be clamped to the range 0..GeneralConstants.MAX_STATES
@@ -83,6 +85,10 @@ CASE nState OF
             nState := IDLE;
         END_IF
 END_CASE
+
+IF bMoveError THEN
+    bExecMove := FALSE;
+END_IF
 
 // Help us detect if there is an EPICS put before the next cycle
 stUserInput.nSetValue := 0;
