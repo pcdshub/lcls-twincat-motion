@@ -67,6 +67,8 @@ VAR_INPUT
     stPMPSEpicsToPlc: ST_StatePMPSEpicsToPlc;
     // Set this to TRUE to re-read the loaded database immediately (useful for debug)
     bReadDBNow: BOOL;
+    // Set this to FALSE to load PMPS parameters locally
+    bUsePmpsDB: BOOL := TRUE;
 END_VAR
 VAR_OUTPUT
     // Normal EPICS outputs, gathered into a single struct
@@ -120,6 +122,7 @@ fbPMPSCore(
     nCurrGoal:=fbCore.nCurrGoal,
     bReadDBNow:=bReadDBNow,
     stDbStateParams=>stDbStateParams,
+    bUsePmpsDB:=TRUE,
 );
 
 stMotionStage1 := astMotionStageMax[1];

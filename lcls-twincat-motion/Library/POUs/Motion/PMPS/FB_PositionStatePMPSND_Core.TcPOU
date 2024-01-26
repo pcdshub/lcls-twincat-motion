@@ -44,6 +44,8 @@ VAR_INPUT
     nCurrGoal: UINT;
     // Set this to TRUE to re-read the loaded database immediately (useful for debug)
     bReadDBNow: BOOL;
+    // Set this to FALSE to load PMPS parameters locally
+    bUsePmpsDB: BOOL := TRUE;
 END_VAR
 VAR_OUTPUT
     // The PMPS database lookup associated with the current position state.
@@ -72,15 +74,17 @@ ELSE
     eStatePMPSStatus := E_StatePMPSStatus.TRANSITION;
 END_IF
 
-fbMotionReadPMPSDB(
-    astPositionState:=astPositionStateMax,
-    fbFFHWO:=fbFFHWO,
-    sTransitionKey:=sTransitionKey,
-    sDeviceName:=sDeviceName,
-    bReadNow:=bReadDBNow,
-    astDbStateParams=>,
-    bError=>,
-);
+IF bUsePmpsDB THEN
+    fbMotionReadPMPSDB(
+        astPositionState:=astPositionStateMax,
+        fbFFHWO:=fbFFHWO,
+        sTransitionKey:=sTransitionKey,
+        sDeviceName:=sDeviceName,
+        bReadNow:=bReadDBNow,
+        astDbStateParams=>,
+        bError=>,
+    );
+END_IF
 
 fbMotionBPTM(
     astMotionStage:=astMotionStageMax,
