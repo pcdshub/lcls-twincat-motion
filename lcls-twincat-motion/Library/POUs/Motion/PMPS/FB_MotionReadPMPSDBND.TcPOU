@@ -31,6 +31,10 @@ VAR_INPUT
     sDeviceName: STRING;
     // For debug: set this to TRUE in online mode to read the database immediately.
     bReadNow: BOOL;
+    // Set this to FALSE to load PMPS parameters locally
+    bUsePmpsDB: BOOL := TRUE;
+    // Local PMPSDB parameteres
+    astManualDbStateParams:  ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
 END_VAR
 VAR_OUTPUT
     // The raw lookup results from this FB. Index 0 is the transition beam, the rest of the indices match the state positions.
@@ -56,13 +60,25 @@ VAR
     asPrevLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
     bNewKeys: BOOL;
     sTempBackfill: STRING;
+    nCopyIndex :INT;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[
-SelectLookupKeys();
-ReadDatabase();
-RunFastFaults();
-BackfillInfo();
+      <ST><![CDATA[IF bUsePmpsDB THEN
+    SelectLookupKeys();
+    ReadDatabase();
+    RunFastFaults();
+    BackfillInfo();
+ELSE
+    FOR nCopyIndex := 0 TO GeneralConstants.MAX_STATES
+    DO
+        astDbStateParams[nCopyIndex].sPmpsState := astManualDbStateParams[nCopyIndex].sPmpsState;
+        astDbStateParams[nCopyIndex].stBeamParams := astManualDbStateParams[nCopyIndex].stBeamParams;
+        astDbStateParams[nCopyIndex].bBeamParamsLoaded := astManualDbStateParams[nCopyIndex].bBeamParamsLoaded;
+        astDbStateParams[nCopyIndex].stReactiveParams := astManualDbStateParams[nCopyIndex].stReactiveParams;
+        astDbStateParams[nCopyIndex].nRequestAssertionID := astManualDbStateParams[nCopyIndex].nRequestAssertionID;
+    END_FOR;
+END_IF
+
 ]]></ST>
     </Implementation>
     <Action Name="BackfillInfo" Id="{da77ffc7-a50e-48a0-9b32-806e7f647a44}">

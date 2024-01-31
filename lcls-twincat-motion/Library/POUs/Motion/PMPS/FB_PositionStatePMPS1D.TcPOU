@@ -60,6 +60,8 @@ VAR_INPUT
     bReadDBNow: BOOL;
     // Set this to FALSE to load PMPS parameters locally
     bUsePmpsDB: BOOL := TRUE;
+    // Local PMPSDB parameteres
+    astManualDbStateParams:  ARRAY[0..GeneralConstants.MAX_STATES] OF ST_DbStateParams;
 END_VAR
 VAR_OUTPUT
     // Normal EPICS outputs, gathered into a single struct
@@ -112,6 +114,7 @@ fbPMPSCore(
     bReadDBNow:=bReadDBNow,
     stDbStateParams=>stDbStateParams,
     bUsePmpsDB:=bUsePmpsDB,
+    astManualDbStateParams:=astManualDbStateParams,
 );
 
 stMotionStage := astMotionStageMax[1];
