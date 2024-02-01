@@ -60,7 +60,6 @@ VAR
     asPrevLookupKeys: ARRAY[0..GeneralConstants.MAX_STATES] OF STRING;
     bNewKeys: BOOL;
     sTempBackfill: STRING;
-    nCopyIndex :INT;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF bUsePmpsDB THEN
@@ -69,14 +68,7 @@ END_VAR]]></Declaration>
     RunFastFaults();
     BackfillInfo();
 ELSE
-    FOR nCopyIndex := 0 TO GeneralConstants.MAX_STATES
-    DO
-        astDbStateParams[nCopyIndex].sPmpsState := astManualDbStateParams[nCopyIndex].sPmpsState;
-        astDbStateParams[nCopyIndex].stBeamParams := astManualDbStateParams[nCopyIndex].stBeamParams;
-        astDbStateParams[nCopyIndex].bBeamParamsLoaded := astManualDbStateParams[nCopyIndex].bBeamParamsLoaded;
-        astDbStateParams[nCopyIndex].stReactiveParams := astManualDbStateParams[nCopyIndex].stReactiveParams;
-        astDbStateParams[nCopyIndex].nRequestAssertionID := astManualDbStateParams[nCopyIndex].nRequestAssertionID;
-    END_FOR;
+    astDbStateParams:=astManualDbStateParams;
 END_IF
 
 ]]></ST>
