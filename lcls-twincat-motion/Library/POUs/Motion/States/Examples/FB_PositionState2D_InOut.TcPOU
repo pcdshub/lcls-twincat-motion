@@ -57,11 +57,11 @@ IF stOut2.sName = '' THEN
     stOut2.sName := 'OUT';
 END_IF
 
-// Assemble the states arrays, matching the enum values (OUT is 1, IN is 2)
-astPositionState1[1] := stOut1;
-astPositionState1[2] := stIn1;
-astPositionState2[1] := stOut2;
-astPositionState2[2] := stIn2;
+// Assemble the states arrays, matching the enum values
+astPositionState1[E_EpicsInOut.OUT] := stOut1;
+astPositionState1[E_EpicsInOut.IN] := stIn1;
+astPositionState2[E_EpicsInOut.OUT] := stOut2;
+astPositionState2[E_EpicsInOut.IN] := stIn2;
 
 // Call the main function block, passing our motors, states, and an enable
 fbPositionState2D(
@@ -75,10 +75,10 @@ fbPositionState2D(
 );
 
 // Send updates made on the array back to the inputs (VAR_IN_OUT) for maximum clarity
-stOut1 := astPositionState1[1];
-stIn1 := astPositionState1[2];
-stOut2 := astPositionState2[1];
-stIn2 := astPositionState2[2];]]></ST>
+stOut1 := astPositionState1[E_EpicsInOut.OUT];
+stIn1 := astPositionState1[E_EpicsInOut.IN];
+stOut2 := astPositionState2[E_EpicsInOut.OUT];
+stIn2 := astPositionState2[E_EpicsInOut.IN];]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
