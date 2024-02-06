@@ -47,9 +47,9 @@ IF stOut.sName = '' THEN
     stOut.sName := 'OUT';
 END_IF
 
-// Assemble the states array, matching the enum values (IN is 1, OUT is 2)
-astPositionState[1] := stIn;
-astPositionState[2] := stOut;
+// Assemble the states array, matching the enum values
+astPositionState[E_EpicsInOut.OUT] := stOut;
+astPositionState[E_EpicsInOut.IN] := stIn;
 
 // Call the main function block, passing our motors, states, enums and an enable
 fbPositionState1D(
@@ -61,8 +61,8 @@ fbPositionState1D(
 );
 
 // Send updates made on the array back to the inputs (VAR_IN_OUT) for maximum clarity
-stIn := astPositionState[1];
-stOut := astPositionState[2];]]></ST>
+stOut := astPositionState[E_EpicsInOut.OUT];
+stIn := astPositionState[E_EpicsInOut.IN];]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
