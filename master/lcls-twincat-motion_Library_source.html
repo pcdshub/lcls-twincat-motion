@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DUTs &mdash; pcdshub/lcls-twincat-motion  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/tree.css?v=837a00b9" />
+      <link rel="stylesheet" type="text/css" href="_static/width.css?v=ab210c7a" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -46,7 +50,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="lcls-twincat-motion_pragmas.html">Pragmas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lcls-twincat-motion_nc.html">NC Settings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="lcls-twincat-motion_ethercat.html">Box Hierarchy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lcls-twincat-motion_ethercat.html">EtherCAT Terminals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lcls-twincat-motion_boxes.html">Boxes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="lcls-twincat-motion_links.html">Links</a></li>
 </ul>
@@ -9510,9 +9514,9 @@ END_ACTION
     <span class="n">stOut</span><span class="o">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="s1">&#39;OUT&#39;</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">array</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span> <span class="p">(</span><span class="n">IN</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">,</span> <span class="n">OUT</span> <span class="ow">is</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">astPositionState</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn</span><span class="p">;</span>
-<span class="n">astPositionState</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut</span><span class="p">;</span>
+<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">array</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span>
+<span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut</span><span class="p">;</span>
+<span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">Call</span> <span class="n">the</span> <span class="n">main</span> <span class="n">function</span> <span class="n">block</span><span class="p">,</span> <span class="n">passing</span> <span class="n">our</span> <span class="n">motors</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="n">enums</span> <span class="ow">and</span> <span class="n">an</span> <span class="n">enable</span>
 <span class="n">fbPositionState1D</span><span class="p">(</span>
@@ -9524,8 +9528,8 @@ END_ACTION
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Send</span> <span class="n">updates</span> <span class="n">made</span> <span class="n">on</span> <span class="n">the</span> <span class="n">array</span> <span class="n">back</span> <span class="n">to</span> <span class="n">the</span> <span class="n">inputs</span> <span class="p">(</span><span class="n">VAR_IN_OUT</span><span class="p">)</span> <span class="k">for</span> <span class="n">maximum</span> <span class="n">clarity</span>
-<span class="n">stIn</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<span class="n">stOut</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="n">stOut</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">];</span>
+<span class="n">stIn</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">];</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 </pre></div>
@@ -9694,11 +9698,11 @@ END_ACTION
     <span class="n">stOut2</span><span class="o">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="s1">&#39;OUT&#39;</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">arrays</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span> <span class="p">(</span><span class="n">IN</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">,</span> <span class="n">OUT</span> <span class="ow">is</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">astPositionState1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn1</span><span class="p">;</span>
-<span class="n">astPositionState1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut1</span><span class="p">;</span>
-<span class="n">astPositionState2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn2</span><span class="p">;</span>
-<span class="n">astPositionState2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut2</span><span class="p">;</span>
+<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">arrays</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span>
+<span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut1</span><span class="p">;</span>
+<span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn1</span><span class="p">;</span>
+<span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut2</span><span class="p">;</span>
+<span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn2</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">Call</span> <span class="n">the</span> <span class="n">main</span> <span class="n">function</span> <span class="n">block</span><span class="p">,</span> <span class="n">passing</span> <span class="n">our</span> <span class="n">motors</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="ow">and</span> <span class="n">an</span> <span class="n">enable</span>
 <span class="n">fbPositionState2D</span><span class="p">(</span>
@@ -9712,10 +9716,10 @@ END_ACTION
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Send</span> <span class="n">updates</span> <span class="n">made</span> <span class="n">on</span> <span class="n">the</span> <span class="n">array</span> <span class="n">back</span> <span class="n">to</span> <span class="n">the</span> <span class="n">inputs</span> <span class="p">(</span><span class="n">VAR_IN_OUT</span><span class="p">)</span> <span class="k">for</span> <span class="n">maximum</span> <span class="n">clarity</span>
-<span class="n">stIn1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<span class="n">stOut1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
-<span class="n">stIn2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<span class="n">stOut2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="n">stOut1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">];</span>
+<span class="n">stIn1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">];</span>
+<span class="n">stOut2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">];</span>
+<span class="n">stIn2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">];</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 </pre></div>
@@ -12666,9 +12670,9 @@ END_ACTION
     <span class="n">stOut</span><span class="o">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="s1">&#39;OUT&#39;</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">array</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span> <span class="p">(</span><span class="n">IN</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">,</span> <span class="n">OUT</span> <span class="ow">is</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">astPositionState</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn</span><span class="p">;</span>
-<span class="n">astPositionState</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut</span><span class="p">;</span>
+<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">array</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span>
+<span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut</span><span class="p">;</span>
+<span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">Call</span> <span class="n">the</span> <span class="n">main</span> <span class="n">function</span> <span class="n">block</span><span class="p">,</span> <span class="n">passing</span> <span class="n">our</span> <span class="n">motors</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="ow">and</span> <span class="n">an</span> <span class="n">enable</span>
 <span class="n">fbPositionStatePMPS1D</span><span class="p">(</span>
@@ -12684,8 +12688,8 @@ END_ACTION
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Send</span> <span class="n">updates</span> <span class="n">made</span> <span class="n">on</span> <span class="n">the</span> <span class="n">array</span> <span class="n">back</span> <span class="n">to</span> <span class="n">the</span> <span class="n">inputs</span> <span class="p">(</span><span class="n">VAR_IN_OUT</span><span class="p">)</span> <span class="k">for</span> <span class="n">maximum</span> <span class="n">clarity</span>
-<span class="n">stIn</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<span class="n">stOut</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="n">stOut</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">];</span>
+<span class="n">stIn</span> <span class="o">:=</span> <span class="n">astPositionState</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">];</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 </pre></div>
@@ -12904,11 +12908,11 @@ END_ACTION
     <span class="n">stOut2</span><span class="o">.</span><span class="n">sName</span> <span class="o">:=</span> <span class="s1">&#39;OUT&#39;</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">arrays</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span> <span class="p">(</span><span class="n">IN</span> <span class="ow">is</span> <span class="mi">1</span><span class="p">,</span> <span class="n">OUT</span> <span class="ow">is</span> <span class="mi">2</span><span class="p">)</span>
-<span class="n">astPositionState1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn1</span><span class="p">;</span>
-<span class="n">astPositionState1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut1</span><span class="p">;</span>
-<span class="n">astPositionState2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn2</span><span class="p">;</span>
-<span class="n">astPositionState2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut2</span><span class="p">;</span>
+<span class="o">//</span> <span class="n">Assemble</span> <span class="n">the</span> <span class="n">states</span> <span class="n">arrays</span><span class="p">,</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">enum</span> <span class="n">values</span>
+<span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut1</span><span class="p">;</span>
+<span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn1</span><span class="p">;</span>
+<span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stOut2</span><span class="p">;</span>
+<span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stIn2</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">Call</span> <span class="n">the</span> <span class="n">main</span> <span class="n">function</span> <span class="n">block</span><span class="p">,</span> <span class="n">passing</span> <span class="n">our</span> <span class="n">motors</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="ow">and</span> <span class="n">an</span> <span class="n">enable</span>
 <span class="n">fbPositionStatePMPS2D</span><span class="p">(</span>
@@ -12926,10 +12930,10 @@ END_ACTION
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Send</span> <span class="n">updates</span> <span class="n">made</span> <span class="n">on</span> <span class="n">the</span> <span class="n">array</span> <span class="n">back</span> <span class="n">to</span> <span class="n">the</span> <span class="n">inputs</span> <span class="p">(</span><span class="n">VAR_IN_OUT</span><span class="p">)</span> <span class="k">for</span> <span class="n">maximum</span> <span class="n">clarity</span>
-<span class="n">stIn1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<span class="n">stOut1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
-<span class="n">stIn2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
-<span class="n">stOut2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="n">stOut1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">];</span>
+<span class="n">stIn1</span> <span class="o">:=</span> <span class="n">astPositionState1</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">];</span>
+<span class="n">stOut2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">OUT</span><span class="p">];</span>
+<span class="n">stIn2</span> <span class="o">:=</span> <span class="n">astPositionState2</span><span class="p">[</span><span class="n">E_EpicsInOut</span><span class="o">.</span><span class="n">IN</span><span class="p">];</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
 </pre></div>
@@ -18121,7 +18125,7 @@ END_METHOD
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2023, SLAC National Accelerator Laboratory.</p>
+    <p>&#169; Copyright 2024, SLAC National Accelerator Laboratory.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
