@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_TestStateInitTiming" Id="{b36fb6c3-2228-4a68-b46d-71d760d78916}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_TestStateInitTiming EXTENDS TcUnit.FB_TestSuite
+VAR
+    stMotionStage: ST_MotionStage;
+    fbMotionStage: FB_MotionStageSim;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[fbMotionStage(stMotionStage:=stMotionStage);
+
+PassiveReinit();]]></ST>
+    </Implementation>
+    <Method Name="PassiveReinit" Id="{f581923a-dba2-4a92-b0c7-df2f67d53bdf}">
+      <Declaration><![CDATA[METHOD PassiveReinit : BOOL
+VAR_INPUT
+END_VAR
+VAR_INST
+    fbStateSetup: FB_StateSetupHelper;
+    stDefault: ST_PositionState := (
+        fDelta := 0.5,
+        fVelocity := 10,
+        bMoveOk := TRUE,
+        bValid := TRUE
+    );
+    eEnumSet: UINT;
+    eEnumGet: UINT;
+    stEpicsToPlc: ST_StateEpicsToPlc;
+    stPlcToEpics: ST_StatePlcToEpics;
+    fbCore: FB_PositionStateND_Core;
+    astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
+    astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
+
+    fbMoveHelper: FB_TestHelperSetAndMove;
+    nCheckStep: UINT := 0;
+
+    timer: TON;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('PassiveReinit');
+
+// State setup
+fbStateSetup(stPositionState:=stDefault, bSetDefault:=TRUE);
+fbStateSetup(stPositionState:=astPositionStateMax[1][1], sName:='ONE', fPosition:=10);
+fbStateSetup(stPositionState:=astPositionStateMax[1][2], sName:='TWO', fPosition:=20);
+
+// Run the state FB every cycle
+astMotionStageMax[1] := stMotionStage;
+fbCore(
+    astMotionStageMax:=astMotionStageMax,
+    astPositionStateMax:=astPositionStateMax,
+    stEpicsToPlc:=stEpicsToPlc,
+    stPlcToEpics:=stPlcToEpics,
+    eEnumSet:=eEnumSet,
+    eEnumGet:=eEnumGet,
+    bEnable:=TRUE,
+    nActiveMotorCount:=1,
+);
+stMotionStage := astMotionStageMax[1];
+
+// Check and adjust different things as we go
+CASE nCheckStep OF
+    0:  // State begins at "Unknown", nCurrGoal begins at "Unknown"
+        AssertEquals_UINT(
+            Expected:=0,
+            Actual:=eEnumGet,
+            Message:='Did not start in unknown state',
+        );
+        AssertEquals_UINT(
+            Expected:=0,
+            Actual:=fbCore.nCurrGoal,
+            Message:='Did not start with nCurrGoal unknown',
+        );
+        nCheckStep := 1;
+    1:  // Set the current position to ONE/10
+        fbMoveHelper(
+            stMotionStage:=stMotionStage,
+            bExecute:=TRUE,
+            fStartPosition:=10,
+            fGoalPosition:=10,
+        );
+        IF fbMoveHelper.bSetDone THEN
+            fbMoveHelper(
+                stMotionStage:=stMotionStage,
+                bExecute:=FALSE,
+            );
+            nCheckStep := 2;
+        END_IF
+    2:  // Without a move, the state and goal should both change to "ONE" if the position updates
+        AssertEquals_UINT(
+            Expected:=1,
+            Actual:=eEnumGet,
+            Message:='Read state did not change to ONE after setpos',
+        );
+        AssertEquals_UINT(
+            Expected:=1,
+            Actual:=fbCore.nCurrGoal,
+            Message:='nCurrGoal did not change to ONE after setpos',
+        );
+        // Verify: no move requested
+        AssertEquals_LREAL(
+            Expected:=0,
+            Actual:=stMotionStage.Axis.NcToPlc.SetPos,
+            Delta:=0.001,
+            Message:='Set pos routine 1 actually gave us a move!',
+        );
+        nCheckStep := 3;
+    3:  // Same as before, but to 20/TWO
+        fbMoveHelper(
+            stMotionStage:=stMotionStage,
+            bExecute:=TRUE,
+            fStartPosition:=20,
+            fGoalPosition:=20,
+        );
+        IF fbMoveHelper.bSetDone THEN
+            fbMoveHelper(
+                stMotionStage:=stMotionStage,
+                bExecute:=FALSE,
+            );
+            nCheckStep := 4;
+        END_IF
+    4:
+        AssertEquals_UINT(
+            Expected:=2,
+            Actual:=eEnumGet,
+            Message:='Read state did not change to TWO after setpos',
+        );
+        AssertEquals_UINT(
+            Expected:=2,
+            Actual:=fbCore.nCurrGoal,
+            Message:='nCurrGoal did not change to TWO after setpos',
+        );
+        // Verify: no move requested
+        AssertEquals_LREAL(
+            Expected:=0,
+            Actual:=stMotionStage.Axis.NcToPlc.SetPos,
+            Delta:=0.001,
+            Message:='Set pos routine 2 actually gave us a move!',
+        );
+        nCheckStep := 5;
+    5:  // Triggering a move should change the goal to the new state, without updating the readback
+        eEnumSet := 1;
+        nCheckStep := 6;
+    6:
+        AssertEquals_UINT(
+            Expected:=1,
+            Actual:=fbCore.nCurrGoal,
+            Message:='nCurrGoal did not change to ONE in move',
+        );
+        IF stPlcToEpics.bDone THEN
+            nCheckStep := 7;
+        ELSE
+            AssertEquals_UINT(
+                Expected:=0,
+                Actual:=eEnumGet,
+                Message:='State mover did not go to unknown readback',
+            );
+        END_IF
+    7: // The readback and curr goal should match after the move, then end test suite
+        AssertEquals_UINT(
+            Expected:=1,
+            Actual:=eEnumGet,
+            Message:='Read state did not change to ONE after move',
+        );
+        AssertEquals_UINT(
+            Expected:=1,
+            Actual:=fbCore.nCurrGoal,
+            Message:='nCurrGoal did not stay at ONE after move',
+        );
+        AssertFalse(
+            Condition:=timer.Q,
+            Message:='Timeout in test',
+        );
+        TEST_FINISHED();
+END_CASE
+
+timer(IN:=TRUE, PT:=T#5s);
+IF timer.Q THEN
+    nCheckStep := 7;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
