@@ -35,6 +35,7 @@ VAR
     bInit: BOOL;
     nQueuedGoal: UINT;
     bNewMove: BOOL;
+    nCachedStart: UINT;
 END_VAR
 VAR CONSTANT
     IDLE: UINT := 0;
@@ -69,6 +70,10 @@ CASE nState OF
         ELSIF bMoveBusy THEN
             // We're moving but used to be idle -> switch to GOING
             nState := GOING;
+        ELSIF nStartingState <> nCachedStart THEN
+            // Usually a late position init, sometimes a live change in encoder offset
+            // The state changed without a move, so we need to partially reinitialize.
+            nCurrGoal := nStartingState;
         END_IF
     GOING:
         IF bNewMove THEN
@@ -89,6 +94,9 @@ END_CASE
 IF bMoveError THEN
     bExecMove := FALSE;
 END_IF
+
+// Detect if the set/start position updates without a move
+nCachedStart := nStartingState;
 
 // Help us detect if there is an EPICS put before the next cycle
 stUserInput.nSetValue := 0;

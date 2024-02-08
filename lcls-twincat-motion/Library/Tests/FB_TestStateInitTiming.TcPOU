@@ -4,11 +4,14 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_TestStateInitTiming EXTENDS TcUnit.FB_TestSuite
 VAR
     stMotionStage: ST_MotionStage;
-    fbMotionStage: FB_MotionStageSim;
+    fbMotionStageSim: FB_MotionStageSim;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[fbMotionStage(stMotionStage:=stMotionStage);
+      <ST><![CDATA[fbMotionStageSim(
+    stMotionStage:=stMotionStage,
+    nEnableMode:=E_StageEnableMode.DURING_MOTION,
+);
 
 PassiveReinit();]]></ST>
     </Implementation>
@@ -20,7 +23,7 @@ VAR_INST
     fbStateSetup: FB_StateSetupHelper;
     stDefault: ST_PositionState := (
         fDelta := 0.5,
-        fVelocity := 10,
+        fVelocity := 3,
         bMoveOk := TRUE,
         bValid := TRUE
     );
@@ -32,10 +35,16 @@ VAR_INST
     astMotionStageMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ST_MotionStage;
     astPositionStateMax: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF ARRAY[1..GeneralConstants.MAX_STATES] OF ST_PositionState;
 
-    fbMoveHelper: FB_TestHelperSetAndMove;
+    mcSetPos: MC_SetPosition;
     nCheckStep: UINT := 0;
+    nFurthestStep: UINT;
 
+    nTransitionState: UINT := 99;
+    nDoneState: UINT := 99;
     timer: TON;
+
+    nSetPosErrCount: UINT := 0;
+    nSetPosErrorID: UDINT;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[TEST('PassiveReinit');
@@ -72,20 +81,27 @@ CASE nCheckStep OF
             Actual:=fbCore.nCurrGoal,
             Message:='Did not start with nCurrGoal unknown',
         );
+        mcSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=FALSE,
+        );
         nCheckStep := 1;
     1:  // Set the current position to ONE/10
-        fbMoveHelper(
-            stMotionStage:=stMotionStage,
-            bExecute:=TRUE,
-            fStartPosition:=10,
-            fGoalPosition:=10,
+        mcSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=TRUE,
+            Position:=10,
         );
-        IF fbMoveHelper.bSetDone THEN
-            fbMoveHelper(
-                stMotionStage:=stMotionStage,
-                bExecute:=FALSE,
+        IF mcSetPos.Done THEN
+            mcSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE,
             );
             nCheckStep := 2;
+        ELSIF mcSetPos.Error THEN
+            nSetPosErrCount := nSetPosErrCount + 1;
+            nSetPosErrorID := mcSetPos.ErrorID;
+            nCheckStep := 0;
         END_IF
     2:  // Without a move, the state and goal should both change to "ONE" if the position updates
         AssertEquals_UINT(
@@ -101,22 +117,21 @@ CASE nCheckStep OF
         // Verify: no move requested
         AssertEquals_LREAL(
             Expected:=0,
-            Actual:=stMotionStage.Axis.NcToPlc.SetPos,
+            Actual:=stMotionStage.fPosition,
             Delta:=0.001,
             Message:='Set pos routine 1 actually gave us a move!',
         );
         nCheckStep := 3;
     3:  // Same as before, but to 20/TWO
-        fbMoveHelper(
-            stMotionStage:=stMotionStage,
-            bExecute:=TRUE,
-            fStartPosition:=20,
-            fGoalPosition:=20,
+        mcSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=TRUE,
+            Position:=20,
         );
-        IF fbMoveHelper.bSetDone THEN
-            fbMoveHelper(
-                stMotionStage:=stMotionStage,
-                bExecute:=FALSE,
+        IF mcSetPos.Done THEN
+            mcSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=FALSE,
             );
             nCheckStep := 4;
         END_IF
@@ -134,7 +149,7 @@ CASE nCheckStep OF
         // Verify: no move requested
         AssertEquals_LREAL(
             Expected:=0,
-            Actual:=stMotionStage.Axis.NcToPlc.SetPos,
+            Actual:=stMotionStage.fPosition,
             Delta:=0.001,
             Message:='Set pos routine 2 actually gave us a move!',
         );
@@ -148,14 +163,25 @@ CASE nCheckStep OF
             Actual:=fbCore.nCurrGoal,
             Message:='nCurrGoal did not change to ONE in move',
         );
+        // Looking for a readback transition 2 -> 0 -> 1
+        // Record the next two transitions
+        IF eEnumGet <> 2 AND eEnumGet <> nTransitionState AND eEnumGet <> nDoneState THEN
+            nTransitionState := eEnumGet;
+        ELSIF eEnumGet <> 2 AND eEnumGet <> nTransitionState THEN
+            nDoneState := eEnumGet;
+        END_IF
         IF stPlcToEpics.bDone THEN
-            nCheckStep := 7;
-        ELSE
             AssertEquals_UINT(
                 Expected:=0,
-                Actual:=eEnumGet,
-                Message:='State mover did not go to unknown readback',
+                Actual:=nTransitionState,
+                Message:='State did not transition 2 -> 0 in move',
             );
+            AssertEquals_UINT(
+                Expected:=1,
+                Actual:=nDoneState,
+                Message:='State did not transition 2 -> 0 -> 1 in move',
+            );
+            nCheckStep := 7;
         END_IF
     7: // The readback and curr goal should match after the move, then end test suite
         AssertEquals_UINT(
@@ -178,6 +204,9 @@ END_CASE
 timer(IN:=TRUE, PT:=T#5s);
 IF timer.Q THEN
     nCheckStep := 7;
+END_IF
+IF nCheckStep < 7 AND nFurthestStep < nCheckStep THEN
+    nFurthestStep := nCheckStep;
 END_IF
 ]]></ST>
       </Implementation>
