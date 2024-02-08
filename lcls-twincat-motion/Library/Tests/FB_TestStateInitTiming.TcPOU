@@ -39,6 +39,7 @@ VAR_INST
     nCheckStep: UINT := 0;
     nFurthestStep: UINT;
 
+    nLastState: UINT;
     nTransitionState: UINT := 99;
     nDoneState: UINT := 99;
     timer: TON;
@@ -156,6 +157,7 @@ CASE nCheckStep OF
         nCheckStep := 5;
     5:  // Triggering a move should change the goal to the new state, without updating the readback
         eEnumSet := 1;
+        nLastState := 2;
         nCheckStep := 6;
     6:
         AssertEquals_UINT(
@@ -165,11 +167,12 @@ CASE nCheckStep OF
         );
         // Looking for a readback transition 2 -> 0 -> 1
         // Record the next two transitions
-        IF eEnumGet <> 2 AND eEnumGet <> nTransitionState AND eEnumGet <> nDoneState THEN
+        IF eEnumGet <> nLastState and nTransitionState = 99 THEN
             nTransitionState := eEnumGet;
-        ELSIF eEnumGet <> 2 AND eEnumGet <> nTransitionState THEN
+        ELSIF eEnumGet <> nLastState and nDoneState = 99 THEN
             nDoneState := eEnumGet;
         END_IF
+        nLastState := eEnumGet;
         IF stPlcToEpics.bDone THEN
             AssertEquals_UINT(
                 Expected:=0,
