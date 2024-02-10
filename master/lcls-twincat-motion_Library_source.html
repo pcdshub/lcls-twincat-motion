@@ -240,6 +240,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#fb-terminalerror">FB_TerminalError</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-testhelpersetandmove">FB_TestHelperSetAndMove</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-testhelpersetandmove-test">FB_TestHelperSetAndMove_Test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-teststateinittiming">FB_TestStateInitTiming</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-writefloatparameter">FB_WriteFloatParameter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-writeparameterinnc-v1-00">FB_WriteParameterInNc_v1_00</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#prg-test">PRG_TEST</a></li>
@@ -17362,6 +17363,7 @@ END_METHOD
     <span class="n">bInit</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">nQueuedGoal</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
     <span class="n">bNewMove</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nCachedStart</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR</span> <span class="n">CONSTANT</span>
     <span class="n">IDLE</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
@@ -17373,6 +17375,7 @@ END_METHOD
     <span class="n">bInit</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">stUserInput</span><span class="o">.</span><span class="n">nSetValue</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
     <span class="n">nCurrGoal</span> <span class="o">:=</span> <span class="n">nStartingState</span><span class="p">;</span>
+    <span class="n">nCachedStart</span> <span class="o">:=</span> <span class="n">nStartingState</span><span class="p">;</span>
     <span class="n">bExecMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
     <span class="n">nState</span> <span class="o">:=</span> <span class="n">IDLE</span><span class="p">;</span>
     <span class="n">bNewMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
@@ -17393,6 +17396,10 @@ END_METHOD
         <span class="n">ELSIF</span> <span class="n">bMoveBusy</span> <span class="n">THEN</span>
             <span class="o">//</span> <span class="n">We</span><span class="s1">&#39;re moving but used to be idle -&gt; switch to GOING</span>
             <span class="n">nState</span> <span class="o">:=</span> <span class="n">GOING</span><span class="p">;</span>
+        <span class="n">ELSIF</span> <span class="n">nStartingState</span> <span class="o">&lt;&gt;</span> <span class="n">nCachedStart</span> <span class="n">THEN</span>
+            <span class="o">//</span> <span class="n">Usually</span> <span class="n">a</span> <span class="n">late</span> <span class="n">position</span> <span class="n">init</span><span class="p">,</span> <span class="n">sometimes</span> <span class="n">a</span> <span class="n">live</span> <span class="n">change</span> <span class="ow">in</span> <span class="n">encoder</span> <span class="n">offset</span>
+            <span class="o">//</span> <span class="n">The</span> <span class="n">state</span> <span class="n">changed</span> <span class="n">without</span> <span class="n">a</span> <span class="n">move</span><span class="p">,</span> <span class="n">so</span> <span class="n">we</span> <span class="n">need</span> <span class="n">to</span> <span class="n">partially</span> <span class="n">reinitialize</span><span class="o">.</span>
+            <span class="n">nCurrGoal</span> <span class="o">:=</span> <span class="n">nStartingState</span><span class="p">;</span>
         <span class="n">END_IF</span>
     <span class="n">GOING</span><span class="p">:</span>
         <span class="n">IF</span> <span class="n">bNewMove</span> <span class="n">THEN</span>
@@ -17413,6 +17420,9 @@ END_METHOD
 <span class="n">IF</span> <span class="n">bMoveError</span> <span class="n">THEN</span>
     <span class="n">bExecMove</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
+
+<span class="o">//</span> <span class="n">Detect</span> <span class="k">if</span> <span class="n">the</span> <span class="nb">set</span><span class="o">/</span><span class="n">start</span> <span class="n">position</span> <span class="n">updates</span> <span class="n">without</span> <span class="n">a</span> <span class="n">move</span>
+<span class="n">nCachedStart</span> <span class="o">:=</span> <span class="n">nStartingState</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">Help</span> <span class="n">us</span> <span class="n">detect</span> <span class="k">if</span> <span class="n">there</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">EPICS</span> <span class="n">put</span> <span class="n">before</span> <span class="n">the</span> <span class="nb">next</span> <span class="n">cycle</span>
 <span class="n">stUserInput</span><span class="o">.</span><span class="n">nSetValue</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
@@ -17869,6 +17879,234 @@ END_METHOD
 </dd>
 </dl>
 </section>
+<section id="fb-teststateinittiming">
+<h2>FB_TestStateInitTiming<a class="headerlink" href="#fb-teststateinittiming" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_TestStateInitTiming</span> <span class="n">EXTENDS</span> <span class="n">TcUnit</span><span class="o">.</span><span class="n">FB_TestSuite</span>
+<span class="n">VAR</span>
+    <span class="n">stMotionStage</span><span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStageSim</span><span class="p">:</span> <span class="n">FB_MotionStageSim</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">fbMotionStageSim</span><span class="p">(</span>
+    <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">,</span>
+    <span class="n">nEnableMode</span><span class="o">:=</span><span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">DURING_MOTION</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="n">PassiveReinit</span><span class="p">();</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+
+<span class="n">METHOD</span> <span class="n">PassiveReinit</span> <span class="p">:</span> <span class="n">BOOL</span>
+<span class="n">VAR_INPUT</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INST</span>
+    <span class="n">fbStateSetup</span><span class="p">:</span> <span class="n">FB_StateSetupHelper</span><span class="p">;</span>
+    <span class="n">stDefault</span><span class="p">:</span> <span class="n">ST_PositionState</span> <span class="o">:=</span> <span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">fVelocity</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="n">bMoveOk</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+        <span class="n">bValid</span> <span class="o">:=</span> <span class="n">TRUE</span>
+    <span class="p">);</span>
+    <span class="n">eEnumSet</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+    <span class="n">eEnumGet</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+    <span class="n">stEpicsToPlc</span><span class="p">:</span> <span class="n">ST_StateEpicsToPlc</span><span class="p">;</span>
+    <span class="n">stPlcToEpics</span><span class="p">:</span> <span class="n">ST_StatePlcToEpics</span><span class="p">;</span>
+    <span class="n">fbCore</span><span class="p">:</span> <span class="n">FB_PositionStateND_Core</span><span class="p">;</span>
+    <span class="n">astMotionStageMax</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">MotionConstants</span><span class="o">.</span><span class="n">MAX_STATE_MOTORS</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">astPositionStateMax</span><span class="p">:</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">MotionConstants</span><span class="o">.</span><span class="n">MAX_STATE_MOTORS</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ARRAY</span><span class="p">[</span><span class="mf">1.</span><span class="o">.</span><span class="n">GeneralConstants</span><span class="o">.</span><span class="n">MAX_STATES</span><span class="p">]</span> <span class="n">OF</span> <span class="n">ST_PositionState</span><span class="p">;</span>
+
+    <span class="n">mcSetPos</span><span class="p">:</span> <span class="n">MC_SetPosition</span><span class="p">;</span>
+    <span class="n">nCheckStep</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">nFurthestStep</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+
+    <span class="n">nLastState</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+    <span class="n">nTransitionState</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">99</span><span class="p">;</span>
+    <span class="n">nDoneState</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">99</span><span class="p">;</span>
+    <span class="n">timer</span><span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+
+    <span class="n">nSetPosErrCount</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">nSetPosErrorID</span><span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;PassiveReinit&#39;</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">State</span> <span class="n">setup</span>
+<span class="n">fbStateSetup</span><span class="p">(</span><span class="n">stPositionState</span><span class="o">:=</span><span class="n">stDefault</span><span class="p">,</span> <span class="n">bSetDefault</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">);</span>
+<span class="n">fbStateSetup</span><span class="p">(</span><span class="n">stPositionState</span><span class="o">:=</span><span class="n">astPositionStateMax</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">sName</span><span class="o">:=</span><span class="s1">&#39;ONE&#39;</span><span class="p">,</span> <span class="n">fPosition</span><span class="o">:=</span><span class="mi">10</span><span class="p">);</span>
+<span class="n">fbStateSetup</span><span class="p">(</span><span class="n">stPositionState</span><span class="o">:=</span><span class="n">astPositionStateMax</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">sName</span><span class="o">:=</span><span class="s1">&#39;TWO&#39;</span><span class="p">,</span> <span class="n">fPosition</span><span class="o">:=</span><span class="mi">20</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Run</span> <span class="n">the</span> <span class="n">state</span> <span class="n">FB</span> <span class="n">every</span> <span class="n">cycle</span>
+<span class="n">astMotionStageMax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">;</span>
+<span class="n">fbCore</span><span class="p">(</span>
+    <span class="n">astMotionStageMax</span><span class="o">:=</span><span class="n">astMotionStageMax</span><span class="p">,</span>
+    <span class="n">astPositionStateMax</span><span class="o">:=</span><span class="n">astPositionStateMax</span><span class="p">,</span>
+    <span class="n">stEpicsToPlc</span><span class="o">:=</span><span class="n">stEpicsToPlc</span><span class="p">,</span>
+    <span class="n">stPlcToEpics</span><span class="o">:=</span><span class="n">stPlcToEpics</span><span class="p">,</span>
+    <span class="n">eEnumSet</span><span class="o">:=</span><span class="n">eEnumSet</span><span class="p">,</span>
+    <span class="n">eEnumGet</span><span class="o">:=</span><span class="n">eEnumGet</span><span class="p">,</span>
+    <span class="n">bEnable</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">nActiveMotorCount</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">);</span>
+<span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">astMotionStageMax</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="o">//</span> <span class="n">Check</span> <span class="ow">and</span> <span class="n">adjust</span> <span class="n">different</span> <span class="n">things</span> <span class="k">as</span> <span class="n">we</span> <span class="n">go</span>
+<span class="n">CASE</span> <span class="n">nCheckStep</span> <span class="n">OF</span>
+    <span class="mi">0</span><span class="p">:</span>  <span class="o">//</span> <span class="n">State</span> <span class="n">begins</span> <span class="n">at</span> <span class="s2">&quot;Unknown&quot;</span><span class="p">,</span> <span class="n">nCurrGoal</span> <span class="n">begins</span> <span class="n">at</span> <span class="s2">&quot;Unknown&quot;</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">eEnumGet</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Did not start in unknown state&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">fbCore</span><span class="o">.</span><span class="n">nCurrGoal</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Did not start with nCurrGoal unknown&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">mcSetPos</span><span class="p">(</span>
+            <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+            <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="mi">1</span><span class="p">:</span>  <span class="o">//</span> <span class="n">Set</span> <span class="n">the</span> <span class="n">current</span> <span class="n">position</span> <span class="n">to</span> <span class="n">ONE</span><span class="o">/</span><span class="mi">10</span>
+        <span class="n">mcSetPos</span><span class="p">(</span>
+            <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+            <span class="n">Execute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">Position</span><span class="o">:=</span><span class="mi">10</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">IF</span> <span class="n">mcSetPos</span><span class="o">.</span><span class="n">Done</span> <span class="n">THEN</span>
+            <span class="n">mcSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
+        <span class="n">ELSIF</span> <span class="n">mcSetPos</span><span class="o">.</span><span class="n">Error</span> <span class="n">THEN</span>
+            <span class="n">nSetPosErrCount</span> <span class="o">:=</span> <span class="n">nSetPosErrCount</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="n">nSetPosErrorID</span> <span class="o">:=</span> <span class="n">mcSetPos</span><span class="o">.</span><span class="n">ErrorID</span><span class="p">;</span>
+            <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="mi">2</span><span class="p">:</span>  <span class="o">//</span> <span class="n">Without</span> <span class="n">a</span> <span class="n">move</span><span class="p">,</span> <span class="n">the</span> <span class="n">state</span> <span class="ow">and</span> <span class="n">goal</span> <span class="n">should</span> <span class="n">both</span> <span class="n">change</span> <span class="n">to</span> <span class="s2">&quot;ONE&quot;</span> <span class="k">if</span> <span class="n">the</span> <span class="n">position</span> <span class="n">updates</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">eEnumGet</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Read state did not change to ONE after setpos&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">fbCore</span><span class="o">.</span><span class="n">nCurrGoal</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;nCurrGoal did not change to ONE after setpos&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="o">//</span> <span class="n">Verify</span><span class="p">:</span> <span class="n">no</span> <span class="n">move</span> <span class="n">requested</span>
+        <span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+            <span class="n">Delta</span><span class="o">:=</span><span class="mf">0.001</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Set pos routine 1 actually gave us a move!&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span>
+    <span class="mi">3</span><span class="p">:</span>  <span class="o">//</span> <span class="n">Same</span> <span class="k">as</span> <span class="n">before</span><span class="p">,</span> <span class="n">but</span> <span class="n">to</span> <span class="mi">20</span><span class="o">/</span><span class="n">TWO</span>
+        <span class="n">mcSetPos</span><span class="p">(</span>
+            <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+            <span class="n">Execute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">Position</span><span class="o">:=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">IF</span> <span class="n">mcSetPos</span><span class="o">.</span><span class="n">Done</span> <span class="n">THEN</span>
+            <span class="n">mcSetPos</span><span class="p">(</span>
+                <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+                <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">4</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="mi">4</span><span class="p">:</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">eEnumGet</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Read state did not change to TWO after setpos&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">fbCore</span><span class="o">.</span><span class="n">nCurrGoal</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;nCurrGoal did not change to TWO after setpos&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="o">//</span> <span class="n">Verify</span><span class="p">:</span> <span class="n">no</span> <span class="n">move</span> <span class="n">requested</span>
+        <span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+            <span class="n">Delta</span><span class="o">:=</span><span class="mf">0.001</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Set pos routine 2 actually gave us a move!&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">5</span><span class="p">;</span>
+    <span class="mi">5</span><span class="p">:</span>  <span class="o">//</span> <span class="n">Triggering</span> <span class="n">a</span> <span class="n">move</span> <span class="n">should</span> <span class="n">change</span> <span class="n">the</span> <span class="n">goal</span> <span class="n">to</span> <span class="n">the</span> <span class="n">new</span> <span class="n">state</span><span class="p">,</span> <span class="n">without</span> <span class="n">updating</span> <span class="n">the</span> <span class="n">readback</span>
+        <span class="n">eEnumSet</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="n">nLastState</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
+        <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">6</span><span class="p">;</span>
+    <span class="mi">6</span><span class="p">:</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">fbCore</span><span class="o">.</span><span class="n">nCurrGoal</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;nCurrGoal did not change to ONE in move&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="o">//</span> <span class="n">Looking</span> <span class="k">for</span> <span class="n">a</span> <span class="n">readback</span> <span class="n">transition</span> <span class="mi">2</span> <span class="o">-&gt;</span> <span class="mi">0</span> <span class="o">-&gt;</span> <span class="mi">1</span>
+        <span class="o">//</span> <span class="n">Record</span> <span class="n">the</span> <span class="nb">next</span> <span class="n">two</span> <span class="n">transitions</span>
+        <span class="n">IF</span> <span class="n">eEnumGet</span> <span class="o">&lt;&gt;</span> <span class="n">nLastState</span> <span class="ow">and</span> <span class="n">nTransitionState</span> <span class="o">=</span> <span class="mi">99</span> <span class="n">THEN</span>
+            <span class="n">nTransitionState</span> <span class="o">:=</span> <span class="n">eEnumGet</span><span class="p">;</span>
+        <span class="n">ELSIF</span> <span class="n">eEnumGet</span> <span class="o">&lt;&gt;</span> <span class="n">nLastState</span> <span class="ow">and</span> <span class="n">nDoneState</span> <span class="o">=</span> <span class="mi">99</span> <span class="n">THEN</span>
+            <span class="n">nDoneState</span> <span class="o">:=</span> <span class="n">eEnumGet</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+        <span class="n">nLastState</span> <span class="o">:=</span> <span class="n">eEnumGet</span><span class="p">;</span>
+        <span class="n">IF</span> <span class="n">stPlcToEpics</span><span class="o">.</span><span class="n">bDone</span> <span class="n">THEN</span>
+            <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+                <span class="n">Expected</span><span class="o">:=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">Actual</span><span class="o">:=</span><span class="n">nTransitionState</span><span class="p">,</span>
+                <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;State did not transition 2 -&gt; 0 in move&#39;</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+                <span class="n">Expected</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">Actual</span><span class="o">:=</span><span class="n">nDoneState</span><span class="p">,</span>
+                <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;State did not transition 2 -&gt; 0 -&gt; 1 in move&#39;</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">7</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="o">//</span> <span class="n">The</span> <span class="n">readback</span> <span class="ow">and</span> <span class="n">curr</span> <span class="n">goal</span> <span class="n">should</span> <span class="n">match</span> <span class="n">after</span> <span class="n">the</span> <span class="n">move</span><span class="p">,</span> <span class="n">then</span> <span class="n">end</span> <span class="n">test</span> <span class="n">suite</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">eEnumGet</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Read state did not change to ONE after move&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">AssertEquals_UINT</span><span class="p">(</span>
+            <span class="n">Expected</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">Actual</span><span class="o">:=</span><span class="n">fbCore</span><span class="o">.</span><span class="n">nCurrGoal</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;nCurrGoal did not stay at ONE after move&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">AssertFalse</span><span class="p">(</span>
+            <span class="n">Condition</span><span class="o">:=</span><span class="n">timer</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+            <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;Timeout in test&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">TEST_FINISHED</span><span class="p">();</span>
+<span class="n">END_CASE</span>
+
+<span class="n">timer</span><span class="p">(</span><span class="n">IN</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span><span class="o">:=</span><span class="n">T</span><span class="c1">#5s);</span>
+<span class="n">IF</span> <span class="n">timer</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">nCheckStep</span> <span class="o">:=</span> <span class="mi">7</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">IF</span> <span class="n">nCheckStep</span> <span class="o">&lt;</span> <span class="mi">7</span> <span class="n">AND</span> <span class="n">nFurthestStep</span> <span class="o">&lt;</span> <span class="n">nCheckStep</span> <span class="n">THEN</span>
+    <span class="n">nFurthestStep</span> <span class="o">:=</span> <span class="n">nCheckStep</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Related:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#e-stageenablemode">E_StageEnableMode</a></p></li>
+<li><p><a class="reference internal" href="#fb-motionstagesim">FB_MotionStageSim</a></p></li>
+<li><p><a class="reference internal" href="#fb-positionstatend-core">FB_PositionStateND_Core</a></p></li>
+<li><p><a class="reference internal" href="#fb-statesetuphelper">FB_StateSetupHelper</a></p></li>
+<li><p><a class="reference internal" href="#motionconstants">MotionConstants</a></p></li>
+<li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
+<li><p><a class="reference internal" href="#st-positionstate">ST_PositionState</a></p></li>
+<li><p><a class="reference internal" href="#st-stateepicstoplc">ST_StateEpicsToPlc</a></p></li>
+<li><p><a class="reference internal" href="#st-stateplctoepics">ST_StatePlcToEpics</a></p></li>
+</ul>
+</dd>
+</dl>
+</section>
 <section id="fb-writefloatparameter">
 <h2>FB_WriteFloatParameter<a class="headerlink" href="#fb-writefloatparameter" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">///</span><span class="c1">#########################################################</span>
@@ -18084,6 +18322,7 @@ END_METHOD
     <span class="n">fb_StatePMPSEnablesND_Test</span><span class="p">:</span> <span class="n">FB_StatePMPSEnablesND_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStatePMPSND_Test</span><span class="p">:</span> <span class="n">FB_PositionStatePMPSND_Test</span><span class="p">;</span>
     <span class="n">fb_StateSetupHelper_Test</span><span class="p">:</span> <span class="n">FB_StateSetupHelper_Test</span><span class="p">;</span>
+    <span class="n">fb_TestStateInitTiming</span><span class="p">:</span> <span class="n">FB_TestStateInitTiming</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">TcUnit</span><span class="o">.</span><span class="n">RUN</span><span class="p">();</span>
 
@@ -18109,6 +18348,7 @@ END_METHOD
 <li><p><a class="reference internal" href="#fb-statepmpsenables-test">FB_StatePMPSEnables_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-statesetuphelper-test">FB_StateSetupHelper_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-testhelpersetandmove-test">FB_TestHelperSetAndMove_Test</a></p></li>
+<li><p><a class="reference internal" href="#fb-teststateinittiming">FB_TestStateInitTiming</a></p></li>
 </ul>
 </dd>
 </dl>
