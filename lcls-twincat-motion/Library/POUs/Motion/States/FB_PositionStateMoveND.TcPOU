@@ -50,6 +50,8 @@ VAR
     bMotorCountError: BOOL;
     nLowerBound: DINT;
     nUpperBound: DINT;
+	nIndex2: DINT;
+	bMyTurnToExecute: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -124,13 +126,23 @@ END_IF
         <ST><![CDATA[
 // Do the individual moves
 FOR nIndex := 1 TO nActiveMotorCount DO
-    afbPositionStateMove[nIndex](
-        stMotionStage:=astMotionStage[nIndex],
-        stPositionState:=astPositionState[nIndex],
-        bExecute:=bExecute,
-        bReset:=bReset,
-        enumMotionRequest:=enumMotionRequest,
-    );
+	bMyTurnToExecute := TRUE;
+	IF astPositionState[nIndex].bSequenceMoves THEN
+		FOR nIndex2 := 1 TO nActiveMotorCount DO
+			IF nIndex2 = nIndex THEN
+				continue;
+			ELSIF astPositionState[nIndex2].iSequence < astPositionState[nIndex].iSequence AND NOT astMotionStage[nIndex2].bDone THEN
+				bMyTurnToExecute := FALSE;
+			END_IF
+		END_FOR
+	END_IF
+	afbPositionStateMove[nIndex](
+		stMotionStage:=astMotionStage[nIndex],
+		stPositionState:=astPositionState[nIndex],
+		bExecute:=bExecute AND bMyTurnToExecute,
+		bReset:=bReset,
+		enumMotionRequest:=enumMotionRequest,
+	);
 END_FOR
 ]]></ST>
       </Implementation>
@@ -148,7 +160,19 @@ END_FOR
       <LineId Id="1" Count="0" />
     </LineIds>
     <LineIds Name="FB_PositionStateMoveND.DoStateMoves">
-      <LineId Id="2" Count="10" />
+      <LineId Id="2" Count="2" />
+      <LineId Id="32" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="24" Count="6" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="12" Count="0" />
       <LineId Id="1" Count="0" />
     </LineIds>
   </POU>
