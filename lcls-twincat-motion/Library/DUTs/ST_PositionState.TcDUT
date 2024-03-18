@@ -69,13 +69,23 @@ STRUCT
     // We give this a state name and it is used to load parameters from the pmps database.
     stPMPS: ST_DbStateParams;
 	
-	// Set this to TRUE to enable use of the iMoveSequence value to sequence moves that incorporate this state.
+	// Set this to TRUE to enable use of the iSequence value to sequence moves that incorporate this state.
+    {attribute 'pytmc' := '
+        pv: SEQUENCE_MOVES
+        io: i
+        field: DESC TRUE if this state represents a state intended to be moved in sequence with other axes
+    '}
 	bSequenceMoves: BOOl;
 	
 	// Set this value to the sequence number that you want this state to have relative to other axes.
 	// E.g. if this state has iSequence = 2 and it is being moved with a state with iSequence = 1, then
 	// the iSequence = 1 state will be moved first and this state will only be moved after.
-	iSequence: UINT := 1;
+    {attribute 'pytmc' := '
+        pv: SEQUENCE_ORDER
+        io: i
+        field: DESC Relative sequence order for the axis movement corresponding to this state.
+    '}
+	iSequenceOrder: UINT := 1;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>
