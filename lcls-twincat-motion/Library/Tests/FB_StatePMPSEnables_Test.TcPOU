@@ -31,8 +31,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[
-astPositionState[nGoalState].fPosition := 10;
+      <ST><![CDATA[astPositionState[nGoalState].fPosition := 10;
 astPositionState[nGoalState].fDelta := 1;
 SetGoodState(astPositionState[nGoalState]);
 astPositionState[nInvalidState].fPosition := 20;
@@ -65,6 +64,7 @@ TestDisabled(6);
 TestLimits(7);
 TestMoveTo(8);
 TestMoveAt(9);
+TestBoundsAfterFallingIntoUnknownState(10);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -284,6 +284,95 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
     AssertTrue(
         fbStateEnables.bForwardEnabled,
         'Forward disabled when below goal',
+    );
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestBoundsAfterFallingIntoUnknownState" Id="{3abf745e-697a-46d1-92e5-75b0ab69c495}">
+      <Declaration><![CDATA[METHOD TestBoundsAfterFallingIntoUnknownState
+VAR_INPUT
+    nTestID: UINT;
+END_VAR
+VAR_INST
+    fbStateEnables: FB_StatePMPSEnables;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    fbMove: FB_TestHelperSetAndMove;
+
+    bInit: BOOL;
+
+    nGoalStateIndex: UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestBoundsAfterFallingIntoUnknownState');
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+SetEnablesPMPS(stMotionStage);
+
+// On first pass, set the goal state index to a valid state to initialize the bounds.
+// Then, set the goal state index to an unknown state to ensure the bounds remain
+// active.
+IF NOT bInit THEN
+    nGoalStateIndex := nGoalState;
+ELSE
+    nGoalStateIndex := 0;
+END_IF
+
+// Run our FB which should enable the real move while within the allowable bounds.
+// Once the position is set out of the bounds, the bounds should persist and prevent
+// further movement away from the goal state.
+fbStateEnables(
+    stMotionStage:=stMotionStage,
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    bEnable:=TRUE,
+    nGoalStateIndex:=nGoalStateIndex,
+    eStatePMPSStatus:=E_StatePMPSStatus.TRANSITION,
+    bTransitionAuthorized:=TRUE,
+);
+
+// Set position to be below the goal's range, and try to move away from the goal
+fbMove(
+    stMotionStage:=stMotionStage,
+    bExecute:=bInit,
+    fStartPosition:=astPositionState[nGoalState].fPosition - 10,
+    fGoalPosition:=astPositionState[nGoalState].fPosition - 20,
+    fVelocity:=5,
+    bHWEnable:=FALSE,
+);
+bInit := TRUE;
+
+fbFFHWO.EvaluateOutput();
+
+// If we've reached the position OR ran out of time to set the position, check the asserts
+IF tonTimer.Q OR fbMove.bMoveDone THEN
+    AssertTrue(
+        tonTimer.Q,
+        'Timeout should have occurred. Move should have been unable to complete.',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState[nGoalState].fPosition - 10,
+        Actual:=fbMove.fActPosition,
+        Delta:=0.0001,
+        Message:='Bounds failed to persist after falling out of state',
+    );
+    AssertFalse(
+        fbFFHWO.q_xFastFaultOut,
+        'Fast fault should have triggered with unknown state',
+    );
+    AssertFalse(
+        fbStateEnables.bBackwardEnabled,
+        'Backward should be disabled.',
+    );
+    AssertTrue(
+        fbStateEnables.bForwardEnabled,
+        'Forward should not be disabled.',
     );
     bOneTestDone := TRUE;
     TEST_FINISHED();

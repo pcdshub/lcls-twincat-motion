@@ -50,8 +50,8 @@ VAR
     bMotorCountError: BOOL;
     nLowerBound: DINT;
     nUpperBound: DINT;
-	nIndex2: DINT;
-	bMyTurnToExecute: BOOL;
+    nIndex2: DINT;
+    bMyTurnToExecute: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -126,54 +126,27 @@ END_IF
         <ST><![CDATA[
 // Do the individual moves
 FOR nIndex := 1 TO nActiveMotorCount DO
-	bMyTurnToExecute := TRUE;
-	IF astPositionState[nIndex].bSequenceMoves THEN
-		FOR nIndex2 := 1 TO nActiveMotorCount DO
-			IF nIndex2 = nIndex THEN
-				continue;
-			ELSIF astPositionState[nIndex2].iSequenceOrder < astPositionState[nIndex].iSequenceOrder AND NOT astMotionStage[nIndex2].bDone THEN
-				bMyTurnToExecute := FALSE;
-			END_IF
-		END_FOR
-	END_IF
-	afbPositionStateMove[nIndex](
-		stMotionStage:=astMotionStage[nIndex],
-		stPositionState:=astPositionState[nIndex],
-		bExecute:=bExecute AND bMyTurnToExecute,
-		bReset:=bReset,
-		enumMotionRequest:=enumMotionRequest,
-	);
+    bMyTurnToExecute := TRUE;
+    IF astPositionState[nIndex].bSequenceMoves THEN
+        FOR nIndex2 := 1 TO nActiveMotorCount DO
+            IF nIndex2 = nIndex THEN
+                continue;
+            ELSIF astPositionState[nIndex2].iSequenceOrder < astPositionState[nIndex].iSequenceOrder AND NOT astMotionStage[nIndex2].bDone THEN
+                bMyTurnToExecute := FALSE;
+                exit;
+            END_IF
+        END_FOR
+    END_IF
+    afbPositionStateMove[nIndex](
+        stMotionStage:=astMotionStage[nIndex],
+        stPositionState:=astPositionState[nIndex],
+        bExecute:=bExecute,// AND bMyTurnToExecute,
+        bReset:=bReset,
+        enumMotionRequest:=enumMotionRequest,
+    );
 END_FOR
 ]]></ST>
       </Implementation>
     </Action>
-    <LineIds Name="FB_PositionStateMoveND">
-      <LineId Id="3" Count="5" />
-      <LineId Id="2" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_PositionStateMoveND.CheckCount">
-      <LineId Id="2" Count="8" />
-      <LineId Id="1" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_PositionStateMoveND.CombineOutputs">
-      <LineId Id="2" Count="38" />
-      <LineId Id="1" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_PositionStateMoveND.DoStateMoves">
-      <LineId Id="2" Count="2" />
-      <LineId Id="32" Count="0" />
-      <LineId Id="11" Count="0" />
-      <LineId Id="15" Count="0" />
-      <LineId Id="17" Count="0" />
-      <LineId Id="19" Count="0" />
-      <LineId Id="21" Count="0" />
-      <LineId Id="23" Count="0" />
-      <LineId Id="20" Count="0" />
-      <LineId Id="18" Count="0" />
-      <LineId Id="24" Count="6" />
-      <LineId Id="16" Count="0" />
-      <LineId Id="12" Count="0" />
-      <LineId Id="1" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>

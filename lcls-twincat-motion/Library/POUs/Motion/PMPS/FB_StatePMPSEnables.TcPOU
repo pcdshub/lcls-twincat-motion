@@ -47,6 +47,7 @@ VAR
     fLowerPos: LREAL;
     fUpperPos: LREAL;
     ffNoGoal: FB_FastFault;
+    bLockBoundsOn: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
@@ -98,6 +99,7 @@ mc_power(
 IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
     IF astPositionState[nGoalStateIndex].bValid AND astPositionState[nGoalStateIndex].bUpdated THEN
         bValidGoal := TRUE;
+        bLockBoundsOn := TRUE;
         fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
         fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);
     ELSE
@@ -105,6 +107,13 @@ IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
     END_IF
 ELSE
     bValidGoal := FALSE;
+END_IF
+// Only set the bounds lock false when the function block is disabled.
+// E.g.: either position limits are explicitly disabled or we enter maintenance mode.
+// Once bounds are disabled once, we wait until we have a new valid goal position state
+// to re-enable bounds.
+IF NOT bEnable THEN
+    bLockBoundsOn := FALSE;
 END_IF]]></ST>
       </Implementation>
     </Action>
@@ -129,11 +138,12 @@ ffNoGoal(
     This action sets bForwardEnable and bBackwardEnable based on
     the current position and the calculated bounds.
 *)
-IF bValidGoal AND bEnable THEN
+IF bLockBoundsOn AND bEnable THEN
     bForwardEnabled := stMotionStage.stAxisStatus.fActPosition < fUpperPos;
     bBackwardEnabled := stMotionStage.stAxisStatus.fActPosition > fLowerPos;
 ELSE
     // Either invalid state with a fault or FB not enabled
+    // Bounds are locked active when a valid goal state is commanded
     bForwardEnabled := TRUE;
     bBackwardEnabled := TRUE;
 END_IF
