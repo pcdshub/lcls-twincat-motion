@@ -45,7 +45,8 @@ VAR
 
     fbIPCReg: FB_IPCDiag_Register;
     fbCheckOS: FB_IPCDiag_ReadParameter;
-    sOSName: STRING;
+    sOSName: STRING := '';
+    nCheckOSTries: UINT := 3;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -68,13 +69,27 @@ END_IF
 
 IF sDirectory = '' THEN
     // Check OS for default directory
-    fbIPCReg(bExecute:=TRUE);
+    fbIPCReg(
+        bExecute:=TRUE,
+        tTimeout:=T#1s,
+    );
     fbCheckOS(
-        bExecute:=NOT fbIPCReg.bBusy,
+        bExecute:=fbIPCReg.bValid,
         eParameterKey:=E_IPCDiag_ParameterKey.OS_Name,
         fbRegister:=fbIPCReg,
     );
-    IF fbCheckOS.bValid THEN
+    IF fbIPCReg.bError OR fbCheckOS.bError THEN
+        IF nCheckOSTries <= 0 THEN
+            // Retry counter down to zero: set to error name to try old default
+            sOSName := 'Error';
+        ELSE
+            // Decrement retry counter
+            nCheckOSTries := nCheckOSTries - 1;
+            // Reset FBs
+            fbCheckOS(bExecute:=FALSE, fbRegister:=fbIPCReg);
+            fbIPCReg(bExecute:=FALSE);
+        END_IF
+    ELSIF fbCheckOS.bValid THEN
         fbCheckOS.GetParameter(
             pBuffer:=ADR(sOSName),
             nBufferSize:=SIZEOF(sOSName),
