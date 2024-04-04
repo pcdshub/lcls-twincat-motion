@@ -57,45 +57,47 @@ END_IF
 TestMove(1, 1, 5, 10, FALSE);
 // Somewhere else
 TestMove(2, -10, 0, 5, FALSE);
-// Interrupt on the way to the last place
-TestMove(3, 0, 0, 0, TRUE);
 
-(*
+
 // Move to somewhere in a sequenced manner (motor 2, then motor 3, then motor 1).
 TestMoveSequence(
-    nTestIndex := 4,
-    fMotor1Pos := 1,  iMotor1SequenceOrder := 3,
-    fMotor2Pos := 5,  iMotor2SequenceOrder := 1,
-    fMotor3Pos := 10, iMotor3SequenceOrder := 2,
+    nTestIndex := 3,
+    fMotor1Pos := 20,  iMotor1SequenceOrder := 3,
+    fMotor2Pos := -20,  iMotor2SequenceOrder := 1,
+    fMotor3Pos := 20, iMotor3SequenceOrder := 2,
     bInterrupt := FALSE);
+(*
 // Move to somewhere else in a different sequence (motors 1 and 2 at the same time, motor 3 after)
 TestMoveSequence(
-    nTestIndex := 5,
+    nTestIndex := 4,
     fMotor1Pos := -10, iMotor1SequenceOrder := 2,
     fMotor2Pos := -5,  iMotor2SequenceOrder := 1,
     fMotor3Pos := 1,   iMotor3SequenceOrder := 3,
     bInterrupt := FALSE);
 // Move to somewhere else in a different sequence (motor 1, then 2, then 3)
 TestMoveSequence(
-    nTestIndex := 6,
+    nTestIndex := 5,
     fMotor1Pos := 1,  iMotor1SequenceOrder := 1,
     fMotor2Pos := 5,  iMotor2SequenceOrder := 2,
     fMotor3Pos := 10, iMotor3SequenceOrder := 3,
     bInterrupt := FALSE);
 // Move to somewhere else in a different sequence (motor 3, then 2, then 1)
 TestMoveSequence(
-    nTestIndex := 7,
+    nTestIndex := 6,
     fMotor1Pos := -10, iMotor1SequenceOrder := 3,
     fMotor2Pos := 2,   iMotor2SequenceOrder := 2,
     fMotor3Pos := 4,   iMotor3SequenceOrder := 1,
     bInterrupt := FALSE);
 // Interrupt on the way to the last place. Make sure all sequence moves are interrupted.
 TestMoveSequence(
-    nTestIndex := 8,
+    nTestIndex := 7,
     fMotor1Pos := 0, iMotor1SequenceOrder := 2,
     fMotor2Pos := 0, iMotor2SequenceOrder := 3,
     fMotor3Pos := 0, iMotor3SequenceOrder := 1,
     bInterrupt := TRUE);*)
+
+// Interrupt on the way to the last place
+TestMove(4, 0, 0, 0, TRUE);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -242,14 +244,20 @@ END_VAR
 VAR_INST
     bLocalInit: BOOL;
     bInterruptStarted: BOOL;
+    fMotor1StartPos: REAL;
+    bMotor1Moved: BOOL;
     bMotor1MovedOutOfSequence: BOOL;
     bMotor1NotDoneMoving: BOOL;
     bMotor1BeforeMotor2: BOOL;
     bMotor1BeforeMotor3: BOOL;
+    fMotor2StartPos: REAL;
+    bMotor2Moved: BOOL;
     bMotor2MovedOutOfSequence: BOOL;
     bMotor2NotDoneMoving: BOOL;
     bMotor2BeforeMotor1: BOOL;
     bMotor2BeforeMotor3: BOOL;
+    fMotor3StartPos: REAL;
+    bMotor3Moved: BOOL;
     bMotor3MovedOutOfSequence: BOOL;
     bMotor3NotDoneMoving: BOOL;
     bMotor3BeforeMotor2: BOOL;
@@ -271,17 +279,22 @@ IF NOT bLocalInit THEN
         Condition:=fbMove.bError,
         Message:='Tried to start test with errored motor',
     );
+
+    fMotor1StartPos := astMotionStage[1].stAxisStatus.fActPosition;
+    fMotor2StartPos := astMotionStage[2].stAxisStatus.fActPosition;
+    fMotor3StartPos := astMotionStage[3].stAxisStatus.fActPosition;
+
     bLocalInit := TRUE;
 END_IF
 
 astGoalPositions[1].fPosition := fMotor1Pos;
-//astGoalPositions[1].bSequenceMoves := TRUE;
+astGoalPositions[1].bSequenceMoves := TRUE;
 astGoalPositions[1].iSequenceOrder := iMotor1SequenceOrder;
 astGoalPositions[2].fPosition := fMotor2Pos;
-//astGoalPositions[2].bSequenceMoves := TRUE;
+astGoalPositions[2].bSequenceMoves := TRUE;
 astGoalPositions[2].iSequenceOrder := iMotor2SequenceOrder;
 astGoalPositions[3].fPosition := fMotor3Pos;
-//astGoalPositions[3].bSequenceMoves := TRUE;
+astGoalPositions[3].bSequenceMoves := TRUE;
 astGoalPositions[3].iSequenceOrder := iMotor3SequenceOrder;
 
 //bInterruptStarted S= bInterrupt AND astMotionStage[1].bBusy AND astMotionStage[2].bBusy AND astMotionStage[3].bBusy;
@@ -303,9 +316,13 @@ bMotor1NotDoneMoving := NOT astMotionStage[1].bDone;// OR abs(astMotionStage[1].
 bMotor2NotDoneMoving := NOT astMotionStage[2].bDone;// OR abs(astMotionStage[2].stAxisStatus.fActVelocity) > astMotionStage[2].fVelocity / 10.0;
 bMotor3NotDoneMoving := NOT astMotionStage[3].bDone;// OR abs(astMotionStage[3].stAxisStatus.fActVelocity) > astMotionStage[3].fVelocity / 10.0;
 
-bMotor1MovedOutOfSequence := astMotionStage[1].bBusy AND ((bMotor2BeforeMotor1 AND bMotor2NotDoneMoving) OR (bMotor3BeforeMotor1 AND bMotor3NotDoneMoving));
-bMotor2MovedOutOfSequence := astMotionStage[2].bBusy AND ((bMotor1BeforeMotor2 AND bMotor1NotDoneMoving) OR (bMotor3BeforeMotor2 AND bMotor3NotDoneMoving));
-bMotor3MovedOutOfSequence := astMotionStage[3].bBusy AND ((bMotor2BeforeMotor3 AND bMotor2NotDoneMoving) OR (bMotor1BeforeMotor3 AND bMotor1NotDoneMoving));
+bMotor1Moved := ABS(fMotor1StartPos - astMotionStage[1].stAxisStatus.fActPosition) > 0.01;
+bMotor2Moved := ABS(fMotor2StartPos - astMotionStage[2].stAxisStatus.fActPosition) > 0.01;
+bMotor3Moved := ABS(fMotor3StartPos - astMotionStage[3].stAxisStatus.fActPosition) > 0.01;
+
+bMotor1MovedOutOfSequence := bMotor1Moved AND ((bMotor2BeforeMotor1 AND bMotor2NotDoneMoving) OR (bMotor3BeforeMotor1 AND bMotor3NotDoneMoving));
+bMotor2MovedOutOfSequence := bMotor2Moved AND ((bMotor1BeforeMotor2 AND bMotor1NotDoneMoving) OR (bMotor3BeforeMotor2 AND bMotor3NotDoneMoving));
+bMotor3MovedOutOfSequence := bMotor3Moved AND ((bMotor2BeforeMotor3 AND bMotor2NotDoneMoving) OR (bMotor1BeforeMotor3 AND bMotor1NotDoneMoving));
 
 (*
 AssertFalse(

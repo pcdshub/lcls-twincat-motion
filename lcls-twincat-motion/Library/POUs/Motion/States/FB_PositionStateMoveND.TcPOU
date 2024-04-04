@@ -52,6 +52,7 @@ VAR
     nUpperBound: DINT;
     nIndex2: DINT;
     bMyTurnToExecute: BOOL;
+    abExecuteQueued: ARRAY[1..MotionConstants.MAX_STATE_MOTORS] OF BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -126,6 +127,7 @@ END_IF
         <ST><![CDATA[
 // Do the individual moves
 FOR nIndex := 1 TO nActiveMotorCount DO
+    abExecuteQueued[nIndex] := abExecuteQueued[nIndex] OR bExecute;
     bMyTurnToExecute := TRUE;
     IF astPositionState[nIndex].bSequenceMoves THEN
         FOR nIndex2 := 1 TO nActiveMotorCount DO
@@ -140,10 +142,13 @@ FOR nIndex := 1 TO nActiveMotorCount DO
     afbPositionStateMove[nIndex](
         stMotionStage:=astMotionStage[nIndex],
         stPositionState:=astPositionState[nIndex],
-        bExecute:=bExecute,// AND bMyTurnToExecute,
+        bExecute:=abExecuteQueued[nIndex] AND bMyTurnToExecute,
         bReset:=bReset,
         enumMotionRequest:=enumMotionRequest,
     );
+    IF bMyTurnToExecute THEN
+        abExecuteQueued[nIndex] := FALSE;
+    END_IF
 END_FOR
 ]]></ST>
       </Implementation>
