@@ -32,6 +32,19 @@ mcReadParams(
     Axis:=stMotionStage.Axis,
     Execute:=bEnable AND bExecute,
     Error=>bError);
+
+// Copy axis parameters that we want to expose to the EPICS layer.
+stMotionStage.stAxisParametersExposed.bCtrlEnablePosDiffControl     := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl;
+stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMaxControl   := stMotionStage.stAxisParameters.bEncEnableSoftEndMaxControl;
+stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMinControl   := stMotionStage.stAxisParameters.bEncEnableSoftEndMinControl;
+stMotionStage.stAxisParametersExposed.fAccelerationMax              := stMotionStage.stAxisParameters.fAccelerationMax;
+stMotionStage.stAxisParametersExposed.fCtrlPosDiffMax               := stMotionStage.stAxisParameters.fCtrlPosDiffMax;
+stMotionStage.stAxisParametersExposed.fCtrlPosDiffMaxTime           := stMotionStage.stAxisParameters.fCtrlPosDiffMaxTime;
+stMotionStage.stAxisParametersExposed.fDecelerationMax              := stMotionStage.stAxisParameters.fDecelerationMax;
+stMotionStage.stAxisParametersExposed.fEncSoftEndMax                := stMotionStage.stAxisParameters.fEncSoftEndMax;
+stMotionStage.stAxisParametersExposed.fEncSoftEndMin                := stMotionStage.stAxisParameters.fEncSoftEndMin;
+stMotionStage.stAxisParametersExposed.fVeloMaximum                  := stMotionStage.stAxisParameters.fVeloMaximum;
+
 IF mcReadParams.ErrorID <> 0 THEN
     nLatchErrId := 0;
 END_IF

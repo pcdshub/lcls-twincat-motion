@@ -195,6 +195,13 @@ STRUCT
     sCustomErrorMessage: STRING;
     // MC_ReadParameterSet Output
     stAxisParameters: ST_AxisParameterSet;
+    // NC parameters that are exposed with pytmc pragmas
+    {attribute 'pytmc' := '
+        pv: PLC:AxisPar
+        io: i
+        field: DESC Axis configuration parameters in the numerical controller.
+    '}
+    stAxisParametersExposed: ST_AxisParameterSetExposed;
     // True if we've updated stAxisParameters at least once
     bAxisParamsInit: BOOL;
 
