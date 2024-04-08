@@ -69,6 +69,21 @@ STRUCT
         field: DESC Maximum commandable position of the axis in EU.
     '}
     fEncSoftEndMax              : LREAL; // Maximum commandable position of the axis in EU.
+
+    // Encoder Evaluation
+    {attribute 'pytmc' := '
+        pv: EncScaling
+        io: i
+        field: DESC Encoder scaling numerator / denominator in EU/COUNT.
+    '}
+    fEncScaleFactorInternal      : LREAL; // Encoder scaling numerator / denominator in EU/COUNT.
+    {attribute 'pytmc' := '
+        pv: EncOffset
+        io: i
+        field: DESC Encoder offset in EU.
+    '}
+    fEncOffset                   : LREAL; // Encoder offset in EU.
+
 END_STRUCT
 END_TYPE
 ]]></Declaration>

@@ -65,6 +65,8 @@ IF bLocalInit THEN
     stMotionStage.stAxisParametersExposed.fEncSoftEndMax                := 107;
     stMotionStage.stAxisParametersExposed.fEncSoftEndMin                := 108;
     stMotionStage.stAxisParametersExposed.fVeloMaximum                  := 109;
+    stMotionStage.stAxisParametersExposed.fEncOffset					:= 110;
+    stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal		:= 111;
 
     bLocalInit := FALSE;
 
@@ -78,7 +80,9 @@ IF bLocalInit THEN
         stMotionStage.stAxisParametersExposed.fDecelerationMax              <> stMotionStage.stAxisParameters.fDecelerationMax AND
         stMotionStage.stAxisParametersExposed.fEncSoftEndMax                <> stMotionStage.stAxisParameters.fEncSoftEndMax AND
         stMotionStage.stAxisParametersExposed.fEncSoftEndMin                <> stMotionStage.stAxisParameters.fEncSoftEndMin AND
-        stMotionStage.stAxisParametersExposed.fVeloMaximum                  <> stMotionStage.stAxisParameters.fVeloMaximum;
+        stMotionStage.stAxisParametersExposed.fVeloMaximum                  <> stMotionStage.stAxisParameters.fVeloMaximum AND
+        stMotionStage.stAxisParametersExposed.fEncOffset                	<> stMotionStage.stAxisParameters.fEncOffset AND
+        stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal       <> stMotionStage.stAxisParameters.fEncScaleFactorInternal;
 
     AssertTrue(
         Condition:=bAllModified,
@@ -96,7 +100,9 @@ bReady :=
         stMotionStage.stAxisParameters.fDecelerationMax              <> 0 AND
         stMotionStage.stAxisParameters.fEncSoftEndMax                <> 0 AND
         stMotionStage.stAxisParameters.fEncSoftEndMin                <> 0 AND
-        stMotionStage.stAxisParameters.fVeloMaximum                  <> 0;
+        stMotionStage.stAxisParameters.fVeloMaximum                  <> 0 AND
+        stMotionStage.stAxisParameters.fEncOffset					 <> 0 AND
+        stMotionStage.stAxisParameters.fEncScaleFactorInternal       <> 0;
 
 IF bReady THEN
     bDone :=
@@ -109,7 +115,9 @@ IF bReady THEN
         stMotionStage.stAxisParametersExposed.fDecelerationMax              = stMotionStage.stAxisParameters.fDecelerationMax AND
         stMotionStage.stAxisParametersExposed.fEncSoftEndMax                = stMotionStage.stAxisParameters.fEncSoftEndMax AND
         stMotionStage.stAxisParametersExposed.fEncSoftEndMin                = stMotionStage.stAxisParameters.fEncSoftEndMin AND
-        stMotionStage.stAxisParametersExposed.fVeloMaximum                  = stMotionStage.stAxisParameters.fVeloMaximum;
+        stMotionStage.stAxisParametersExposed.fVeloMaximum                  = stMotionStage.stAxisParameters.fVeloMaximum AND
+        stMotionStage.stAxisParametersExposed.fEncOffset                	= stMotionStage.stAxisParameters.fEncOffset AND
+        stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal       = stMotionStage.stAxisParameters.fEncScaleFactorInternal;
 END_IF
 
 IF bDone OR tonTimer.Q THEN
