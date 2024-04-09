@@ -93,6 +93,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#enum-stagebrakemode">ENUM_StageBrakeMode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#enum-stageenablemode">ENUM_StageEnableMode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#enum-statepmpsstatus">ENUM_StatePMPSStatus</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#st-axisparametersetexposed">ST_AxisParameterSetExposed</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st-el5042-status">ST_EL5042_Status</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st-errorsystem">ST_ErrorSystem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#st-motionpneumaticactuator">ST_MotionPneumaticActuator</a></li>
@@ -146,6 +147,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#f-posunderupperbound">F_PosUnderUpperBound</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#f-poswithindelta">F_PosWithinDelta</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-atpositionstate-test">FB_AtPositionState_Test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-axisparametersetexposed-test">FB_AxisParameterSetExposed_Test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-calculatefrequency-3702-v0-01">FB_CalculateFrequency_3702_v0_01</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-causencerror">FB_CauseNCError</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-drivevirtual">FB_DriveVirtual</a></li>
@@ -804,6 +806,96 @@
 </dd>
 </dl>
 </section>
+<section id="st-axisparametersetexposed">
+<h2>ST_AxisParameterSetExposed<a class="headerlink" href="#st-axisparametersetexposed" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TYPE</span> <span class="n">ST_AxisParameterSetExposed</span> <span class="p">:</span>
+    <span class="o">//</span> <span class="n">Collects</span> <span class="n">the</span> <span class="n">axis</span> <span class="n">parameters</span> <span class="n">that</span> <span class="n">are</span> <span class="n">intentionally</span> <span class="n">exposed</span> <span class="n">to</span> <span class="n">EPICS</span><span class="o">.</span>
+<span class="n">STRUCT</span>
+    <span class="o">//</span> <span class="n">Maximum</span> <span class="n">Dynamics</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">MaxVel</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Maximum</span> <span class="n">commandable</span> <span class="n">speed</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">s</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fVeloMaximum</span>                <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Maximum</span> <span class="n">commandable</span> <span class="n">speed</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">s</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">MaxAccel</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Maximum</span> <span class="n">rate</span> <span class="n">of</span> <span class="n">increase</span> <span class="ow">in</span> <span class="n">speed</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">s</span><span class="o">^</span><span class="mf">2.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fAccelerationMax</span>            <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Maximum</span> <span class="n">rate</span> <span class="n">of</span> <span class="n">increase</span> <span class="ow">in</span> <span class="n">speed</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">s</span><span class="o">^</span><span class="mf">2.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">MaxDecel</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Maximum</span> <span class="n">rate</span> <span class="n">of</span> <span class="n">decrease</span> <span class="ow">in</span> <span class="n">speed</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">s</span><span class="o">^</span><span class="mf">2.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fDecelerationMax</span>            <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Maximum</span> <span class="n">rate</span> <span class="n">of</span> <span class="n">decrease</span> <span class="ow">in</span> <span class="n">speed</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">s</span><span class="o">^</span><span class="mf">2.</span>
+
+    <span class="o">//</span> <span class="n">Monitoring</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PosLagEn</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">position</span> <span class="n">lag</span> <span class="n">monitor</span> <span class="p">(</span><span class="n">also</span> <span class="n">known</span> <span class="k">as</span> <span class="n">stall</span> <span class="n">monitor</span><span class="p">)</span> <span class="ow">is</span> <span class="n">enabled</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bCtrlEnablePosDiffControl</span>   <span class="p">:</span> <span class="n">WORD</span><span class="p">;</span>  <span class="o">//</span> <span class="n">Enable</span><span class="o">/</span><span class="n">Disable</span> <span class="n">state</span> <span class="n">of</span> <span class="n">Position</span> <span class="n">Lag</span> <span class="n">Monitor</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PosLagVal</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Maximum</span> <span class="n">magnitude</span> <span class="n">of</span> <span class="n">position</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fCtrlPosDiffMax</span>             <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Maximum</span> <span class="n">magnitude</span> <span class="n">of</span> <span class="n">position</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PosLagTime</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Maximum</span> <span class="n">allowable</span> <span class="n">duration</span> <span class="n">outside</span> <span class="n">of</span> <span class="n">maximum</span> <span class="n">position</span> <span class="n">lag</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">seconds</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fCtrlPosDiffMaxTime</span>         <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Maximum</span> <span class="n">allowable</span> <span class="n">duration</span> <span class="n">outside</span> <span class="n">of</span> <span class="n">maximum</span> <span class="n">position</span> <span class="n">lag</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">seconds</span><span class="o">.</span>
+
+    <span class="o">//</span> <span class="n">Limit</span> <span class="n">Switches</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">SLimMinEn</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">controller</span> <span class="n">static</span> <span class="n">minimum</span> <span class="n">limit</span> <span class="ow">is</span> <span class="n">enabled</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bEncEnableSoftEndMinControl</span> <span class="p">:</span> <span class="n">WORD</span><span class="p">;</span>  <span class="o">//</span> <span class="n">Enable</span><span class="o">/</span><span class="n">Disable</span> <span class="n">state</span> <span class="n">of</span> <span class="n">controller</span> <span class="n">static</span> <span class="n">minimum</span> <span class="n">limit</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">SLimMaxEn</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">TRUE</span> <span class="k">if</span> <span class="n">controller</span> <span class="n">static</span> <span class="n">maximum</span> <span class="n">limit</span> <span class="ow">is</span> <span class="n">enabled</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">bEncEnableSoftEndMaxControl</span> <span class="p">:</span> <span class="n">WORD</span><span class="p">;</span>  <span class="o">//</span> <span class="n">Enable</span><span class="o">/</span><span class="n">Disable</span> <span class="n">state</span> <span class="n">of</span> <span class="n">controller</span> <span class="n">static</span> <span class="n">maximum</span> <span class="n">limit</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">SLimMin</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Minimum</span> <span class="n">commandable</span> <span class="n">position</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fEncSoftEndMin</span>              <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Minimum</span> <span class="n">commandable</span> <span class="n">position</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">SLimMax</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Maximum</span> <span class="n">commandable</span> <span class="n">position</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fEncSoftEndMax</span>              <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Maximum</span> <span class="n">commandable</span> <span class="n">position</span> <span class="n">of</span> <span class="n">the</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+
+    <span class="o">//</span> <span class="n">Encoder</span> <span class="n">Evaluation</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">EncScaling</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Encoder</span> <span class="n">scaling</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">COUNT</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fEncScaleFactorInternal</span>      <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Encoder</span> <span class="n">scaling</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">/</span><span class="n">COUNT</span><span class="o">.</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">EncOffset</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Encoder</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">fEncOffset</span>                   <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Encoder</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">EU</span><span class="o">.</span>
+
+<span class="n">END_STRUCT</span>
+<span class="n">END_TYPE</span>
+</pre></div>
+</div>
+</section>
 <section id="st-el5042-status">
 <h2>ST_EL5042_Status<a class="headerlink" href="#st-el5042-status" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TYPE</span> <span class="n">ST_EL5042_Status</span> <span class="p">:</span>
@@ -1193,6 +1285,13 @@
     <span class="n">sCustomErrorMessage</span><span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">MC_ReadParameterSet</span> <span class="n">Output</span>
     <span class="n">stAxisParameters</span><span class="p">:</span> <span class="n">ST_AxisParameterSet</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">NC</span> <span class="n">parameters</span> <span class="n">that</span> <span class="n">are</span> <span class="n">exposed</span> <span class="k">with</span> <span class="n">pytmc</span> <span class="n">pragmas</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">PLC</span><span class="p">:</span><span class="n">AxisPar</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Axis</span> <span class="n">configuration</span> <span class="n">parameters</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">numerical</span> <span class="n">controller</span><span class="o">.</span>
+    <span class="s1">&#39;}</span>
+    <span class="n">stAxisParametersExposed</span><span class="p">:</span> <span class="n">ST_AxisParameterSetExposed</span><span class="p">;</span>
     <span class="o">//</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">we</span><span class="s1">&#39;ve updated stAxisParameters at least once</span>
     <span class="n">bAxisParamsInit</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
 
@@ -1217,6 +1316,7 @@
 <li><p><a class="reference internal" href="#e-epicshomecmd">E_EpicsHomeCmd</a></p></li>
 <li><p><a class="reference internal" href="#e-stagebrakemode">E_StageBrakeMode</a></p></li>
 <li><p><a class="reference internal" href="#e-stageenablemode">E_StageEnableMode</a></p></li>
+<li><p><a class="reference internal" href="#st-axisparametersetexposed">ST_AxisParameterSetExposed</a></p></li>
 </ul>
 </dd>
 </dl>
@@ -3798,6 +3898,148 @@
 <li><p><a class="reference internal" href="#f-poswithindelta">F_PosWithinDelta</a></p></li>
 <li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
 <li><p><a class="reference internal" href="#st-positionstate">ST_PositionState</a></p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="fb-axisparametersetexposed-test">
+<h2>FB_AxisParameterSetExposed_Test<a class="headerlink" href="#fb-axisparametersetexposed-test" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_AxisParameterSetExposed_Test</span> <span class="n">EXTENDS</span> <span class="n">FB_MotorTestSuite</span>
+<span class="p">(</span><span class="o">*</span>
+    <span class="n">Quick</span> <span class="n">Check</span> <span class="n">to</span> <span class="n">verify</span> <span class="n">exposed</span> <span class="n">NC</span> <span class="n">parameters</span> <span class="n">are</span> <span class="n">copied</span> <span class="n">properly</span><span class="o">.</span>
+<span class="o">*</span><span class="p">)</span>
+<span class="n">VAR</span>
+    <span class="n">stMotionStage</span><span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStage</span><span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+    <span class="n">nTestCounter</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+    <span class="n">bOneTestDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">tonTimer</span><span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">IF</span> <span class="n">nTestCounter</span> <span class="o">=</span> <span class="mi">0</span> <span class="n">THEN</span>
+    <span class="n">nTestCounter</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="o">//</span> <span class="n">Test</span> <span class="n">that</span> <span class="n">parameters</span> <span class="n">are</span> <span class="n">copied</span> <span class="n">to</span> <span class="n">the</span> <span class="n">exposed</span> <span class="n">parameters</span> <span class="n">properly</span><span class="o">.</span>
+<span class="n">TestParameterCopy</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">bOneTestDone</span> <span class="n">THEN</span>
+    <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">nTestCounter</span> <span class="o">:=</span> <span class="n">nTestCounter</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">tonTimer</span><span class="p">(</span><span class="n">IN</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+<span class="n">END_IF</span><span class="p">;</span>
+
+<span class="o">//</span> <span class="n">Use</span> <span class="n">this</span> <span class="n">timer</span> <span class="n">to</span> <span class="n">time</span> <span class="n">out</span> <span class="nb">any</span> <span class="n">tests</span> <span class="n">that</span> <span class="n">stall</span>
+<span class="n">tonTimer</span><span class="p">(</span>
+    <span class="n">IN</span><span class="o">:=</span><span class="n">nTestCounter</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">PT</span><span class="o">:=</span><span class="n">T</span><span class="c1">#2s,</span>
+<span class="p">);</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+
+<span class="n">METHOD</span> <span class="n">TestParameterCopy</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nTestIndex</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bLocalInit</span><span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">bAllModified</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bReady</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;TestParameterCopy&#39;</span><span class="p">,</span> <span class="n">UINT_TO_STRING</span><span class="p">(</span><span class="n">nTestIndex</span><span class="p">)));</span>
+<span class="n">IF</span> <span class="n">nTestCounter</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIndex</span> <span class="n">OR</span> <span class="n">bOneTestDone</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStage</span><span class="p">(</span><span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">bLocalInit</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span>     <span class="o">:=</span> <span class="mi">100</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span>   <span class="o">:=</span> <span class="mi">101</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span>   <span class="o">:=</span> <span class="mi">102</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fAccelerationMax</span>              <span class="o">:=</span> <span class="mi">103</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span>               <span class="o">:=</span> <span class="mi">104</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span>           <span class="o">:=</span> <span class="mi">105</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fDecelerationMax</span>              <span class="o">:=</span> <span class="mi">106</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMax</span>                <span class="o">:=</span> <span class="mi">107</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMin</span>                <span class="o">:=</span> <span class="mi">108</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fVeloMaximum</span>                  <span class="o">:=</span> <span class="mi">109</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncOffset</span>                                        <span class="o">:=</span> <span class="mi">110</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span>           <span class="o">:=</span> <span class="mi">111</span><span class="p">;</span>
+
+    <span class="n">bLocalInit</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+
+    <span class="n">bAllModified</span> <span class="o">:=</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span>     <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span>   <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span>   <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fAccelerationMax</span>              <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fAccelerationMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span>               <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span>           <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fDecelerationMax</span>              <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fDecelerationMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMax</span>                <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMin</span>                <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMin</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fVeloMaximum</span>                  <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fVeloMaximum</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncOffset</span>                    <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncOffset</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span>       <span class="o">&lt;&gt;</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span><span class="p">;</span>
+
+    <span class="n">AssertTrue</span><span class="p">(</span>
+        <span class="n">Condition</span><span class="o">:=</span><span class="n">bAllModified</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;One or more parameters was not modified initially so the check is invalid.&#39;</span><span class="p">,</span>
+    <span class="p">);</span>
+<span class="n">END_IF</span>
+
+<span class="n">bReady</span> <span class="o">:=</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span>     <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span>   <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span>   <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fAccelerationMax</span>              <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span>               <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span>           <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fDecelerationMax</span>              <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMax</span>                <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMin</span>                <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fVeloMaximum</span>                  <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncOffset</span>                                    <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span>       <span class="o">&lt;&gt;</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">bReady</span> <span class="n">THEN</span>
+    <span class="n">bDone</span> <span class="o">:=</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span>     <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span>   <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span>   <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fAccelerationMax</span>              <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fAccelerationMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span>               <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span>           <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fDecelerationMax</span>              <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fDecelerationMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMax</span>                <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMax</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMin</span>                <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMin</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fVeloMaximum</span>                  <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fVeloMaximum</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncOffset</span>                    <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncOffset</span> <span class="n">AND</span>
+        <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span>       <span class="o">=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bDone</span> <span class="n">OR</span> <span class="n">tonTimer</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">AssertFalse</span><span class="p">(</span>
+        <span class="n">Condition</span><span class="o">:=</span><span class="n">tonTimer</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="n">CONCAT</span><span class="p">(</span><span class="s1">&#39;Failed to update the parameters within &#39;</span><span class="p">,</span> <span class="n">TIME_TO_STRING</span><span class="p">(</span><span class="n">tonTimer</span><span class="o">.</span><span class="n">PT</span><span class="p">)),</span><span class="s1">&#39; seconds.&#39;</span><span class="p">),</span>
+    <span class="p">);</span>
+    <span class="n">AssertTrue</span><span class="p">(</span>
+        <span class="n">Condition</span><span class="o">:=</span><span class="n">bDone</span><span class="p">,</span>
+        <span class="n">Message</span><span class="o">:=</span><span class="s1">&#39;One or more parameters was not copied properly.&#39;</span><span class="p">,</span>
+    <span class="p">);</span>
+
+    <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+<span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Related:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#fb-motionstage">FB_MotionStage</a></p></li>
+<li><p><a class="reference internal" href="#fb-motortestsuite">FB_MotorTestSuite</a></p></li>
+<li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
 </ul>
 </dd>
 </dl>
@@ -8598,6 +8840,21 @@ END_ACTION
     <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
     <span class="n">Execute</span><span class="o">:=</span><span class="n">bEnable</span> <span class="n">AND</span> <span class="n">bExecute</span><span class="p">,</span>
     <span class="n">Error</span><span class="o">=&gt;</span><span class="n">bError</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Copy</span> <span class="n">axis</span> <span class="n">parameters</span> <span class="n">that</span> <span class="n">we</span> <span class="n">want</span> <span class="n">to</span> <span class="n">expose</span> <span class="n">to</span> <span class="n">the</span> <span class="n">EPICS</span> <span class="n">layer</span><span class="o">.</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span>     <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bCtrlEnablePosDiffControl</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span>   <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMaxControl</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span>   <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">bEncEnableSoftEndMinControl</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fAccelerationMax</span>              <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fAccelerationMax</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span>               <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMax</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span>           <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fCtrlPosDiffMaxTime</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fDecelerationMax</span>              <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fDecelerationMax</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMax</span>                <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMax</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncSoftEndMin</span>                <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncSoftEndMin</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fVeloMaximum</span>                  <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fVeloMaximum</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncOffset</span>                            <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncOffset</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParametersExposed</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span>       <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fEncScaleFactorInternal</span><span class="p">;</span>
+
 <span class="n">IF</span> <span class="n">mcReadParams</span><span class="o">.</span><span class="n">ErrorID</span> <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="n">THEN</span>
     <span class="n">nLatchErrId</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
 <span class="n">END_IF</span>
@@ -18323,6 +18580,7 @@ END_METHOD
     <span class="n">fb_PositionStatePMPSND_Test</span><span class="p">:</span> <span class="n">FB_PositionStatePMPSND_Test</span><span class="p">;</span>
     <span class="n">fb_StateSetupHelper_Test</span><span class="p">:</span> <span class="n">FB_StateSetupHelper_Test</span><span class="p">;</span>
     <span class="n">fb_TestStateInitTiming</span><span class="p">:</span> <span class="n">FB_TestStateInitTiming</span><span class="p">;</span>
+    <span class="n">fb_AxisParameterSetExposed_Test</span><span class="p">:</span> <span class="n">FB_AxisParameterSetExposed_Test</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">TcUnit</span><span class="o">.</span><span class="n">RUN</span><span class="p">();</span>
 
@@ -18332,6 +18590,7 @@ END_METHOD
 <dl class="simple">
 <dt>Related:</dt><dd><ul class="simple">
 <li><p><a class="reference internal" href="#fb-atpositionstate-test">FB_AtPositionState_Test</a></p></li>
+<li><p><a class="reference internal" href="#fb-axisparametersetexposed-test">FB_AxisParameterSetExposed_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-miscstateserrorffo-test">FB_MiscStatesErrorFFO_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionbptm-test">FB_MotionBPTM_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionclearasserts-test">FB_MotionClearAsserts_Test</a></p></li>

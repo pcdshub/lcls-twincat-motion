@@ -574,6 +574,100 @@ Related:
     * `E_StatePMPSStatus`_
 
 
+ST_AxisParameterSetExposed
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    TYPE ST_AxisParameterSetExposed :
+        // Collects the axis parameters that are intentionally exposed to EPICS.
+    STRUCT
+        // Maximum Dynamics
+        {attribute 'pytmc' := '
+            pv: MaxVel
+            io: i
+            field: DESC Maximum commandable speed of the axis in EU/s.
+        '}
+        fVeloMaximum                : LREAL; // Maximum commandable speed of the axis in EU/s.
+        {attribute 'pytmc' := '
+            pv: MaxAccel
+            io: i
+            field: DESC Maximum rate of increase in speed of the axis in EU/s^2.
+        '}
+        fAccelerationMax            : LREAL; // Maximum rate of increase in speed of the axis in EU/s^2.
+        {attribute 'pytmc' := '
+            pv: MaxDecel
+            io: i
+            field: DESC Maximum rate of decrease in speed of the axis in EU/s^2.
+        '}
+        fDecelerationMax            : LREAL; // Maximum rate of decrease in speed of the axis in EU/s^2.
+
+        // Monitoring
+        {attribute 'pytmc' := '
+            pv: PosLagEn
+            io: i
+            field: DESC TRUE if position lag monitor (also known as stall monitor) is enabled.
+        '}
+        bCtrlEnablePosDiffControl   : WORD;  // Enable/Disable state of Position Lag Monitor.
+        {attribute 'pytmc' := '
+            pv: PosLagVal
+            io: i
+            field: DESC Maximum magnitude of position lag in EU.
+        '}
+        fCtrlPosDiffMax             : LREAL; // Maximum magnitude of position lag in EU.
+        {attribute 'pytmc' := '
+            pv: PosLagTime
+            io: i
+            field: DESC Maximum allowable duration outside of maximum position lag value in seconds.
+        '}
+        fCtrlPosDiffMaxTime         : LREAL; // Maximum allowable duration outside of maximum position lag value in seconds.
+
+        // Limit Switches
+        {attribute 'pytmc' := '
+            pv: SLimMinEn
+            io: i
+            field: DESC TRUE if controller static minimum limit is enabled.
+        '}
+        bEncEnableSoftEndMinControl : WORD;  // Enable/Disable state of controller static minimum limit.
+        {attribute 'pytmc' := '
+            pv: SLimMaxEn
+            io: i
+            field: DESC TRUE if controller static maximum limit is enabled.
+        '}
+        bEncEnableSoftEndMaxControl : WORD;  // Enable/Disable state of controller static maximum limit.
+        {attribute 'pytmc' := '
+            pv: SLimMin
+            io: i
+            field: DESC Minimum commandable position of the axis in EU.
+        '}
+        fEncSoftEndMin              : LREAL; // Minimum commandable position of the axis in EU.
+        {attribute 'pytmc' := '
+            pv: SLimMax
+            io: i
+            field: DESC Maximum commandable position of the axis in EU.
+        '}
+        fEncSoftEndMax              : LREAL; // Maximum commandable position of the axis in EU.
+
+        // Encoder Evaluation
+        {attribute 'pytmc' := '
+            pv: EncScaling
+            io: i
+            field: DESC Encoder scaling numerator / denominator in EU/COUNT.
+        '}
+        fEncScaleFactorInternal      : LREAL; // Encoder scaling numerator / denominator in EU/COUNT.
+        {attribute 'pytmc' := '
+            pv: EncOffset
+            io: i
+            field: DESC Encoder offset in EU.
+        '}
+        fEncOffset                   : LREAL; // Encoder offset in EU.
+
+    END_STRUCT
+    END_TYPE
+
+
+
+
 ST_EL5042_Status
 ^^^^^^^^^^^^^^^^
 
@@ -970,6 +1064,13 @@ ST_MotionStage
         sCustomErrorMessage: STRING;
         // MC_ReadParameterSet Output
         stAxisParameters: ST_AxisParameterSet;
+        // NC parameters that are exposed with pytmc pragmas
+        {attribute 'pytmc' := '
+            pv: PLC:AxisPar
+            io: i
+            field: DESC Axis configuration parameters in the numerical controller.
+        '}
+        stAxisParametersExposed: ST_AxisParameterSetExposed;
         // True if we've updated stAxisParameters at least once
         bAxisParamsInit: BOOL;
 
@@ -993,6 +1094,7 @@ Related:
     * `E_EpicsHomeCmd`_
     * `E_StageBrakeMode`_
     * `E_StageEnableMode`_
+    * `ST_AxisParameterSetExposed`_
 
 
 ST_PositionState
@@ -3628,6 +3730,148 @@ Related:
     * `F_PosWithinDelta`_
     * `ST_MotionStage`_
     * `ST_PositionState`_
+
+
+FB_AxisParameterSetExposed_Test
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_AxisParameterSetExposed_Test EXTENDS FB_MotorTestSuite
+    (*
+        Quick Check to verify exposed NC parameters are copied properly.
+    *)
+    VAR
+        stMotionStage: ST_MotionStage;
+        fbMotionStage: FB_MotionStage;
+        nTestCounter: UINT;
+        bOneTestDone: BOOL;
+        tonTimer: TON;
+    END_VAR
+    IF nTestCounter = 0 THEN
+        nTestCounter := 1;
+    END_IF
+
+    // Test that parameters are copied to the exposed parameters properly.
+    TestParameterCopy(1);
+
+    IF bOneTestDone THEN
+        bOneTestDone := FALSE;
+        nTestCounter := nTestCounter + 1;
+        tonTimer(IN:=FALSE);
+    END_IF;
+
+    // Use this timer to time out any tests that stall
+    tonTimer(
+        IN:=nTestCounter >= 1,
+        PT:=T#2s,
+    );
+
+    END_FUNCTION_BLOCK
+
+    METHOD TestParameterCopy
+    VAR_INPUT
+        nTestIndex: UINT;
+    END_VAR
+    VAR_INST
+        bLocalInit: BOOL := TRUE;
+        bAllModified: BOOL;
+        bReady: BOOL;
+        bDone: BOOL;
+    END_VAR
+    TEST(CONCAT('TestParameterCopy', UINT_TO_STRING(nTestIndex)));
+    IF nTestCounter <> nTestIndex OR bOneTestDone THEN
+        RETURN;
+    END_IF
+
+    fbMotionStage(stMotionStage:=stMotionStage);
+
+    IF bLocalInit THEN
+        stMotionStage.stAxisParametersExposed.bCtrlEnablePosDiffControl     := 100;
+        stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMaxControl   := 101;
+        stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMinControl   := 102;
+        stMotionStage.stAxisParametersExposed.fAccelerationMax              := 103;
+        stMotionStage.stAxisParametersExposed.fCtrlPosDiffMax               := 104;
+        stMotionStage.stAxisParametersExposed.fCtrlPosDiffMaxTime           := 105;
+        stMotionStage.stAxisParametersExposed.fDecelerationMax              := 106;
+        stMotionStage.stAxisParametersExposed.fEncSoftEndMax                := 107;
+        stMotionStage.stAxisParametersExposed.fEncSoftEndMin                := 108;
+        stMotionStage.stAxisParametersExposed.fVeloMaximum                  := 109;
+        stMotionStage.stAxisParametersExposed.fEncOffset					:= 110;
+        stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal		:= 111;
+
+        bLocalInit := FALSE;
+
+        bAllModified :=
+            stMotionStage.stAxisParametersExposed.bCtrlEnablePosDiffControl     <> stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl AND
+            stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMaxControl   <> stMotionStage.stAxisParameters.bEncEnableSoftEndMaxControl AND
+            stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMinControl   <> stMotionStage.stAxisParameters.bEncEnableSoftEndMinControl AND
+            stMotionStage.stAxisParametersExposed.fAccelerationMax              <> stMotionStage.stAxisParameters.fAccelerationMax AND
+            stMotionStage.stAxisParametersExposed.fCtrlPosDiffMax               <> stMotionStage.stAxisParameters.fCtrlPosDiffMax AND
+            stMotionStage.stAxisParametersExposed.fCtrlPosDiffMaxTime           <> stMotionStage.stAxisParameters.fCtrlPosDiffMaxTime AND
+            stMotionStage.stAxisParametersExposed.fDecelerationMax              <> stMotionStage.stAxisParameters.fDecelerationMax AND
+            stMotionStage.stAxisParametersExposed.fEncSoftEndMax                <> stMotionStage.stAxisParameters.fEncSoftEndMax AND
+            stMotionStage.stAxisParametersExposed.fEncSoftEndMin                <> stMotionStage.stAxisParameters.fEncSoftEndMin AND
+            stMotionStage.stAxisParametersExposed.fVeloMaximum                  <> stMotionStage.stAxisParameters.fVeloMaximum AND
+            stMotionStage.stAxisParametersExposed.fEncOffset                	<> stMotionStage.stAxisParameters.fEncOffset AND
+            stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal       <> stMotionStage.stAxisParameters.fEncScaleFactorInternal;
+
+        AssertTrue(
+            Condition:=bAllModified,
+            Message:='One or more parameters was not modified initially so the check is invalid.',
+        );
+    END_IF
+
+    bReady :=
+            stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl     <> 0 AND
+            stMotionStage.stAxisParameters.bEncEnableSoftEndMaxControl   <> 0 AND
+            stMotionStage.stAxisParameters.bEncEnableSoftEndMinControl   <> 0 AND
+            stMotionStage.stAxisParameters.fAccelerationMax              <> 0 AND
+            stMotionStage.stAxisParameters.fCtrlPosDiffMax               <> 0 AND
+            stMotionStage.stAxisParameters.fCtrlPosDiffMaxTime           <> 0 AND
+            stMotionStage.stAxisParameters.fDecelerationMax              <> 0 AND
+            stMotionStage.stAxisParameters.fEncSoftEndMax                <> 0 AND
+            stMotionStage.stAxisParameters.fEncSoftEndMin                <> 0 AND
+            stMotionStage.stAxisParameters.fVeloMaximum                  <> 0 AND
+            stMotionStage.stAxisParameters.fEncOffset					 <> 0 AND
+            stMotionStage.stAxisParameters.fEncScaleFactorInternal       <> 0;
+
+    IF bReady THEN
+        bDone :=
+            stMotionStage.stAxisParametersExposed.bCtrlEnablePosDiffControl     = stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl AND
+            stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMaxControl   = stMotionStage.stAxisParameters.bEncEnableSoftEndMaxControl AND
+            stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMinControl   = stMotionStage.stAxisParameters.bEncEnableSoftEndMinControl AND
+            stMotionStage.stAxisParametersExposed.fAccelerationMax              = stMotionStage.stAxisParameters.fAccelerationMax AND
+            stMotionStage.stAxisParametersExposed.fCtrlPosDiffMax               = stMotionStage.stAxisParameters.fCtrlPosDiffMax AND
+            stMotionStage.stAxisParametersExposed.fCtrlPosDiffMaxTime           = stMotionStage.stAxisParameters.fCtrlPosDiffMaxTime AND
+            stMotionStage.stAxisParametersExposed.fDecelerationMax              = stMotionStage.stAxisParameters.fDecelerationMax AND
+            stMotionStage.stAxisParametersExposed.fEncSoftEndMax                = stMotionStage.stAxisParameters.fEncSoftEndMax AND
+            stMotionStage.stAxisParametersExposed.fEncSoftEndMin                = stMotionStage.stAxisParameters.fEncSoftEndMin AND
+            stMotionStage.stAxisParametersExposed.fVeloMaximum                  = stMotionStage.stAxisParameters.fVeloMaximum AND
+            stMotionStage.stAxisParametersExposed.fEncOffset                	= stMotionStage.stAxisParameters.fEncOffset AND
+            stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal       = stMotionStage.stAxisParameters.fEncScaleFactorInternal;
+    END_IF
+
+    IF bDone OR tonTimer.Q THEN
+        AssertFalse(
+            Condition:=tonTimer.Q,
+            Message:=CONCAT(CONCAT('Failed to update the parameters within ', TIME_TO_STRING(tonTimer.PT)),' seconds.'),
+        );
+        AssertTrue(
+            Condition:=bDone,
+            Message:='One or more parameters was not copied properly.',
+        );
+
+        bOneTestDone := TRUE;
+        TEST_FINISHED();
+    END_IF
+    END_METHOD
+
+
+Related:
+    * `FB_MotionStage`_
+    * `FB_MotorTestSuite`_
+    * `ST_MotionStage`_
 
 
 FB_CalculateFrequency_3702_v0_01
@@ -8453,6 +8697,21 @@ FB_MotionStageNCParams
         Axis:=stMotionStage.Axis,
         Execute:=bEnable AND bExecute,
         Error=>bError);
+
+    // Copy axis parameters that we want to expose to the EPICS layer.
+    stMotionStage.stAxisParametersExposed.bCtrlEnablePosDiffControl     := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl;
+    stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMaxControl   := stMotionStage.stAxisParameters.bEncEnableSoftEndMaxControl;
+    stMotionStage.stAxisParametersExposed.bEncEnableSoftEndMinControl   := stMotionStage.stAxisParameters.bEncEnableSoftEndMinControl;
+    stMotionStage.stAxisParametersExposed.fAccelerationMax              := stMotionStage.stAxisParameters.fAccelerationMax;
+    stMotionStage.stAxisParametersExposed.fCtrlPosDiffMax               := stMotionStage.stAxisParameters.fCtrlPosDiffMax;
+    stMotionStage.stAxisParametersExposed.fCtrlPosDiffMaxTime           := stMotionStage.stAxisParameters.fCtrlPosDiffMaxTime;
+    stMotionStage.stAxisParametersExposed.fDecelerationMax              := stMotionStage.stAxisParameters.fDecelerationMax;
+    stMotionStage.stAxisParametersExposed.fEncSoftEndMax                := stMotionStage.stAxisParameters.fEncSoftEndMax;
+    stMotionStage.stAxisParametersExposed.fEncSoftEndMin                := stMotionStage.stAxisParameters.fEncSoftEndMin;
+    stMotionStage.stAxisParametersExposed.fVeloMaximum                  := stMotionStage.stAxisParameters.fVeloMaximum;
+    stMotionStage.stAxisParametersExposed.fEncOffset               		:= stMotionStage.stAxisParameters.fEncOffset;
+    stMotionStage.stAxisParametersExposed.fEncScaleFactorInternal       := stMotionStage.stAxisParameters.fEncScaleFactorInternal;
+
     IF mcReadParams.ErrorID <> 0 THEN
         nLatchErrId := 0;
     END_IF
@@ -18206,6 +18465,7 @@ PRG_TEST
         fb_PositionStatePMPSND_Test: FB_PositionStatePMPSND_Test;
         fb_StateSetupHelper_Test: FB_StateSetupHelper_Test;
         fb_TestStateInitTiming: FB_TestStateInitTiming;
+        fb_AxisParameterSetExposed_Test: FB_AxisParameterSetExposed_Test;
     END_VAR
     TcUnit.RUN();
 
@@ -18214,6 +18474,7 @@ PRG_TEST
 
 Related:
     * `FB_AtPositionState_Test`_
+    * `FB_AxisParameterSetExposed_Test`_
     * `FB_MiscStatesErrorFFO_Test`_
     * `FB_MotionBPTM_Test`_
     * `FB_MotionClearAsserts_Test`_
