@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_AxisParameterSetExposed" Id="{ee296551-543a-4bbb-98b7-123ff2229439}">
+    <Declaration><![CDATA[TYPE ST_AxisParameterSetExposed :
+    // Collects the axis parameters that are intentionally exposed to EPICS.
+STRUCT
+    // Maximum Dynamics
+    {attribute 'pytmc' := '
+        pv: MaxVel
+        io: i
+        field: DESC Maximum commandable speed of the axis in EU/s.
+    '}
+    fVeloMaximum                : LREAL; // Maximum commandable speed of the axis in EU/s.
+    {attribute 'pytmc' := '
+        pv: MaxAccel
+        io: i
+        field: DESC Maximum rate of increase in speed of the axis in EU/s^2.
+    '}
+    fAccelerationMax            : LREAL; // Maximum rate of increase in speed of the axis in EU/s^2.
+    {attribute 'pytmc' := '
+        pv: MaxDecel
+        io: i
+        field: DESC Maximum rate of decrease in speed of the axis in EU/s^2.
+    '}
+    fDecelerationMax            : LREAL; // Maximum rate of decrease in speed of the axis in EU/s^2.
+
+    // Monitoring
+    {attribute 'pytmc' := '
+        pv: PosLagEn
+        io: i
+        field: DESC TRUE if position lag monitor (also known as stall monitor) is enabled.
+    '}
+    bCtrlEnablePosDiffControl   : WORD;  // Enable/Disable state of Position Lag Monitor.
+    {attribute 'pytmc' := '
+        pv: PosLagVal
+        io: i
+        field: DESC Maximum magnitude of position lag in EU.
+    '}
+    fCtrlPosDiffMax             : LREAL; // Maximum magnitude of position lag in EU.
+    {attribute 'pytmc' := '
+        pv: PosLagTime
+        io: i
+        field: DESC Maximum allowable duration outside of maximum position lag value in seconds.
+    '}
+    fCtrlPosDiffMaxTime         : LREAL; // Maximum allowable duration outside of maximum position lag value in seconds.
+
+    // Limit Switches
+    {attribute 'pytmc' := '
+        pv: SLimMinEn
+        io: i
+        field: DESC TRUE if controller static minimum limit is enabled.
+    '}
+    bEncEnableSoftEndMinControl : WORD;  // Enable/Disable state of controller static minimum limit.
+    {attribute 'pytmc' := '
+        pv: SLimMaxEn
+        io: i
+        field: DESC TRUE if controller static maximum limit is enabled.
+    '}
+    bEncEnableSoftEndMaxControl : WORD;  // Enable/Disable state of controller static maximum limit.
+    {attribute 'pytmc' := '
+        pv: SLimMin
+        io: i
+        field: DESC Minimum commandable position of the axis in EU.
+    '}
+    fEncSoftEndMin              : LREAL; // Minimum commandable position of the axis in EU.
+    {attribute 'pytmc' := '
+        pv: SLimMax
+        io: i
+        field: DESC Maximum commandable position of the axis in EU.
+    '}
+    fEncSoftEndMax              : LREAL; // Maximum commandable position of the axis in EU.
+
+    // Encoder Evaluation
+    {attribute 'pytmc' := '
+        pv: EncScaling
+        io: i
+        field: DESC Encoder scaling numerator / denominator in EU/COUNT.
+    '}
+    fEncScaleFactorInternal      : LREAL; // Encoder scaling numerator / denominator in EU/COUNT.
+    {attribute 'pytmc' := '
+        pv: EncOffset
+        io: i
+        field: DESC Encoder offset in EU.
+    '}
+    fEncOffset                   : LREAL; // Encoder offset in EU.
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
