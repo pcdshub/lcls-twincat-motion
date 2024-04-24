@@ -18,7 +18,7 @@
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
         <script src="_static/docs-versions-menu.js?v=3d6a1aea"></script>
     <script src="_static/js/theme.js"></script>
@@ -15899,7 +15899,7 @@ END_ACTION
     <span class="o">//</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">TRUE</span> <span class="n">to</span> <span class="n">cause</span> <span class="n">an</span> <span class="n">extra</span> <span class="n">read</span><span class="o">.</span>
     <span class="n">bRefresh</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Directory</span> <span class="n">where</span> <span class="n">the</span> <span class="n">DB</span> <span class="ow">is</span> <span class="n">stored</span><span class="o">.</span>
-    <span class="n">sDirectory</span><span class="p">:</span> <span class="n">STRING</span> <span class="o">:=</span> <span class="s1">&#39;/Hard Disk/ftp/PMPS/&#39;</span><span class="p">;</span>
+    <span class="n">sDirectory</span><span class="p">:</span> <span class="n">STRING</span> <span class="o">:=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR_OUTPUT</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
@@ -15919,6 +15919,11 @@ END_ACTION
     <span class="n">fbTime</span> <span class="p">:</span> <span class="n">FB_LocalSystemTime</span> <span class="o">:=</span> <span class="p">(</span> <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">dwCycle</span> <span class="o">:=</span> <span class="mi">1</span> <span class="p">);</span>
     <span class="n">fbTime_to_UTC</span><span class="p">:</span> <span class="n">FB_TzSpecificLocalTimeToSystemTime</span><span class="p">;</span>
     <span class="n">fbGetTimeZone</span><span class="p">:</span> <span class="n">FB_GetTimeZoneInformation</span><span class="p">;</span>
+
+    <span class="n">fbIPCReg</span><span class="p">:</span> <span class="n">FB_IPCDiag_Register</span><span class="p">;</span>
+    <span class="n">fbCheckOS</span><span class="p">:</span> <span class="n">FB_IPCDiag_ReadParameter</span><span class="p">;</span>
+    <span class="n">sOSName</span><span class="p">:</span> <span class="n">STRING</span> <span class="o">:=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+    <span class="n">nCheckOSTries</span><span class="p">:</span> <span class="n">UINT</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">IF</span> <span class="n">NOT</span> <span class="n">bEnable</span> <span class="n">THEN</span>
     <span class="n">RETURN</span><span class="p">;</span>
@@ -15937,9 +15942,44 @@ END_ACTION
     <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
+<span class="n">IF</span> <span class="n">sDirectory</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="n">THEN</span>
+    <span class="o">//</span> <span class="n">Check</span> <span class="n">OS</span> <span class="k">for</span> <span class="n">default</span> <span class="n">directory</span>
+    <span class="n">fbIPCReg</span><span class="p">(</span>
+        <span class="n">bExecute</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+        <span class="n">tTimeout</span><span class="o">:=</span><span class="n">T</span><span class="c1">#1s,</span>
+    <span class="p">);</span>
+    <span class="n">fbCheckOS</span><span class="p">(</span>
+        <span class="n">bExecute</span><span class="o">:=</span><span class="n">fbIPCReg</span><span class="o">.</span><span class="n">bValid</span><span class="p">,</span>
+        <span class="n">eParameterKey</span><span class="o">:=</span><span class="n">E_IPCDiag_ParameterKey</span><span class="o">.</span><span class="n">OS_Name</span><span class="p">,</span>
+        <span class="n">fbRegister</span><span class="o">:=</span><span class="n">fbIPCReg</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="n">IF</span> <span class="n">fbIPCReg</span><span class="o">.</span><span class="n">bError</span> <span class="n">OR</span> <span class="n">fbCheckOS</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
+        <span class="n">IF</span> <span class="n">nCheckOSTries</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="n">THEN</span>
+            <span class="o">//</span> <span class="n">Retry</span> <span class="n">counter</span> <span class="n">down</span> <span class="n">to</span> <span class="n">zero</span><span class="p">:</span> <span class="nb">set</span> <span class="n">to</span> <span class="n">error</span> <span class="n">name</span> <span class="n">to</span> <span class="k">try</span> <span class="n">old</span> <span class="n">default</span>
+            <span class="n">sOSName</span> <span class="o">:=</span> <span class="s1">&#39;Error&#39;</span><span class="p">;</span>
+        <span class="n">ELSE</span>
+            <span class="o">//</span> <span class="n">Decrement</span> <span class="n">retry</span> <span class="n">counter</span>
+            <span class="n">nCheckOSTries</span> <span class="o">:=</span> <span class="n">nCheckOSTries</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="o">//</span> <span class="n">Reset</span> <span class="n">FBs</span>
+            <span class="n">fbCheckOS</span><span class="p">(</span><span class="n">bExecute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span> <span class="n">fbRegister</span><span class="o">:=</span><span class="n">fbIPCReg</span><span class="p">);</span>
+            <span class="n">fbIPCReg</span><span class="p">(</span><span class="n">bExecute</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+        <span class="n">END_IF</span>
+    <span class="n">ELSIF</span> <span class="n">fbCheckOS</span><span class="o">.</span><span class="n">bValid</span> <span class="n">THEN</span>
+        <span class="n">fbCheckOS</span><span class="o">.</span><span class="n">GetParameter</span><span class="p">(</span>
+            <span class="n">pBuffer</span><span class="o">:=</span><span class="n">ADR</span><span class="p">(</span><span class="n">sOSName</span><span class="p">),</span>
+            <span class="n">nBufferSize</span><span class="o">:=</span><span class="n">SIZEOF</span><span class="p">(</span><span class="n">sOSName</span><span class="p">),</span>
+        <span class="p">);</span>
+    <span class="n">END_IF</span>
+    <span class="n">IF</span> <span class="n">sOSName</span> <span class="o">=</span> <span class="s1">&#39;TwinCAT/BSD&#39;</span> <span class="n">THEN</span>
+        <span class="n">sDirectory</span> <span class="o">:=</span> <span class="s1">&#39;/home/ecs-user/pmpsdb/&#39;</span><span class="p">;</span>
+    <span class="n">ELSIF</span> <span class="n">sOSName</span> <span class="o">&lt;&gt;</span> <span class="s1">&#39;&#39;</span> <span class="n">THEN</span>
+        <span class="n">sDirectory</span> <span class="o">:=</span> <span class="s1">&#39;/Hard Disk/ftp/PMPS/&#39;</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+<span class="n">END_IF</span>
+
 <span class="n">MOTION_GVL</span><span class="o">.</span><span class="n">fbPmpsFileReader</span><span class="p">(</span>
     <span class="n">io_fbFFHWO</span><span class="o">:=</span><span class="n">io_fbFFHWO</span><span class="p">,</span>
-    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">,</span>
+    <span class="n">bExecute</span><span class="o">:=</span><span class="n">bExecute</span> <span class="n">AND</span> <span class="n">sDirectory</span> <span class="o">&lt;&gt;</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
     <span class="n">sSrcPathName</span><span class="o">:=</span><span class="n">CONCAT</span><span class="p">(</span><span class="n">CONCAT</span><span class="p">(</span><span class="n">sDirectory</span><span class="p">,</span> <span class="n">sPlcName</span><span class="p">),</span> <span class="s1">&#39;.json&#39;</span><span class="p">),</span>
     <span class="n">sPLCName</span><span class="o">:=</span><span class="n">sPLCName</span><span class="p">,</span>
     <span class="n">PMPS_jsonDoc</span><span class="o">=&gt;</span><span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">BP_jsonDoc</span><span class="p">,</span>
