@@ -31,8 +31,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[
-astPositionState[nGoalState].fPosition := 10;
+      <ST><![CDATA[astPositionState[nGoalState].fPosition := 10;
 astPositionState[nGoalState].fDelta := 1;
 SetGoodState(astPositionState[nGoalState]);
 astPositionState[nInvalidState].fPosition := 20;
@@ -65,6 +64,8 @@ TestDisabled(6);
 TestLimits(7);
 TestMoveTo(8);
 TestMoveAt(9);
+TestBoundsAfterFallingIntoUnknownState(10,-20,-40);
+TestBoundsAfterFallingIntoUnknownState(11,20,40);
 
 IF bOneTestDone THEN
     bOneTestDone := FALSE;
@@ -109,6 +110,7 @@ fbMove(
     bHWEnable:=FALSE,
 );
 bInit := TRUE;
+
 // Run our FB
 fbStateEnables(
     stMotionStage:=stMotionStage,
@@ -118,6 +120,7 @@ fbStateEnables(
     nGoalStateIndex:=nGoalState,
 );
 fbFFHWO.EvaluateOutput();
+
 // If we've set the position OR ran out of time to set the position, check the asserts
 IF tonTimer.Q OR fbMove.bSetDone THEN
     AssertFalse(
@@ -180,6 +183,7 @@ fbMove(
     bHWEnable:=FALSE,
 );
 bInit := TRUE;
+
 // Run our FB
 fbStateEnables(
     stMotionStage:=stMotionStage,
@@ -288,6 +292,136 @@ IF tonTimer.Q OR fbMove.bSetDone THEN
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestBoundsAfterFallingIntoUnknownState" Id="{3abf745e-697a-46d1-92e5-75b0ab69c495}">
+      <Declaration><![CDATA[METHOD TestBoundsAfterFallingIntoUnknownState
+VAR_INPUT
+    nTestID: UINT;
+    fStartPosDelta: REAL;
+    fGoalPosDelta: REAL;
+END_VAR
+VAR_INST
+    stBoundsCheckMotionStage: ST_MotionStage;
+    fbBoundsCheckMotionStage: FB_MotionStage;
+    fbStateEnables: FB_StatePMPSEnables;
+    fbMotionStageSetAndMove: FB_MotionStageSetAndMoveHelper;
+    fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+    mcSetPos: MC_SetPosition;
+    bInit: BOOL;
+    bSetPos: BOOL;
+    bCommandedMove: BOOL;
+    nGoalStateIndex: UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(CONCAT('TestBoundsAfterFallingIntoUnknownState',UINT_TO_STRING(nTestID)));
+IF nTestCounter <> nTestID THEN
+    RETURN;
+END_IF
+
+// On first pass, set the goal state index to a valid state to initialize the bounds.
+// Then, set the goal state index to an unknown state to ensure the bounds remain
+// active.
+IF NOT bInit THEN
+    nGoalStateIndex := nGoalState;
+    SetEnables(stBoundsCheckMotionStage);
+ELSE
+    nGoalStateIndex := 0;
+END_IF
+
+
+// Run our FB which should enable the real move while within the allowable bounds.
+// Once the position is set out of the bounds, the bounds should persist and prevent
+// further movement away from the goal state.
+fbStateEnables(
+    stMotionStage:=stBoundsCheckMotionStage,
+    astPositionState:=astPositionState,
+    fbFFHWO:=fbFFHWO,
+    bEnable:=TRUE,
+    nGoalStateIndex:=nGoalStateIndex,
+    eStatePMPSStatus:=E_StatePMPSStatus.TRANSITION,
+    bTransitionAuthorized:=TRUE,
+);
+
+// Set position to be out of the goal's range, and try to move away from the goal
+fbMotionStageSetAndMove(
+    bExecute:=bInit,
+    fStartPosition:=astPositionState[nGoalState].fPosition + fStartPosDelta,
+    fGoalPosition:=astPositionState[nGoalState].fPosition + fGoalPosDelta,
+    fVelocity:=1.0,
+    stMotionStage:=stBoundsCheckMotionStage,
+    fDelta:=0.01,
+    bResetDone=>,
+    bSetDone=>,
+    bMotionStarted=>,
+    bMoveDone=>
+);
+
+bInit := TRUE;
+
+fbFFHWO.EvaluateOutput();
+
+// If we've reached the position OR ran out of time to set the position, check the asserts
+IF tonTimer.Q OR fbMotionStageSetAndMove.bMoveDone THEN
+    AssertTrue(
+        tonTimer.Q,
+        'Timeout should have occurred. Move should have been unable to complete.',
+    );
+    AssertTrue(
+        fbMotionStageSetAndMove.bSetDone,
+        'Position was never set.',
+    );
+    AssertTrue(
+        fbMotionStageSetAndMove.bMotionStarted,
+        'Move was never commanded.',
+    );
+    AssertEquals_LREAL(
+        Expected:=astPositionState[nGoalState].fPosition + fStartPosDelta,
+        Actual:=stBoundsCheckMotionStage.stAxisStatus.fActPosition,
+        Delta:=0.0001,
+        Message:='Bounds failed to persist after falling out of state',
+    );
+    AssertFalse(
+        fbFFHWO.q_xFastFaultOut,
+        'Fast fault should have triggered with unknown state',
+    );
+    IF fStartPosDelta < 0 AND abs(fStartPosDelta) > astPositionState[nGoalState].fDelta THEN
+        AssertFalse(
+            fbStateEnables.bBackwardEnabled,
+            'Backward should be disabled.',
+        );
+        AssertTrue(
+            fbStateEnables.bForwardEnabled,
+            'Forward should be enabled.',
+        );
+    ELSIF fStartPosDelta > 0 AND abs(fStartPosDelta) > astPositionState[nGoalState].fDelta THEN
+        AssertTrue(
+            fbStateEnables.bBackwardEnabled,
+            'Backward should be enabled.',
+        );
+        AssertFalse(
+            fbStateEnables.bForwardEnabled,
+            'Forward should be disabled.',
+        );
+    ELSE
+        AssertTrue(
+            fbStateEnables.bForwardEnabled,
+            'Forward should be enabled.',
+        );
+        AssertTrue(
+            fbStateEnables.bBackwardEnabled,
+            'Backward should be enabled.',
+        );
+    END_IF
+    bInit := FALSE;
+    stBoundsCheckMotionStage.bReset := TRUE;
+    bOneTestDone := TRUE;
+    TEST_FINISHED();
+END_IF
+
+fbBoundsCheckMotionStage(stMotionStage:=stBoundsCheckMotionStage);
 ]]></ST>
       </Implementation>
     </Method>

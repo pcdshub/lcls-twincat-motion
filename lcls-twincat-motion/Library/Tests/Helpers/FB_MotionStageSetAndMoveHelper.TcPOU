@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionStageSetAndMoveHelper" Id="{d7e042f5-46bb-44d9-bf49-77a017ae9e25}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStageSetAndMoveHelper
+VAR_INPUT
+    // Begin on rising edge, stop on falling edge.
+    bExecute: BOOL;
+    // The position to set the motor to
+    fStartPosition: LREAL;
+    // The goal to move the motor towards
+    fGoalPosition: LREAL;
+    // The velocity to move at
+    fVelocity: LREAL;
+    // The allowable deviation from the goal position to be considered done moving.
+    fDelta: LREAL;
+END_VAR
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_OUTPUT
+    // Goes to TRUE once the motor has no errors and is deactivated.
+    bResetDone: BOOL;
+    // Goes to TRUE once the set position completes.
+    bSetDone: BOOL;
+    // Goes to TRUE once the motor begins moving.
+    bMotionStarted: BOOL;
+    // Goes to TRUE once the motor reaches its destination.
+    bMoveDone: BOOL;
+END_VAR
+VAR
+    rtExec: R_TRIG;
+    mcSetPos: MC_SetPosition;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtExec(CLK:=bExecute);
+
+IF rtExec.Q THEN
+    stMotionStage.bReset := TRUE;
+    stMotionStage.bEnable := FALSE;
+    stMotionStage.nEnableMode := E_StageEnableMode.NEVER;
+    mcSetPos(
+        Axis:=stMotionStage.Axis,
+        Execute:=FALSE
+    );
+    bResetDone := FALSE;
+    bSetDone := FALSE;
+    bMotionStarted := FALSE;
+    bMoveDone := FALSE;
+END_IF
+
+bResetDone := NOT stMotionStage.bError AND NOT stMotionStage.bBusy;
+bMoveDone := stMotionStage.stAxisStatus.fActPosition <= fGoalPosition + fDelta AND
+             stMotionStage.stAxisStatus.fActPosition >= fGoalPosition - fDelta;
+
+IF NOT bSetDone THEN
+    stMotionStage.bReset := TRUE;
+    stMotionStage.bEnable := FALSE;
+    IF stMotionStage.stAxisStatus.fActPosition <> fStartPosition THEN
+        mcSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=NOT mcSetPos.Execute,
+            Position:=fStartPosition,
+            Mode:=FALSE,
+            Done=>
+        );
+    ELSE
+        bSetDone := TRUE;
+    END_IF
+ELSE
+    stMotionStage.bEnable := TRUE;
+    IF NOT bMotionStarted AND NOT stMotionStage.Axis.Status.Disabled THEN
+        stMotionStage.fPosition := fGoalPosition;
+        stMotionStage.fVelocity := fVelocity;
+        stMotionStage.bMoveCmd := TRUE;
+        bMotionStarted := TRUE;
+    END_IF
+END_IF
+
+IF bMoveDone THEN
+    stMotionStage.bReset := TRUE;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
