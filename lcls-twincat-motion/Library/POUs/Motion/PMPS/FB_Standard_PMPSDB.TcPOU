@@ -22,7 +22,7 @@ VAR_INPUT
     // Set to TRUE to cause an extra read.
     bRefresh: BOOL;
     // Directory where the DB is stored.
-    sDirectory: STRING := '/Hard Disk/ftp/PMPS/';
+    sDirectory: STRING := '';
 END_VAR
 VAR_OUTPUT
     {attribute 'pytmc' := '
@@ -42,6 +42,11 @@ VAR
     fbTime : FB_LocalSystemTime := ( bEnable := TRUE, dwCycle := 1 );
     fbTime_to_UTC: FB_TzSpecificLocalTimeToSystemTime;
     fbGetTimeZone: FB_GetTimeZoneInformation;
+
+    fbIPCReg: FB_IPCDiag_Register;
+    fbCheckOS: FB_IPCDiag_ReadParameter;
+    sOSName: STRING := '';
+    nCheckOSTries: UINT := 3;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -62,9 +67,44 @@ IF rtEnable.Q OR rtRefresh.Q THEN
     bExecute := TRUE;
 END_IF
 
+IF sDirectory = '' THEN
+    // Check OS for default directory
+    fbIPCReg(
+        bExecute:=TRUE,
+        tTimeout:=T#1s,
+    );
+    fbCheckOS(
+        bExecute:=fbIPCReg.bValid,
+        eParameterKey:=E_IPCDiag_ParameterKey.OS_Name,
+        fbRegister:=fbIPCReg,
+    );
+    IF fbIPCReg.bError OR fbCheckOS.bError THEN
+        IF nCheckOSTries <= 0 THEN
+            // Retry counter down to zero: set to error name to try old default
+            sOSName := 'Error';
+        ELSE
+            // Decrement retry counter
+            nCheckOSTries := nCheckOSTries - 1;
+            // Reset FBs
+            fbCheckOS(bExecute:=FALSE, fbRegister:=fbIPCReg);
+            fbIPCReg(bExecute:=FALSE);
+        END_IF
+    ELSIF fbCheckOS.bValid THEN
+        fbCheckOS.GetParameter(
+            pBuffer:=ADR(sOSName),
+            nBufferSize:=SIZEOF(sOSName),
+        );
+    END_IF
+    IF sOSName = 'TwinCAT/BSD' THEN
+        sDirectory := '/home/ecs-user/pmpsdb/';
+    ELSIF sOSName <> '' THEN
+        sDirectory := '/Hard Disk/ftp/PMPS/';
+    END_IF
+END_IF
+
 MOTION_GVL.fbPmpsFileReader(
     io_fbFFHWO:=io_fbFFHWO,
-    bExecute:=bExecute,
+    bExecute:=bExecute AND sDirectory <> '',
     sSrcPathName:=CONCAT(CONCAT(sDirectory, sPlcName), '.json'),
     sPLCName:=sPLCName,
     PMPS_jsonDoc=>PMPS_GVL.BP_jsonDoc,
