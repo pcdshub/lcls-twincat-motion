@@ -47,6 +47,8 @@ VAR
     fLowerPos: LREAL;
     fUpperPos: LREAL;
     ffNoGoal: FB_FastFault;
+    bLockBounds: BOOL;
+    bErrorMsg: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
@@ -58,9 +60,8 @@ RunFastFaults();
     </Implementation>
     <Action Name="ApplyEnables" Id="{b171457a-f455-4e4b-9f24-4b9baf95384f}">
       <Implementation>
-        <ST><![CDATA[
-(*
-    This action takes runs MC_POWER appropriately
+        <ST><![CDATA[(*
+    This action runs MC_POWER appropriately
     given the motor's own enables and the results of this FB's checks.
 *)
 bEnabled := stMotionStage.bAllEnable;
@@ -80,6 +81,11 @@ CASE eStatePMPSStatus OF
         stMotionStage.bSafetyReady := TRUE;
 END_CASE
 
+// bPowerSelf MUST be false to use this function with FB_MotionStage, so
+// automatically set it false here otherwise it will conflict with the
+// MC_POWER call in FB_MotionStage.
+stMotionStage.bPowerSelf := FALSE;
+
 mc_power(
     Axis:=stMotionStage.Axis,
     Enable:=bEnabled,
@@ -98,6 +104,7 @@ mc_power(
 IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
     IF astPositionState[nGoalStateIndex].bValid AND astPositionState[nGoalStateIndex].bUpdated THEN
         bValidGoal := TRUE;
+        bLockBounds := TRUE;
         fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
         fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);
     ELSE
@@ -105,6 +112,10 @@ IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
     END_IF
 ELSE
     bValidGoal := FALSE;
+END_IF
+
+IF NOT bEnable THEN
+    bLockBounds := FALSE;
 END_IF]]></ST>
       </Implementation>
     </Action>
@@ -129,9 +140,19 @@ ffNoGoal(
     This action sets bForwardEnable and bBackwardEnable based on
     the current position and the calculated bounds.
 *)
-IF bValidGoal AND bEnable THEN
-    bForwardEnabled := stMotionStage.stAxisStatus.fActPosition < fUpperPos;
-    bBackwardEnabled := stMotionStage.stAxisStatus.fActPosition > fLowerPos;
+IF bLockBounds THEN
+    // Prevent forward/backward motion if the position of the axis is outside of the upper/lower bounds respectively.
+    // Prevent forward/backward motion if the command to the axis is outside of the upper/lower bounds respectively.
+    bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.Axis.NcToPlc.TargetPos < fUpperPos;
+    bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.Axis.NcToPlc.TargetPos > fLowerPos;
+
+    IF (stMotionStage.nErrorId = 16#4223 OR stMotionStage.nErrorId = 16#4260) AND
+        ((stMotionStage.bAllForwardEnable AND NOT bForwardEnabled) OR
+        (stMotionStage.bAllBackwardEnable AND NOT bBackwardEnabled)) THEN
+        // Cannot move forward/backward and not triggered by one of the stMotionStage disables so overwrite the error with a custom error message to give more context.
+        stMotionStage.sCustomErrorMessage := CONCAT(CONCAT(CONCAT(
+            'Limits exceeded for most recent PMPS position state: ', LREAL_TO_FMTSTR(fLowerPos,5,TRUE)), ' < pos < '), LREAL_TO_FMTSTR(fUpperPos,5,TRUE));
+    END_IF
 ELSE
     // Either invalid state with a fault or FB not enabled
     bForwardEnabled := TRUE;
