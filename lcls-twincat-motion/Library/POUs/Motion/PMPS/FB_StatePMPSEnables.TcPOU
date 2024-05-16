@@ -149,7 +149,7 @@ IF bLockBounds THEN
     IF (stMotionStage.nErrorId = 16#4223 OR stMotionStage.nErrorId = 16#4260) AND
         ((stMotionStage.bAllForwardEnable AND NOT bForwardEnabled) OR
         (stMotionStage.bAllBackwardEnable AND NOT bBackwardEnabled)) THEN
-        // Cannot move forward and not triggered by the forward limit switch, overwrite the error with a custom error message to give more context.
+        // Cannot move forward/backward and not triggered by one of the stMotionStage disables so overwrite the error with a custom error message to give more context.
         stMotionStage.sCustomErrorMessage := CONCAT(CONCAT(CONCAT(
             'Limits exceeded for most recent PMPS position state: ', LREAL_TO_FMTSTR(fLowerPos,5,TRUE)), ' < pos < '), LREAL_TO_FMTSTR(fUpperPos,5,TRUE));
     END_IF
