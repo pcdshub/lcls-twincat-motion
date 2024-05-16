@@ -48,6 +48,7 @@ VAR
     fUpperPos: LREAL;
     ffNoGoal: FB_FastFault;
     bLockBounds: BOOL;
+    bErrorMsg: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
@@ -142,11 +143,13 @@ ffNoGoal(
 IF bLockBounds THEN
     // Prevent forward/backward motion if the position of the axis is outside of the upper/lower bounds respectively.
     // Prevent forward/backward motion if the command to the axis is outside of the upper/lower bounds respectively.
-    bForwardEnabled := stMotionStage.stAxisStatus.fActPosition < fUpperPos AND stMotionStage.fPosition < fUpperPos;
-    bBackwardEnabled := stMotionStage.stAxisStatus.fActPosition > fLowerPos AND stMotionStage.fPosition > fLowerPos;
+    bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.Axis.NcToPlc.TargetPos < fUpperPos;
+    bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.Axis.NcToPlc.TargetPos > fLowerPos;
 
-    IF stMotionStage.nErrorId = 16#4223 AND (NOT bForwardEnabled OR NOT bBackwardEnabled) THEN
-        // Cannot move forward or backward, overwrite the error with a custom error message to give more context.
+    IF (stMotionStage.nErrorId = 16#4223 OR stMotionStage.nErrorId = 16#4260) AND
+        ((stMotionStage.bAllForwardEnable AND NOT bForwardEnabled) OR
+        (stMotionStage.bAllBackwardEnable AND NOT bBackwardEnabled)) THEN
+        // Cannot move forward and not triggered by the forward limit switch, overwrite the error with a custom error message to give more context.
         stMotionStage.sCustomErrorMessage := CONCAT(CONCAT(CONCAT(
             'Limits exceeded for most recent PMPS position state: ', LREAL_TO_FMTSTR(fLowerPos,5,TRUE)), ' < pos < '), LREAL_TO_FMTSTR(fUpperPos,5,TRUE));
     END_IF

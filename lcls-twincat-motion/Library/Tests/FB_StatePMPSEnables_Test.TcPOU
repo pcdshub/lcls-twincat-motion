@@ -31,7 +31,8 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[astPositionState[nGoalState].fPosition := 10;
+      <ST><![CDATA[
+astPositionState[nGoalState].fPosition := 10;
 astPositionState[nGoalState].fDelta := 1;
 SetGoodState(astPositionState[nGoalState]);
 astPositionState[nInvalidState].fPosition := 20;
@@ -303,8 +304,6 @@ VAR_INPUT
     fGoalPosDelta: REAL;
 END_VAR
 VAR_INST
-    stBoundsCheckMotionStage: ST_MotionStage;
-    fbBoundsCheckMotionStage: FB_MotionStage;
     fbStateEnables: FB_StatePMPSEnables;
     fbMotionStageSetAndMove: FB_MotionStageSetAndMoveHelper;
     fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
@@ -316,7 +315,8 @@ VAR_INST
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[TEST(CONCAT('TestBoundsAfterFallingIntoUnknownState',UINT_TO_STRING(nTestID)));
+        <ST><![CDATA[
+TEST(CONCAT('TestBoundsAfterFallingIntoUnknownState',UINT_TO_STRING(nTestID)));
 IF nTestCounter <> nTestID THEN
     RETURN;
 END_IF
@@ -326,7 +326,7 @@ END_IF
 // active.
 IF NOT bInit THEN
     nGoalStateIndex := nGoalState;
-    SetEnables(stBoundsCheckMotionStage);
+    SetEnables(stMotionStage);
 ELSE
     nGoalStateIndex := 0;
 END_IF
@@ -336,7 +336,7 @@ END_IF
 // Once the position is set out of the bounds, the bounds should persist and prevent
 // further movement away from the goal state.
 fbStateEnables(
-    stMotionStage:=stBoundsCheckMotionStage,
+    stMotionStage:=stMotionStage,
     astPositionState:=astPositionState,
     fbFFHWO:=fbFFHWO,
     bEnable:=TRUE,
@@ -351,7 +351,7 @@ fbMotionStageSetAndMove(
     fStartPosition:=astPositionState[nGoalState].fPosition + fStartPosDelta,
     fGoalPosition:=astPositionState[nGoalState].fPosition + fGoalPosDelta,
     fVelocity:=1.0,
-    stMotionStage:=stBoundsCheckMotionStage,
+    stMotionStage:=stMotionStage,
     fDelta:=0.01,
     bResetDone=>,
     bSetDone=>,
@@ -379,7 +379,7 @@ IF tonTimer.Q OR fbMotionStageSetAndMove.bMoveDone THEN
     );
     AssertEquals_LREAL(
         Expected:=astPositionState[nGoalState].fPosition + fStartPosDelta,
-        Actual:=stBoundsCheckMotionStage.stAxisStatus.fActPosition,
+        Actual:=stMotionStage.stAxisStatus.fActPosition,
         Delta:=0.0001,
         Message:='Bounds failed to persist after falling out of state',
     );
@@ -416,12 +416,12 @@ IF tonTimer.Q OR fbMotionStageSetAndMove.bMoveDone THEN
         );
     END_IF
     bInit := FALSE;
-    stBoundsCheckMotionStage.bReset := TRUE;
+    stMotionStage.bReset := TRUE;
     bOneTestDone := TRUE;
     TEST_FINISHED();
 END_IF
 
-fbBoundsCheckMotionStage(stMotionStage:=stBoundsCheckMotionStage);
+fbMotionStage(stMotionStage:=stMotionStage);
 ]]></ST>
       </Implementation>
     </Method>
