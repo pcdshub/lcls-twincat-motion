@@ -143,8 +143,8 @@ ffNoGoal(
 IF bLockBounds THEN
     // Prevent forward/backward motion if the position of the axis is outside of the upper/lower bounds respectively.
     // Prevent forward/backward motion if the command to the axis is outside of the upper/lower bounds respectively.
-    bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.Axis.NcToPlc.TargetPos < fUpperPos;
-    bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.Axis.NcToPlc.TargetPos > fLowerPos;
+    bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.fPosition < fUpperPos;
+    bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.fPosition > fLowerPos;
 
     IF (stMotionStage.nErrorId = 16#4223 OR stMotionStage.nErrorId = 16#4260) AND
         ((stMotionStage.bAllForwardEnable AND NOT bForwardEnabled) OR
