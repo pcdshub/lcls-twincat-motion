@@ -143,8 +143,8 @@ ffNoGoal(
 IF bLockBounds THEN
     // Prevent forward/backward motion if the position of the axis is outside of the upper/lower bounds respectively.
     // Prevent forward/backward motion if the command to the axis is outside of the upper/lower bounds respectively.
-    bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.Axis.NcToPlc.TargetPos < fUpperPos;
-    bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.Axis.NcToPlc.TargetPos > fLowerPos;
+    bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.fPosition < fUpperPos;
+    bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.fPosition > fLowerPos;
 
     IF (stMotionStage.nErrorId = 16#4223 OR stMotionStage.nErrorId = 16#4260) AND
         ((stMotionStage.bAllForwardEnable AND NOT bForwardEnabled) OR
@@ -161,5 +161,25 @@ END_IF
 ]]></ST>
       </Implementation>
     </Action>
+    <LineIds Name="FB_StatePMPSEnables">
+      <LineId Id="3" Count="4" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnables.ApplyEnables">
+      <LineId Id="2" Count="31" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnables.GetBounds">
+      <LineId Id="2" Count="18" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnables.RunFastFaults">
+      <LineId Id="2" Count="8" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnables.SetEnables">
+      <LineId Id="2" Count="22" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>
