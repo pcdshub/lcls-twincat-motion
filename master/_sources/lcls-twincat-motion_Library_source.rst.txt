@@ -3174,10 +3174,11 @@ F_MotionErrorCodeLookup
         16#4357: msg:='Negative limit hit';
         16#4358: msg:='Positive limit hit';
         16#4395: msg:='Set velocity not allowed';
+        16#4466: msg:='Invalid I/O data for more than n continuous NC cycles (encoder)';
+        16#4467: msg:='Encoder error: invalid actual position data';
         16#4550: msg:='Stall: position lag monitoring error';
         16#4650: msg:='Drive hardware not ready to operate';
         16#4655: msg:='Invalid IO data';
-        16#4467: msg:='Encoder error: invalid actual position data';
         16#4B07: msg:='Timeout axis function block after 6 seconds';
         16#4FFF: msg:='Unknown NC error (not in manual)';
 
@@ -8722,6 +8723,97 @@ FB_MotionStageNCParams
 
 
 Related:
+    * `ST_MotionStage`_
+
+
+FB_MotionStageSetAndMoveHelper
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_MotionStageSetAndMoveHelper
+    VAR_INPUT
+        // Begin on rising edge, stop on falling edge.
+        bExecute: BOOL;
+        // The position to set the motor to
+        fStartPosition: LREAL;
+        // The goal to move the motor towards
+        fGoalPosition: LREAL;
+        // The velocity to move at
+        fVelocity: LREAL;
+        // The allowable deviation from the goal position to be considered done moving.
+        fDelta: LREAL;
+    END_VAR
+    VAR_IN_OUT
+        stMotionStage: ST_MotionStage;
+    END_VAR
+    VAR_OUTPUT
+        // Goes to TRUE once the motor has no errors and is deactivated.
+        bResetDone: BOOL;
+        // Goes to TRUE once the set position completes.
+        bSetDone: BOOL;
+        // Goes to TRUE once the motor begins moving.
+        bMotionStarted: BOOL;
+        // Goes to TRUE once the motor reaches its destination.
+        bMoveDone: BOOL;
+    END_VAR
+    VAR
+        rtExec: R_TRIG;
+        mcSetPos: MC_SetPosition;
+    END_VAR
+    rtExec(CLK:=bExecute);
+
+    IF rtExec.Q THEN
+        stMotionStage.bReset := TRUE;
+        stMotionStage.bEnable := FALSE;
+        stMotionStage.nEnableMode := E_StageEnableMode.NEVER;
+        mcSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=FALSE
+        );
+        bResetDone := FALSE;
+        bSetDone := FALSE;
+        bMotionStarted := FALSE;
+        bMoveDone := FALSE;
+    END_IF
+
+    bResetDone := NOT stMotionStage.bError AND NOT stMotionStage.bBusy;
+    bMoveDone := stMotionStage.stAxisStatus.fActPosition <= fGoalPosition + fDelta AND
+                 stMotionStage.stAxisStatus.fActPosition >= fGoalPosition - fDelta;
+
+    IF NOT bSetDone THEN
+        stMotionStage.bReset := TRUE;
+        stMotionStage.bEnable := FALSE;
+        IF stMotionStage.stAxisStatus.fActPosition <> fStartPosition THEN
+            mcSetPos(
+                Axis:=stMotionStage.Axis,
+                Execute:=NOT mcSetPos.Execute,
+                Position:=fStartPosition,
+                Mode:=FALSE,
+                Done=>
+            );
+        ELSE
+            bSetDone := TRUE;
+        END_IF
+    ELSE
+        stMotionStage.bEnable := TRUE;
+        IF NOT bMotionStarted AND NOT stMotionStage.Axis.Status.Disabled THEN
+            stMotionStage.fPosition := fGoalPosition;
+            stMotionStage.fVelocity := fVelocity;
+            stMotionStage.bMoveCmd := TRUE;
+            bMotionStarted := TRUE;
+        END_IF
+    END_IF
+
+    IF bMoveDone THEN
+        stMotionStage.bReset := TRUE;
+    END_IF
+
+    END_FUNCTION_BLOCK
+
+
+Related:
+    * `E_StageEnableMode`_
     * `ST_MotionStage`_
 
 
@@ -15940,6 +16032,8 @@ FB_StatePMPSEnables
         fLowerPos: LREAL;
         fUpperPos: LREAL;
         ffNoGoal: FB_FastFault;
+        bLockBounds: BOOL;
+        bErrorMsg: BOOL;
     END_VAR
     GetBounds();
     SetEnables();
@@ -15950,7 +16044,7 @@ FB_StatePMPSEnables
 
     ACTION ApplyEnables:
     (*
-        This action takes runs MC_POWER appropriately
+        This action runs MC_POWER appropriately
         given the motor's own enables and the results of this FB's checks.
     *)
     bEnabled := stMotionStage.bAllEnable;
@@ -15970,6 +16064,11 @@ FB_StatePMPSEnables
             stMotionStage.bSafetyReady := TRUE;
     END_CASE
 
+    // bPowerSelf MUST be false to use this function with FB_MotionStage, so
+    // automatically set it false here otherwise it will conflict with the
+    // MC_POWER call in FB_MotionStage.
+    stMotionStage.bPowerSelf := FALSE;
+
     mc_power(
         Axis:=stMotionStage.Axis,
         Enable:=bEnabled,
@@ -15985,6 +16084,7 @@ FB_StatePMPSEnables
     IF nGoalStateIndex > 0 AND nGoalStateIndex <= GeneralConstants.MAX_STATES THEN
         IF astPositionState[nGoalStateIndex].bValid AND astPositionState[nGoalStateIndex].bUpdated THEN
             bValidGoal := TRUE;
+            bLockBounds := TRUE;
             fLowerPos := astPositionState[nGoalStateIndex].fPosition - ABS(astPositionState[nGoalStateIndex].fDelta);
             fUpperPos := astPositionState[nGoalStateIndex].fPosition + ABS(astPositionState[nGoalStateIndex].fDelta);
         ELSE
@@ -15992,6 +16092,10 @@ FB_StatePMPSEnables
         END_IF
     ELSE
         bValidGoal := FALSE;
+    END_IF
+
+    IF NOT bEnable THEN
+        bLockBounds := FALSE;
     END_IF
     END_ACTION
 
@@ -16011,9 +16115,19 @@ FB_StatePMPSEnables
         This action sets bForwardEnable and bBackwardEnable based on
         the current position and the calculated bounds.
     *)
-    IF bValidGoal AND bEnable THEN
-        bForwardEnabled := stMotionStage.stAxisStatus.fActPosition < fUpperPos;
-        bBackwardEnabled := stMotionStage.stAxisStatus.fActPosition > fLowerPos;
+    IF bLockBounds THEN
+        // Prevent forward/backward motion if the position of the axis is outside of the upper/lower bounds respectively.
+        // Prevent forward/backward motion if the command to the axis is outside of the upper/lower bounds respectively.
+        bForwardEnabled  := stMotionStage.Axis.NcToPlc.ActPos < fUpperPos AND stMotionStage.fPosition < fUpperPos;
+        bBackwardEnabled := stMotionStage.Axis.NcToPlc.ActPos > fLowerPos AND stMotionStage.fPosition > fLowerPos;
+
+        IF (stMotionStage.nErrorId = 16#4223 OR stMotionStage.nErrorId = 16#4260) AND
+            ((stMotionStage.bAllForwardEnable AND NOT bForwardEnabled) OR
+            (stMotionStage.bAllBackwardEnable AND NOT bBackwardEnabled)) THEN
+            // Cannot move forward/backward and not triggered by one of the stMotionStage disables so overwrite the error with a custom error message to give more context.
+            stMotionStage.sCustomErrorMessage := CONCAT(CONCAT(CONCAT(
+                'Limits exceeded for most recent PMPS position state: ', LREAL_TO_FMTSTR(fLowerPos,5,TRUE)), ' < pos < '), LREAL_TO_FMTSTR(fUpperPos,5,TRUE));
+        END_IF
     ELSE
         // Either invalid state with a fault or FB not enabled
         bForwardEnabled := TRUE;
@@ -16025,6 +16139,7 @@ FB_StatePMPSEnables
 Related:
     * `E_MotionFFType`_
     * `E_StatePMPSStatus`_
+    * `FB_MotionStage`_
     * `ST_MotionStage`_
     * `ST_PositionState`_
 
@@ -16095,6 +16210,8 @@ FB_StatePMPSEnables_Test
     TestLimits(7);
     TestMoveTo(8);
     TestMoveAt(9);
+    TestBoundsAfterFallingIntoUnknownState(10,-20,-40);
+    TestBoundsAfterFallingIntoUnknownState(11,20,40);
 
     IF bOneTestDone THEN
         bOneTestDone := FALSE;
@@ -16137,6 +16254,7 @@ FB_StatePMPSEnables_Test
         bHWEnable:=FALSE,
     );
     bInit := TRUE;
+
     // Run our FB
     fbStateEnables(
         stMotionStage:=stMotionStage,
@@ -16146,6 +16264,7 @@ FB_StatePMPSEnables_Test
         nGoalStateIndex:=nGoalState,
     );
     fbFFHWO.EvaluateOutput();
+
     // If we've set the position OR ran out of time to set the position, check the asserts
     IF tonTimer.Q OR fbMove.bSetDone THEN
         AssertFalse(
@@ -16203,6 +16322,7 @@ FB_StatePMPSEnables_Test
         bHWEnable:=FALSE,
     );
     bInit := TRUE;
+
     // Run our FB
     fbStateEnables(
         stMotionStage:=stMotionStage,
@@ -16306,6 +16426,130 @@ FB_StatePMPSEnables_Test
         bOneTestDone := TRUE;
         TEST_FINISHED();
     END_IF
+    END_METHOD
+
+    METHOD TestBoundsAfterFallingIntoUnknownState
+    VAR_INPUT
+        nTestID: UINT;
+        fStartPosDelta: REAL;
+        fGoalPosDelta: REAL;
+    END_VAR
+    VAR_INST
+        fbStateEnables: FB_StatePMPSEnables;
+        fbMotionStageSetAndMove: FB_MotionStageSetAndMoveHelper;
+        fbFFHWO: FB_HardwareFFOutput := (bAutoReset := TRUE);
+        mcSetPos: MC_SetPosition;
+        bInit: BOOL;
+        bSetPos: BOOL;
+        bCommandedMove: BOOL;
+        nGoalStateIndex: UINT;
+    END_VAR
+    TEST(CONCAT('TestBoundsAfterFallingIntoUnknownState',UINT_TO_STRING(nTestID)));
+    IF nTestCounter <> nTestID THEN
+        RETURN;
+    END_IF
+
+    // On first pass, set the goal state index to a valid state to initialize the bounds.
+    // Then, set the goal state index to an unknown state to ensure the bounds remain
+    // active.
+    IF NOT bInit THEN
+        nGoalStateIndex := nGoalState;
+        SetEnables(stMotionStage);
+    ELSE
+        nGoalStateIndex := 0;
+    END_IF
+
+
+    // Run our FB which should enable the real move while within the allowable bounds.
+    // Once the position is set out of the bounds, the bounds should persist and prevent
+    // further movement away from the goal state.
+    fbStateEnables(
+        stMotionStage:=stMotionStage,
+        astPositionState:=astPositionState,
+        fbFFHWO:=fbFFHWO,
+        bEnable:=TRUE,
+        nGoalStateIndex:=nGoalStateIndex,
+        eStatePMPSStatus:=E_StatePMPSStatus.TRANSITION,
+        bTransitionAuthorized:=TRUE,
+    );
+
+    // Set position to be out of the goal's range, and try to move away from the goal
+    fbMotionStageSetAndMove(
+        bExecute:=bInit,
+        fStartPosition:=astPositionState[nGoalState].fPosition + fStartPosDelta,
+        fGoalPosition:=astPositionState[nGoalState].fPosition + fGoalPosDelta,
+        fVelocity:=1.0,
+        stMotionStage:=stMotionStage,
+        fDelta:=0.01,
+        bResetDone=>,
+        bSetDone=>,
+        bMotionStarted=>,
+        bMoveDone=>
+    );
+
+    bInit := TRUE;
+
+    fbFFHWO.EvaluateOutput();
+
+    // If we've reached the position OR ran out of time to set the position, check the asserts
+    IF tonTimer.Q OR fbMotionStageSetAndMove.bMoveDone THEN
+        AssertTrue(
+            tonTimer.Q,
+            'Timeout should have occurred. Move should have been unable to complete.',
+        );
+        AssertTrue(
+            fbMotionStageSetAndMove.bSetDone,
+            'Position was never set.',
+        );
+        AssertTrue(
+            fbMotionStageSetAndMove.bMotionStarted,
+            'Move was never commanded.',
+        );
+        AssertEquals_LREAL(
+            Expected:=astPositionState[nGoalState].fPosition + fStartPosDelta,
+            Actual:=stMotionStage.stAxisStatus.fActPosition,
+            Delta:=0.0001,
+            Message:='Bounds failed to persist after falling out of state',
+        );
+        AssertFalse(
+            fbFFHWO.q_xFastFaultOut,
+            'Fast fault should have triggered with unknown state',
+        );
+        IF fStartPosDelta < 0 AND abs(fStartPosDelta) > astPositionState[nGoalState].fDelta THEN
+            AssertFalse(
+                fbStateEnables.bBackwardEnabled,
+                'Backward should be disabled.',
+            );
+            AssertTrue(
+                fbStateEnables.bForwardEnabled,
+                'Forward should be enabled.',
+            );
+        ELSIF fStartPosDelta > 0 AND abs(fStartPosDelta) > astPositionState[nGoalState].fDelta THEN
+            AssertTrue(
+                fbStateEnables.bBackwardEnabled,
+                'Backward should be enabled.',
+            );
+            AssertFalse(
+                fbStateEnables.bForwardEnabled,
+                'Forward should be disabled.',
+            );
+        ELSE
+            AssertTrue(
+                fbStateEnables.bForwardEnabled,
+                'Forward should be enabled.',
+            );
+            AssertTrue(
+                fbStateEnables.bBackwardEnabled,
+                'Backward should be enabled.',
+            );
+        END_IF
+        bInit := FALSE;
+        stMotionStage.bReset := TRUE;
+        bOneTestDone := TRUE;
+        TEST_FINISHED();
+    END_IF
+
+    fbMotionStage(stMotionStage:=stMotionStage);
     END_METHOD
 
     METHOD TestDisabled
@@ -16667,6 +16911,7 @@ FB_StatePMPSEnables_Test
 Related:
     * `E_StatePMPSStatus`_
     * `FB_MotionStage`_
+    * `FB_MotionStageSetAndMoveHelper`_
     * `FB_MotorTestSuite`_
     * `FB_PositionStateInternal`_
     * `FB_StatePMPSEnables`_
@@ -17915,6 +18160,10 @@ FB_TestHelperSetAndMove
         );
         bMotionStarted S= bSetDone AND fbMoveRequest.bExecute AND stMotionStage.bBusy AND stMotionStage.stAxisStatus.fActPosition <> fStartPosition;
         bMoveDone S= bMotionStarted AND stMotionStage.stAxisStatus.fActPosition = fGoalPosition;
+    ELSIF fStartPosition = fGoalPosition THEN
+        // if the start position matches the goal position, make sure the commanded position is
+        // set to the current position.
+        stMotionStage.fPosition := fGoalPosition;
     END_IF
 
     // Set the position prior to the move but after the reset.
