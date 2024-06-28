@@ -40,6 +40,7 @@ VAR
     bFFOxOk: BOOL;
     bAtSafeState: BOOL;
     nIter: UINT;
+    fbFlutterDet : FB_FlutterDetection;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -111,11 +112,18 @@ bFFOxOk := F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stBeamNeeded);
 // You can pass in a different stHighBeamThreshold as an input parameter to customize this behavior
 bAtSafeState := F_SafeBPCompare(stHighBeamThreshold, stBeamNeeded);
 
+fbFlutterDet(bVarToMonitor:=bFFOxOk, fPastTime:=T#1000ms, nMaxFlipsAllowed:=3);
+
 // If the beam parameters are wrong, it is a fault! This encompasses all unknown arbiter-related errors.
 ffBeamParamsOk.i_xOK := bFFOxOk;
 ffBeamParamsOk.i_xReset S= bFFOxOk AND bAtSafeState;
 ffBeamParamsOk.i_xReset R= NOT ffBeamParamsOk.i_xOK;
-ffBeamParamsOk.i_xAutoReset := bBPOKAutoReset;
+
+IF fbFlutterDet.bExceededFlipMax = TRUE THEN
+    ffBeamParamsOk.i_xAutoReset := FALSE;
+ELSE
+    ffBeamParamsOk.i_xAutoReset := bBPOKAutoReset;
+END_IF
 
 ffBeamParamsOk(
     i_DevName:=stMotionStage.sName,
