@@ -70,6 +70,9 @@ VAR
     q_xInsert_DO    AT%Q*: BOOL;
     q_xRetract_DO    AT%Q*: BOOL;
 
+    {attribute 'pytmc' :='pv: FWM'}
+    fbFlowMeter: FB_FDQ_FlowMeter;
+
 END_VAR
 
 
@@ -162,7 +165,9 @@ fbFF(i_xOK := xMPS_OK,
     io_fbFFHWO := io_fbFFHWO);
 
 (*Soft IO Mapping to Epics pvs*)
-ACT_IO();]]></ST>
+ACT_IO();
+
+fbFlowMeter();]]></ST>
     </Implementation>
     <Action Name="ACT_IO" Id="{090f58e5-b160-4478-a84f-328a90ba6204}">
       <Implementation>
