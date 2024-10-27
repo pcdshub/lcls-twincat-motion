@@ -1,0 +1,215 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionVirtualFrame" Id="{db4a3323-bc78-4bca-8918-99f0e2117f18}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_MotionVirtualFrame
+VAR_IN_OUT
+    stMotionStageRx : ST_MotionStage; // Real X Axis in base frame of reference
+    stMotionStageRy : ST_MotionStage; // Real Y Axis in base frame of reference
+    stMotionStageRz : ST_MotionStage; // Real Z Axis in base frame of reference
+    stMotionStageVx : ST_MotionStage; // Virtual X Axis in new frame of reference
+    stMotionStageVy : ST_MotionStage; // Virtual Y Axis in new frame of reference
+    stMotionStageVz : ST_MotionStage; // Virtual Z Axis in new frame of reference
+END_VAR
+VAR_INPUT
+    bEnable : BOOL;
+    fAlphaDegrees : LREAL;
+    fBetaDegrees : LREAL;
+    fGammaDegrees : LREAL;
+    sOrder : STRING;
+END_VAR
+VAR
+    fAlphaRadians : LREAL;
+    fBetaRadians : LREAL;
+    fGammaRadians : LREAL;
+
+    rtExecuteVx : R_TRIG;
+    rtExecuteVy : R_TRIG;
+    rtExecuteVz : R_TRIG;
+
+    fbRealActPositionVec3 : FB_Vec3;
+    fbRealActVelocityVec3 : FB_Vec3;
+    fbRealActAcceleraVec3 : FB_Vec3;
+    fbVirtActPositionVec3 : FB_Vec3;
+    fbVirtActVelocityVec3 : FB_Vec3;
+    fbVirtActAcceleraVec3 : FB_Vec3;
+
+    sOrderReversed : STRING;
+    sLeft : STRING;
+    sMid : STRING;
+    sRight : STRING;
+
+    fbRealTarPositionVec3 : FB_Vec3;
+    fbRealTarVelocityVec3 : FB_Vec3;
+    fbRealTarAcceleraVec3 : FB_Vec3;
+    fbVirtTarPositionVec3 : FB_Vec3;
+    fbVirtTarVelocityVec3 : FB_Vec3;
+    fbVirtTarAcceleraVec3 : FB_Vec3;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fAlphaRadians := fAlphaDegrees / 180.0 * lcls_twincat_math.GVL_Constants.PI;
+fBetaRadians := fBetaDegrees / 180.0 * lcls_twincat_math.GVL_Constants.PI;
+fGammaRadians := fGammaDegrees / 180.0 * lcls_twincat_math.GVL_Constants.PI;
+
+rtExecuteVx(CLK := stMotionStageVx.bExecute);
+rtExecuteVy(CLK := stMotionStageVy.bExecute);
+rtExecuteVz(CLK := stMotionStageVz.bExecute);
+
+fbRealActPositionVec3.x := stMotionStageRx.Axis.NcToPlc.ActPos;
+fbRealActPositionVec3.y := stMotionStageRy.Axis.NcToPlc.ActPos;
+fbRealActPositionVec3.z := stMotionStageRz.Axis.NcToPlc.ActPos;
+
+fbRealActVelocityVec3.x := stMotionStageRx.Axis.NcToPlc.ActVelo;
+fbRealActVelocityVec3.y := stMotionStageRy.Axis.NcToPlc.ActVelo;
+fbRealActVelocityVec3.z := stMotionStageRz.Axis.NcToPlc.ActVelo;
+
+fbRealActAcceleraVec3.x := stMotionStageRx.Axis.NcToPlc.ActAcc;
+fbRealActAcceleraVec3.y := stMotionStageRy.Axis.NcToPlc.ActAcc;
+fbRealActAcceleraVec3.z := stMotionStageRz.Axis.NcToPlc.ActAcc;
+
+fbVirtActPositionVec3 := F_EulerRotateVec3Frame(
+    iVec3 := fbRealActPositionVec3,
+    fAlphaRadians := fAlphaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fGammaRadians,
+    sOrder := sOrder
+);
+
+fbVirtActVelocityVec3 := F_EulerRotateVec3Frame(
+    iVec3 := fbRealActVelocityVec3,
+    fAlphaRadians := fAlphaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fGammaRadians,
+    sOrder := sOrder
+);
+
+IF stMotionStageVx.bBusy THEN
+    fbVirtTarPositionVec3.x := stMotionStageVx.fPosition;
+    IF fbVirtTarPositionVec3.x >= fbVirtActPositionVec3.x THEN
+        fbVirtTarVelocityVec3.x := stMotionStageVx.fVelocity;
+        fbVirtTarAcceleraVec3.x := stMotionStageVx.fAcceleration;
+    ELSE
+        fbVirtTarVelocityVec3.x := -stMotionStageVx.fVelocity;
+        fbVirtTarAcceleraVec3.x := -stMotionStageVx.fAcceleration;
+    END_IF
+ELSE
+    fbVirtTarPositionVec3.x := fbVirtActPositionVec3.x;
+    fbVirtTarVelocityVec3.x := 0.0;
+    fbVirtTarAcceleraVec3.x := 0.0;
+END_IF
+
+IF stMotionStageVy.bBusy THEN
+    fbVirtTarPositionVec3.y := stMotionStageVy.fPosition;
+    IF fbVirtTarPositionVec3.y >= fbVirtActPositionVec3.y THEN
+        fbVirtTarVelocityVec3.y := stMotionStageVy.fVelocity;
+        fbVirtTarAcceleraVec3.y := stMotionStageVy.fAcceleration;
+    ELSE
+        fbVirtTarVelocityVec3.y := -stMotionStageVy.fVelocity;
+        fbVirtTarAcceleraVec3.y := -stMotionStageVy.fAcceleration;
+    END_IF
+ELSE
+    fbVirtTarPositionVec3.y := fbVirtActPositionVec3.y;
+    fbVirtTarVelocityVec3.y := 0.0;
+    fbVirtTarAcceleraVec3.y := 0.0;
+END_IF
+
+IF stMotionStageVz.bBusy THEN
+    fbVirtTarPositionVec3.z := stMotionStageVz.fPosition;
+    IF fbVirtTarPositionVec3.z >= fbVirtActPositionVec3.z THEN
+        fbVirtTarVelocityVec3.z := stMotionStageVz.fVelocity;
+        fbVirtTarAcceleraVec3.z := stMotionStageVz.fAcceleration;
+    ELSE
+        fbVirtTarVelocityVec3.z := -stMotionStageVz.fVelocity;
+        fbVirtTarAcceleraVec3.z := -stMotionStageVz.fAcceleration;
+    END_IF
+ELSE
+    fbVirtTarPositionVec3.z := fbVirtActPositionVec3.z;
+    fbVirtTarVelocityVec3.z := 0.0;
+    fbVirtTarAcceleraVec3.z := 0.0;
+END_IF
+
+(*
+sLeft := LEFT(sOrder, 1);
+sMid := MID(sOrder, 1, 1);
+sRight := RIGHT(sOrder, 1);
+sOrderReversed := CONCAT(sRight, CONCAT(sMid, sLeft));
+
+fbRealTarPositionVec3 := F_EulerRotateVec3Frame(
+    iVec3 := fbVirtTarPositionVec3,
+    fAlphaRadians := fGammaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fAlphaRadians,
+    sOrder := sOrderReversed
+);
+
+fbRealTarVelocityVec3 := F_EulerRotateVec3Frame(
+    iVec3 := fbVirtTarVelocityVec3,
+    fAlphaRadians := fGammaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fAlphaRadians,
+    sOrder := sOrderReversed
+);
+*)
+
+fbRealTarPositionVec3 := F_EulerRotateVec3Point(
+    iVec3 := fbVirtTarPositionVec3,
+    fAlphaRadians := fAlphaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fGammaRadians,
+    sOrder := sOrder
+);
+
+fbRealTarVelocityVec3 := F_EulerRotateVec3Point(
+    iVec3 := fbVirtTarVelocityVec3,
+    fAlphaRadians := fAlphaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fGammaRadians,
+    sOrder := sOrder
+);
+
+fbRealTarAcceleraVec3 := F_EulerRotateVec3Point(
+    iVec3 := fbVirtTarAcceleraVec3,
+    fAlphaRadians := fAlphaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fGammaRadians,
+    sOrder := sOrder
+);
+
+IF bEnable THEN
+    stMotionStageRx.fPosition := fbRealTarPositionVec3.x;
+    stMotionStageRy.fPosition := fbRealTarPositionVec3.y;
+    stMotionStageRz.fPosition := fbRealTarPositionVec3.z;
+
+    stMotionStageRx.fVelocity := ABS(fbRealTarVelocityVec3.x);
+    stMotionStageRy.fVelocity := ABS(fbRealTarVelocityVec3.y);
+    stMotionStageRz.fVelocity := ABS(fbRealTarVelocityVec3.z);
+
+    stMotionStageRx.fAcceleration := ABS(fbRealTarAcceleraVec3.x);
+    stMotionStageRy.fAcceleration := ABS(fbRealTarAcceleraVec3.y);
+    stMotionStageRz.fAcceleration := ABS(fbRealTarAcceleraVec3.z);
+
+    stMotionStageRx.fDeceleration := ABS(fbRealTarAcceleraVec3.x);
+    stMotionStageRy.fDeceleration := ABS(fbRealTarAcceleraVec3.y);
+    stMotionStageRz.fDeceleration := ABS(fbRealTarAcceleraVec3.z);
+
+    IF rtExecuteVx.Q OR rtExecuteVy.Q OR rtExecuteVz.Q THEN
+        stMotionStageRx.bMoveCmd := TRUE;
+        stMotionStageRy.bMoveCmd := TRUE;
+        stMotionStageRz.bMoveCmd := TRUE;
+    END_IF
+
+    IF stMotionStageRx.bError OR stMotionStageRy.bError OR stMotionStageRz.bError THEN
+        stMotionStageVx.bError := TRUE;
+        stMotionStageVy.bError := TRUE;
+        stMotionStageVz.bError := TRUE;
+        stMotionStageVx.sCustomErrorMessage := 'An error occured in one of the real axes. All virtual axes stopped.';
+        stMotionStageVy.sCustomErrorMessage := 'An error occured in one of the real axes. All virtual axes stopped.';
+        stMotionStageVz.sCustomErrorMessage := 'An error occured in one of the real axes. All virtual axes stopped.';
+    END_IF
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

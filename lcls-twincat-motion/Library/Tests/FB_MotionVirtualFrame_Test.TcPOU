@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionVirtualFrame_Test" Id="{89c3fcc0-8932-48a8-9976-db5e1ce2e9c1}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_MotionVirtualFrame_Test EXTENDS TcUnit.FB_TestSuite
+VAR
+    nTestIDAssigner : INT;
+    nTestID : INT;
+
+    stMotionStageRx : ST_MotionStage;
+    stMotionStageRy : ST_MotionStage;
+    stMotionStageRz : ST_MotionStage;
+
+    stMotionStageVx : ST_MotionStage;
+    stMotionStageVy : ST_MotionStage;
+    stMotionStageVz : ST_MotionStage;
+
+    fbMotionStageRx : FB_MotionStage;
+    fbMotionStageRy : FB_MotionStage;
+    fbMotionStageRz : FB_MotionStage;
+
+    fbMotionStageVx : FB_MotionStage;
+    fbMotionStageVy : FB_MotionStage;
+    fbMotionStageVz : FB_MotionStage;
+
+    nPositionCountsVx AT %Q* : UDINT;
+    nPositionCountsVy AT %Q* : UDINT;
+    nPositionCountsVz AT %Q* : UDINT;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+nTestIDAssigner := 0;
+
+TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc();
+
+fbMotionStageRx(stMotionStage := stMotionStageRx);
+fbMotionStageRy(stMotionStage := stMotionStageRy);
+fbMotionStageRz(stMotionStage := stMotionStageRz);
+
+fbMotionStageVx(stMotionStage := stMotionStageVx);
+fbMotionStageVy(stMotionStage := stMotionStageVy);
+fbMotionStageVz(stMotionStage := stMotionStageVz);
+]]></ST>
+    </Implementation>
+    <Action Name="AssertNoErrors" Id="{835be31f-8489-492c-bbc8-90f1a0c04eb1}">
+      <Implementation>
+        <ST><![CDATA[
+AssertFalse(
+    Condition := stMotionStageRx.bError,
+    Message := 'Rx axis error detected when it should not have an error.'
+);
+
+AssertFalse(
+    Condition := stMotionStageRy.bError,
+    Message := 'Ry axis error detected when it should not have an error.'
+);
+
+AssertFalse(
+    Condition := stMotionStageRz.bError,
+    Message := 'Rz axis error detected when it should not have an error.'
+);
+
+AssertFalse(
+    Condition := stMotionStageVx.bError,
+    Message := 'Vx axis error detected when it should not have an error.'
+);
+
+AssertFalse(
+    Condition := stMotionStageVy.bError,
+    Message := 'Vy axis error detected when it should not have an error.'
+);
+
+AssertFalse(
+    Condition := stMotionStageVz.bError,
+    Message := 'Vz axis error detected when it should not have an error.'
+);
+]]></ST>
+      </Implementation>
+    </Action>
+    <Method Name="TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc" Id="{96619493-4949-4dca-ad6e-5a7f16038b00}">
+      <Declaration><![CDATA[
+METHOD PRIVATE TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc
+VAR
+    fbMotionVirtualFrame : FB_MotionVirtualFrame;
+    bInit : BOOL;
+    fbMotorTestSuite : FB_MotorTestSuite;
+    fbMotionStageSetAndMoveHelper : FB_MotionStageSetAndMoveHelper;
+    bComplete : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc');
+
+IF nTestID <> nTestIDAssigner THEN
+    RETURN;
+END_IF
+
+IF NOT bInit THEN
+    bInit := TRUE;
+
+    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRx);
+    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRy);
+    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRz);
+    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVx);
+    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVy);
+    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVz);
+
+    stMotionStageVx.fAcceleration := 20.0;
+END_IF
+
+fbMotionStageSetAndMoveHelper(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    fGoalPosition := 100.0,
+    fVelocity := 10.0,
+    fDelta := 0.001,
+    stMotionStage := stMotionStageVx,
+    bResetDone => ,
+    bSetDone => ,
+    bMotionStarted => ,
+    bMoveDone =>
+);
+
+fbMotionVirtualFrame(
+    stMotionStageRx := stMotionStageRx,
+    stMotionStageRy := stMotionStageRy,
+    stMotionStageRz := stMotionStageRz,
+    stMotionStageVx := stMotionStageVx,
+    stMotionStageVy := stMotionStageVy,
+    stMotionStageVz := stMotionStageVz,
+    bEnable := TRUE,
+    fAlphaDegrees := 90.0,
+    fBetaDegrees := 90.0,
+    fGammaDegrees := 90.0,
+    sOrder := 'XYZ'
+);
+
+bComplete := fbMotionStageSetAndMoveHelper.bMoveDone;
+
+IF bComplete THEN
+    AssertNoErrors();
+
+    TEST_FINISHED();
+
+    nTestID := nTestID + 1;
+END_IF
+
+nTestIDAssigner := nTestIDAssigner + 1;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
