@@ -5,7 +5,9 @@
 FUNCTION_BLOCK FB_MotionVirtualFrame_Test EXTENDS TcUnit.FB_TestSuite
 VAR
     nTestIDAssigner : INT;
-    nTestID : INT;
+    nTestID : INT := 1;
+    tonTimeout : TON;
+    tonStart : TON;
 
     stMotionStageRx : ST_MotionStage;
     stMotionStageRy : ST_MotionStage;
@@ -26,6 +28,16 @@ VAR
     nPositionCountsVx AT %Q* : UDINT;
     nPositionCountsVy AT %Q* : UDINT;
     nPositionCountsVz AT %Q* : UDINT;
+
+    fbMotorTestSuite : FB_MotorTestSuite;
+    fbMotionStageSetAndMoveHelper : FB_MotionStageSetAndMoveHelper;
+    fbMotionStageSetHelperRx : FB_MotionStageSetHelper;
+    fbMotionStageSetHelperRy : FB_MotionStageSetHelper;
+    fbMotionStageSetHelperRz : FB_MotionStageSetHelper;
+    fbMotionStageSetHelperVx : FB_MotionStageSetHelper;
+    fbMotionStageSetHelperVy : FB_MotionStageSetHelper;
+    fbMotionStageSetHelperVz : FB_MotionStageSetHelper;
+    fbMotionVirtualFrame : FB_MotionVirtualFrame;
 END_VAR
 
 ]]></Declaration>
@@ -33,20 +45,25 @@ END_VAR
       <ST><![CDATA[
 nTestIDAssigner := 0;
 
+tonStart(IN := TRUE, PT := T#1s);
+
+TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc();
+
+TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc();
+
+TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc();
+
 TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc();
-
-fbMotionStageRx(stMotionStage := stMotionStageRx);
-fbMotionStageRy(stMotionStage := stMotionStageRy);
-fbMotionStageRz(stMotionStage := stMotionStageRz);
-
-fbMotionStageVx(stMotionStage := stMotionStageVx);
-fbMotionStageVy(stMotionStage := stMotionStageVy);
-fbMotionStageVz(stMotionStage := stMotionStageVz);
 ]]></ST>
     </Implementation>
     <Action Name="AssertNoErrors" Id="{835be31f-8489-492c-bbc8-90f1a0c04eb1}">
       <Implementation>
         <ST><![CDATA[
+AssertFalse(
+    Condition := tonTimeout.Q,
+    Message := 'Timeout timer ended the test because it took longer than expected.'
+);
+
 AssertFalse(
     Condition := stMotionStageRx.bError,
     Message := 'Rx axis error detected when it should not have an error.'
@@ -79,50 +96,678 @@ AssertFalse(
 ]]></ST>
       </Implementation>
     </Action>
-    <Method Name="TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc" Id="{96619493-4949-4dca-ad6e-5a7f16038b00}">
+    <Method Name="AssertPosVelAccCorrect" Id="{645a18f6-30c6-4966-a4ea-a55c7fe24cdb}">
+      <Declaration><![CDATA[
+METHOD PRIVATE AssertPosVelAccCorrect
+VAR_INPUT
+    fDelta : LREAL;
+
+    fRxPosExpected : LREAL;
+    fRyPosExpected : LREAL;
+    fRzPosExpected : LREAL;
+    fVxPosExpected : LREAL;
+    fVyPosExpected : LREAL;
+    fVzPosExpected : LREAL;
+
+    fRxVelExpected : LREAL;
+    fRyVelExpected : LREAL;
+    fRzVelExpected : LREAL;
+    fVxVelExpected : LREAL;
+    fVyVelExpected : LREAL;
+    fVzVelExpected : LREAL;
+
+    fRxAccExpected : LREAL;
+    fRyAccExpected : LREAL;
+    fRzAccExpected : LREAL;
+    fVxAccExpected : LREAL;
+    fVyAccExpected : LREAL;
+    fVzAccExpected : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// Position
+AssertEquals_LREAL(
+    Expected := fRxPosExpected,
+    Actual := stMotionStageRx.Axis.NcToPlc.ActPos,
+    Delta := fDelta,
+    Message := 'Rx did not end at expected position.'
+);
+
+AssertEquals_LREAL(
+    Expected := fRyPosExpected,
+    Actual := stMotionStageRy.Axis.NcToPlc.ActPos,
+    Delta := fDelta,
+    Message := 'Ry did not end at expected position.'
+);
+
+AssertEquals_LREAL(
+    Expected := fRzPosExpected,
+    Actual := stMotionStageRz.Axis.NcToPlc.ActPos,
+    Delta := fDelta,
+    Message := 'Rz did not end at expected position.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVxPosExpected,
+    Actual := stMotionStageVx.Axis.NcToPlc.ActPos,
+    Delta := fDelta,
+    Message := 'Vx did not end at expected position.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVyPosExpected,
+    Actual := stMotionStageVy.Axis.NcToPlc.ActPos,
+    Delta := fDelta,
+    Message := 'Vy did not end at expected position.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVzPosExpected,
+    Actual := stMotionStageVz.Axis.NcToPlc.ActPos,
+    Delta := fDelta,
+    Message := 'Vz did not end at expected position.'
+);
+
+// Velocity
+AssertEquals_LREAL(
+    Expected := fRxVelExpected,
+    Actual := stMotionStageRx.fVelocity,
+    Delta := fDelta,
+    Message := 'Rx did not use the expected velocity.'
+);
+
+AssertEquals_LREAL(
+    Expected := fRyVelExpected,
+    Actual := stMotionStageRy.fVelocity,
+    Delta := fDelta,
+    Message := 'Ry did not use the expected velocity.'
+);
+
+AssertEquals_LREAL(
+    Expected := fRzVelExpected,
+    Actual := stMotionStageRz.fVelocity,
+    Delta := fDelta,
+    Message := 'Rz did not use the expected velocity.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVxVelExpected,
+    Actual := stMotionStageVx.fVelocity,
+    Delta := fDelta,
+    Message := 'Vx did not use the expected velocity.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVyVelExpected,
+    Actual := stMotionStageVy.fVelocity,
+    Delta := fDelta,
+    Message := 'Vy did not use the expected velocity.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVzVelExpected,
+    Actual := stMotionStageVz.fVelocity,
+    Delta := fDelta,
+    Message := 'Vz did not use the expected velocity.'
+);
+
+// Acceleration
+AssertEquals_LREAL(
+    Expected := fRxAccExpected,
+    Actual := stMotionStageRx.fAcceleration,
+    Delta := fDelta,
+    Message := 'Rx did not use the expected acceleration.'
+);
+
+AssertEquals_LREAL(
+    Expected := fRyAccExpected,
+    Actual := stMotionStageRy.fAcceleration,
+    Delta := fDelta,
+    Message := 'Ry did not use the expected acceleration.'
+);
+
+AssertEquals_LREAL(
+    Expected := fRzAccExpected,
+    Actual := stMotionStageRz.fAcceleration,
+    Delta := fDelta,
+    Message := 'Rz did not use the expected acceleration.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVxAccExpected,
+    Actual := stMotionStageVx.fAcceleration,
+    Delta := fDelta,
+    Message := 'Vx did not use the expected acceleration.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVyAccExpected,
+    Actual := stMotionStageVy.fAcceleration,
+    Delta := fDelta,
+    Message := 'Vy did not use the expected acceleration.'
+);
+
+AssertEquals_LREAL(
+    Expected := fVzAccExpected,
+    Actual := stMotionStageVz.fAcceleration,
+    Delta := fDelta,
+    Message := 'Vz did not use the expected acceleration.'
+);
+    ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="InitMotors" Id="{62a5dad0-d7c7-4660-a2ba-05b951ff6ec0}">
+      <Declaration><![CDATA[
+METHOD PRIVATE InitMotors : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRx);
+fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRy);
+fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRz);
+fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVx);
+fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVy);
+fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVz);
+
+fbMotionStageSetHelperRx(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    stMotionStage := stMotionStageRx,
+    bResetDone => ,
+    bSetDone =>
+);
+
+fbMotionStageSetHelperRy(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    stMotionStage := stMotionStageRy,
+    bResetDone => ,
+    bSetDone =>
+);
+
+fbMotionStageSetHelperRz(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    stMotionStage := stMotionStageRz,
+    bResetDone => ,
+    bSetDone =>
+);
+
+fbMotionStageSetHelperVx(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    stMotionStage := stMotionStageVx,
+    bResetDone => ,
+    bSetDone =>
+);
+
+fbMotionStageSetHelperVy(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    stMotionStage := stMotionStageVy,
+    bResetDone => ,
+    bSetDone =>
+);
+
+fbMotionStageSetHelperVz(
+    bExecute := TRUE,
+    fStartPosition := 0.0,
+    stMotionStage := stMotionStageVz,
+    bResetDone => ,
+    bSetDone =>
+);
+
+IF fbMotionStageSetHelperRx.bSetDone AND
+   fbMotionStageSetHelperRy.bSetDone AND
+   fbMotionStageSetHelperRz.bSetDone AND
+   fbMotionStageSetHelperVx.bSetDone AND
+   fbMotionStageSetHelperVy.bSetDone AND
+   fbMotionStageSetHelperVz.bSetDone THEN
+
+    fbMotionStageSetHelperRx(
+        bExecute := FALSE,
+        fStartPosition := 0.0,
+        stMotionStage := stMotionStageRx,
+        bResetDone => ,
+        bSetDone =>
+    );
+
+    fbMotionStageSetHelperRy(
+        bExecute := FALSE,
+        fStartPosition := 0.0,
+        stMotionStage := stMotionStageRy,
+        bResetDone => ,
+        bSetDone =>
+    );
+
+    fbMotionStageSetHelperRz(
+        bExecute := FALSE,
+        fStartPosition := 0.0,
+        stMotionStage := stMotionStageRz,
+        bResetDone => ,
+        bSetDone =>
+    );
+
+    fbMotionStageSetHelperVx(
+        bExecute := FALSE,
+        fStartPosition := 0.0,
+        stMotionStage := stMotionStageVx,
+        bResetDone => ,
+        bSetDone =>
+    );
+
+    fbMotionStageSetHelperVy(
+        bExecute := FALSE,
+        fStartPosition := 0.0,
+        stMotionStage := stMotionStageVy,
+        bResetDone => ,
+        bSetDone =>
+    );
+
+    fbMotionStageSetHelperVz(
+        bExecute := FALSE,
+        fStartPosition := 0.0,
+        stMotionStage := stMotionStageVz,
+        bResetDone => ,
+        bSetDone =>
+    );
+
+    stMotionStageRx.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStageRy.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStageRz.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStageVx.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStageVy.nEnableMode := E_StageEnableMode.ALWAYS;
+    stMotionStageVz.nEnableMode := E_StageEnableMode.ALWAYS;
+
+    IF stMotionStageRx.bAllEnable AND
+        stMotionStageRy.bAllEnable AND
+        stMotionStageRz.bAllEnable AND
+        stMotionStageVx.bAllEnable AND
+        stMotionStageVy.bAllEnable AND
+        stMotionStageVz.bAllEnable THEN
+
+        InitMotors := TRUE;
+    END_IF
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc" Id="{2d40004f-479b-4cbc-9e82-633d171550b1}">
+      <Declaration><![CDATA[
+METHOD PRIVATE TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc
+VAR_INST
+    bInit : BOOL;
+    bComplete : BOOL;
+    bBusyReached : BOOL;
+    rtMoveCmdOnce : R_TRIG;
+    fDelta : LREAL := 1e-9;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc');
+
+nTestIDAssigner := nTestIDAssigner + 1;
+
+IF nTestID <> nTestIDAssigner OR NOT tonStart.Q THEN
+    RETURN;
+END_IF
+
+tonTimeout(IN := TRUE, PT := T#3s);
+
+IF NOT bInit THEN
+    bInit := InitMotors();
+END_IF
+
+IF bInit THEN
+    stMotionStageVx.fPosition := 15.0 + INT_TO_LREAL(nTestIDAssigner) * 5.0;
+    stMotionStageVx.fVelocity := 10.0 + INT_TO_LREAL(nTestIDAssigner) * 1.0;
+    stMotionStageVx.fAcceleration := 50.0 + INT_TO_LREAL(nTestIDAssigner) * 10.0;
+    rtMoveCmdOnce(CLK := TRUE);
+    stMotionStageVx.bMoveCmd := rtMoveCmdOnce.Q;
+END_IF
+
+fbMotionVirtualFrame(
+    stMotionStageRx := stMotionStageRx,
+    stMotionStageRy := stMotionStageRy,
+    stMotionStageRz := stMotionStageRz,
+    stMotionStageVx := stMotionStageVx,
+    stMotionStageVy := stMotionStageVy,
+    stMotionStageVz := stMotionStageVz,
+    bEnable := TRUE,
+    fAlphaDegrees := 0.0,
+    fBetaDegrees := 0.0,
+    fGammaDegrees := 45.0,
+    sOrder := 'XYZ',
+    fbVirtActPositionVec3 => ,
+    fbVirtActVelocityVec3 => ,
+    fbVirtActAcceleraVec3 =>
+);
+
+IF stMotionStageVx.bBusy THEN
+    bBusyReached := TRUE;
+END_IF
+
+IF bBusyReached AND NOT stMotionStageRx.bBusy THEN
+    bComplete := TRUE;
+END_IF
+
+IF (bComplete AND
+    NOT stMotionStageVx.bBusy AND
+    NOT stMotionStageVy.bBusy AND
+    NOT stMotionStageVz.bBusy AND
+    NOT stMotionStageRx.bBusy AND
+    NOT stMotionStageRy.bBusy AND
+    NOT stMotionStageRz.bBusy)
+    OR tonTimeout.Q THEN
+
+    AssertNoErrors();
+
+    AssertPosVelAccCorrect(
+        fDelta := fDelta,
+        fRxPosExpected := stMotionStageVx.fPosition * SQRT(2.0) / 2.0,
+        fRyPosExpected := stMotionStageVx.fPosition * SQRT(2.0) / 2.0,
+        fRzPosExpected := 0.0,
+        fVxPosExpected := stMotionStageVx.fPosition,
+        fVyPosExpected := 0.0,
+        fVzPosExpected := 0.0,
+        fRxVelExpected := stMotionStageVx.fVelocity * SQRT(2.0) / 2.0,
+        fRyVelExpected := stMotionStageVx.fVelocity * SQRT(2.0) / 2.0,
+        fRzVelExpected := 0.0,
+        fVxVelExpected := stMotionStageVx.fVelocity,
+        fVyVelExpected := 0.0,
+        fVzVelExpected := 0.0,
+        fRxAccExpected := stMotionStageVx.fAcceleration * SQRT(2.0) / 2.0,
+        fRyAccExpected := stMotionStageVx.fAcceleration * SQRT(2.0) / 2.0,
+        fRzAccExpected := 0.0,
+        fVxAccExpected := stMotionStageVx.fAcceleration,
+        fVyAccExpected := 0.0,
+        fVzAccExpected := 0.0
+    );
+
+    TEST_FINISHED();
+
+    tonTimeout(IN := FALSE);
+
+    nTestID := nTestID + 1;
+END_IF
+
+fbMotionStageRx(stMotionStage := stMotionStageRx);
+fbMotionStageRy(stMotionStage := stMotionStageRy);
+fbMotionStageRz(stMotionStage := stMotionStageRz);
+
+fbMotionStageVx(stMotionStage := stMotionStageVx);
+fbMotionStageVy(stMotionStage := stMotionStageVy);
+fbMotionStageVz(stMotionStage := stMotionStageVz);
+
+nPositionCountsVx := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.x + 100.0) * 1e6);
+nPositionCountsVy := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.y + 100.0) * 1e6);
+nPositionCountsVz := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.z + 100.0) * 1e6);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc" Id="{96619493-4949-4dca-ad6e-5a7f16038b00}">
+      <Declaration><![CDATA[
+METHOD PRIVATE TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc
+VAR_INST
+    bInit : BOOL;
+    bComplete : BOOL;
+    bBusyReached : BOOL;
+    rtMoveCmdOnce : R_TRIG;
+    fDelta : LREAL := 1e-9;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc');
+
+nTestIDAssigner := nTestIDAssigner + 1;
+
+IF nTestID <> nTestIDAssigner OR NOT tonStart.Q THEN
+    RETURN;
+END_IF
+
+tonTimeout(IN := TRUE, PT := T#3s);
+
+IF NOT bInit THEN
+    bInit := InitMotors();
+END_IF
+
+IF bInit THEN
+    stMotionStageVx.fPosition := 15.0 + INT_TO_LREAL(nTestIDAssigner) * 5.0;
+    stMotionStageVx.fVelocity := 10.0 + INT_TO_LREAL(nTestIDAssigner) * 1.0;
+    stMotionStageVx.fAcceleration := 50.0 + INT_TO_LREAL(nTestIDAssigner) * 10.0;
+    rtMoveCmdOnce(CLK := TRUE);
+    stMotionStageVx.bMoveCmd := rtMoveCmdOnce.Q;
+END_IF
+
+fbMotionVirtualFrame(
+    stMotionStageRx := stMotionStageRx,
+    stMotionStageRy := stMotionStageRy,
+    stMotionStageRz := stMotionStageRz,
+    stMotionStageVx := stMotionStageVx,
+    stMotionStageVy := stMotionStageVy,
+    stMotionStageVz := stMotionStageVz,
+    bEnable := TRUE,
+    fAlphaDegrees := 0.0,
+    fBetaDegrees := 0.0,
+    fGammaDegrees := 90.0,
+    sOrder := 'XYZ',
+    fbVirtActPositionVec3 => ,
+    fbVirtActVelocityVec3 => ,
+    fbVirtActAcceleraVec3 =>
+);
+
+IF stMotionStageVx.bBusy THEN
+    bBusyReached := TRUE;
+END_IF
+
+IF bBusyReached AND NOT stMotionStageRx.bBusy THEN
+    bComplete := TRUE;
+END_IF
+
+IF (bComplete AND
+    NOT stMotionStageVx.bBusy AND
+    NOT stMotionStageVy.bBusy AND
+    NOT stMotionStageVz.bBusy AND
+    NOT stMotionStageRx.bBusy AND
+    NOT stMotionStageRy.bBusy AND
+    NOT stMotionStageRz.bBusy)
+    OR tonTimeout.Q THEN
+
+    AssertNoErrors();
+
+    AssertPosVelAccCorrect(
+        fDelta := fDelta,
+        fRxPosExpected := 0.0,
+        fRyPosExpected := stMotionStageVx.fPosition,
+        fRzPosExpected := 0.0,
+        fVxPosExpected := stMotionStageVx.fPosition,
+        fVyPosExpected := 0.0,
+        fVzPosExpected := 0.0,
+        fRxVelExpected := 0.0,
+        fRyVelExpected := stMotionStageVx.fVelocity,
+        fRzVelExpected := 0.0,
+        fVxVelExpected := stMotionStageVx.fVelocity,
+        fVyVelExpected := 0.0,
+        fVzVelExpected := 0.0,
+        fRxAccExpected := 0.0,
+        fRyAccExpected := stMotionStageVx.fAcceleration,
+        fRzAccExpected := 0.0,
+        fVxAccExpected := stMotionStageVx.fAcceleration,
+        fVyAccExpected := 0.0,
+        fVzAccExpected := 0.0
+    );
+
+    TEST_FINISHED();
+
+    tonTimeout(IN := FALSE);
+
+    nTestID := nTestID + 1;
+END_IF
+
+fbMotionStageRx(stMotionStage := stMotionStageRx);
+fbMotionStageRy(stMotionStage := stMotionStageRy);
+fbMotionStageRz(stMotionStage := stMotionStageRz);
+
+fbMotionStageVx(stMotionStage := stMotionStageVx);
+fbMotionStageVy(stMotionStage := stMotionStageVy);
+fbMotionStageVz(stMotionStage := stMotionStageVz);
+
+nPositionCountsVx := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.x + 100.0) * 1e6);
+nPositionCountsVy := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.y + 100.0) * 1e6);
+nPositionCountsVz := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.z + 100.0) * 1e6);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc" Id="{1e6baa8a-c190-4123-9357-8013455bb605}">
+      <Declaration><![CDATA[
+METHOD PRIVATE TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc
+VAR_INST
+    bInit : BOOL;
+    bComplete : BOOL;
+    bBusyReached : BOOL;
+    rtMoveCmdOnce : R_TRIG;
+    fDelta : LREAL := 1e-9;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+TEST('TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc');
+
+nTestIDAssigner := nTestIDAssigner + 1;
+
+IF nTestID <> nTestIDAssigner OR NOT tonStart.Q THEN
+    RETURN;
+END_IF
+
+tonTimeout(IN := TRUE, PT := T#3s);
+
+IF NOT bInit THEN
+    bInit := InitMotors();
+END_IF
+
+IF bInit THEN
+    stMotionStageVx.fPosition := 15.0 + INT_TO_LREAL(nTestIDAssigner) * 5.0;
+    stMotionStageVx.fVelocity := 10.0 + INT_TO_LREAL(nTestIDAssigner) * 1.0;
+    stMotionStageVx.fAcceleration := 50.0 + INT_TO_LREAL(nTestIDAssigner) * 10.0;
+    rtMoveCmdOnce(CLK := TRUE);
+    stMotionStageVx.bMoveCmd := rtMoveCmdOnce.Q;
+END_IF
+
+fbMotionVirtualFrame(
+    stMotionStageRx := stMotionStageRx,
+    stMotionStageRy := stMotionStageRy,
+    stMotionStageRz := stMotionStageRz,
+    stMotionStageVx := stMotionStageVx,
+    stMotionStageVy := stMotionStageVy,
+    stMotionStageVz := stMotionStageVz,
+    bEnable := TRUE,
+    fAlphaDegrees := 0.0,
+    fBetaDegrees := 90.0,
+    fGammaDegrees := 90.0,
+    sOrder := 'XYZ',
+    fbVirtActPositionVec3 => ,
+    fbVirtActVelocityVec3 => ,
+    fbVirtActAcceleraVec3 =>
+);
+
+IF stMotionStageVx.bBusy THEN
+    bBusyReached := TRUE;
+END_IF
+
+IF bBusyReached AND NOT stMotionStageRx.bBusy THEN
+    bComplete := TRUE;
+END_IF
+
+IF (bComplete AND
+    NOT stMotionStageVx.bBusy AND
+    NOT stMotionStageVy.bBusy AND
+    NOT stMotionStageVz.bBusy AND
+    NOT stMotionStageRx.bBusy AND
+    NOT stMotionStageRy.bBusy AND
+    NOT stMotionStageRz.bBusy)
+    OR tonTimeout.Q THEN
+
+    AssertNoErrors();
+
+    AssertPosVelAccCorrect(
+        fDelta := fDelta,
+        fRxPosExpected := 0.0,
+        fRyPosExpected := stMotionStageVx.fPosition,
+        fRzPosExpected := 0.0,
+        fVxPosExpected := stMotionStageVx.fPosition,
+        fVyPosExpected := 0.0,
+        fVzPosExpected := 0.0,
+        fRxVelExpected := 0.0,
+        fRyVelExpected := stMotionStageVx.fVelocity,
+        fRzVelExpected := 0.0,
+        fVxVelExpected := stMotionStageVx.fVelocity,
+        fVyVelExpected := 0.0,
+        fVzVelExpected := 0.0,
+        fRxAccExpected := 0.0,
+        fRyAccExpected := stMotionStageVx.fAcceleration,
+        fRzAccExpected := 0.0,
+        fVxAccExpected := stMotionStageVx.fAcceleration,
+        fVyAccExpected := 0.0,
+        fVzAccExpected := 0.0
+    );
+
+    TEST_FINISHED();
+
+    tonTimeout(IN := FALSE);
+
+    nTestID := nTestID + 1;
+END_IF
+
+fbMotionStageRx(stMotionStage := stMotionStageRx);
+fbMotionStageRy(stMotionStage := stMotionStageRy);
+fbMotionStageRz(stMotionStage := stMotionStageRz);
+
+fbMotionStageVx(stMotionStage := stMotionStageVx);
+fbMotionStageVy(stMotionStage := stMotionStageVy);
+fbMotionStageVz(stMotionStage := stMotionStageVz);
+
+nPositionCountsVx := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.x + 100.0) * 1e6);
+nPositionCountsVy := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.y + 100.0) * 1e6);
+nPositionCountsVz := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.z + 100.0) * 1e6);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc" Id="{6c8e3a8e-65f7-4fff-beca-5b108daa78c7}">
       <Declaration><![CDATA[
 METHOD PRIVATE TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc
-VAR
-    fbMotionVirtualFrame : FB_MotionVirtualFrame;
+VAR_INST
     bInit : BOOL;
-    fbMotorTestSuite : FB_MotorTestSuite;
-    fbMotionStageSetAndMoveHelper : FB_MotionStageSetAndMoveHelper;
     bComplete : BOOL;
+    bBusyReached : BOOL;
+    rtMoveCmdOnce : R_TRIG;
+    fDelta : LREAL := 1e-9;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[
 TEST('TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc');
 
-IF nTestID <> nTestIDAssigner THEN
+nTestIDAssigner := nTestIDAssigner + 1;
+
+IF nTestID <> nTestIDAssigner OR NOT tonStart.Q THEN
     RETURN;
 END_IF
 
+tonTimeout(IN := TRUE, PT := T#3s);
+
 IF NOT bInit THEN
-    bInit := TRUE;
-
-    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRx);
-    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRy);
-    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageRz);
-    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVx);
-    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVy);
-    fbMotorTestSuite.SetEnables(stMotionStage := stMotionStageVz);
-
-    stMotionStageVx.fAcceleration := 20.0;
+    bInit := InitMotors();
 END_IF
 
-fbMotionStageSetAndMoveHelper(
-    bExecute := TRUE,
-    fStartPosition := 0.0,
-    fGoalPosition := 100.0,
-    fVelocity := 10.0,
-    fDelta := 0.001,
-    stMotionStage := stMotionStageVx,
-    bResetDone => ,
-    bSetDone => ,
-    bMotionStarted => ,
-    bMoveDone =>
-);
+IF bInit THEN
+    stMotionStageVx.fPosition := 15.0 + INT_TO_LREAL(nTestIDAssigner) * 5.0;
+    stMotionStageVx.fVelocity := 10.0 + INT_TO_LREAL(nTestIDAssigner) * 1.0;
+    stMotionStageVx.fAcceleration := 50.0 + INT_TO_LREAL(nTestIDAssigner) * 10.0;
+    rtMoveCmdOnce(CLK := TRUE);
+    stMotionStageVx.bMoveCmd := rtMoveCmdOnce.Q;
+END_IF
 
 fbMotionVirtualFrame(
     stMotionStageRx := stMotionStageRx,
@@ -135,20 +780,71 @@ fbMotionVirtualFrame(
     fAlphaDegrees := 90.0,
     fBetaDegrees := 90.0,
     fGammaDegrees := 90.0,
-    sOrder := 'XYZ'
+    sOrder := 'XYZ',
+    fbVirtActPositionVec3 => ,
+    fbVirtActVelocityVec3 => ,
+    fbVirtActAcceleraVec3 =>
 );
 
-bComplete := fbMotionStageSetAndMoveHelper.bMoveDone;
+IF stMotionStageVx.bBusy THEN
+    bBusyReached := TRUE;
+END_IF
 
-IF bComplete THEN
+IF bBusyReached AND NOT stMotionStageRx.bBusy THEN
+    bComplete := TRUE;
+END_IF
+
+IF (bComplete AND
+    NOT stMotionStageVx.bBusy AND
+    NOT stMotionStageVy.bBusy AND
+    NOT stMotionStageVz.bBusy AND
+    NOT stMotionStageRx.bBusy AND
+    NOT stMotionStageRy.bBusy AND
+    NOT stMotionStageRz.bBusy)
+    OR tonTimeout.Q THEN
+
     AssertNoErrors();
 
+    AssertPosVelAccCorrect(
+        fDelta := fDelta,
+        fRxPosExpected := 0.0,
+        fRyPosExpected := 0.0,
+        fRzPosExpected := stMotionStageVx.fPosition,
+        fVxPosExpected := stMotionStageVx.fPosition,
+        fVyPosExpected := 0.0,
+        fVzPosExpected := 0.0,
+        fRxVelExpected := 0.0,
+        fRyVelExpected := 0.0,
+        fRzVelExpected := stMotionStageVx.fVelocity,
+        fVxVelExpected := stMotionStageVx.fVelocity,
+        fVyVelExpected := 0.0,
+        fVzVelExpected := 0.0,
+        fRxAccExpected := 0.0,
+        fRyAccExpected := 0.0,
+        fRzAccExpected := stMotionStageVx.fAcceleration,
+        fVxAccExpected := stMotionStageVx.fAcceleration,
+        fVyAccExpected := 0.0,
+        fVzAccExpected := 0.0
+    );
+
     TEST_FINISHED();
+
+    tonTimeout(IN := FALSE);
 
     nTestID := nTestID + 1;
 END_IF
 
-nTestIDAssigner := nTestIDAssigner + 1;
+fbMotionStageRx(stMotionStage := stMotionStageRx);
+fbMotionStageRy(stMotionStage := stMotionStageRy);
+fbMotionStageRz(stMotionStage := stMotionStageRz);
+
+fbMotionStageVx(stMotionStage := stMotionStageVx);
+fbMotionStageVy(stMotionStage := stMotionStageVy);
+fbMotionStageVz(stMotionStage := stMotionStageVz);
+
+nPositionCountsVx := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.x + 100.0) * 1e6);
+nPositionCountsVy := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.y + 100.0) * 1e6);
+nPositionCountsVz := LREAL_TO_UDINT((fbMotionVirtualFrame.fbVirtActPositionVec3.z + 100.0) * 1e6);
 ]]></ST>
       </Implementation>
     </Method>

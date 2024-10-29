@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionStageSetHelper" Id="{a6e3baa8-89ca-4587-9e8c-708eb7f80452}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionStageSetHelper
+VAR_INPUT
+    // Begin on rising edge, stop on falling edge.
+    bExecute: BOOL;
+    // The position to set the motor to
+    fStartPosition: LREAL;
+END_VAR
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_OUTPUT
+    // Goes to TRUE once the motor has no errors and is deactivated.
+    bResetDone: BOOL;
+    // Goes to TRUE once the set position completes.
+    bSetDone: BOOL;
+END_VAR
+VAR
+    rtExec: R_TRIG;
+    mcSetPos: MC_SetPosition;
+    stSetPositionOptions : ST_SetPositionOptions;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+rtExec(CLK:=bExecute);
+
+IF rtExec.Q THEN
+    stMotionStage.bReset := TRUE;
+    stMotionStage.bEnable := FALSE;
+    stMotionStage.nEnableMode := E_StageEnableMode.NEVER;
+    mcSetPos(
+        Axis:=stMotionStage.Axis,
+        Execute:=FALSE
+    );
+    bResetDone := FALSE;
+    bSetDone := FALSE;
+END_IF
+
+bResetDone := NOT stMotionStage.bError AND NOT stMotionStage.bBusy;
+
+IF bResetDone THEN
+    stMotionStage.bReset := FALSE;
+END_IF
+
+IF NOT bSetDone THEN
+    stMotionStage.bEnable := FALSE;
+    IF stMotionStage.Axis.NcToPlc.ActPos <> fStartPosition THEN
+        stSetPositionOptions.ClearPositionLag := TRUE;
+        mcSetPos(
+            Axis:=stMotionStage.Axis,
+            Execute:=NOT mcSetPos.Execute,
+            Position:=fStartPosition,
+            Mode:=FALSE,
+            Options:=stSetPositionOptions,
+            Done=>
+        );
+    ELSE
+        bSetDone := TRUE;
+    END_IF
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

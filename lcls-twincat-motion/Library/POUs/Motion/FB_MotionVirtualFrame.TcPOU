@@ -18,6 +18,11 @@ VAR_INPUT
     fGammaDegrees : LREAL;
     sOrder : STRING;
 END_VAR
+VAR_OUTPUT
+    fbVirtActPositionVec3 : FB_Vec3;
+    fbVirtActVelocityVec3 : FB_Vec3;
+    fbVirtActAcceleraVec3 : FB_Vec3;
+END_VAR
 VAR
     fAlphaRadians : LREAL;
     fBetaRadians : LREAL;
@@ -30,9 +35,6 @@ VAR
     fbRealActPositionVec3 : FB_Vec3;
     fbRealActVelocityVec3 : FB_Vec3;
     fbRealActAcceleraVec3 : FB_Vec3;
-    fbVirtActPositionVec3 : FB_Vec3;
-    fbVirtActVelocityVec3 : FB_Vec3;
-    fbVirtActAcceleraVec3 : FB_Vec3;
 
     sOrderReversed : STRING;
     sLeft : STRING;
@@ -85,6 +87,14 @@ fbVirtActVelocityVec3 := F_EulerRotateVec3Frame(
     sOrder := sOrder
 );
 
+fbVirtActAcceleraVec3 := F_EulerRotateVec3Frame(
+    iVec3 := fbRealActAcceleraVec3,
+    fAlphaRadians := fAlphaRadians,
+    fBetaRadians := fBetaRadians,
+    fGammaRadians := fGammaRadians,
+    sOrder := sOrder
+);
+
 IF stMotionStageVx.bBusy THEN
     fbVirtTarPositionVec3.x := stMotionStageVx.fPosition;
     IF fbVirtTarPositionVec3.x >= fbVirtActPositionVec3.x THEN
@@ -130,7 +140,6 @@ ELSE
     fbVirtTarAcceleraVec3.z := 0.0;
 END_IF
 
-(*
 sLeft := LEFT(sOrder, 1);
 sMid := MID(sOrder, 1, 1);
 sRight := RIGHT(sOrder, 1);
@@ -138,66 +147,69 @@ sOrderReversed := CONCAT(sRight, CONCAT(sMid, sLeft));
 
 fbRealTarPositionVec3 := F_EulerRotateVec3Frame(
     iVec3 := fbVirtTarPositionVec3,
-    fAlphaRadians := fGammaRadians,
-    fBetaRadians := fBetaRadians,
-    fGammaRadians := fAlphaRadians,
+    fAlphaRadians := -fGammaRadians,
+    fBetaRadians := -fBetaRadians,
+    fGammaRadians := -fAlphaRadians,
     sOrder := sOrderReversed
 );
 
 fbRealTarVelocityVec3 := F_EulerRotateVec3Frame(
     iVec3 := fbVirtTarVelocityVec3,
-    fAlphaRadians := fGammaRadians,
-    fBetaRadians := fBetaRadians,
-    fGammaRadians := fAlphaRadians,
+    fAlphaRadians := -fGammaRadians,
+    fBetaRadians := -fBetaRadians,
+    fGammaRadians := -fAlphaRadians,
     sOrder := sOrderReversed
 );
-*)
 
-fbRealTarPositionVec3 := F_EulerRotateVec3Point(
-    iVec3 := fbVirtTarPositionVec3,
-    fAlphaRadians := fAlphaRadians,
-    fBetaRadians := fBetaRadians,
-    fGammaRadians := fGammaRadians,
-    sOrder := sOrder
-);
-
-fbRealTarVelocityVec3 := F_EulerRotateVec3Point(
-    iVec3 := fbVirtTarVelocityVec3,
-    fAlphaRadians := fAlphaRadians,
-    fBetaRadians := fBetaRadians,
-    fGammaRadians := fGammaRadians,
-    sOrder := sOrder
-);
-
-fbRealTarAcceleraVec3 := F_EulerRotateVec3Point(
+fbRealTarAcceleraVec3 := F_EulerRotateVec3Frame(
     iVec3 := fbVirtTarAcceleraVec3,
-    fAlphaRadians := fAlphaRadians,
-    fBetaRadians := fBetaRadians,
-    fGammaRadians := fGammaRadians,
-    sOrder := sOrder
+    fAlphaRadians := -fGammaRadians,
+    fBetaRadians := -fBetaRadians,
+    fGammaRadians := -fAlphaRadians,
+    sOrder := sOrderReversed
 );
 
 IF bEnable THEN
-    stMotionStageRx.fPosition := fbRealTarPositionVec3.x;
-    stMotionStageRy.fPosition := fbRealTarPositionVec3.y;
-    stMotionStageRz.fPosition := fbRealTarPositionVec3.z;
-
-    stMotionStageRx.fVelocity := ABS(fbRealTarVelocityVec3.x);
-    stMotionStageRy.fVelocity := ABS(fbRealTarVelocityVec3.y);
-    stMotionStageRz.fVelocity := ABS(fbRealTarVelocityVec3.z);
-
-    stMotionStageRx.fAcceleration := ABS(fbRealTarAcceleraVec3.x);
-    stMotionStageRy.fAcceleration := ABS(fbRealTarAcceleraVec3.y);
-    stMotionStageRz.fAcceleration := ABS(fbRealTarAcceleraVec3.z);
-
-    stMotionStageRx.fDeceleration := ABS(fbRealTarAcceleraVec3.x);
-    stMotionStageRy.fDeceleration := ABS(fbRealTarAcceleraVec3.y);
-    stMotionStageRz.fDeceleration := ABS(fbRealTarAcceleraVec3.z);
-
     IF rtExecuteVx.Q OR rtExecuteVy.Q OR rtExecuteVz.Q THEN
-        stMotionStageRx.bMoveCmd := TRUE;
-        stMotionStageRy.bMoveCmd := TRUE;
-        stMotionStageRz.bMoveCmd := TRUE;
+        stMotionStageRx.fPosition := fbRealTarPositionVec3.x;
+        stMotionStageRy.fPosition := fbRealTarPositionVec3.y;
+        stMotionStageRz.fPosition := fbRealTarPositionVec3.z;
+
+        stMotionStageRx.fVelocity := ABS(fbRealTarVelocityVec3.x);
+        stMotionStageRy.fVelocity := ABS(fbRealTarVelocityVec3.y);
+        stMotionStageRz.fVelocity := ABS(fbRealTarVelocityVec3.z);
+
+        stMotionStageRx.fAcceleration := ABS(fbRealTarAcceleraVec3.x);
+        stMotionStageRy.fAcceleration := ABS(fbRealTarAcceleraVec3.y);
+        stMotionStageRz.fAcceleration := ABS(fbRealTarAcceleraVec3.z);
+
+        stMotionStageRx.fDeceleration := ABS(fbRealTarAcceleraVec3.x);
+        stMotionStageRy.fDeceleration := ABS(fbRealTarAcceleraVec3.y);
+        stMotionStageRz.fDeceleration := ABS(fbRealTarAcceleraVec3.z);
+
+        IF stMotionStageRx.fVelocity >= 0.001 THEN
+            stMotionStageRx.bMoveCmd := TRUE;
+        ELSIF ABS(stMotionStageRx.fPosition - stMotionStageRx.Axis.NcToPlc.ActPos) >
+                stMotionStageRx.stAxisParameters.fTargetPosControlRange THEN
+            stMotionStageRx.fVelocity := 0.001;
+            stMotionStageRx.bMoveCmd := TRUE;
+        END_IF
+
+        IF stMotionStageRy.fVelocity >= 0.001 THEN
+            stMotionStageRy.bMoveCmd := TRUE;
+        ELSIF ABS(stMotionStageRy.fPosition - stMotionStageRy.Axis.NcToPlc.ActPos) >
+                stMotionStageRy.stAxisParameters.fTargetPosControlRange THEN
+            stMotionStageRy.fVelocity := 0.001;
+            stMotionStageRy.bMoveCmd := TRUE;
+        END_IF
+
+        IF stMotionStageRz.fVelocity >= 0.001 THEN
+            stMotionStageRz.bMoveCmd := TRUE;
+        ELSIF ABS(stMotionStageRz.fPosition - stMotionStageRz.Axis.NcToPlc.ActPos) >
+                stMotionStageRz.stAxisParameters.fTargetPosControlRange THEN
+            stMotionStageRz.fVelocity := 0.001;
+            stMotionStageRz.bMoveCmd := TRUE;
+        END_IF
     END_IF
 
     IF stMotionStageRx.bError OR stMotionStageRy.bError OR stMotionStageRz.bError THEN
