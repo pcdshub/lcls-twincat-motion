@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="./">
 <head>
@@ -6,21 +8,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DUTs &mdash; pcdshub/lcls-twincat-motion  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/tree.css?v=837a00b9" />
       <link rel="stylesheet" type="text/css" href="_static/width.css?v=ab210c7a" />
 
   
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="_static/doctools.js?v=9a2dae69"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script src="_static/docs-versions-menu.js?v=3d6a1aea"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/docs-versions-menu.js?v=3d6a1aea"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -184,7 +182,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionstage">FB_MotionStage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionstagencparams">FB_MotionStageNCParams</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionstagesetandmovehelper">FB_MotionStageSetAndMoveHelper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-motionstagesethelper">FB_MotionStageSetHelper</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motionstagesim">FB_MotionStageSim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-motionvirtualframe">FB_MotionVirtualFrame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fb-motionvirtualframe-test">FB_MotionVirtualFrame_Test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-motortestsuite">FB_MotorTestSuite</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-ncaxis">FB_NcAxis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#fb-ncerrorffo">FB_NCErrorFFO</a></li>
@@ -8922,8 +8923,8 @@ END_ACTION
 <span class="n">END_IF</span>
 
 <span class="n">bResetDone</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bBusy</span><span class="p">;</span>
-<span class="n">bMoveDone</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">fActPosition</span> <span class="o">&lt;=</span> <span class="n">fGoalPosition</span> <span class="o">+</span> <span class="n">fDelta</span> <span class="n">AND</span>
-             <span class="n">stMotionStage</span><span class="o">.</span><span class="n">stAxisStatus</span><span class="o">.</span><span class="n">fActPosition</span> <span class="o">&gt;=</span> <span class="n">fGoalPosition</span> <span class="o">-</span> <span class="n">fDelta</span><span class="p">;</span>
+<span class="n">bMoveDone</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span> <span class="o">&lt;=</span> <span class="n">fGoalPosition</span> <span class="o">+</span> <span class="n">fDelta</span> <span class="n">AND</span>
+             <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span> <span class="o">&gt;=</span> <span class="n">fGoalPosition</span> <span class="o">-</span> <span class="n">fDelta</span><span class="p">;</span>
 
 <span class="n">IF</span> <span class="n">NOT</span> <span class="n">bSetDone</span> <span class="n">THEN</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
@@ -8951,6 +8952,96 @@ END_ACTION
 
 <span class="n">IF</span> <span class="n">bMoveDone</span> <span class="n">THEN</span>
     <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+
+<span class="n">METHOD</span> <span class="n">PUBLIC</span> <span class="n">Reset</span>
+<span class="n">VAR_IN_OUT</span>
+    <span class="n">stMotionStage</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">rtExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">);</span>
+
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">stMotionStage</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">NEVER</span><span class="p">;</span>
+<span class="n">mcSetPos</span><span class="p">(</span>
+    <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+    <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span>
+<span class="p">);</span>
+<span class="n">bResetDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">bSetDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">bMotionStarted</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">bMoveDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">END_METHOD</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Related:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#e-stageenablemode">E_StageEnableMode</a></p></li>
+<li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="fb-motionstagesethelper">
+<h2>FB_MotionStageSetHelper<a class="headerlink" href="#fb-motionstagesethelper" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_MotionStageSetHelper</span>
+<span class="n">VAR_INPUT</span>
+    <span class="o">//</span> <span class="n">Begin</span> <span class="n">on</span> <span class="n">rising</span> <span class="n">edge</span><span class="p">,</span> <span class="n">stop</span> <span class="n">on</span> <span class="n">falling</span> <span class="n">edge</span><span class="o">.</span>
+    <span class="n">bExecute</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">The</span> <span class="n">position</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">motor</span> <span class="n">to</span>
+    <span class="n">fStartPosition</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_IN_OUT</span>
+    <span class="n">stMotionStage</span><span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+    <span class="o">//</span> <span class="n">Goes</span> <span class="n">to</span> <span class="n">TRUE</span> <span class="n">once</span> <span class="n">the</span> <span class="n">motor</span> <span class="n">has</span> <span class="n">no</span> <span class="n">errors</span> <span class="ow">and</span> <span class="ow">is</span> <span class="n">deactivated</span><span class="o">.</span>
+    <span class="n">bResetDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">Goes</span> <span class="n">to</span> <span class="n">TRUE</span> <span class="n">once</span> <span class="n">the</span> <span class="nb">set</span> <span class="n">position</span> <span class="n">completes</span><span class="o">.</span>
+    <span class="n">bSetDone</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">rtExec</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">mcSetPos</span><span class="p">:</span> <span class="n">MC_SetPosition</span><span class="p">;</span>
+    <span class="n">stSetPositionOptions</span> <span class="p">:</span> <span class="n">ST_SetPositionOptions</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">rtExec</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bExecute</span><span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">rtExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">NEVER</span><span class="p">;</span>
+    <span class="n">mcSetPos</span><span class="p">(</span>
+        <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+        <span class="n">Execute</span><span class="o">:=</span><span class="n">FALSE</span>
+    <span class="p">);</span>
+    <span class="n">bResetDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">bSetDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">bResetDone</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bError</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bBusy</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">bResetDone</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bReset</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bSetDone</span> <span class="n">THEN</span>
+    <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnable</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span> <span class="o">&lt;&gt;</span> <span class="n">fStartPosition</span> <span class="n">THEN</span>
+        <span class="n">stSetPositionOptions</span><span class="o">.</span><span class="n">ClearPositionLag</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">mcSetPos</span><span class="p">(</span>
+            <span class="n">Axis</span><span class="o">:=</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">Axis</span><span class="p">,</span>
+            <span class="n">Execute</span><span class="o">:=</span><span class="n">NOT</span> <span class="n">mcSetPos</span><span class="o">.</span><span class="n">Execute</span><span class="p">,</span>
+            <span class="n">Position</span><span class="o">:=</span><span class="n">fStartPosition</span><span class="p">,</span>
+            <span class="n">Mode</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+            <span class="n">Options</span><span class="o">:=</span><span class="n">stSetPositionOptions</span><span class="p">,</span>
+            <span class="n">Done</span><span class="o">=&gt;</span>
+        <span class="p">);</span>
+    <span class="n">ELSE</span>
+        <span class="n">bSetDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">END_IF</span>
 <span class="n">END_IF</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
@@ -9004,6 +9095,1452 @@ END_ACTION
 <dt>Related:</dt><dd><ul class="simple">
 <li><p><a class="reference internal" href="#e-stageenablemode">E_StageEnableMode</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionstage">FB_MotionStage</a></p></li>
+<li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="fb-motionvirtualframe">
+<h2>FB_MotionVirtualFrame<a class="headerlink" href="#fb-motionvirtualframe" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_MotionVirtualFrame</span>
+<span class="p">(</span><span class="o">*</span>
+<span class="n">Takes</span> <span class="mi">3</span> <span class="n">ST_MotionStages</span> <span class="n">representing</span> <span class="n">real</span> <span class="n">axes</span> <span class="n">that</span> <span class="n">are</span> <span class="n">orthogonal</span> <span class="n">to</span> <span class="n">each</span> <span class="n">other</span> <span class="ow">and</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">base</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span><span class="o">.</span>
+<span class="n">Takes</span> <span class="mi">3</span> <span class="n">ST_MotionStages</span> <span class="n">representing</span> <span class="n">virtual</span> <span class="n">axes</span> <span class="n">that</span> <span class="n">are</span> <span class="n">orthogonal</span> <span class="n">to</span> <span class="n">each</span> <span class="n">other</span> <span class="ow">and</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span><span class="o">.</span>
+<span class="n">Computes</span> <span class="n">the</span> <span class="n">transformation</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">base</span> <span class="n">to</span> <span class="n">the</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span> <span class="n">using</span> <span class="mi">3</span> <span class="n">euler</span> <span class="n">angles</span> <span class="ow">and</span> <span class="n">a</span> <span class="n">rotation</span> <span class="n">order</span>
+<span class="k">as</span> <span class="n">inputs</span><span class="o">.</span> <span class="n">By</span> <span class="n">default</span><span class="p">,</span> <span class="n">the</span> <span class="n">order</span> <span class="ow">and</span> <span class="n">angles</span> <span class="n">are</span> <span class="n">interpreted</span> <span class="k">as</span> <span class="n">going</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">base</span> <span class="n">to</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">frame</span><span class="o">.</span> <span class="n">Can</span> <span class="n">be</span>
+<span class="n">switched</span> <span class="n">to</span> <span class="n">go</span> <span class="kn">from</span> <span class="nn">virtual</span> <span class="n">to</span> <span class="n">base</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span><span class="o">.</span>
+<span class="n">If</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">this</span> <span class="n">function</span> <span class="n">block</span> <span class="n">will</span> <span class="n">automatically</span> <span class="n">handle</span> <span class="n">commanding</span> <span class="n">the</span> <span class="n">real</span> <span class="n">axes</span> <span class="n">to</span> <span class="n">move</span> <span class="n">when</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">axes</span>
+<span class="n">are</span> <span class="n">commanded</span> <span class="n">to</span> <span class="n">move</span><span class="o">.</span> <span class="n">If</span> <span class="ow">not</span> <span class="n">enabled</span><span class="p">,</span> <span class="n">the</span> <span class="n">function</span> <span class="n">block</span> <span class="n">acts</span> <span class="k">as</span> <span class="n">a</span> <span class="n">calculator</span><span class="p">,</span> <span class="n">outputing</span> <span class="n">the</span> <span class="n">results</span> <span class="n">of</span>
+<span class="n">calculating</span> <span class="n">motions</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span><span class="p">,</span> <span class="n">but</span> <span class="ow">not</span> <span class="n">changing</span> <span class="nb">any</span> <span class="n">setpoints</span> <span class="ow">or</span> <span class="n">commanding</span> <span class="nb">any</span> <span class="n">moves</span><span class="o">.</span>
+<span class="o">*</span><span class="p">)</span>
+<span class="n">VAR_IN_OUT</span>
+    <span class="n">stMotionStageRx</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span> <span class="o">//</span> <span class="n">Real</span> <span class="n">X</span> <span class="n">Axis</span> <span class="ow">in</span> <span class="n">base</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span>
+    <span class="n">stMotionStageRy</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span> <span class="o">//</span> <span class="n">Real</span> <span class="n">Y</span> <span class="n">Axis</span> <span class="ow">in</span> <span class="n">base</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span>
+    <span class="n">stMotionStageRz</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span> <span class="o">//</span> <span class="n">Real</span> <span class="n">Z</span> <span class="n">Axis</span> <span class="ow">in</span> <span class="n">base</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span>
+    <span class="n">stMotionStageVx</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span> <span class="o">//</span> <span class="n">Virtual</span> <span class="n">X</span> <span class="n">Axis</span> <span class="ow">in</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span>
+    <span class="n">stMotionStageVy</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span> <span class="o">//</span> <span class="n">Virtual</span> <span class="n">Y</span> <span class="n">Axis</span> <span class="ow">in</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span>
+    <span class="n">stMotionStageVz</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span> <span class="o">//</span> <span class="n">Virtual</span> <span class="n">Z</span> <span class="n">Axis</span> <span class="ow">in</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INPUT</span>
+    <span class="p">(</span><span class="o">*</span><span class="n">TRUE</span> <span class="n">to</span> <span class="n">automatically</span> <span class="n">overwrite</span> <span class="n">real</span> <span class="n">axis</span> <span class="n">setpoints</span> <span class="ow">and</span> <span class="n">command</span> <span class="n">moves</span><span class="o">.</span>
+      <span class="n">FALSE</span> <span class="n">to</span> <span class="n">use</span> <span class="n">this</span> <span class="n">function</span> <span class="n">only</span> <span class="k">as</span> <span class="n">a</span> <span class="n">calculator</span><span class="o">.*</span><span class="p">)</span>
+    <span class="n">bEnable</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">fAlphaDegrees</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Angle</span> <span class="n">of</span> <span class="n">rotation</span> <span class="n">about</span> <span class="n">first</span> <span class="n">axis</span><span class="o">.</span>
+    <span class="n">fBetaDegrees</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Angle</span> <span class="n">of</span> <span class="n">rotation</span> <span class="n">about</span> <span class="n">second</span> <span class="n">axis</span><span class="o">.</span>
+    <span class="n">fGammaDegrees</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span> <span class="o">//</span> <span class="n">Angle</span> <span class="n">of</span> <span class="n">rotation</span> <span class="n">about</span> <span class="n">third</span> <span class="n">axis</span><span class="o">.</span>
+    <span class="p">(</span><span class="o">*</span><span class="n">Rotation</span> <span class="n">Order</span><span class="o">.</span> <span class="n">E</span><span class="o">.</span><span class="n">g</span><span class="p">:</span> <span class="n">XYZ</span> <span class="n">to</span> <span class="n">rotate</span> <span class="n">alpha</span> <span class="n">degrees</span> <span class="n">around</span> <span class="n">X</span> <span class="n">axis</span><span class="p">,</span> <span class="n">beta</span> <span class="n">degrees</span> <span class="n">around</span> <span class="n">Y</span> <span class="n">axis</span><span class="p">,</span>
+      <span class="ow">and</span> <span class="n">gamma</span> <span class="n">degrees</span> <span class="n">around</span> <span class="n">Z</span> <span class="n">axis</span><span class="o">.</span> <span class="n">Valid</span> <span class="n">rotation</span> <span class="n">orders</span> <span class="n">are</span><span class="p">:</span>
+      <span class="n">YZY</span><span class="p">,</span> <span class="n">YXY</span><span class="p">,</span> <span class="n">ZYZ</span><span class="p">,</span> <span class="n">ZXZ</span><span class="p">,</span> <span class="n">XYX</span><span class="p">,</span> <span class="n">XZX</span><span class="p">,</span> <span class="n">XYZ</span><span class="p">,</span> <span class="n">YZX</span><span class="p">,</span> <span class="n">ZXY</span><span class="p">,</span> <span class="n">XZY</span><span class="p">,</span> <span class="n">ZYX</span><span class="p">,</span> <span class="n">YXZ</span><span class="o">.</span>
+      <span class="n">Default</span> <span class="n">order</span> <span class="k">for</span> <span class="n">empty</span> <span class="ow">or</span> <span class="n">invalid</span> <span class="nb">input</span> <span class="ow">is</span><span class="p">:</span> <span class="n">ZYX</span><span class="o">.*</span><span class="p">)</span>
+    <span class="n">sOrder</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+    <span class="p">(</span><span class="o">*</span><span class="n">FALSE</span> <span class="n">to</span> <span class="n">define</span> <span class="n">inputs</span> <span class="k">as</span> <span class="n">rotating</span> <span class="n">the</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">new</span> <span class="n">frame</span> <span class="n">to</span> <span class="n">the</span> <span class="n">base</span> <span class="n">frame</span><span class="o">.</span>
+      <span class="n">TRUE</span> <span class="n">to</span> <span class="n">define</span> <span class="n">the</span> <span class="n">inputs</span> <span class="k">as</span> <span class="n">rotating</span> <span class="n">the</span> <span class="n">frame</span> <span class="n">of</span> <span class="n">reference</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">base</span> <span class="kn">from</span> <span class="nn">to</span> <span class="n">the</span> <span class="n">new</span> <span class="n">frame</span><span class="o">.*</span><span class="p">)</span>
+    <span class="n">bBaseToNew</span> <span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+
+    <span class="n">fbRealTarPositionVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbRealTarVelocityVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbRealTarAcceleraVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">fAlphaRadians</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fBetaRadians</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fGammaRadians</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+
+    <span class="n">rtExecuteVx</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">rtExecuteVy</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">rtExecuteVz</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+
+    <span class="n">fbRealActPositionVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbRealActVelocityVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbRealActAcceleraVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+
+    <span class="n">sOrderReversed</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+    <span class="n">sLeft</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+    <span class="n">sMid</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+    <span class="n">sRight</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+
+    <span class="n">fbVirtTarPositionVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbVirtTarVelocityVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbVirtTarAcceleraVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="n">DegToRad</span><span class="p">(</span><span class="n">fAlphaDegrees</span><span class="p">);</span>
+<span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="n">DegToRad</span><span class="p">(</span><span class="n">fBetaDegrees</span><span class="p">);</span>
+<span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="n">DegToRad</span><span class="p">(</span><span class="n">fGammaDegrees</span><span class="p">);</span>
+
+<span class="n">rtExecuteVx</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bExecute</span><span class="p">);</span>
+<span class="n">rtExecuteVy</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bExecute</span><span class="p">);</span>
+<span class="n">rtExecuteVz</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bExecute</span><span class="p">);</span>
+
+<span class="n">fbRealActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">;</span>
+<span class="n">fbRealActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">;</span>
+<span class="n">fbRealActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">;</span>
+
+<span class="n">fbRealActVelocityVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActVelo</span><span class="p">;</span>
+<span class="n">fbRealActVelocityVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActVelo</span><span class="p">;</span>
+<span class="n">fbRealActVelocityVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActVelo</span><span class="p">;</span>
+
+<span class="n">fbRealActAcceleraVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActAcc</span><span class="p">;</span>
+<span class="n">fbRealActAcceleraVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActAcc</span><span class="p">;</span>
+<span class="n">fbRealActAcceleraVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActAcc</span><span class="p">;</span>
+
+<span class="n">sOrderReversed</span> <span class="o">:=</span> <span class="n">ReverseOrder</span><span class="p">(</span><span class="n">sOrder</span><span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">bBaseToNew</span> <span class="n">THEN</span>
+    <span class="n">RotatePosVelAccFrame</span><span class="p">(</span>
+        <span class="n">fbBaseFramePositionVec3</span> <span class="o">:=</span> <span class="n">fbRealActPositionVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameVelocityVec3</span> <span class="o">:=</span> <span class="n">fbRealActVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameAcceleraVec3</span> <span class="o">:=</span> <span class="n">fbRealActAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fbNewFramePositionVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtActPositionVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameVelocityVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtActVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameAcceleraVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtActAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="n">fAlphaRadians</span><span class="p">,</span>
+        <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="n">fBetaRadians</span><span class="p">,</span>
+        <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="n">fGammaRadians</span><span class="p">,</span>
+        <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrder</span>
+    <span class="p">);</span>
+<span class="n">ELSE</span>
+    <span class="n">RotatePosVelAccFrame</span><span class="p">(</span>
+        <span class="n">fbBaseFramePositionVec3</span> <span class="o">:=</span> <span class="n">fbRealActPositionVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameVelocityVec3</span> <span class="o">:=</span> <span class="n">fbRealActVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameAcceleraVec3</span> <span class="o">:=</span> <span class="n">fbRealActAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fbNewFramePositionVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtActPositionVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameVelocityVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtActVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameAcceleraVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtActAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="o">-</span><span class="n">fGammaRadians</span><span class="p">,</span>
+        <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="o">-</span><span class="n">fBetaRadians</span><span class="p">,</span>
+        <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="o">-</span><span class="n">fAlphaRadians</span><span class="p">,</span>
+        <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrderReversed</span>
+    <span class="p">);</span>
+<span class="n">END_IF</span>
+
+<span class="n">SetTargetPosVelAcc3D</span><span class="p">(</span>
+    <span class="n">stMotionStageX</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageY</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageZ</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">fbActPosVec3</span> <span class="o">:=</span> <span class="n">fbVirtActPositionVec3</span><span class="p">,</span>
+    <span class="n">fbTarPosVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtTarPositionVec3</span><span class="p">,</span>
+    <span class="n">fbTarVelVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtTarVelocityVec3</span><span class="p">,</span>
+    <span class="n">fbTarAccVec3</span> <span class="o">=&gt;</span> <span class="n">fbVirtTarAcceleraVec3</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">bBaseToNew</span> <span class="n">THEN</span>
+    <span class="n">RotatePosVelAccFrame</span><span class="p">(</span>
+        <span class="n">fbBaseFramePositionVec3</span> <span class="o">:=</span> <span class="n">fbVirtTarPositionVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameVelocityVec3</span> <span class="o">:=</span> <span class="n">fbVirtTarVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameAcceleraVec3</span> <span class="o">:=</span> <span class="n">fbVirtTarAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fbNewFramePositionVec3</span> <span class="o">=&gt;</span> <span class="n">fbRealTarPositionVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameVelocityVec3</span> <span class="o">=&gt;</span> <span class="n">fbRealTarVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameAcceleraVec3</span> <span class="o">=&gt;</span> <span class="n">fbRealTarAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="o">-</span><span class="n">fGammaRadians</span><span class="p">,</span>
+        <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="o">-</span><span class="n">fBetaRadians</span><span class="p">,</span>
+        <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="o">-</span><span class="n">fAlphaRadians</span><span class="p">,</span>
+        <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrderReversed</span>
+    <span class="p">);</span>
+<span class="n">ELSE</span>
+    <span class="n">RotatePosVelAccFrame</span><span class="p">(</span>
+        <span class="n">fbBaseFramePositionVec3</span> <span class="o">:=</span> <span class="n">fbVirtTarPositionVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameVelocityVec3</span> <span class="o">:=</span> <span class="n">fbVirtTarVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbBaseFrameAcceleraVec3</span> <span class="o">:=</span> <span class="n">fbVirtTarAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fbNewFramePositionVec3</span> <span class="o">=&gt;</span> <span class="n">fbRealTarPositionVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameVelocityVec3</span> <span class="o">=&gt;</span> <span class="n">fbRealTarVelocityVec3</span><span class="p">,</span>
+        <span class="n">fbNewFrameAcceleraVec3</span> <span class="o">=&gt;</span> <span class="n">fbRealTarAcceleraVec3</span><span class="p">,</span>
+        <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="n">fAlphaRadians</span><span class="p">,</span>
+        <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="n">fBetaRadians</span><span class="p">,</span>
+        <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="n">fGammaRadians</span><span class="p">,</span>
+        <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrder</span>
+    <span class="p">);</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bEnable</span> <span class="n">THEN</span>
+    <span class="n">IF</span> <span class="n">rtExecuteVx</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">rtExecuteVy</span><span class="o">.</span><span class="n">Q</span> <span class="n">OR</span> <span class="n">rtExecuteVz</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+        <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="n">fbRealTarPositionVec3</span><span class="o">.</span><span class="n">x</span><span class="p">;</span>
+        <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="n">fbRealTarPositionVec3</span><span class="o">.</span><span class="n">y</span><span class="p">;</span>
+        <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="n">fbRealTarPositionVec3</span><span class="o">.</span><span class="n">z</span><span class="p">;</span>
+
+        <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarVelocityVec3</span><span class="o">.</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarVelocityVec3</span><span class="o">.</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarVelocityVec3</span><span class="o">.</span><span class="n">z</span><span class="p">);</span>
+
+        <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarAcceleraVec3</span><span class="o">.</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarAcceleraVec3</span><span class="o">.</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarAcceleraVec3</span><span class="o">.</span><span class="n">z</span><span class="p">);</span>
+
+        <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fDeceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarAcceleraVec3</span><span class="o">.</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fDeceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarAcceleraVec3</span><span class="o">.</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fDeceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">fbRealTarAcceleraVec3</span><span class="o">.</span><span class="n">z</span><span class="p">);</span>
+
+        <span class="n">IF</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">&gt;=</span> <span class="mf">0.001</span> <span class="n">THEN</span>
+            <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">ELSIF</span> <span class="n">ABS</span><span class="p">(</span><span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">-</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">)</span> <span class="o">&gt;</span>
+                <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fTargetPosControlRange</span> <span class="n">THEN</span>
+            <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.001</span><span class="p">;</span>
+            <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+
+        <span class="n">IF</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">&gt;=</span> <span class="mf">0.001</span> <span class="n">THEN</span>
+            <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">ELSIF</span> <span class="n">ABS</span><span class="p">(</span><span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">-</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">)</span> <span class="o">&gt;</span>
+                <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fTargetPosControlRange</span> <span class="n">THEN</span>
+            <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.001</span><span class="p">;</span>
+            <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+
+        <span class="n">IF</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">&gt;=</span> <span class="mf">0.001</span> <span class="n">THEN</span>
+            <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">ELSIF</span> <span class="n">ABS</span><span class="p">(</span><span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">-</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">)</span> <span class="o">&gt;</span>
+                <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">stAxisParameters</span><span class="o">.</span><span class="n">fTargetPosControlRange</span> <span class="n">THEN</span>
+            <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.001</span><span class="p">;</span>
+            <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="n">END_IF</span>
+
+    <span class="n">IF</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bError</span> <span class="n">OR</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bError</span> <span class="n">OR</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bError</span> <span class="n">THEN</span>
+        <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bError</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;An error occured in one of the real axes. All virtual axes stopped.&#39;</span><span class="p">;</span>
+        <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;An error occured in one of the real axes. All virtual axes stopped.&#39;</span><span class="p">;</span>
+        <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">sCustomErrorMessage</span> <span class="o">:=</span> <span class="s1">&#39;An error occured in one of the real axes. All virtual axes stopped.&#39;</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+<span class="n">END_IF</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+
+<span class="n">METHOD</span> <span class="n">PUBLIC</span> <span class="n">DegToRad</span> <span class="p">:</span> <span class="n">LREAL</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">fDeg</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">DegToRad</span> <span class="o">:=</span> <span class="n">fDeg</span>  <span class="o">/</span> <span class="mf">180.0</span> <span class="o">*</span> <span class="n">lcls_twincat_math</span><span class="o">.</span><span class="n">GVL_Constants</span><span class="o">.</span><span class="n">PI</span><span class="p">;</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">ReverseOrder</span> <span class="p">:</span> <span class="n">STRING</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">sOrder</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">IF</span> <span class="n">sOrder</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="n">THEN</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;ZYX&#39;</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">sLeft</span> <span class="o">:=</span> <span class="n">LEFT</span><span class="p">(</span><span class="n">sOrder</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="n">sMid</span> <span class="o">:=</span> <span class="n">MID</span><span class="p">(</span><span class="n">sOrder</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">sRight</span> <span class="o">:=</span> <span class="n">RIGHT</span><span class="p">(</span><span class="n">sOrder</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="n">ReverseOrder</span> <span class="o">:=</span> <span class="n">CONCAT</span><span class="p">(</span><span class="n">sRight</span><span class="p">,</span> <span class="n">CONCAT</span><span class="p">(</span><span class="n">sMid</span><span class="p">,</span> <span class="n">sLeft</span><span class="p">));</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PUBLIC</span> <span class="n">RotatePosVelAccFrame</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">fbBaseFramePositionVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbBaseFrameVelocityVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbBaseFrameAcceleraVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+
+    <span class="n">fAlphaRadians</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fBetaRadians</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fGammaRadians</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">sOrder</span> <span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+    <span class="n">fbNewFramePositionVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbNewFrameVelocityVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbNewFrameAcceleraVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">fbNewFramePositionVec3</span> <span class="o">:=</span> <span class="n">F_EulerRotateVec3Frame</span><span class="p">(</span>
+    <span class="n">iVec3</span> <span class="o">:=</span> <span class="n">fbBaseFramePositionVec3</span><span class="p">,</span>
+    <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="n">fAlphaRadians</span><span class="p">,</span>
+    <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="n">fBetaRadians</span><span class="p">,</span>
+    <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="n">fGammaRadians</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrder</span>
+<span class="p">);</span>
+
+<span class="n">fbNewFrameVelocityVec3</span> <span class="o">:=</span> <span class="n">F_EulerRotateVec3Frame</span><span class="p">(</span>
+    <span class="n">iVec3</span> <span class="o">:=</span> <span class="n">fbBaseFrameVelocityVec3</span><span class="p">,</span>
+    <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="n">fAlphaRadians</span><span class="p">,</span>
+    <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="n">fBetaRadians</span><span class="p">,</span>
+    <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="n">fGammaRadians</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrder</span>
+<span class="p">);</span>
+
+<span class="n">fbNewFrameAcceleraVec3</span> <span class="o">:=</span> <span class="n">F_EulerRotateVec3Frame</span><span class="p">(</span>
+    <span class="n">iVec3</span> <span class="o">:=</span> <span class="n">fbBaseFrameAcceleraVec3</span><span class="p">,</span>
+    <span class="n">fAlphaRadians</span> <span class="o">:=</span> <span class="n">fAlphaRadians</span><span class="p">,</span>
+    <span class="n">fBetaRadians</span> <span class="o">:=</span> <span class="n">fBetaRadians</span><span class="p">,</span>
+    <span class="n">fGammaRadians</span> <span class="o">:=</span> <span class="n">fGammaRadians</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="n">sOrder</span>
+<span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PUBLIC</span> <span class="n">SetTargetPosVelAcc1D</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">stMotionStage</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">fActPos</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+    <span class="n">fTarPos</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarVel</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarAcc</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">IF</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">fTarPos</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">fPosition</span><span class="p">;</span>
+    <span class="n">IF</span> <span class="n">fTarPos</span> <span class="o">&gt;=</span> <span class="n">fActPos</span> <span class="n">THEN</span>
+        <span class="n">fTarVel</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">;</span>
+        <span class="n">fTarAcc</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">;</span>
+    <span class="n">ELSE</span>
+        <span class="n">fTarVel</span> <span class="o">:=</span> <span class="o">-</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">;</span>
+        <span class="n">fTarAcc</span> <span class="o">:=</span> <span class="o">-</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+<span class="n">ELSE</span>
+    <span class="n">fTarPos</span> <span class="o">:=</span> <span class="n">fActPos</span><span class="p">;</span>
+    <span class="n">fTarVel</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+    <span class="n">fTarAcc</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PUBLIC</span> <span class="n">SetTargetPosVelAcc3D</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">stMotionStageX</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">stMotionStageY</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">stMotionStageZ</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">fbActPosVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_OUTPUT</span>
+    <span class="n">fbTarPosVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbTarVelVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+    <span class="n">fbTarAccVec3</span> <span class="p">:</span> <span class="n">FB_Vec3</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR</span>
+    <span class="n">fTarPosX</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarPosY</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarPosZ</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+
+    <span class="n">fTarVelX</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarVelY</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarVelZ</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+
+    <span class="n">fTarAccX</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarAccY</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fTarAccZ</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">SetTargetPosVelAcc1D</span><span class="p">(</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageX</span><span class="p">,</span>
+    <span class="n">fActPos</span> <span class="o">:=</span> <span class="n">fbActPosVec3</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+    <span class="n">fTarPos</span> <span class="o">=&gt;</span> <span class="n">fTarPosX</span><span class="p">,</span>
+    <span class="n">fTarVel</span> <span class="o">=&gt;</span> <span class="n">fTarVelX</span><span class="p">,</span>
+    <span class="n">fTarAcc</span> <span class="o">=&gt;</span> <span class="n">fTarAccX</span>
+<span class="p">);</span>
+
+<span class="n">SetTargetPosVelAcc1D</span><span class="p">(</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageY</span><span class="p">,</span>
+    <span class="n">fActPos</span> <span class="o">:=</span> <span class="n">fbActPosVec3</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+    <span class="n">fTarPos</span> <span class="o">=&gt;</span> <span class="n">fTarPosY</span><span class="p">,</span>
+    <span class="n">fTarVel</span> <span class="o">=&gt;</span> <span class="n">fTarVelY</span><span class="p">,</span>
+    <span class="n">fTarAcc</span> <span class="o">=&gt;</span> <span class="n">fTarAccY</span>
+<span class="p">);</span>
+
+<span class="n">SetTargetPosVelAcc1D</span><span class="p">(</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageZ</span><span class="p">,</span>
+    <span class="n">fActPos</span> <span class="o">:=</span> <span class="n">fbActPosVec3</span><span class="o">.</span><span class="n">z</span><span class="p">,</span>
+    <span class="n">fTarPos</span> <span class="o">=&gt;</span> <span class="n">fTarPosZ</span><span class="p">,</span>
+    <span class="n">fTarVel</span> <span class="o">=&gt;</span> <span class="n">fTarVelZ</span><span class="p">,</span>
+    <span class="n">fTarAcc</span> <span class="o">=&gt;</span> <span class="n">fTarAccZ</span>
+<span class="p">);</span>
+
+<span class="n">fbTarPosVec3</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">fTarPosX</span><span class="p">,</span> <span class="n">fTarPosY</span><span class="p">,</span> <span class="n">fTarPosZ</span><span class="p">);</span>
+<span class="n">fbTarVelVec3</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">fTarVelX</span><span class="p">,</span> <span class="n">fTarVelY</span><span class="p">,</span> <span class="n">fTarVelZ</span><span class="p">);</span>
+<span class="n">fbTarAccVec3</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">fTarAccX</span><span class="p">,</span> <span class="n">fTarAccY</span><span class="p">,</span> <span class="n">fTarAccZ</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Related:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="fb-motionvirtualframe-test">
+<h2>FB_MotionVirtualFrame_Test<a class="headerlink" href="#fb-motionvirtualframe-test" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FUNCTION_BLOCK</span> <span class="n">FB_MotionVirtualFrame_Test</span> <span class="n">EXTENDS</span> <span class="n">TcUnit</span><span class="o">.</span><span class="n">FB_TestSuite</span>
+<span class="n">VAR</span>
+    <span class="n">nTestIDAssigner</span> <span class="p">:</span> <span class="n">INT</span><span class="p">;</span>
+    <span class="n">nTestID</span> <span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">tonTimeout</span> <span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+    <span class="n">tonStart</span> <span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+
+    <span class="n">stMotionStageRx</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">stMotionStageRy</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">stMotionStageRz</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+
+    <span class="n">stMotionStageVx</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">stMotionStageVy</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+    <span class="n">stMotionStageVz</span> <span class="p">:</span> <span class="n">ST_MotionStage</span><span class="p">;</span>
+
+    <span class="n">fbMotionStageRx</span> <span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStageRy</span> <span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStageRz</span> <span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+
+    <span class="n">fbMotionStageVx</span> <span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStageVy</span> <span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+    <span class="n">fbMotionStageVz</span> <span class="p">:</span> <span class="n">FB_MotionStage</span><span class="p">;</span>
+
+    <span class="n">nPositionCountsVx</span> <span class="n">AT</span> <span class="o">%</span><span class="n">Q</span><span class="o">*</span> <span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
+    <span class="n">nPositionCountsVy</span> <span class="n">AT</span> <span class="o">%</span><span class="n">Q</span><span class="o">*</span> <span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
+    <span class="n">nPositionCountsVz</span> <span class="n">AT</span> <span class="o">%</span><span class="n">Q</span><span class="o">*</span> <span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
+
+    <span class="n">fbMotorTestSuite</span> <span class="p">:</span> <span class="n">FB_MotorTestSuite</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetAndMoveHelper</span> <span class="p">:</span> <span class="n">FB_MotionStageSetAndMoveHelper</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetHelperRx</span> <span class="p">:</span> <span class="n">FB_MotionStageSetHelper</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetHelperRy</span> <span class="p">:</span> <span class="n">FB_MotionStageSetHelper</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetHelperRz</span> <span class="p">:</span> <span class="n">FB_MotionStageSetHelper</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetHelperVx</span> <span class="p">:</span> <span class="n">FB_MotionStageSetHelper</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetHelperVy</span> <span class="p">:</span> <span class="n">FB_MotionStageSetHelper</span><span class="p">;</span>
+    <span class="n">fbMotionStageSetHelperVz</span> <span class="p">:</span> <span class="n">FB_MotionStageSetHelper</span><span class="p">;</span>
+    <span class="n">fbMotionVirtualFrame</span> <span class="p">:</span> <span class="n">FB_MotionVirtualFrame</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="n">tonStart</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#1s);</span>
+
+<span class="n">TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span><span class="p">();</span>
+
+<span class="n">TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span><span class="p">();</span>
+
+<span class="n">TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span><span class="p">();</span>
+
+<span class="n">TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span><span class="p">();</span>
+
+<span class="n">TestEnabledN22N21P4XYZMoveVxVyVzExpectNoErrorsCorrectPosVelAcc</span><span class="p">();</span>
+
+<span class="n">TestEnabledN22N21P4XYZMoveVyExpectNoErrorsCorrectPosVelAcc</span><span class="p">();</span>
+
+<span class="n">END_FUNCTION_BLOCK</span>
+
+<span class="n">ACTION</span> <span class="n">AssertNoErrors</span><span class="p">:</span>
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Timeout timer ended the test because it took longer than expected.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rx axis error detected when it should not have an error.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Ry axis error detected when it should not have an error.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rz axis error detected when it should not have an error.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vx axis error detected when it should not have an error.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vy axis error detected when it should not have an error.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertFalse</span><span class="p">(</span>
+    <span class="n">Condition</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bError</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vz axis error detected when it should not have an error.&#39;</span>
+<span class="p">);</span>
+<span class="n">END_ACTION</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">AssertPosVelAccCorrect</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+
+    <span class="n">fRxPosExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fRyPosExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fRzPosExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVxPosExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVyPosExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVzPosExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+
+    <span class="n">fRxVelExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fRyVelExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fRzVelExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVxVelExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVyVelExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVzVelExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+
+    <span class="n">fRxAccExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fRyAccExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fRzAccExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVxAccExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVyAccExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+    <span class="n">fVzAccExpected</span> <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="o">//</span> <span class="n">Position</span>
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRxPosExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rx did not end at expected position.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRyPosExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Ry did not end at expected position.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRzPosExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rz did not end at expected position.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVxPosExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vx did not end at expected position.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVyPosExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vy did not end at expected position.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVzPosExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">Axis</span><span class="o">.</span><span class="n">NcToPlc</span><span class="o">.</span><span class="n">ActPos</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vz did not end at expected position.&#39;</span>
+<span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Velocity</span>
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRxVelExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rx did not use the expected velocity.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRyVelExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Ry did not use the expected velocity.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRzVelExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rz did not use the expected velocity.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVxVelExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vx did not use the expected velocity.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVyVelExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vy did not use the expected velocity.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVzVelExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vz did not use the expected velocity.&#39;</span>
+<span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Acceleration</span>
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRxAccExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rx did not use the expected acceleration.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRyAccExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Ry did not use the expected acceleration.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fRzAccExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Rz did not use the expected acceleration.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVxAccExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vx did not use the expected acceleration.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVyAccExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vy did not use the expected acceleration.&#39;</span>
+<span class="p">);</span>
+
+<span class="n">AssertEquals_LREAL</span><span class="p">(</span>
+    <span class="n">Expected</span> <span class="o">:=</span> <span class="n">fVzAccExpected</span><span class="p">,</span>
+    <span class="n">Actual</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+    <span class="n">Delta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+    <span class="n">Message</span> <span class="o">:=</span> <span class="s1">&#39;Vz did not use the expected acceleration.&#39;</span>
+<span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">InitMotors</span> <span class="p">:</span> <span class="n">BOOL</span>
+<span class="n">fbMotorTestSuite</span><span class="o">.</span><span class="n">SetEnables</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotorTestSuite</span><span class="o">.</span><span class="n">SetEnables</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotorTestSuite</span><span class="o">.</span><span class="n">SetEnables</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+<span class="n">fbMotorTestSuite</span><span class="o">.</span><span class="n">SetEnables</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotorTestSuite</span><span class="o">.</span><span class="n">SetEnables</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotorTestSuite</span><span class="o">.</span><span class="n">SetEnables</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">SetTar0</span><span class="p">();</span>
+
+<span class="n">fbMotionStageSetHelperRx</span><span class="p">(</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">fbMotionStageSetHelperRy</span><span class="p">(</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">fbMotionStageSetHelperRz</span><span class="p">(</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">fbMotionStageSetHelperVx</span><span class="p">(</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">fbMotionStageSetHelperVy</span><span class="p">(</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">fbMotionStageSetHelperVz</span><span class="p">(</span>
+    <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">fbMotionStageSetHelperRx</span><span class="o">.</span><span class="n">bSetDone</span> <span class="n">AND</span>
+   <span class="n">fbMotionStageSetHelperRy</span><span class="o">.</span><span class="n">bSetDone</span> <span class="n">AND</span>
+   <span class="n">fbMotionStageSetHelperRz</span><span class="o">.</span><span class="n">bSetDone</span> <span class="n">AND</span>
+   <span class="n">fbMotionStageSetHelperVx</span><span class="o">.</span><span class="n">bSetDone</span> <span class="n">AND</span>
+   <span class="n">fbMotionStageSetHelperVy</span><span class="o">.</span><span class="n">bSetDone</span> <span class="n">AND</span>
+   <span class="n">fbMotionStageSetHelperVz</span><span class="o">.</span><span class="n">bSetDone</span> <span class="n">THEN</span>
+
+    <span class="n">fbMotionStageSetHelperRx</span><span class="p">(</span>
+        <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+        <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+        <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+        <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+    <span class="p">);</span>
+
+    <span class="n">fbMotionStageSetHelperRy</span><span class="p">(</span>
+        <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+        <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+        <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+        <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+    <span class="p">);</span>
+
+    <span class="n">fbMotionStageSetHelperRz</span><span class="p">(</span>
+        <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+        <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+        <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+        <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+    <span class="p">);</span>
+
+    <span class="n">fbMotionStageSetHelperVx</span><span class="p">(</span>
+        <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+        <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+        <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+        <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+    <span class="p">);</span>
+
+    <span class="n">fbMotionStageSetHelperVy</span><span class="p">(</span>
+        <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+        <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+        <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+        <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+    <span class="p">);</span>
+
+    <span class="n">fbMotionStageSetHelperVz</span><span class="p">(</span>
+        <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+        <span class="n">fStartPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+        <span class="n">bResetDone</span> <span class="o">=&gt;</span> <span class="p">,</span>
+        <span class="n">bSetDone</span> <span class="o">=&gt;</span>
+    <span class="p">);</span>
+
+    <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+    <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+    <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+    <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">nEnableMode</span> <span class="o">:=</span> <span class="n">E_StageEnableMode</span><span class="o">.</span><span class="n">ALWAYS</span><span class="p">;</span>
+
+    <span class="n">IF</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">AND</span>
+        <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">AND</span>
+        <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">AND</span>
+        <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">AND</span>
+        <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">AND</span>
+        <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bAllEnable</span> <span class="n">THEN</span>
+
+        <span class="n">InitMotors</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">END_IF</span>
+<span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">SetTar0</span>
+<span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+<span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+<span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+<span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+<span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+
+<span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">;</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bComplete</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bBusyReached</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mf">1e-9</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestEnabled000045XYZMoveVxExpectNoErrorsCorrectPosVelAcc&#39;</span><span class="p">);</span>
+
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="n">nTestIDAssigner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">nTestID</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIDAssigner</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">tonStart</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#3s);</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">InitMotors</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">15.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionVirtualFrame</span><span class="p">(</span>
+    <span class="n">stMotionStageRx</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">stMotionStageRy</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">stMotionStageRz</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">stMotionStageVx</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageVy</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageVz</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fAlphaDegrees</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">fBetaDegrees</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">fGammaDegrees</span> <span class="o">:=</span> <span class="mf">45.0</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">,</span>
+    <span class="n">bBaseToNew</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bBusyReached</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bBusyReached</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bComplete</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="p">(</span><span class="n">bComplete</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bBusy</span><span class="p">)</span>
+    <span class="n">OR</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+
+    <span class="n">AssertNoErrors</span><span class="p">();</span>
+
+    <span class="n">AssertPosVelAccCorrect</span><span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+        <span class="n">fRxPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="n">SQRT</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">fRyPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="n">SQRT</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">fRzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVyPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="n">SQRT</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">fRyVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="n">SQRT</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">fRzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVyVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">*</span> <span class="n">SQRT</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">fRyAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">*</span> <span class="n">SQRT</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">fRzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVyAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span>
+    <span class="p">);</span>
+
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+
+    <span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">);</span>
+
+    <span class="n">nTestID</span> <span class="o">:=</span> <span class="n">nTestID</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStageRx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotionStageRy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotionStageRz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+
+<span class="n">fbMotionStageVx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotionStageVy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotionStageVz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">nPositionCountsVx</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVy</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVz</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bComplete</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bBusyReached</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mf">1e-9</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestEnabled000090XYZMoveVxExpectNoErrorsCorrectPosVelAcc&#39;</span><span class="p">);</span>
+
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="n">nTestIDAssigner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">nTestID</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIDAssigner</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">tonStart</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#3s);</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">InitMotors</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">20.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionVirtualFrame</span><span class="p">(</span>
+    <span class="n">stMotionStageRx</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">stMotionStageRy</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">stMotionStageRz</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">stMotionStageVx</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageVy</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageVz</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fAlphaDegrees</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">fBetaDegrees</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">fGammaDegrees</span> <span class="o">:=</span> <span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">,</span>
+    <span class="n">bBaseToNew</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bBusyReached</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bBusyReached</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bComplete</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="p">(</span><span class="n">bComplete</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bBusy</span><span class="p">)</span>
+    <span class="n">OR</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+
+    <span class="n">AssertNoErrors</span><span class="p">();</span>
+
+    <span class="n">AssertPosVelAccCorrect</span><span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+        <span class="n">fRxPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fRzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVyPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fRzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVyVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fRzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVyAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span>
+    <span class="p">);</span>
+
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+
+    <span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">);</span>
+
+    <span class="n">nTestID</span> <span class="o">:=</span> <span class="n">nTestID</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStageRx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotionStageRy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotionStageRz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+
+<span class="n">fbMotionStageVx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotionStageVy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotionStageVz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">nPositionCountsVx</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVy</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVz</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bComplete</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bBusyReached</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mf">1e-9</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestEnabled009090XYZMoveVxExpectNoErrorsCorrectPosVelAcc&#39;</span><span class="p">);</span>
+
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="n">nTestIDAssigner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">nTestID</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIDAssigner</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">tonStart</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#3s);</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">InitMotors</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">25.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionVirtualFrame</span><span class="p">(</span>
+    <span class="n">stMotionStageRx</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">stMotionStageRy</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">stMotionStageRz</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">stMotionStageVx</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageVy</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageVz</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fAlphaDegrees</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">fBetaDegrees</span> <span class="o">:=</span> <span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">fGammaDegrees</span> <span class="o">:=</span> <span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">,</span>
+    <span class="n">bBaseToNew</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bBusyReached</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bBusyReached</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bComplete</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="p">(</span><span class="n">bComplete</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bBusy</span><span class="p">)</span>
+    <span class="n">OR</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+
+    <span class="n">AssertNoErrors</span><span class="p">();</span>
+
+    <span class="n">AssertPosVelAccCorrect</span><span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+        <span class="n">fRxPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fRzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVyPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fRzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVyVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fRzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVxAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVyAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span>
+    <span class="p">);</span>
+
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+
+    <span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">);</span>
+
+    <span class="n">nTestID</span> <span class="o">:=</span> <span class="n">nTestID</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStageRx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotionStageRy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotionStageRz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+
+<span class="n">fbMotionStageVx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotionStageVy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotionStageVz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">nPositionCountsVx</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVy</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVz</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bComplete</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bBusyReached</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mf">1e-9</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestEnabled909090XYZMoveVxExpectNoErrorsCorrectPosVelAcc&#39;</span><span class="p">);</span>
+
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="n">nTestIDAssigner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">nTestID</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIDAssigner</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">tonStart</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#3s);</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">InitMotors</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">35.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionVirtualFrame</span><span class="p">(</span>
+    <span class="n">stMotionStageRx</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">stMotionStageRy</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">stMotionStageRz</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">stMotionStageVx</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageVy</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageVz</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fAlphaDegrees</span> <span class="o">:=</span> <span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">fBetaDegrees</span> <span class="o">:=</span> <span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">fGammaDegrees</span> <span class="o">:=</span> <span class="mf">90.0</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">,</span>
+    <span class="n">bBaseToNew</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bBusyReached</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bBusyReached</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bComplete</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="p">(</span><span class="n">bComplete</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bBusy</span><span class="p">)</span>
+    <span class="n">OR</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+
+    <span class="n">AssertNoErrors</span><span class="p">();</span>
+
+    <span class="n">AssertPosVelAccCorrect</span><span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+        <span class="n">fRxPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRzPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVxPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVyPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRzVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVxVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVyVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRyAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRzAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVxAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVyAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span>
+    <span class="p">);</span>
+
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+
+    <span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">);</span>
+
+    <span class="n">nTestID</span> <span class="o">:=</span> <span class="n">nTestID</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStageRx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotionStageRy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotionStageRz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+
+<span class="n">fbMotionStageVx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotionStageVy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotionStageVz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">nPositionCountsVx</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVy</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVz</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">TestEnabledN22N21P4XYZMoveVxVyVzExpectNoErrorsCorrectPosVelAcc</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bComplete</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bBusyReached</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mf">1e-9</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestEnabledN22N21P4XYZMoveVxVyVzExpectNoErrorsCorrectPosVelAcc&#39;</span><span class="p">);</span>
+
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="n">nTestIDAssigner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">nTestID</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIDAssigner</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">tonStart</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#3s);</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">InitMotors</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">rtMoveCmdOnce</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">15.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="o">-</span><span class="mf">30.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">);</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">ABS</span><span class="p">(</span><span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">);</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+
+    <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">45.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionVirtualFrame</span><span class="p">(</span>
+    <span class="n">stMotionStageRx</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">stMotionStageRy</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">stMotionStageRz</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">stMotionStageVx</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageVy</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageVz</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fAlphaDegrees</span> <span class="o">:=</span> <span class="o">-</span><span class="mf">22.21</span><span class="p">,</span>
+    <span class="n">fBetaDegrees</span> <span class="o">:=</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span>
+    <span class="n">fGammaDegrees</span> <span class="o">:=</span> <span class="mf">3.793</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">,</span>
+    <span class="n">bBaseToNew</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bBusyReached</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bBusyReached</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bComplete</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="p">(</span><span class="n">bComplete</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bBusy</span><span class="p">)</span>
+    <span class="n">OR</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+
+    <span class="n">AssertNoErrors</span><span class="p">();</span>
+
+    <span class="n">AssertPosVelAccCorrect</span><span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+        <span class="n">fRxPosExpected</span> <span class="o">:=</span> <span class="mf">21.732640182123049</span><span class="p">,</span>
+        <span class="n">fRyPosExpected</span> <span class="o">:=</span> <span class="o">-</span><span class="mf">46.323371856381527</span><span class="p">,</span>
+        <span class="n">fRzPosExpected</span> <span class="o">:=</span> <span class="mf">23.061603816078627</span><span class="p">,</span>
+        <span class="n">fVxPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVyPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVzPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fRxVelExpected</span> <span class="o">:=</span> <span class="mf">14.488426788082032</span><span class="p">,</span>
+        <span class="n">fRyVelExpected</span> <span class="o">:=</span> <span class="mf">30.882247904254346</span><span class="p">,</span>
+        <span class="n">fRzVelExpected</span> <span class="o">:=</span> <span class="mf">15.374402544052412</span><span class="p">,</span>
+        <span class="n">fVxVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVyVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVzVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fRxAccExpected</span> <span class="o">:=</span> <span class="mf">0.724421339404102</span> <span class="o">*</span> <span class="mf">1e2</span><span class="p">,</span>
+        <span class="n">fRyAccExpected</span> <span class="o">:=</span> <span class="mf">1.544112395212718</span> <span class="o">*</span> <span class="mf">1e2</span><span class="p">,</span>
+        <span class="n">fRzAccExpected</span> <span class="o">:=</span> <span class="mf">0.768720127202621</span> <span class="o">*</span> <span class="mf">1e2</span><span class="p">,</span>
+        <span class="n">fVxAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVyAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVzAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">fAcceleration</span>
+    <span class="p">);</span>
+
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+
+    <span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">);</span>
+
+    <span class="n">nTestID</span> <span class="o">:=</span> <span class="n">nTestID</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStageRx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotionStageRy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotionStageRz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+
+<span class="n">fbMotionStageVx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotionStageVy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotionStageVz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">nPositionCountsVx</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVy</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVz</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">PRIVATE</span> <span class="n">TestEnabledN22N21P4XYZMoveVyExpectNoErrorsCorrectPosVelAcc</span>
+<span class="n">VAR_INST</span>
+    <span class="n">bInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bComplete</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">bBusyReached</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span> <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="n">fDelta</span> <span class="p">:</span> <span class="n">LREAL</span> <span class="o">:=</span> <span class="mf">1e-9</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestEnabledN22N21P4XYZMoveVyExpectNoErrorsCorrectPosVelAcc&#39;</span><span class="p">);</span>
+
+<span class="n">nTestIDAssigner</span> <span class="o">:=</span> <span class="n">nTestIDAssigner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="n">IF</span> <span class="n">nTestID</span> <span class="o">&lt;&gt;</span> <span class="n">nTestIDAssigner</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">tonStart</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span> <span class="n">PT</span> <span class="o">:=</span> <span class="n">T</span><span class="c1">#3s);</span>
+
+<span class="n">IF</span> <span class="n">NOT</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">bInit</span> <span class="o">:=</span> <span class="n">InitMotors</span><span class="p">();</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bInit</span> <span class="n">THEN</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">:=</span> <span class="mf">30.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">;</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fAcceleration</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">;</span>
+    <span class="n">rtMoveCmdOnce</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">);</span>
+    <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">rtMoveCmdOnce</span><span class="o">.</span><span class="n">Q</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionVirtualFrame</span><span class="p">(</span>
+    <span class="n">stMotionStageRx</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">,</span>
+    <span class="n">stMotionStageRy</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">,</span>
+    <span class="n">stMotionStageRz</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">,</span>
+    <span class="n">stMotionStageVx</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">,</span>
+    <span class="n">stMotionStageVy</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">,</span>
+    <span class="n">stMotionStageVz</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">,</span>
+    <span class="n">bEnable</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">,</span>
+    <span class="n">fAlphaDegrees</span> <span class="o">:=</span> <span class="o">-</span><span class="mf">22.21</span><span class="p">,</span>
+    <span class="n">fBetaDegrees</span> <span class="o">:=</span> <span class="o">-</span><span class="mf">20.7</span><span class="p">,</span>
+    <span class="n">fGammaDegrees</span> <span class="o">:=</span> <span class="mf">3.793</span><span class="p">,</span>
+    <span class="n">sOrder</span> <span class="o">:=</span> <span class="s1">&#39;XYZ&#39;</span><span class="p">,</span>
+    <span class="n">bBaseToNew</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
+    <span class="n">fbVirtActPositionVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActVelocityVec3</span> <span class="o">=&gt;</span> <span class="p">,</span>
+    <span class="n">fbVirtActAcceleraVec3</span> <span class="o">=&gt;</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bBusyReached</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="n">bBusyReached</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">THEN</span>
+    <span class="n">bComplete</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">IF</span> <span class="p">(</span><span class="n">bComplete</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageVz</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRx</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRy</span><span class="o">.</span><span class="n">bBusy</span> <span class="n">AND</span>
+    <span class="n">NOT</span> <span class="n">stMotionStageRz</span><span class="o">.</span><span class="n">bBusy</span><span class="p">)</span>
+    <span class="n">OR</span> <span class="n">tonTimeout</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+
+    <span class="n">AssertNoErrors</span><span class="p">();</span>
+
+    <span class="n">AssertPosVelAccCorrect</span><span class="p">(</span>
+        <span class="n">fDelta</span> <span class="o">:=</span> <span class="n">fDelta</span><span class="p">,</span>
+        <span class="n">fRxPosExpected</span> <span class="o">:=</span> <span class="mf">5.836964390001455</span><span class="p">,</span>
+        <span class="n">fRyPosExpected</span> <span class="o">:=</span> <span class="mf">27.448135465863341</span><span class="p">,</span>
+        <span class="n">fRzPosExpected</span> <span class="o">:=</span> <span class="mf">10.608001987060069</span><span class="p">,</span>
+        <span class="n">fVxPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVyPosExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fPosition</span><span class="p">,</span>
+        <span class="n">fVzPosExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxVelExpected</span> <span class="o">:=</span> <span class="mf">5.836964390001455</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">fRyVelExpected</span> <span class="o">:=</span> <span class="mf">27.448135465863341</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">fRzVelExpected</span> <span class="o">:=</span> <span class="mf">10.608001987060069</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">fVxVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVyVelExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fVelocity</span><span class="p">,</span>
+        <span class="n">fVzVelExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fRxAccExpected</span> <span class="o">:=</span> <span class="mf">5.836964390001455</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">fRyAccExpected</span> <span class="o">:=</span> <span class="mf">27.448135465863341</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">fRzAccExpected</span> <span class="o">:=</span> <span class="mf">10.608001987060069</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">fVxAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">fVyAccExpected</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="o">.</span><span class="n">fAcceleration</span><span class="p">,</span>
+        <span class="n">fVzAccExpected</span> <span class="o">:=</span> <span class="mf">0.0</span>
+    <span class="p">);</span>
+
+    <span class="n">TEST_FINISHED</span><span class="p">();</span>
+
+    <span class="n">tonTimeout</span><span class="p">(</span><span class="n">IN</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">);</span>
+
+    <span class="n">nTestID</span> <span class="o">:=</span> <span class="n">nTestID</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbMotionStageRx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRx</span><span class="p">);</span>
+<span class="n">fbMotionStageRy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRy</span><span class="p">);</span>
+<span class="n">fbMotionStageRz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageRz</span><span class="p">);</span>
+
+<span class="n">fbMotionStageVx</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVx</span><span class="p">);</span>
+<span class="n">fbMotionStageVy</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVy</span><span class="p">);</span>
+<span class="n">fbMotionStageVz</span><span class="p">(</span><span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStageVz</span><span class="p">);</span>
+
+<span class="n">nPositionCountsVx</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVy</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">nPositionCountsVz</span> <span class="o">:=</span> <span class="n">LREAL_TO_UDINT</span><span class="p">((</span><span class="n">fbMotionVirtualFrame</span><span class="o">.</span><span class="n">fbVirtActPositionVec3</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">);</span>
+<span class="n">END_METHOD</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>Related:</dt><dd><ul class="simple">
+<li><p><a class="reference internal" href="#e-stageenablemode">E_StageEnableMode</a></p></li>
+<li><p><a class="reference internal" href="#fb-motionstage">FB_MotionStage</a></p></li>
+<li><p><a class="reference internal" href="#fb-motionstagesetandmovehelper">FB_MotionStageSetAndMoveHelper</a></p></li>
+<li><p><a class="reference internal" href="#fb-motionstagesethelper">FB_MotionStageSetHelper</a></p></li>
+<li><p><a class="reference internal" href="#fb-motionvirtualframe">FB_MotionVirtualFrame</a></p></li>
+<li><p><a class="reference internal" href="#fb-motortestsuite">FB_MotorTestSuite</a></p></li>
 <li><p><a class="reference internal" href="#st-motionstage">ST_MotionStage</a></p></li>
 </ul>
 </dd>
@@ -18852,25 +20389,26 @@ END_METHOD
 <h2>PRG_TEST<a class="headerlink" href="#prg-test" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PROGRAM</span> <span class="n">PRG_TEST</span>
 <span class="n">VAR</span>
-    <span class="n">fb_TestHelperSetAndMove_Test</span><span class="p">:</span> <span class="n">FB_TestHelperSetAndMove_Test</span><span class="p">;</span>
     <span class="n">fb_AtPositionState_Test</span><span class="p">:</span> <span class="n">FB_AtPositionState_Test</span><span class="p">;</span>
+    <span class="n">fb_AxisParameterSetExposed_Test</span><span class="p">:</span> <span class="n">FB_AxisParameterSetExposed_Test</span><span class="p">;</span>
+    <span class="n">fb_MiscStatesErrorFFO_Test</span><span class="p">:</span> <span class="n">FB_MiscStatesErrorFFO_Test</span><span class="p">;</span>
+    <span class="n">fb_MotionBPTM_Test</span><span class="p">:</span> <span class="n">FB_MotionBPTM_Test</span><span class="p">;</span>
+    <span class="n">fb_MotionClearAsserts_Test</span><span class="p">:</span> <span class="n">FB_MotionClearAsserts_Test</span><span class="p">;</span>
+    <span class="n">fb_MotionReadPMPSDBND_Test</span><span class="p">:</span> <span class="n">FB_MotionReadPMPSDBND_Test</span><span class="p">;</span>
+    <span class="n">fbMotionVirtualFrameTest</span><span class="p">:</span> <span class="n">FB_MotionVirtualFrame_Test</span><span class="p">;</span>
+    <span class="n">fb_TestHelperSetAndMove_Test</span><span class="p">:</span> <span class="n">FB_TestHelperSetAndMove_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStateRead_Test</span><span class="p">:</span> <span class="n">FB_PositionStateRead_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStateReadND_Test</span><span class="p">:</span> <span class="n">FB_PositionStateReadND_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStateMove_Test</span><span class="p">:</span> <span class="n">FB_PositionStateMove_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStateMoveND_Test</span><span class="p">:</span> <span class="n">FB_PositionStateMoveND_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStateND_Test</span><span class="p">:</span> <span class="n">FB_PositionStateND_Test</span><span class="p">;</span>
     <span class="n">fb_NCErrorFFO_Test</span><span class="p">:</span> <span class="n">FB_NCErrorFFO_Test</span><span class="p">;</span>
-    <span class="n">fb_MiscStatesErrorFFO_Test</span><span class="p">:</span> <span class="n">FB_MiscStatesErrorFFO_Test</span><span class="p">;</span>
-    <span class="n">fb_MotionBPTM_Test</span><span class="p">:</span> <span class="n">FB_MotionBPTM_Test</span><span class="p">;</span>
-    <span class="n">fb_MotionClearAsserts_Test</span><span class="p">:</span> <span class="n">FB_MotionClearAsserts_Test</span><span class="p">;</span>
     <span class="n">fb_StatePMPSEnables_Test</span><span class="p">:</span> <span class="n">FB_StatePMPSEnables_Test</span><span class="p">;</span>
-    <span class="n">fb_MotionReadPMPSDBND_Test</span><span class="p">:</span> <span class="n">FB_MotionReadPMPSDBND_Test</span><span class="p">;</span>
     <span class="n">fb_PerMotorFFOND_Test</span><span class="p">:</span> <span class="n">FB_PerMotorFFOND_Test</span><span class="p">;</span>
     <span class="n">fb_StatePMPSEnablesND_Test</span><span class="p">:</span> <span class="n">FB_StatePMPSEnablesND_Test</span><span class="p">;</span>
     <span class="n">fb_PositionStatePMPSND_Test</span><span class="p">:</span> <span class="n">FB_PositionStatePMPSND_Test</span><span class="p">;</span>
     <span class="n">fb_StateSetupHelper_Test</span><span class="p">:</span> <span class="n">FB_StateSetupHelper_Test</span><span class="p">;</span>
     <span class="n">fb_TestStateInitTiming</span><span class="p">:</span> <span class="n">FB_TestStateInitTiming</span><span class="p">;</span>
-    <span class="n">fb_AxisParameterSetExposed_Test</span><span class="p">:</span> <span class="n">FB_AxisParameterSetExposed_Test</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">TcUnit</span><span class="o">.</span><span class="n">RUN</span><span class="p">();</span>
 
@@ -18885,6 +20423,7 @@ END_METHOD
 <li><p><a class="reference internal" href="#fb-motionbptm-test">FB_MotionBPTM_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionclearasserts-test">FB_MotionClearAsserts_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-motionreadpmpsdbnd-test">FB_MotionReadPMPSDBND_Test</a></p></li>
+<li><p><a class="reference internal" href="#fb-motionvirtualframe-test">FB_MotionVirtualFrame_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-ncerrorffo-test">FB_NCErrorFFO_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-permotorffond-test">FB_PerMotorFFOND_Test</a></p></li>
 <li><p><a class="reference internal" href="#fb-positionstatemovend-test">FB_PositionStateMoveND_Test</a></p></li>
