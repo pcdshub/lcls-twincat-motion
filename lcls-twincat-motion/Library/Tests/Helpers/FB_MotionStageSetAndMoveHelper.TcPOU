@@ -50,8 +50,8 @@ IF rtExec.Q THEN
 END_IF
 
 bResetDone := NOT stMotionStage.bError AND NOT stMotionStage.bBusy;
-bMoveDone := stMotionStage.stAxisStatus.fActPosition <= fGoalPosition + fDelta AND
-             stMotionStage.stAxisStatus.fActPosition >= fGoalPosition - fDelta;
+bMoveDone := stMotionStage.Axis.NcToPlc.ActPos <= fGoalPosition + fDelta AND
+             stMotionStage.Axis.NcToPlc.ActPos >= fGoalPosition - fDelta;
 
 IF NOT bSetDone THEN
     stMotionStage.bReset := TRUE;
@@ -82,5 +82,30 @@ IF bMoveDone THEN
 END_IF
 ]]></ST>
     </Implementation>
+    <Method Name="Reset" Id="{099bbc37-1b9e-476a-b5a9-5f8f1f38a75e}">
+      <Declaration><![CDATA[
+METHOD PUBLIC Reset
+VAR_IN_OUT
+    stMotionStage : ST_MotionStage;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+rtExec(CLK:=FALSE);
+
+stMotionStage.bReset := FALSE;
+stMotionStage.bEnable := FALSE;
+stMotionStage.nEnableMode := E_StageEnableMode.NEVER;
+mcSetPos(
+    Axis:=stMotionStage.Axis,
+    Execute:=FALSE
+);
+bResetDone := FALSE;
+bSetDone := FALSE;
+bMotionStarted := FALSE;
+bMoveDone := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
   </POU>
 </TcPlcObject>
