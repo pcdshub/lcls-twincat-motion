@@ -445,8 +445,8 @@ fbSubSysIO(
       <Declaration><![CDATA[METHOD TestToggle
 (*
     Arbitration requests should be added to pool even if there is no transition, as case which occurs
-	when a BeamParameterTransitionManager is not processed for at least one cycle without changing states
-	and then reprocessed, usually when arbitration is temporarily disabled to deal with unrelated faults.
+    when a BeamParameterTransitionManager is not processed for at least one cycle without changing states
+    and then reprocessed, usually when arbitration is temporarily disabled to deal with unrelated faults.
 *)
 VAR_INST
     fbBptm: FB_MotionBPTM;
@@ -526,7 +526,7 @@ CASE nState OF
             AssertInPool(fbArbiter, stTrans, FALSE, 'after switching goals (2)');
             nState := 3;
         END_IF
-	3:
+    3:
         // Re-enable without changing goal
         fbBptm(
             astMotionStage:=astMotionStage,
