@@ -58,8 +58,6 @@ VAR
     bArbiterTimeout: BOOL;
     ffBPTMTimeoutAndMove: FB_FastFault;
     ffBPTMError: FB_FastFault;
-
-    rtEnable: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -111,7 +109,6 @@ ffBPTMTimeoutAndMove(
     <Action Name="RunBPTM" Id="{2a8eea81-b08c-4171-a9e1-1702d22d9fba}">
       <Implementation>
         <ST><![CDATA[
-rtEnable(CLK:=bEnable);
 bptm(
     fbArbiter:=fbArbiter,
     i_sDeviceName:=sDeviceName,
@@ -121,7 +118,6 @@ bptm(
     i_stRequestedAssertion:=stGoalParams.stBeamParams,
     i_xDoneMoving:=bDoneMoving AND bAtState,
     stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
-    bRetry:=rtEnable.Q,
     q_xTransitionAuthorized=>bInternalAuth,
     bDone=>bDone,
 );
