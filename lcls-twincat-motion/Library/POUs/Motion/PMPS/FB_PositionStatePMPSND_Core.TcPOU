@@ -58,11 +58,11 @@ VAR
     fbPerMotorFFO: FB_PerMotorFFOND;
 
     eStatePMPSStatus: E_StatePMPSStatus;
-	
-	bEnable: BOOL;
-	nGoalAtClear : UINT;
-	bAtStateAtClear : BOOL;
-	rtEnable: R_TRIG;
+
+    bEnable: BOOL;
+    nGoalAtClear : UINT;
+    bAtStateAtClear : BOOL;
+    rtEnable: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -99,7 +99,7 @@ fbMotionBPTM(
     bEnable:=bEnable,
     bAtState:=stPlcToEpics.nGetValue = nCurrGoal AND nCurrGoal <> 0,
     sDeviceName:=sDeviceName,
-	bRetry:=rtEnable.Q AND nGoalAtClear = nCurrGoal AND bAtStateAtClear,
+    bRetry:=rtEnable.Q AND nGoalAtClear = nCurrGoal AND bAtStateAtClear,
     bTransitionAuthorized=>,
     bDone=>,
     bMotorCountError=>,

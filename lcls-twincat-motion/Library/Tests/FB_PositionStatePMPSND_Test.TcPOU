@@ -805,7 +805,7 @@ END_IF]]></ST>
       <Declaration><![CDATA[METHOD TestToggleBPTM
 VAR_INST
     fbFFHWO: FB_HardwareFFOutput;
-	nState: UINT;
+    nState: UINT;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -824,71 +824,71 @@ eSetPos := 2;
 
 CASE nState OF
     0:
-		fb_Move1D(
-    		stMotionStage:=stMotionStage1,
-    		astPositionState:=astPositionState1,
-    		eEnumSet:= eSetPos,
-    		eEnumGet:=eGetPos,
-    		fbFFHWO:=fbFFHWO,
-    		fbArbiter:=fbArbiter1D,
-    		bEnableMotion:=TRUE,
-    		bEnableBeamParams:=TRUE,
-    		bEnablePositionLimits:=TRUE,
-    		bReadDBNow:=TRUE,
-    		sDeviceName:='test',
-    		sTransitionKey:='trans',
-		);
+        fb_Move1D(
+            stMotionStage:=stMotionStage1,
+            astPositionState:=astPositionState1,
+            eEnumSet:= eSetPos,
+            eEnumGet:=eGetPos,
+            fbFFHWO:=fbFFHWO,
+            fbArbiter:=fbArbiter1D,
+            bEnableMotion:=TRUE,
+            bEnableBeamParams:=TRUE,
+            bEnablePositionLimits:=TRUE,
+            bReadDBNow:=TRUE,
+            sDeviceName:='test',
+            sTransitionKey:='trans',
+        );
         IF fb_Move1D.stPlcToEpics.bDone THEN
-			AssertTrue(
-        		fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
-        		'Destination bp should have been in the arbiter',
-    		);
+            AssertTrue(
+                fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
+                'Destination bp should have been in the arbiter',
+            );
             nState := 1;
         END_IF
-	1:
-		fb_Move1D.stPMPSEpicsToPlc.bArbiterEnabled := FALSE;
-		fb_Move1D(
-    		stMotionStage:=stMotionStage1,
-    		astPositionState:=astPositionState1,
-    		eEnumSet:= eSetPos,
-    		eEnumGet:=eGetPos,
-    		fbFFHWO:=fbFFHWO,
-    		fbArbiter:=fbArbiter1D,
-    		bEnableMotion:=TRUE,
-    		bEnableBeamParams:=TRUE,
-    		bEnablePositionLimits:=TRUE,
-    		bReadDBNow:=FALSE,
-    		sDeviceName:='test',
-    		sTransitionKey:='trans',
-		);
+    1:
+        fb_Move1D.stPMPSEpicsToPlc.bArbiterEnabled := FALSE;
+        fb_Move1D(
+            stMotionStage:=stMotionStage1,
+            astPositionState:=astPositionState1,
+            eEnumSet:= eSetPos,
+            eEnumGet:=eGetPos,
+            fbFFHWO:=fbFFHWO,
+            fbArbiter:=fbArbiter1D,
+            bEnableMotion:=TRUE,
+            bEnableBeamParams:=TRUE,
+            bEnablePositionLimits:=TRUE,
+            bReadDBNow:=FALSE,
+            sDeviceName:='test',
+            sTransitionKey:='trans',
+        );
         IF fb_Move1D.stPlcToEpics.bDone THEN
-			AssertFalse(
-        		fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
-        		'Destination bp should have been in the arbiter',
-    		);
+            AssertFalse(
+                fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
+                'Destination bp should have been in the arbiter',
+            );
             nState := 2;
         END_IF
-	2:
-		fb_Move1D.stPMPSEpicsToPlc.bArbiterEnabled := TRUE;
-		fb_Move1D(
-    		stMotionStage:=stMotionStage1,
-    		astPositionState:=astPositionState1,
-    		eEnumSet:= eSetPos,
-    		eEnumGet:=eGetPos,
-    		fbFFHWO:=fbFFHWO,
-    		fbArbiter:=fbArbiter1D,
-    		bEnableMotion:=TRUE,
-    		bEnableBeamParams:=TRUE,
-    		bEnablePositionLimits:=TRUE,
-    		bReadDBNow:=FALSE,
-    		sDeviceName:='test',
-    		sTransitionKey:='trans',
-		);
+    2:
+        fb_Move1D.stPMPSEpicsToPlc.bArbiterEnabled := TRUE;
+        fb_Move1D(
+            stMotionStage:=stMotionStage1,
+            astPositionState:=astPositionState1,
+            eEnumSet:= eSetPos,
+            eEnumGet:=eGetPos,
+            fbFFHWO:=fbFFHWO,
+            fbArbiter:=fbArbiter1D,
+            bEnableMotion:=TRUE,
+            bEnableBeamParams:=TRUE,
+            bEnablePositionLimits:=TRUE,
+            bReadDBNow:=FALSE,
+            sDeviceName:='test',
+            sTransitionKey:='trans',
+        );
         IF fb_Move1D.stPlcToEpics.bDone THEN
-			AssertTrue(
-        		fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
-        		'Destination bp should have been in the arbiter',
-    		);
+            AssertTrue(
+                fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
+                'Destination bp should have been in the arbiter',
+            );
             nState := 3;
         END_IF
     3:
