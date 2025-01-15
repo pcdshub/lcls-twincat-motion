@@ -36,6 +36,8 @@ VAR_INPUT
     bMoveOnArbiterTimeout: BOOL := TRUE;
     // Set to TRUE when it is safe to reset the BPTM timeout fast fault, to reset it early.
     bResetBPTMTimeout: BOOL;
+	// Set to TRUE to make the BPTM retry
+	bRetry: BOOL;
 END_VAR
 VAR_OUTPUT
     // This becomes TRUE when the motors are allowed to move to their destinations.
@@ -118,6 +120,7 @@ bptm(
     i_stRequestedAssertion:=stGoalParams.stBeamParams,
     i_xDoneMoving:=bDoneMoving AND bAtState,
     stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+	bRetry:=bRetry,
     q_xTransitionAuthorized=>bInternalAuth,
     bDone=>bDone,
 );

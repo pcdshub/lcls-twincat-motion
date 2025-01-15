@@ -58,6 +58,11 @@ VAR
     fbPerMotorFFO: FB_PerMotorFFOND;
 
     eStatePMPSStatus: E_StatePMPSStatus;
+	
+	bEnable: BOOL;
+	nGoalAtClear : UINT;
+	bAtStateAtClear : BOOL;
+	rtEnable: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -82,6 +87,8 @@ fbMotionReadPMPSDB(
     bError=>,
 );
 
+bEnable := stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams;
+rtEnable(CLK:=bEnable);
 fbMotionBPTM(
     astMotionStage:=astMotionStageMax,
     fbArbiter:=fbArbiter,
@@ -89,9 +96,10 @@ fbMotionBPTM(
     stGoalParams:=fbMotionReadPMPSDB.astDbStateParams[nCurrGoal],
     stTransParams:=fbMotionReadPMPSDB.astDbStateParams[0],
     nActiveMotorCount:=nActiveMotorCount,
-    bEnable:=stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams,
+    bEnable:=bEnable,
     bAtState:=stPlcToEpics.nGetValue = nCurrGoal AND nCurrGoal <> 0,
     sDeviceName:=sDeviceName,
+	bRetry:=rtEnable.Q AND nGoalAtClear = nCurrGoal AND bAtStateAtClear,
     bTransitionAuthorized=>,
     bDone=>,
     bMotorCountError=>,
@@ -102,6 +110,8 @@ fbMotionClearAsserts(
     fbArbiter:=fbArbiter,
     bExecute:=NOT fbMotionBPTM.bEnable,
 );
+nGoalAtClear := nCurrGoal;
+bAtStateAtClear := fbMotionBPTM.bAtState;
 
 fbStatePMPSEnables(
     astMotionStage:=astMotionStageMax,
