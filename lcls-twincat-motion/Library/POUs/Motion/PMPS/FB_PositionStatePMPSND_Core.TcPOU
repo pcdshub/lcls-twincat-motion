@@ -61,7 +61,6 @@ VAR
 
     bEnable: BOOL;
     nGoalAtClear : UINT;
-    bAtStateAtClear : BOOL;
     rtEnable: R_TRIG;
 END_VAR
 ]]></Declaration>
@@ -99,7 +98,7 @@ fbMotionBPTM(
     bEnable:=bEnable,
     bAtState:=stPlcToEpics.nGetValue = nCurrGoal AND nCurrGoal <> 0,
     sDeviceName:=sDeviceName,
-    bRetry:=rtEnable.Q AND nGoalAtClear = nCurrGoal AND bAtStateAtClear,
+    bRetry:=rtEnable.Q AND nGoalAtClear = nCurrGoal,
     bTransitionAuthorized=>,
     bDone=>,
     bMotorCountError=>,
@@ -111,7 +110,6 @@ fbMotionClearAsserts(
     bExecute:=NOT fbMotionBPTM.bEnable,
 );
 nGoalAtClear := nCurrGoal;
-bAtStateAtClear := fbMotionBPTM.bAtState;
 
 fbStatePMPSEnables(
     astMotionStage:=astMotionStageMax,
