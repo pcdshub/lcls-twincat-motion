@@ -109,7 +109,9 @@ fbMotionClearAsserts(
     fbArbiter:=fbArbiter,
     bExecute:=NOT fbMotionBPTM.bEnable,
 );
-nGoalAtClear := nCurrGoal;
+IF fbMotionClearAsserts.bExecute THEN
+    nGoalAtClear := nCurrGoal;
+END_IF
 
 fbStatePMPSEnables(
     astMotionStage:=astMotionStageMax,
