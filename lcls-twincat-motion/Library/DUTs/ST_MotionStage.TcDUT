@@ -216,6 +216,43 @@ STRUCT
         field: DESC Position lag difference
     '}
     fPosDiff: LREAL;
+	(* Backlash compensation*)
+	// Enabled axis backlash compensation
+    {attribute 'pytmc' := '
+        pv: PLC:bBacklash
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Enable Backlash compensation
+    '}
+    bBacklash: BOOL;
+	
+	// Enabled axis backlash compensation
+    {attribute 'pytmc' := '
+        pv: PLC:bBacklasStatus
+        io: i
+        field: ZNAM DISABLED
+        field: ONAM ENABLED
+        field: DESC Backlash compensation status
+    '}
+    bBacklashStatus: BOOL;
+	
+	// Backlash compensation value
+    {attribute 'pytmc' := '
+        pv: PLC:fBacklashCompensation
+        io: io
+        field: DESC Backlash compensation
+    '}
+    fBacklashCompensation: LREAL;
+	
+	// Current Backlash compensation value ?
+    {attribute 'pytmc' := '
+        pv: PLC:fCurrentBacklashCompensation
+        io: i
+        field: DESC Current Backlash compensation
+    '}
+    fCurrentBacklashCompensation: LREAL;
+	
 END_STRUCT
 END_TYPE
 ]]></Declaration>

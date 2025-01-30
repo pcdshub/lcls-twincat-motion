@@ -15,6 +15,7 @@ VAR
     fbMotionHome: FB_MotionHoming;
     fbSaveRestore: FB_EncSaveRestore;
     fbLogError: FB_LogMotionError;
+	fbBacklashCompensation: FB_MotionBacklashCompensation;
     bExecute: BOOL;
     bExecMove: BOOL;
     bExecHome: BOOL;
@@ -35,6 +36,11 @@ VAR
     bMoveCmd: BOOL;
     rtMoveCmdShortcut: R_TRIG;
     rtHomeCmdShortcut: R_TRIG;
+	// backlash compensation
+	bBacklashEnabled: BOOL;
+    bBacklashBusy: BOOL;
+    bBacklashError: BOOL;
+    nBacklashErrorID: UDINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -52,6 +58,7 @@ IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
+	// maybe disable backlash here
 END_IF
 // Always reset, even if not rising edge, so command can be issued again
 IF stMotionStage.bMoveCmd OR stMotionStage.bHomeCmd THEN
@@ -62,6 +69,7 @@ END_IF
 // Automatically fill the correct nCmdData for homing
 IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
     stMotionStage.nCmdData := stMotionStage.nHomingMode;
+	// or maybe here
 END_IF
 
 // Check if the command wants to cause a move
@@ -138,15 +146,21 @@ IF stMotionStage.bError THEN
     bExecute := FALSE;
 END_IF
 
+bExecHome := bExecute AND (stMotionStage.nCommand = 10);
+// absolute move is valid only after after backlash compensation is enabled
+bExecMove := bExecute AND NOT bExecHome AND bBacklashEnabled; 
 
-bExecHome := bExecute AND stMotionStage.nCommand = 10;
-bExecMove := bExecute AND NOT bExecHome;
-
+// backlash compensention handling
+fbBacklashCompensation(stMotionStage:=stMotionStage, 
+	bHoming:=bExecHome, 
+	bMove:=bExecMove, 
+	bEnabled=>bBacklashEnabled);
+	
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
     bEnable:=stMotionStage.bAllEnable,
     bReset:=stMotionStage.bReset,
-    bExecute:=bExecMove,
+    bExecute:=bExecMove, // add a condition on this boolean, backlsash needs to be enabled
     nCommand:=INT_TO_UINT(stMotionStage.nCommand),
     nCmdData:=INT_TO_UINT(stMotionStage.nCmdData),
     fVelocity:=stMotionStage.fVelocity,
@@ -174,6 +188,12 @@ IF NOT stMotionStage.bError THEN
     stMotionStage.bError := fbDriveVirtual.bError;
     stMotionStage.nErrorId := fbDriveVirtual.nErrorId;
 END_IF
+
+IF NOT stMotionStage.bError THEN
+    stMotionStage.bError := fbBacklashCompensation.bError;
+    stMotionStage.nErrorId := fbBacklashCompensation.nErrorId;
+END_IF
+
 IF NOT stMotionStage.bError THEN
     stMotionStage.bError := fbMotionHome.bError;
     stMotionStage.nErrorId := fbMotionHome.nErrorId;
@@ -305,5 +325,27 @@ fbSaveRestore(
     stMotionStage:=stMotionStage,
     bEnable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);]]></ST>
     </Implementation>
+    <LineIds Name="FB_MotionStage">
+      <LineId Id="3" Count="13" />
+      <LineId Id="303" Count="0" />
+      <LineId Id="17" Count="9" />
+      <LineId Id="304" Count="0" />
+      <LineId Id="27" Count="74" />
+      <LineId Id="103" Count="1" />
+      <LineId Id="381" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="389" Count="0" />
+      <LineId Id="384" Count="3" />
+      <LineId Id="364" Count="0" />
+      <LineId Id="388" Count="0" />
+      <LineId Id="107" Count="17" />
+      <LineId Id="374" Count="0" />
+      <LineId Id="126" Count="12" />
+      <LineId Id="376" Count="3" />
+      <LineId Id="375" Count="0" />
+      <LineId Id="380" Count="0" />
+      <LineId Id="139" Count="128" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>
