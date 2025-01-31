@@ -36,11 +36,6 @@ VAR
     bMoveCmd: BOOL;
     rtMoveCmdShortcut: R_TRIG;
     rtHomeCmdShortcut: R_TRIG;
-    // backlash compensation
-    bBacklashEnabled: BOOL;
-    bBacklashBusy: BOOL;
-    bBacklashError: BOOL;
-    nBacklashErrorID: UDINT;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -153,8 +148,7 @@ bExecMove := bExecute AND NOT bExecHome;
 // backlash compensention handling
 fbBacklashCompensation(stMotionStage:=stMotionStage,
     bHoming:=bExecHome,
-    bMove:=bExecMove,
-    bEnabled=>bBacklashEnabled);
+    bMove:=bExecMove );
 
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
