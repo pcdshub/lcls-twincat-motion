@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionBacklashCompensation" Id="{8a5f8930-cc79-4651-8951-8645e0708394}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionBacklashCompensation
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_INPUT
+    bHoming: BOOL;
+    bMoving: BOOL;
+END_VAR
+VAR_OUTPUT
+    bEnabled: BOOL;
+    bBusy: BOOL;
+    bError: BOOL;
+    nErrorID: UDINT;
+END_VAR
+VAR
+    fbBacklashCompensation: MC_BacklashCompensation;
+    bPrevCompensation : LREAL := 0.0;
+    bBacklashCompEnable: BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*Note: Configure within the axis parameters set "position correction" to true *)
+(*Directional change for compensation
+  default: positive backlash):
+  TRUE -> Negative backlash compensation *)
+(* Reset Compensation to register a new value change*)
+bBacklashCompEnable R= bHoming OR (stMotionStage.fBacklashCompensation<>bPrevCompensation);
+bBacklashCompEnable S= bMoving;
+
+fbBacklashCompensation(Axis:=stMotionStage.Axis,
+    Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable),
+    Backlash:=stMotionStage.fBacklashCompensation,
+    CompensationInPositiveDirection:=(stMotionStage.fBacklashCompensation<0.0),
+    Ramp:=stMotionStage.fVelocity,
+    DisableMode:=DisableModeHold,
+    Enabled=> stMotionStage.bBacklashStatus,
+    Error=>bError,
+    ErrorID=>nErrorID,
+    CurrentBacklash=>stMotionStage.fCurrentBacklashCompensation);
+
+bPrevCompensation:=stMotionStage.fBacklashCompensation;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -15,6 +15,7 @@ VAR
     fbMotionHome: FB_MotionHoming;
     fbSaveRestore: FB_EncSaveRestore;
     fbLogError: FB_LogMotionError;
+    fbBacklashCompensation: FB_MotionBacklashCompensation;
     bExecute: BOOL;
     bExecMove: BOOL;
     bExecHome: BOOL;
@@ -142,6 +143,11 @@ END_IF
 bExecHome := bExecute AND stMotionStage.nCommand = 10;
 bExecMove := bExecute AND NOT bExecHome;
 
+// handles backlash compensention
+fbBacklashCompensation(stMotionStage:=stMotionStage,
+    bHoming:=bExecHome,
+    bMoving:=bExecMove );
+
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
     bEnable:=stMotionStage.bAllEnable,
@@ -170,6 +176,11 @@ fbMotionHome(
 stMotionStage.Axis.ReadStatus();
 
 // Check for a new error
+IF NOT stMotionStage.bError THEN
+    stMotionStage.bError := fbBacklashCompensation.bError;
+    stMotionStage.nErrorId := fbBacklashCompensation.nErrorId;
+END_IF
+
 IF NOT stMotionStage.bError THEN
     stMotionStage.bError := fbDriveVirtual.bError;
     stMotionStage.nErrorId := fbDriveVirtual.nErrorId;
