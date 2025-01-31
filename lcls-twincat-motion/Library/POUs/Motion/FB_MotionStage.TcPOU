@@ -148,7 +148,7 @@ END_IF
 
 bExecHome := bExecute AND (stMotionStage.nCommand = 10);
 // absolute move is valid only after after backlash compensation is enabled
-bExecMove := bExecute AND NOT bExecHome AND bBacklashEnabled; 
+bExecMove := bExecute AND NOT bExecHome; 
 
 // backlash compensention handling
 fbBacklashCompensation(stMotionStage:=stMotionStage, 
@@ -325,27 +325,5 @@ fbSaveRestore(
     stMotionStage:=stMotionStage,
     bEnable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);]]></ST>
     </Implementation>
-    <LineIds Name="FB_MotionStage">
-      <LineId Id="3" Count="13" />
-      <LineId Id="303" Count="0" />
-      <LineId Id="17" Count="9" />
-      <LineId Id="304" Count="0" />
-      <LineId Id="27" Count="74" />
-      <LineId Id="103" Count="1" />
-      <LineId Id="381" Count="0" />
-      <LineId Id="105" Count="0" />
-      <LineId Id="389" Count="0" />
-      <LineId Id="384" Count="3" />
-      <LineId Id="364" Count="0" />
-      <LineId Id="388" Count="0" />
-      <LineId Id="107" Count="17" />
-      <LineId Id="374" Count="0" />
-      <LineId Id="126" Count="12" />
-      <LineId Id="376" Count="3" />
-      <LineId Id="375" Count="0" />
-      <LineId Id="380" Count="0" />
-      <LineId Id="139" Count="128" />
-      <LineId Id="2" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>

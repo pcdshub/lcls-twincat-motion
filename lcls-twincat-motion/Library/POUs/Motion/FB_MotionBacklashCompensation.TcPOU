@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <POU Name="FB_MotionBacklashCompensation" Id="{ca6d14d0-2e55-42e4-8fc6-d17fd5f74053}" SpecialFunc="None">
+  <POU Name="FB_MotionBacklashCompensation" Id="{8a5f8930-cc79-4651-8951-8645e0708394}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionBacklashCompensation
 VAR_IN_OUT
     stMotionStage: ST_MotionStage;
@@ -17,107 +17,32 @@ VAR_OUTPUT
 END_VAR
 VAR
     fbBacklashCompensation: MC_BacklashCompensation;
-    rtHomeExec: R_TRIG;
-    rtMoveExec: F_TRIG;
+	// Default: Positive backlash compensation
+	bPrevCompensation : LREAL := 0.0;
+	bBacklashCompEnable: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[(*Configure within the axis parameters set "position correction" to true *)
-rtHomeExec(CLK:=bHoming);
-rtMoveExec(CLK:=bMove);
+      <ST><![CDATA[(*Note: Configure within the axis parameters set "position correction" to true *)
+(*Directional change for compensation 
+  default: psotive backlash): 
+  TRUE -> Negative backlash compensation *)
+(* Disabled Compensation to register a new value change*)
 
-IF rtHomeExec.Q THEN
-	BacklashCompDisable();
-END_IF
+bBacklashCompEnable R= bHoming OR (stMotionStage.fBacklashCompensation<>bPrevCompensation);
+bBacklashCompEnable S= bMove;
 
-IF rtMoveExec.Q THEN
-	BacklashCompEnable();
-END_IF
+fbBacklashCompensation(Axis:=stMotionStage.Axis, 
+	Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable), 
+	Backlash:=stMotionStage.fBacklashCompensation, 
+	CompensationInPositiveDirection:=(stMotionStage.fBacklashCompensation<0.0),
+	Ramp:=stMotionStage.fVelocity, 
+	DisableMode:=DisableModeHold, 
+	Enabled=> stMotionStage.bBacklashStatus, 
+	Error=>bError, 
+	ErrorID=>nErrorID, 
+	CurrentBacklash=>stMotionStage.fCurrentBacklashCompensation);
 
-
-
-]]></ST>
+bPrevCompensation:=stMotionStage.fBacklashCompensation;]]></ST>
     </Implementation>
-    <Method Name="BacklashCompDisable" Id="{dfa38fb4-8af5-4573-b73f-c7816c901f59}">
-      <Declaration><![CDATA[METHOD BacklashCompDisable
-
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[(*Disable the compensation*)
-(*Reset the compenstion value*)
-fbBacklashCompensation.DisableMode := DisableModeReset;
-fbBacklashCompensation.Enable := FALSE;
-	
-IF fbBacklashCompensation.Error THEN
-    bError:=fbBacklashCompensation.Error;
-    nErrorID:=fbBacklashCompensation.ErrorID;
-END_IF
-
-bEnabled := fbBacklashCompensation.Enabled;]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="BacklashCompEnable" Id="{11e7a569-1bd6-4259-a522-e58298a869f9}">
-      <Declaration><![CDATA[METHOD BacklashCompEnable
-
-VAR
-	// Default: Positive backlash compensation
-	bCompensationInDirection : BOOL := FALSE;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[(*Enable backlash compensation*)
-(*Positive backlash: CompensationInPositiveDirection -> false
-  Negative backlash: CompensationInPositiveDirection -> true
-*)
-IF stMotionStage.fBacklashCompensation < 0.0 THEN
-	bCompensationInDirection := TRUE;
-END_IF
-(*A movement in the desired direction will need to be compensated*)
-fbBacklashCompensation.CompensationInPositiveDirection := bCompensationInDirection;
-// peraphs a sanity check is needed for the backlash value?
-fbBacklashCompensation.Backlash := stMotionStage.fBacklashCompensation; (*mm*)
-fbBacklashCompensation.Ramp := stMotionStage.fVelocity;(*mm/s*)
-fbBacklashCompensation.Enable := stMotionStage.bBacklash;
-
-IF fbBacklashCompensation.Error THEN
-    bError:= fbBacklashCompensation.Error;
-    nErrorID:= fbBacklashCompensation.ErrorID;
-END_IF
-
-bEnabled := fbBacklashCompensation.Enabled;
-stMotionStage.bBacklashStatus:=bEnabled;
-stMotionStage.fCurrentBacklashCompensation:=fbBacklashCompensation.CurrentBacklash;]]></ST>
-      </Implementation>
-    </Method>
-    <LineIds Name="FB_MotionBacklashCompensation">
-      <LineId Id="336" Count="0" />
-      <LineId Id="338" Count="5" />
-      <LineId Id="345" Count="0" />
-      <LineId Id="344" Count="0" />
-      <LineId Id="346" Count="2" />
-      <LineId Id="357" Count="0" />
-      <LineId Id="356" Count="0" />
-      <LineId Id="2" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_MotionBacklashCompensation.BacklashCompDisable">
-      <LineId Id="6" Count="3" />
-      <LineId Id="11" Count="1" />
-      <LineId Id="14" Count="0" />
-      <LineId Id="13" Count="0" />
-      <LineId Id="5" Count="0" />
-      <LineId Id="17" Count="0" />
-      <LineId Id="16" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_MotionBacklashCompensation.BacklashCompEnable">
-      <LineId Id="9" Count="0" />
-      <LineId Id="23" Count="0" />
-      <LineId Id="25" Count="2" />
-      <LineId Id="38" Count="1" />
-      <LineId Id="41" Count="0" />
-      <LineId Id="13" Count="0" />
-      <LineId Id="42" Count="0" />
-      <LineId Id="14" Count="2" />
-      <LineId Id="45" Count="7" />
-      <LineId Id="44" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
