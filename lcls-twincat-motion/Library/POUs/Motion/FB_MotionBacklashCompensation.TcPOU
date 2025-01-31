@@ -7,7 +7,7 @@ VAR_IN_OUT
 END_VAR
 VAR_INPUT
     bHoming: BOOL;
-	bMove: BOOL;
+    bMove: BOOL;
 END_VAR
 VAR_OUTPUT
     bEnabled: BOOL;
@@ -17,30 +17,30 @@ VAR_OUTPUT
 END_VAR
 VAR
     fbBacklashCompensation: MC_BacklashCompensation;
-	// Default: Positive backlash compensation
-	bPrevCompensation : LREAL := 0.0;
-	bBacklashCompEnable: BOOL;
+    // Default: Positive backlash compensation
+    bPrevCompensation : LREAL := 0.0;
+    bBacklashCompEnable: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[(*Note: Configure within the axis parameters set "position correction" to true *)
-(*Directional change for compensation 
-  default: psotive backlash): 
+(*Directional change for compensation
+  default: psotive backlash):
   TRUE -> Negative backlash compensation *)
 (* Disabled Compensation to register a new value change*)
 
 bBacklashCompEnable R= bHoming OR (stMotionStage.fBacklashCompensation<>bPrevCompensation);
 bBacklashCompEnable S= bMove;
 
-fbBacklashCompensation(Axis:=stMotionStage.Axis, 
-	Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable), 
-	Backlash:=stMotionStage.fBacklashCompensation, 
-	CompensationInPositiveDirection:=(stMotionStage.fBacklashCompensation<0.0),
-	Ramp:=stMotionStage.fVelocity, 
-	DisableMode:=DisableModeHold, 
-	Enabled=> stMotionStage.bBacklashStatus, 
-	Error=>bError, 
-	ErrorID=>nErrorID, 
-	CurrentBacklash=>stMotionStage.fCurrentBacklashCompensation);
+fbBacklashCompensation(Axis:=stMotionStage.Axis,
+    Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable),
+    Backlash:=stMotionStage.fBacklashCompensation,
+    CompensationInPositiveDirection:=(stMotionStage.fBacklashCompensation<0.0),
+    Ramp:=stMotionStage.fVelocity,
+    DisableMode:=DisableModeHold,
+    Enabled=> stMotionStage.bBacklashStatus,
+    Error=>bError,
+    ErrorID=>nErrorID,
+    CurrentBacklash=>stMotionStage.fCurrentBacklashCompensation);
 
 bPrevCompensation:=stMotionStage.fBacklashCompensation;]]></ST>
     </Implementation>

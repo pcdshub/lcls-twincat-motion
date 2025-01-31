@@ -15,7 +15,7 @@ VAR
     fbMotionHome: FB_MotionHoming;
     fbSaveRestore: FB_EncSaveRestore;
     fbLogError: FB_LogMotionError;
-	fbBacklashCompensation: FB_MotionBacklashCompensation;
+    fbBacklashCompensation: FB_MotionBacklashCompensation;
     bExecute: BOOL;
     bExecMove: BOOL;
     bExecHome: BOOL;
@@ -36,8 +36,8 @@ VAR
     bMoveCmd: BOOL;
     rtMoveCmdShortcut: R_TRIG;
     rtHomeCmdShortcut: R_TRIG;
-	// backlash compensation
-	bBacklashEnabled: BOOL;
+    // backlash compensation
+    bBacklashEnabled: BOOL;
     bBacklashBusy: BOOL;
     bBacklashError: BOOL;
     nBacklashErrorID: UDINT;
@@ -58,7 +58,7 @@ IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
-	// maybe disable backlash here
+    // maybe disable backlash here
 END_IF
 // Always reset, even if not rising edge, so command can be issued again
 IF stMotionStage.bMoveCmd OR stMotionStage.bHomeCmd THEN
@@ -69,7 +69,7 @@ END_IF
 // Automatically fill the correct nCmdData for homing
 IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
     stMotionStage.nCmdData := stMotionStage.nHomingMode;
-	// or maybe here
+    // or maybe here
 END_IF
 
 // Check if the command wants to cause a move
@@ -148,14 +148,14 @@ END_IF
 
 bExecHome := bExecute AND (stMotionStage.nCommand = 10);
 // absolute move is valid only after after backlash compensation is enabled
-bExecMove := bExecute AND NOT bExecHome; 
+bExecMove := bExecute AND NOT bExecHome;
 
 // backlash compensention handling
-fbBacklashCompensation(stMotionStage:=stMotionStage, 
-	bHoming:=bExecHome, 
-	bMove:=bExecMove, 
-	bEnabled=>bBacklashEnabled);
-	
+fbBacklashCompensation(stMotionStage:=stMotionStage,
+    bHoming:=bExecHome,
+    bMove:=bExecMove,
+    bEnabled=>bBacklashEnabled);
+
 // Handle standard commands using ESS's FB
 fbDriveVirtual(En:=TRUE,
     bEnable:=stMotionStage.bAllEnable,
