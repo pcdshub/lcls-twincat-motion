@@ -2,6 +2,13 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MotionBacklashCompensation" Id="{8a5f8930-cc79-4651-8951-8645e0708394}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionBacklashCompensation
+(*	
+    Handle positive/negative backlash compensation
+    User needs to set the direction of backlash from the sign of the compensation value	
+    Backlash compensation is disabled during referencing (homing). 
+    When direction is positive/negative, further movement in the negative/positive direction not compensated
+    further movement in the negative/positive direction will be compensated 
+*)
 VAR_IN_OUT
     stMotionStage: ST_MotionStage;
 END_VAR
@@ -10,14 +17,12 @@ VAR_INPUT
     bMoving: BOOL;
 END_VAR
 VAR_OUTPUT
-    bEnabled: BOOL;
-    bBusy: BOOL;
     bError: BOOL;
     nErrorID: UDINT;
 END_VAR
 VAR
     fbBacklashCompensation: MC_BacklashCompensation;
-    bPrevCompensation : LREAL := 0.0;
+    fPrevCompensation : LREAL := 0.0;
     bBacklashCompEnable: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
@@ -40,7 +45,7 @@ fbBacklashCompensation(Axis:=stMotionStage.Axis,
     ErrorID=>nErrorID,
     CurrentBacklash=>stMotionStage.fCurrentBacklashCompensation);
 
-bPrevCompensation:=stMotionStage.fBacklashCompensation;]]></ST>
+fPrevCompensation:=stMotionStage.fBacklashCompensation;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
