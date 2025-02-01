@@ -36,16 +36,16 @@ bBacklashCompEnable S= bMoving;
 
 fbBacklashCompensation(Axis:=stMotionStage.Axis,
     Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable),
-    Backlash:=stMotionStage.fBacklashCompensation,
-    CompensationInPositiveDirection:=(stMotionStage.fBacklashCompensation<0.0),
+    Backlash:=stMotionStage.fBacklash,
+    CompensationInPositiveDirection:=(stMotionStage.fBacklash<0.0),
     Ramp:=stMotionStage.fVelocity,
     DisableMode:=DisableModeHold,
     Enabled=> stMotionStage.bBacklashStatus,
     Error=>bError,
     ErrorID=>nErrorID,
-    CurrentBacklash=>stMotionStage.fCurrentBacklashCompensation);
+    CurrentBacklash=>stMotionStage.fCurrentBacklash);
 
-fPrevCompensation:=stMotionStage.fBacklashCompensation;]]></ST>
+fPrevCompensation:=stMotionStage.fBacklash;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
