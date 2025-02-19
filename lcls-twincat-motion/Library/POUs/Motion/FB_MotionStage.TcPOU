@@ -89,9 +89,9 @@ CASE stMotionStage.nEnableMode OF
     E_StageEnableMode.ALWAYS:
         stMotionStage.bEnable := TRUE;
     E_StageEnableMode.DURING_MOTION:
-		IF rtEnableMode.Q THEN
-			stMotionStage.bEnable := FALSE;
-		END_IF
+        IF rtEnableMode.Q THEN
+            stMotionStage.bEnable := FALSE;
+        END_IF
         IF bNewMoveReq THEN
             IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
                 stMotionStage.bEnable := stMotionStage.bSafetyReady;
@@ -311,14 +311,5 @@ fbSaveRestore(
     stMotionStage:=stMotionStage,
     bEnable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);]]></ST>
     </Implementation>
-    <LineIds Name="FB_MotionStage">
-      <LineId Id="3" Count="41" />
-      <LineId Id="309" Count="0" />
-      <LineId Id="303" Count="0" />
-      <LineId Id="45" Count="5" />
-      <LineId Id="306" Count="2" />
-      <LineId Id="51" Count="216" />
-      <LineId Id="2" Count="0" />
-    </LineIds>
   </POU>
 </TcPlcObject>
