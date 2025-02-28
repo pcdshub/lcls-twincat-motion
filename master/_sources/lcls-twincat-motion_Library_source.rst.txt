@@ -6585,6 +6585,8 @@ FB_MotionBPTM
         bMoveOnArbiterTimeout: BOOL := TRUE;
         // Set to TRUE when it is safe to reset the BPTM timeout fast fault, to reset it early.
         bResetBPTMTimeout: BOOL;
+        // Set to TRUE to make the BPTM retry
+        bRetry: BOOL;
     END_VAR
     VAR_OUTPUT
         // This becomes TRUE when the motors are allowed to move to their destinations.
@@ -6657,6 +6659,7 @@ FB_MotionBPTM
         i_stRequestedAssertion:=stGoalParams.stBeamParams,
         i_xDoneMoving:=bDoneMoving AND bAtState,
         stCurrentBeamParameters:=PMPS_GVL.stCurrentBeamParameters,
+        bRetry:=bRetry,
         q_xTransitionAuthorized=>bInternalAuth,
         bDone=>bDone,
     );
@@ -15225,6 +15228,10 @@ FB_PositionStatePMPSND_Core
         fbPerMotorFFO: FB_PerMotorFFOND;
 
         eStatePMPSStatus: E_StatePMPSStatus;
+
+        bEnable: BOOL;
+        nGoalAtClear : UINT;
+        rtEnable: R_TRIG;
     END_VAR
     IF stPMPSEpicsToPlc.bMaintMode OR NOT stPMPSEpicsToPlc.bArbiterEnabled THEN
         eStatePMPSStatus := E_StatePMPSStatus.DISABLED;
@@ -15246,6 +15253,8 @@ FB_PositionStatePMPSND_Core
         bError=>,
     );
 
+    bEnable := stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams;
+    rtEnable(CLK:=bEnable);
     fbMotionBPTM(
         astMotionStage:=astMotionStageMax,
         fbArbiter:=fbArbiter,
@@ -15253,9 +15262,10 @@ FB_PositionStatePMPSND_Core
         stGoalParams:=fbMotionReadPMPSDB.astDbStateParams[nCurrGoal],
         stTransParams:=fbMotionReadPMPSDB.astDbStateParams[0],
         nActiveMotorCount:=nActiveMotorCount,
-        bEnable:=stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams,
+        bEnable:=bEnable,
         bAtState:=stPlcToEpics.nGetValue = nCurrGoal AND nCurrGoal <> 0,
         sDeviceName:=sDeviceName,
+        bRetry:=rtEnable.Q AND nGoalAtClear = nCurrGoal,
         bTransitionAuthorized=>,
         bDone=>,
         bMotorCountError=>,
@@ -15266,6 +15276,9 @@ FB_PositionStatePMPSND_Core
         fbArbiter:=fbArbiter,
         bExecute:=NOT fbMotionBPTM.bEnable,
     );
+    IF fbMotionClearAsserts.bExecute THEN
+        nGoalAtClear := nCurrGoal;
+    END_IF
 
     fbStatePMPSEnables(
         astMotionStage:=astMotionStageMax,
@@ -15489,6 +15502,7 @@ FB_PositionStatePMPSND_Test
     Test3D(10, E_TestStates.OUT);
     Test3D(11, E_TestStates.TARGET1);
     Test3D(12, E_TestStates.TARGET2);
+    TestToggleBPTM(13);
 
     IF bOneTestDone THEN
         bOneTestDone := FALSE;
@@ -16106,6 +16120,108 @@ FB_PositionStatePMPSND_Test
         bOneTestDone := TRUE;
         TEST_FINISHED();
     END_IF
+    END_METHOD
+
+    METHOD TestToggleBPTM
+    VAR_INPUT
+        nTestID: UINT;
+    END_VAR
+    VAR_INST
+        fbFFHWO: FB_HardwareFFOutput;
+        nState: UINT;
+    END_VAR
+    TEST('TestToggleBPTM');
+    IF nTestCounter <> nTestID THEN
+        RETURN;
+    END_IF
+
+    fbSubSysIO1D(
+        LA:=fbArbiter1D,
+        FFO:=fbFFHWO,
+    );
+
+    IF tonTimer.Q THEN
+        nState := 3;
+    END_IF
+
+    eSetPos := 2;
+
+    CASE nState OF
+        0:
+            fb_Move1D(
+                stMotionStage:=stMotionStage1,
+                astPositionState:=astPositionState1,
+                eEnumSet:= eSetPos,
+                eEnumGet:=eGetPos,
+                fbFFHWO:=fbFFHWO,
+                fbArbiter:=fbArbiter1D,
+                bEnableMotion:=TRUE,
+                bEnableBeamParams:=TRUE,
+                bEnablePositionLimits:=TRUE,
+                bReadDBNow:=TRUE,
+                sDeviceName:='test',
+                sTransitionKey:='trans',
+            );
+            IF fb_Move1D.stPlcToEpics.bDone THEN
+                AssertTrue(
+                    fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
+                    'Destination bp should have been in the arbiter1',
+                );
+                nState := 1;
+            END_IF
+        1:
+            fb_Move1D.stPMPSEpicsToPlc.bArbiterEnabled := FALSE;
+            fb_Move1D(
+                stMotionStage:=stMotionStage1,
+                astPositionState:=astPositionState1,
+                eEnumSet:= eSetPos,
+                eEnumGet:=eGetPos,
+                fbFFHWO:=fbFFHWO,
+                fbArbiter:=fbArbiter1D,
+                bEnableMotion:=TRUE,
+                bEnableBeamParams:=TRUE,
+                bEnablePositionLimits:=TRUE,
+                bReadDBNow:=FALSE,
+                sDeviceName:='test',
+                sTransitionKey:='trans',
+            );
+            IF fb_Move1D.stPlcToEpics.bDone THEN
+                AssertFalse(
+                    fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
+                    'Destination bp should not have been in the arbiter2',
+                );
+                nState := 2;
+            END_IF
+        2:
+            fb_Move1D.stPMPSEpicsToPlc.bArbiterEnabled := TRUE;
+            fb_Move1D(
+                stMotionStage:=stMotionStage1,
+                astPositionState:=astPositionState1,
+                eEnumSet:= eSetPos,
+                eEnumGet:=eGetPos,
+                fbFFHWO:=fbFFHWO,
+                fbArbiter:=fbArbiter1D,
+                bEnableMotion:=TRUE,
+                bEnableBeamParams:=TRUE,
+                bEnablePositionLimits:=TRUE,
+                bReadDBNow:=FALSE,
+                sDeviceName:='test',
+                sTransitionKey:='trans',
+            );
+            IF fb_Move1D.fbPMPSCore.fbMotionBPTM.bptm.eBPTMState = E_BPTMState.WaitForBP THEN
+                AssertTrue(
+                    fbArbiter1D.CheckRequestInPool(astBeam[E_TestStates.TARGET1].nRequestAssertionID),
+                    'Destination bp should have been in the arbiter3',
+                );
+                nState := 3;
+            END_IF
+        3:
+            AssertFalse(
+                tonTimer.Q,
+                'Timeout in test',
+            );
+            TEST_FINISHED();
+    END_CASE
     END_METHOD
 
 

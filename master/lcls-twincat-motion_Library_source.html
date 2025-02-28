@@ -6734,6 +6734,8 @@ END_METHOD
     <span class="n">bMoveOnArbiterTimeout</span><span class="p">:</span> <span class="n">BOOL</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">TRUE</span> <span class="n">when</span> <span class="n">it</span> <span class="ow">is</span> <span class="n">safe</span> <span class="n">to</span> <span class="n">reset</span> <span class="n">the</span> <span class="n">BPTM</span> <span class="n">timeout</span> <span class="n">fast</span> <span class="n">fault</span><span class="p">,</span> <span class="n">to</span> <span class="n">reset</span> <span class="n">it</span> <span class="n">early</span><span class="o">.</span>
     <span class="n">bResetBPTMTimeout</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="o">//</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">TRUE</span> <span class="n">to</span> <span class="n">make</span> <span class="n">the</span> <span class="n">BPTM</span> <span class="n">retry</span>
+    <span class="n">bRetry</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR_OUTPUT</span>
     <span class="o">//</span> <span class="n">This</span> <span class="n">becomes</span> <span class="n">TRUE</span> <span class="n">when</span> <span class="n">the</span> <span class="n">motors</span> <span class="n">are</span> <span class="n">allowed</span> <span class="n">to</span> <span class="n">move</span> <span class="n">to</span> <span class="n">their</span> <span class="n">destinations</span><span class="o">.</span>
@@ -6806,6 +6808,7 @@ END_METHOD
     <span class="n">i_stRequestedAssertion</span><span class="o">:=</span><span class="n">stGoalParams</span><span class="o">.</span><span class="n">stBeamParams</span><span class="p">,</span>
     <span class="n">i_xDoneMoving</span><span class="o">:=</span><span class="n">bDoneMoving</span> <span class="n">AND</span> <span class="n">bAtState</span><span class="p">,</span>
     <span class="n">stCurrentBeamParameters</span><span class="o">:=</span><span class="n">PMPS_GVL</span><span class="o">.</span><span class="n">stCurrentBeamParameters</span><span class="p">,</span>
+    <span class="n">bRetry</span><span class="o">:=</span><span class="n">bRetry</span><span class="p">,</span>
     <span class="n">q_xTransitionAuthorized</span><span class="o">=&gt;</span><span class="n">bInternalAuth</span><span class="p">,</span>
     <span class="n">bDone</span><span class="o">=&gt;</span><span class="n">bDone</span><span class="p">,</span>
 <span class="p">);</span>
@@ -15362,6 +15365,10 @@ END_ACTION
     <span class="n">fbPerMotorFFO</span><span class="p">:</span> <span class="n">FB_PerMotorFFOND</span><span class="p">;</span>
 
     <span class="n">eStatePMPSStatus</span><span class="p">:</span> <span class="n">E_StatePMPSStatus</span><span class="p">;</span>
+
+    <span class="n">bEnable</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nGoalAtClear</span> <span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+    <span class="n">rtEnable</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">IF</span> <span class="n">stPMPSEpicsToPlc</span><span class="o">.</span><span class="n">bMaintMode</span> <span class="n">OR</span> <span class="n">NOT</span> <span class="n">stPMPSEpicsToPlc</span><span class="o">.</span><span class="n">bArbiterEnabled</span> <span class="n">THEN</span>
     <span class="n">eStatePMPSStatus</span> <span class="o">:=</span> <span class="n">E_StatePMPSStatus</span><span class="o">.</span><span class="n">DISABLED</span><span class="p">;</span>
@@ -15383,6 +15390,8 @@ END_ACTION
     <span class="n">bError</span><span class="o">=&gt;</span><span class="p">,</span>
 <span class="p">);</span>
 
+<span class="n">bEnable</span> <span class="o">:=</span> <span class="n">stPMPSEpicsToPlc</span><span class="o">.</span><span class="n">bArbiterEnabled</span> <span class="n">AND</span> <span class="n">bEnableBeamParams</span><span class="p">;</span>
+<span class="n">rtEnable</span><span class="p">(</span><span class="n">CLK</span><span class="o">:=</span><span class="n">bEnable</span><span class="p">);</span>
 <span class="n">fbMotionBPTM</span><span class="p">(</span>
     <span class="n">astMotionStage</span><span class="o">:=</span><span class="n">astMotionStageMax</span><span class="p">,</span>
     <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter</span><span class="p">,</span>
@@ -15390,9 +15399,10 @@ END_ACTION
     <span class="n">stGoalParams</span><span class="o">:=</span><span class="n">fbMotionReadPMPSDB</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="n">nCurrGoal</span><span class="p">],</span>
     <span class="n">stTransParams</span><span class="o">:=</span><span class="n">fbMotionReadPMPSDB</span><span class="o">.</span><span class="n">astDbStateParams</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
     <span class="n">nActiveMotorCount</span><span class="o">:=</span><span class="n">nActiveMotorCount</span><span class="p">,</span>
-    <span class="n">bEnable</span><span class="o">:=</span><span class="n">stPMPSEpicsToPlc</span><span class="o">.</span><span class="n">bArbiterEnabled</span> <span class="n">AND</span> <span class="n">bEnableBeamParams</span><span class="p">,</span>
+    <span class="n">bEnable</span><span class="o">:=</span><span class="n">bEnable</span><span class="p">,</span>
     <span class="n">bAtState</span><span class="o">:=</span><span class="n">stPlcToEpics</span><span class="o">.</span><span class="n">nGetValue</span> <span class="o">=</span> <span class="n">nCurrGoal</span> <span class="n">AND</span> <span class="n">nCurrGoal</span> <span class="o">&lt;&gt;</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">sDeviceName</span><span class="o">:=</span><span class="n">sDeviceName</span><span class="p">,</span>
+    <span class="n">bRetry</span><span class="o">:=</span><span class="n">rtEnable</span><span class="o">.</span><span class="n">Q</span> <span class="n">AND</span> <span class="n">nGoalAtClear</span> <span class="o">=</span> <span class="n">nCurrGoal</span><span class="p">,</span>
     <span class="n">bTransitionAuthorized</span><span class="o">=&gt;</span><span class="p">,</span>
     <span class="n">bDone</span><span class="o">=&gt;</span><span class="p">,</span>
     <span class="n">bMotorCountError</span><span class="o">=&gt;</span><span class="p">,</span>
@@ -15403,6 +15413,9 @@ END_ACTION
     <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter</span><span class="p">,</span>
     <span class="n">bExecute</span><span class="o">:=</span><span class="n">NOT</span> <span class="n">fbMotionBPTM</span><span class="o">.</span><span class="n">bEnable</span><span class="p">,</span>
 <span class="p">);</span>
+<span class="n">IF</span> <span class="n">fbMotionClearAsserts</span><span class="o">.</span><span class="n">bExecute</span> <span class="n">THEN</span>
+    <span class="n">nGoalAtClear</span> <span class="o">:=</span> <span class="n">nCurrGoal</span><span class="p">;</span>
+<span class="n">END_IF</span>
 
 <span class="n">fbStatePMPSEnables</span><span class="p">(</span>
     <span class="n">astMotionStage</span><span class="o">:=</span><span class="n">astMotionStageMax</span><span class="p">,</span>
@@ -15626,6 +15639,7 @@ END_ACTION
 <span class="n">Test3D</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">OUT</span><span class="p">);</span>
 <span class="n">Test3D</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET1</span><span class="p">);</span>
 <span class="n">Test3D</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET2</span><span class="p">);</span>
+<span class="n">TestToggleBPTM</span><span class="p">(</span><span class="mi">13</span><span class="p">);</span>
 
 <span class="n">IF</span> <span class="n">bOneTestDone</span> <span class="n">THEN</span>
     <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
@@ -16243,6 +16257,108 @@ END_ACTION
     <span class="n">bOneTestDone</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
     <span class="n">TEST_FINISHED</span><span class="p">();</span>
 <span class="n">END_IF</span>
+<span class="n">END_METHOD</span>
+
+<span class="n">METHOD</span> <span class="n">TestToggleBPTM</span>
+<span class="n">VAR_INPUT</span>
+    <span class="n">nTestID</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">VAR_INST</span>
+    <span class="n">fbFFHWO</span><span class="p">:</span> <span class="n">FB_HardwareFFOutput</span><span class="p">;</span>
+    <span class="n">nState</span><span class="p">:</span> <span class="n">UINT</span><span class="p">;</span>
+<span class="n">END_VAR</span>
+<span class="n">TEST</span><span class="p">(</span><span class="s1">&#39;TestToggleBPTM&#39;</span><span class="p">);</span>
+<span class="n">IF</span> <span class="n">nTestCounter</span> <span class="o">&lt;&gt;</span> <span class="n">nTestID</span> <span class="n">THEN</span>
+    <span class="n">RETURN</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">fbSubSysIO1D</span><span class="p">(</span>
+    <span class="n">LA</span><span class="o">:=</span><span class="n">fbArbiter1D</span><span class="p">,</span>
+    <span class="n">FFO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="n">IF</span> <span class="n">tonTimer</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
+    <span class="n">nState</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span>
+<span class="n">END_IF</span>
+
+<span class="n">eSetPos</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
+
+<span class="n">CASE</span> <span class="n">nState</span> <span class="n">OF</span>
+    <span class="mi">0</span><span class="p">:</span>
+        <span class="n">fb_Move1D</span><span class="p">(</span>
+            <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage1</span><span class="p">,</span>
+            <span class="n">astPositionState</span><span class="o">:=</span><span class="n">astPositionState1</span><span class="p">,</span>
+            <span class="n">eEnumSet</span><span class="o">:=</span> <span class="n">eSetPos</span><span class="p">,</span>
+            <span class="n">eEnumGet</span><span class="o">:=</span><span class="n">eGetPos</span><span class="p">,</span>
+            <span class="n">fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
+            <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter1D</span><span class="p">,</span>
+            <span class="n">bEnableMotion</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bEnableBeamParams</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bEnablePositionLimits</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bReadDBNow</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">sDeviceName</span><span class="o">:=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span>
+            <span class="n">sTransitionKey</span><span class="o">:=</span><span class="s1">&#39;trans&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">IF</span> <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">stPlcToEpics</span><span class="o">.</span><span class="n">bDone</span> <span class="n">THEN</span>
+            <span class="n">AssertTrue</span><span class="p">(</span>
+                <span class="n">fbArbiter1D</span><span class="o">.</span><span class="n">CheckRequestInPool</span><span class="p">(</span><span class="n">astBeam</span><span class="p">[</span><span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET1</span><span class="p">]</span><span class="o">.</span><span class="n">nRequestAssertionID</span><span class="p">),</span>
+                <span class="s1">&#39;Destination bp should have been in the arbiter1&#39;</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">nState</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="mi">1</span><span class="p">:</span>
+        <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">stPMPSEpicsToPlc</span><span class="o">.</span><span class="n">bArbiterEnabled</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
+        <span class="n">fb_Move1D</span><span class="p">(</span>
+            <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage1</span><span class="p">,</span>
+            <span class="n">astPositionState</span><span class="o">:=</span><span class="n">astPositionState1</span><span class="p">,</span>
+            <span class="n">eEnumSet</span><span class="o">:=</span> <span class="n">eSetPos</span><span class="p">,</span>
+            <span class="n">eEnumGet</span><span class="o">:=</span><span class="n">eGetPos</span><span class="p">,</span>
+            <span class="n">fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
+            <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter1D</span><span class="p">,</span>
+            <span class="n">bEnableMotion</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bEnableBeamParams</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bEnablePositionLimits</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bReadDBNow</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+            <span class="n">sDeviceName</span><span class="o">:=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span>
+            <span class="n">sTransitionKey</span><span class="o">:=</span><span class="s1">&#39;trans&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">IF</span> <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">stPlcToEpics</span><span class="o">.</span><span class="n">bDone</span> <span class="n">THEN</span>
+            <span class="n">AssertFalse</span><span class="p">(</span>
+                <span class="n">fbArbiter1D</span><span class="o">.</span><span class="n">CheckRequestInPool</span><span class="p">(</span><span class="n">astBeam</span><span class="p">[</span><span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET1</span><span class="p">]</span><span class="o">.</span><span class="n">nRequestAssertionID</span><span class="p">),</span>
+                <span class="s1">&#39;Destination bp should not have been in the arbiter2&#39;</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">nState</span> <span class="o">:=</span> <span class="mi">2</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="mi">2</span><span class="p">:</span>
+        <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">stPMPSEpicsToPlc</span><span class="o">.</span><span class="n">bArbiterEnabled</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
+        <span class="n">fb_Move1D</span><span class="p">(</span>
+            <span class="n">stMotionStage</span><span class="o">:=</span><span class="n">stMotionStage1</span><span class="p">,</span>
+            <span class="n">astPositionState</span><span class="o">:=</span><span class="n">astPositionState1</span><span class="p">,</span>
+            <span class="n">eEnumSet</span><span class="o">:=</span> <span class="n">eSetPos</span><span class="p">,</span>
+            <span class="n">eEnumGet</span><span class="o">:=</span><span class="n">eGetPos</span><span class="p">,</span>
+            <span class="n">fbFFHWO</span><span class="o">:=</span><span class="n">fbFFHWO</span><span class="p">,</span>
+            <span class="n">fbArbiter</span><span class="o">:=</span><span class="n">fbArbiter1D</span><span class="p">,</span>
+            <span class="n">bEnableMotion</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bEnableBeamParams</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bEnablePositionLimits</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">,</span>
+            <span class="n">bReadDBNow</span><span class="o">:=</span><span class="n">FALSE</span><span class="p">,</span>
+            <span class="n">sDeviceName</span><span class="o">:=</span><span class="s1">&#39;test&#39;</span><span class="p">,</span>
+            <span class="n">sTransitionKey</span><span class="o">:=</span><span class="s1">&#39;trans&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">IF</span> <span class="n">fb_Move1D</span><span class="o">.</span><span class="n">fbPMPSCore</span><span class="o">.</span><span class="n">fbMotionBPTM</span><span class="o">.</span><span class="n">bptm</span><span class="o">.</span><span class="n">eBPTMState</span> <span class="o">=</span> <span class="n">E_BPTMState</span><span class="o">.</span><span class="n">WaitForBP</span> <span class="n">THEN</span>
+            <span class="n">AssertTrue</span><span class="p">(</span>
+                <span class="n">fbArbiter1D</span><span class="o">.</span><span class="n">CheckRequestInPool</span><span class="p">(</span><span class="n">astBeam</span><span class="p">[</span><span class="n">E_TestStates</span><span class="o">.</span><span class="n">TARGET1</span><span class="p">]</span><span class="o">.</span><span class="n">nRequestAssertionID</span><span class="p">),</span>
+                <span class="s1">&#39;Destination bp should have been in the arbiter3&#39;</span><span class="p">,</span>
+            <span class="p">);</span>
+            <span class="n">nState</span> <span class="o">:=</span> <span class="mi">3</span><span class="p">;</span>
+        <span class="n">END_IF</span>
+    <span class="mi">3</span><span class="p">:</span>
+        <span class="n">AssertFalse</span><span class="p">(</span>
+            <span class="n">tonTimer</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+            <span class="s1">&#39;Timeout in test&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+        <span class="n">TEST_FINISHED</span><span class="p">();</span>
+<span class="n">END_CASE</span>
 <span class="n">END_METHOD</span>
 </pre></div>
 </div>
