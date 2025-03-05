@@ -51,7 +51,7 @@ IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
 
     // attempting to move an axis without homing first?
-    IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE THEN
+    IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stMotionStage.bHomed THEN
         // one can just set bHome here even though no homing was done?
         stMotionStage.sErrorMessage := 'Axis homing mode set, but homing routine pending';
     END_IF
