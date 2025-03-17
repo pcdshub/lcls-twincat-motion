@@ -1087,6 +1087,43 @@ ST_MotionStage
             field: DESC Position lag difference
         '}
         fPosDiff: LREAL;
+
+        (* Backlash compensation*)
+        // Enabled axis backlash compensation
+        {attribute 'pytmc' := '
+            pv: PLC:bBacklashEn
+            io: io
+            field: ZNAM FALSE
+            field: ONAM TRUE
+            field: DESC Enable Backlash compensation
+        '}
+        bUserBacklashEn: BOOL;
+
+        // backlash compensation status
+        {attribute 'pytmc' := '
+            pv: PLC:bBacklasStatus
+            io: i
+            field: ZNAM DISABLED
+            field: ONAM ENABLED
+            field: DESC Backlash compensation status
+        '}
+        bBacklashStatus: BOOL;
+
+        // Backlash compensation value
+        {attribute 'pytmc' := '
+            pv: PLC:fBacklash
+            io: io
+            field: DESC Backlash compensation
+        '}
+        fBacklash: LREAL;
+
+        // Current Backlash compensation value ?
+        {attribute 'pytmc' := '
+            pv: PLC:fCurrentBacklash
+            io: i
+            field: DESC Currently applied compensation
+        '}
+        fCurrentBacklash: LREAL;
     END_STRUCT
     END_TYPE
 
@@ -6546,6 +6583,252 @@ Related:
     * `FB_MiscStatesErrorFFO`_
 
 
+FB_MotionBacklashCompensation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_MotionBacklashCompensation
+    (*
+        Handle positive/negative backlash compensation
+        User needs to set the direction of backlash from the sign of the compensation value
+        Backlash compensation is disabled during referencing (homing).
+        When direction is positive/negative, further movement in the negative/positive direction not compensated
+        further movement in the negative/positive direction will be compensated
+    *)
+    VAR_IN_OUT
+        stMotionStage: ST_MotionStage;
+    END_VAR
+    VAR_INPUT
+        bHoming: BOOL;
+        bMoving: BOOL;
+    END_VAR
+    VAR_OUTPUT
+        bError: BOOL;
+        nErrorID: UDINT;
+    END_VAR
+    VAR
+        fbBacklashCompensation: MC_BacklashCompensation;
+        fPrevCompensation : LREAL := 0.0;
+        bBacklashCompEnable: BOOL;
+    END_VAR
+    (*Note: Configure within the axis parameters set "position correction" to true *)
+    (*Directional change for compensation
+      default: positive backlash):
+      TRUE -> Negative backlash compensation *)
+    (* Reset Compensation to register a new value change*)
+    bBacklashCompEnable R= bHoming OR (stMotionStage.fBacklash<>fPrevCompensation);
+    bBacklashCompEnable S= bMoving;
+
+    fbBacklashCompensation(Axis:=stMotionStage.Axis,
+        Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable),
+        Backlash:=stMotionStage.fBacklash,
+        CompensationInPositiveDirection:=(stMotionStage.fBacklash<0.0),
+        Ramp:=(stMotionStage.fVelocity / 10.0),
+        DisableMode:=DisableModeHold,
+        Enabled=> stMotionStage.bBacklashStatus,
+        Error=>bError,
+        ErrorID=>nErrorID,
+        CurrentBacklash=>stMotionStage.fCurrentBacklash);
+
+    fPrevCompensation:=stMotionStage.fBacklash;
+
+    END_FUNCTION_BLOCK
+
+
+Related:
+    * `ST_MotionStage`_
+
+
+FB_MotionBacklashCompensation_Test
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_MotionBacklashCompensation_Test EXTENDS TcUnit.FB_TestSuite
+    (*
+        Test  FB_MotionStage backlash compensation functionalities.
+        - The Test capture the status of the backhash FB during homing  expected to be disabled
+        - The  status and value of backlash compensation in either direction of set correction
+    *)
+    VAR
+        fbMotorTestSuite 	: FB_MotorTestSuite;
+        stMotionStage 		: ST_MotionStage := (sName := 'RATTM:MOTION',
+                                                    bPowerSelf := TRUE,
+                                                    nEnableMode:= ENUM_StageEnableMode.ALWAYS,
+                                                    fHomePosition:=0.0,
+                                                    nHomingMode:=ENUM_EpicsHomeCmd.LOW_LIMIT);
+        fbMotionStage		: FB_MotionStage;
+
+    END_VAR
+    TestMotionBacklashCompensation();
+
+    END_FUNCTION_BLOCK
+
+    METHOD PRIVATE TestMotionBacklashCompensation
+    VAR_INST
+    tonHomeSwitchSim : TON;
+    uStates	: UINT := 10;
+    bLimitBackward : BOOL := TRUE;
+    bLimitForward  : BOOL := TRUE;
+    bBacklashCompensationHomeExp  : BOOL:=FALSE;
+    bBacklashCompensationHomeStatus  : BOOL;
+    bBacklashCompensationStatus  : BOOL;
+    bBacklashCompensationStatusExp: BOOL:=TRUE;
+    // Positive compensation
+    bBacklashCompensationPosFwd  : LREAL;
+    bBacklashCompensationPosRev  : LREAL;
+    // Negative compensation
+    bBacklashCompensationNegFwd  : LREAL;
+    bBacklashCompensationNegRev  : LREAL;
+
+    bBacklashCompensationActPos  : LREAL :=4.0;
+    bBacklashCompensationActNeg  : LREAL :=-4.0;
+    bBacklashCompensationNotAct  : LREAL :=0.0;
+    ptWaitTime: TIME:=T#1S;
+
+    END_VAR
+    TEST('TestMotionBacklashCompensation');
+
+    CASE uStates OF
+
+        10:
+            //  start homming and get backalsh status.
+            stMotionStage.bHomeCmd := TRUE;
+            tonHomeSwitchSim.IN:=TRUE;
+            ptWaitTime:=T#1S;
+            uStates := 20;
+        20:
+            IF stMotionStage.bBusy THEN
+                // Homing is done without any backlash compensation
+                bBacklashCompensationHomeStatus := stMotionStage.bBacklashStatus;
+            END_IF
+
+            // Homming busy, simualte a state change in the backward (homing switch) switch
+            IF tonHomeSwitchSim.Q AND stMotionStage.Axis.NcToPlc.StateDWord.10 AND NOT stMotionStage.Axis.NcToPlc.StateDWord.3 THEN
+                bLimitBackward := FALSE;
+                tonHomeSwitchSim.IN:=FALSE;
+            END_IF
+
+            //  Homing switch pulse detected motion is reverse release the the backward limit switch for completion.
+            IF stMotionStage.Axis.NcToPlc.StateDWord.9 AND NOT stMotionStage.Axis.NcToPlc.StateDWord.3 THEN
+                bLimitBackward := TRUE;
+            END_IF
+
+            // Homing is done
+            IF stMotionStage.bHomed THEN
+                uStates := 40;
+            END_IF
+        40:
+            // simualte a user enabled for backlash compensation
+            stMotionStage.bUserBacklashEn:=TRUE;
+            // Positive backlash compensation
+            stMotionStage.fBacklash:=4;
+            // Initiate an absolute move
+            uStates := 50;
+        50:
+            // Initate Positive backlash compensation
+            stMotionStage.fPosition := 100.0;
+            stMotionStage.fVelocity := 100.0;
+            stMotionStage.fAcceleration := 100.0;
+            stMotionStage.fDeceleration:= 100.0;
+            stMotionStage.bMoveCmd:=TRUE;
+            uStates := 60;
+
+        60:
+            IF stMotionStage.bBusy THEN
+                // At this point the backlash compensation is enabled
+                bBacklashCompensationStatus:=stMotionStage.bBacklashStatus;
+                tonHomeSwitchSim.IN:=TRUE;
+                ptWaitTime:=T#0.1S;
+            END_IF
+
+            // if compensation bloack not active here return
+            IF tonHomeSwitchSim.Q AND NOT bBacklashCompensationStatus THEN
+                RETURN;
+            END_IF
+
+            // No backlash compensation expected in this direction
+            IF stMotionStage.bDone THEN
+                bBacklashCompensationPosFwd:=(stMotionStage.Axis.NcToPlc.ActPos - stMotionStage.Axis.NcToPlc.ActPosWithoutPosCorrection);
+                tonHomeSwitchSim.IN:=FALSE;
+                uStates := 70;
+            END_IF
+
+        70:
+
+            // reverse movement
+            stMotionStage.fPosition := 50.0;
+            stMotionStage.bMoveCmd:=TRUE;
+            uStates := 80;
+        80:
+
+            // this move has been compensated
+            IF stMotionStage.bDone THEN
+                bBacklashCompensationPosRev:=(stMotionStage.Axis.NcToPlc.ActPos - stMotionStage.Axis.NcToPlc.ActPosWithoutPosCorrection);
+                uStates := 90;
+            END_IF
+
+        90:
+
+            // Initiate compensation for Negative Backlash
+            stMotionStage.fBacklash:=-4.0;
+            stMotionStage.fPosition:=10.0;
+            stMotionStage.bMoveCmd:=TRUE;
+            uStates:=100;
+
+        100:
+            // No compensation here
+            IF stMotionStage.bDone THEN
+                bBacklashCompensationNegFwd:=(stMotionStage.Axis.NcToPlc.ActPos - stMotionStage.Axis.NcToPlc.ActPosWithoutPosCorrection);
+                uStates:=110;
+            END_IF
+
+        110:
+
+            // this move will be compensated
+            stMotionStage.fPosition:=50.0;
+            stMotionStage.bMoveCmd:=TRUE;
+            uStates:=120;
+
+        120:
+            // when done a negative compensation must have been done.
+            IF stMotionStage.bDone THEN
+                bBacklashCompensationNegRev:=(stMotionStage.Axis.NcToPlc.ActPos - stMotionStage.Axis.NcToPlc.ActPosWithoutPosCorrection);
+                uStates:=130;
+            END_IF
+
+        130:
+            AssertEquals ( Expected:=bBacklashCompensationHomeExp, Actual:=bBacklashCompensationHomeStatus , Message:='Error:Backlash compensation enable in while homming');
+            AssertEquals ( Expected:=bBacklashCompensationStatusExp, Actual:=bBacklashCompensationStatus , Message:='Error:Backlash compensation disabled in absolute move mode');
+            AssertEquals_LREAL ( Expected:=bBacklashCompensationNotAct, Actual:=bBacklashCompensationPosFwd , Delta:=0.0, Message:='Error: Positive compensation enabled: Not compensation must be applied');
+            AssertEquals_LREAL ( Expected:=bBacklashCompensationActPos,    Actual:=bBacklashCompensationPosRev , Delta:=0.0, Message:='Error: Positive compensation enabled: Compensation must be applied');
+            AssertEquals_LREAL ( Expected:=bBacklashCompensationNotAct, Actual:=bBacklashCompensationNegFwd , Delta:=0.0, Message:='Error: Negative compensation enabled: Not compensation should be applied');
+            AssertEquals_LREAL ( Expected:=bBacklashCompensationActNeg,    Actual:=bBacklashCompensationNegRev , Delta:=0.0, Message:='Error: Negative compensation enabled: Compensation must be applied');
+            TEST_FINISHED();
+        ELSE
+            ;
+    END_CASE
+
+    stMotionStage.bHardwareEnable := TRUE;
+    stMotionStage.bPowerSelf := TRUE;
+
+    stMotionStage.bLimitBackwardEnable := bLimitBackward;
+    stMotionStage.bLimitForwardEnable := bLimitForward;
+
+    tonHomeSwitchSim(PT:=ptWaitTime);
+    fbMotionStage(stMotionStage := stMotionStage);
+    END_METHOD
+
+
+Related:
+    * `ENUM_EpicsHomeCmd`_
+    * `ENUM_StageEnableMode`_
+    * `FB_MotionStage`_
+    * `FB_MotorTestSuite`_
+    * `ST_MotionStage`_
+
+
 FB_MotionBPTM
 ^^^^^^^^^^^^^
 
@@ -8364,6 +8647,7 @@ FB_MotionStage
         fbMotionHome: FB_MotionHoming;
         fbSaveRestore: FB_EncSaveRestore;
         fbLogError: FB_LogMotionError;
+        fbBacklashCompensation: FB_MotionBacklashCompensation;
         bExecute: BOOL;
         bExecMove: BOOL;
         bExecHome: BOOL;
@@ -8384,6 +8668,7 @@ FB_MotionStage
         bMoveCmd: BOOL;
         rtMoveCmdShortcut: R_TRIG;
         rtHomeCmdShortcut: R_TRIG;
+        rtEnableMode: R_TRIG;
     END_VAR
     // Start with an accurate status
     stMotionStage.Axis.ReadStatus();
@@ -8396,6 +8681,13 @@ FB_MotionStage
     IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
         stMotionStage.bExecute := TRUE;
         stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
+
+        // attempting to move an axis without homing first?
+        IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stMotionStage.bHomed THEN
+            // one can just set bHome here even though no homing was done?
+            stMotionStage.sErrorMessage := 'Axis homing mode set, but homing routine pending';
+        END_IF
+
     ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
         stMotionStage.bExecute := TRUE;
         stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
@@ -8428,11 +8720,16 @@ FB_MotionStage
     // Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
     stMotionStage.bSafetyReady S= stMotionStage.bPowerSelf;
 
+    // Transition to DURING_MOTION drive mode
+    rtEnableMode(CLK:=(stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION));
     // Handle auto-enable timing
     CASE stMotionStage.nEnableMode OF
         E_StageEnableMode.ALWAYS:
             stMotionStage.bEnable := TRUE;
         E_StageEnableMode.DURING_MOTION:
+            IF rtEnableMode.Q THEN
+                stMotionStage.bEnable := FALSE;
+            END_IF
             IF bNewMoveReq THEN
                 IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
                     stMotionStage.bEnable := stMotionStage.bSafetyReady;
@@ -8489,6 +8786,11 @@ FB_MotionStage
     bExecHome := bExecute AND stMotionStage.nCommand = 10;
     bExecMove := bExecute AND NOT bExecHome;
 
+    // handles backlash compensention
+    fbBacklashCompensation(stMotionStage:=stMotionStage,
+        bHoming:=bExecHome,
+        bMoving:=bExecMove );
+
     // Handle standard commands using ESS's FB
     fbDriveVirtual(En:=TRUE,
         bEnable:=stMotionStage.bAllEnable,
@@ -8520,6 +8822,10 @@ FB_MotionStage
     IF NOT stMotionStage.bError THEN
         stMotionStage.bError := fbDriveVirtual.bError;
         stMotionStage.nErrorId := fbDriveVirtual.nErrorId;
+    END_IF
+    IF NOT stMotionStage.bError THEN
+        stMotionStage.bError := fbBacklashCompensation.bError;
+        stMotionStage.nErrorId := fbBacklashCompensation.nErrorId;
     END_IF
     IF NOT stMotionStage.bError THEN
         stMotionStage.bError := fbMotionHome.bError;
@@ -8664,6 +8970,7 @@ Related:
     * `FB_EncSaveRestore`_
     * `FB_EncoderValue`_
     * `FB_LogMotionError`_
+    * `FB_MotionBacklashCompensation`_
     * `FB_MotionHoming`_
     * `FB_MotionStageNCParams`_
     * `FB_SetEnables`_
@@ -17255,6 +17562,138 @@ Related:
     * `ST_PositionState`_
 
 
+FB_PowerEnableMode_Test
+^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    FUNCTION_BLOCK FB_PowerEnableMode_Test EXTENDS TcUnit.FB_TestSuite
+    (*
+        Test that FB_MotionStage drive power enable mode bug is fixed
+        switching from ALWAYS to DURING_MOTION mode. the mode switch should first disable power
+        then reanable power to the drive with the next absolution move cmd.
+    *)
+    VAR
+        fbMotorTestSuite 	: FB_MotorTestSuite;
+        stMotionStage 		: ST_MotionStage := (sName := 'SIM:PEM');
+        fbMotionStage		: FB_MotionStage;
+        fbSetPos            : MC_SetPosition;
+
+    END_VAR
+    TestModeEnableSwitchAndAbsoluteMove();
+
+    END_FUNCTION_BLOCK
+
+    METHOD PRIVATE TestModeEnableSwitchAndAbsoluteMove
+    VAR_INST
+
+    tonModeTimer : TON;
+    bCompleted   : BOOL;
+
+    fActualPosition : LREAL;
+    fExpectedPosition : LREAL := 100.0;
+
+    bPowAlwaysModeSw  	: BOOL;
+    bPowDuringMotionSw  : BOOL;
+    bPowDuringMotion  	: BOOL;
+    bExpectedAlwaysModeSw		: BOOL := TRUE;
+    bExpectedPowDuringMotionSw	: BOOL := FALSE;
+    bExpectedPowDuringMotion	: BOOL := TRUE;
+
+    uMoveID : UINT := 1; // always default
+    uStates	: UINT := 10;
+    btimerOn : BOOL;
+    bPowerStatus : BOOL;
+
+    END_VAR
+    TEST('TestModeEnableSwitchAndAbsoluteMove');
+
+    CASE uStates OF
+        //init
+        10:
+            fbMotorTestSuite.SetEnables(stMotionStage := stMotionStage);
+            // set initial position
+            fbSetPos(Axis:=stMotionStage.Axis, Execute:=TRUE, Position:=0.0, Mode:=FALSE);
+            uStates := 20;
+
+        // mode selection
+        20:
+            // set mode (always|during_motion)
+            IF uMoveID = 1 THEN
+                stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+            ELSIF uMoveID = 2 THEN
+                stMotionStage.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+            END_IF
+            //start a mode change timer
+            uStates := 30;
+            bTimerOn := TRUE;
+        // mode change timeout
+        30:
+            IF tonModeTimer.Q THEN
+                IF uMoveID = 1 THEN
+                    // power should enable
+                    bPowAlwaysModeSw := bPowerStatus;
+                    uMoveID := 2;
+                    uStates := 20;
+                ELSIF uMoveID = 2 THEN
+                    // power should be disabled
+                    bPowDuringMotionSw := bPowerStatus;
+                    // prepare an absolute move
+                    uMoveID := 1;
+                    // completed
+                    uStates := 40;
+                END_IF
+                btimerOn := FALSE;
+            END_IF
+
+        // prepare an absolute move
+        40:
+            stMotionStage.fPosition := 100;
+            stMotionStage.fVelocity := 100;
+            stMotionStage.fAcceleration := 50;
+            stMotionStage.fDeceleration:= 50;
+            // Start Motion
+            stMotionStage.bMoveCmd	:= TRUE;
+            // wait to ensure power been enabled
+            btimerOn := TRUE;
+            uStates := 50;
+        // wait for absolute move done
+        50:
+            // power must be enabled to the drive at this point
+            IF tonModeTimer.Q THEN
+              bPowDuringMotion := bPowerStatus;
+              btimerOn := FALSE;
+            END_IF
+            IF stMotionStage.bDone THEN
+                fActualPosition := stMotionStage.Axis.NCtoPLC.ActPos;
+                uStates := 60;
+            END_IF
+
+        //completed
+        60:
+            AssertEquals ( Expected:=bExpectedAlwaysModeSw, Actual:=bPowAlwaysModeSw , Message:='Power must be enable after ALWAYS mode switch');
+            AssertEquals ( Expected:=bExpectedPowDuringMotionSw, Actual:=bPowDuringMotionSw , Message:='Power must be reset after a DURING_MOTION mode switch');
+            AssertEquals ( Expected:=bExpectedPowDuringMotion, Actual:=bPowDuringMotion , Message:='Power must be enable after a DURING_MOTION motion mode switch');
+            AssertEquals_LREAL ( Expected:= fExpectedPosition, Actual:=fActualPosition , Delta:=0.0, Message:='Drive must have done a 100 units absolute move in DURING_MOTION mode');
+
+            TEST_FINISHED();
+        ELSE
+            ;
+    END_CASE
+
+    tonModeTimer(IN:=btimerOn, PT:=T#0.2S);
+    fbMotionStage(stMotionStage := stMotionStage);
+    bPowerStatus := stMotionStage.bEnable;
+    END_METHOD
+
+
+Related:
+    * `ENUM_StageEnableMode`_
+    * `FB_MotionStage`_
+    * `FB_MotorTestSuite`_
+    * `ST_MotionStage`_
+
+
 FB_RawCountConverter
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -20412,6 +20851,8 @@ PRG_TEST
         fb_PositionStatePMPSND_Test: FB_PositionStatePMPSND_Test;
         fb_StateSetupHelper_Test: FB_StateSetupHelper_Test;
         fb_TestStateInitTiming: FB_TestStateInitTiming;
+        fb_PowerEnableMode_Test: FB_PowerEnableMode_Test;
+        fb_MotionBacklashCompensation_Test: FB_MotionBacklashCompensation_Test;
     END_VAR
     TcUnit.RUN();
 
@@ -20423,6 +20864,7 @@ Related:
     * `FB_AxisParameterSetExposed_Test`_
     * `FB_MiscStatesErrorFFO_Test`_
     * `FB_MotionBPTM_Test`_
+    * `FB_MotionBacklashCompensation_Test`_
     * `FB_MotionClearAsserts_Test`_
     * `FB_MotionReadPMPSDBND_Test`_
     * `FB_MotionVirtualFrame_Test`_
@@ -20434,6 +20876,7 @@ Related:
     * `FB_PositionStatePMPSND_Test`_
     * `FB_PositionStateReadND_Test`_
     * `FB_PositionStateRead_Test`_
+    * `FB_PowerEnableMode_Test`_
     * `FB_StatePMPSEnablesND_Test`_
     * `FB_StatePMPSEnables_Test`_
     * `FB_StateSetupHelper_Test`_
