@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PowerEnableMode_Test" Id="{68971d55-cd98-41d6-951e-223d024e829f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PowerEnableMode_Test EXTENDS TcUnit.FB_TestSuite
+(*
+    Test that FB_MotionStage drive power enable mode bug is fixed
+    switching from ALWAYS to DURING_MOTION mode. the mode switch should first disable power
+    then reanable power to the drive with the next absolution move cmd.
+*)
+VAR
+    fbMotorTestSuite 	: FB_MotorTestSuite;
+    stMotionStage 		: ST_MotionStage := (sName := 'SIM:PEM');
+    fbMotionStage		: FB_MotionStage;
+    fbSetPos            : MC_SetPosition;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+TestModeEnableSwitchAndAbsoluteMove();]]></ST>
+    </Implementation>
+    <Method Name="TestModeEnableSwitchAndAbsoluteMove" Id="{85fbeddc-1ba5-4021-87ee-fac0a9b6ce6e}">
+      <Declaration><![CDATA[METHOD PRIVATE TestModeEnableSwitchAndAbsoluteMove
+VAR_INST
+
+tonModeTimer : TON;
+bCompleted   : BOOL;
+
+fActualPosition : LREAL;
+fExpectedPosition : LREAL := 100.0;
+
+bPowAlwaysModeSw  	: BOOL;
+bPowDuringMotionSw  : BOOL;
+bPowDuringMotion  	: BOOL;
+bExpectedAlwaysModeSw		: BOOL := TRUE;
+bExpectedPowDuringMotionSw	: BOOL := FALSE;
+bExpectedPowDuringMotion	: BOOL := TRUE;
+
+uMoveID : UINT := 1; // always default
+uStates	: UINT := 10;
+btimerOn : BOOL;
+bPowerStatus : BOOL;
+
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('TestModeEnableSwitchAndAbsoluteMove');
+
+CASE uStates OF
+    //init
+    10:
+        fbMotorTestSuite.SetEnables(stMotionStage := stMotionStage);
+        // set initial position
+        fbSetPos(Axis:=stMotionStage.Axis, Execute:=TRUE, Position:=0.0, Mode:=FALSE);
+        uStates := 20;
+
+    // mode selection
+    20:
+        // set mode (always|during_motion)
+        IF uMoveID = 1 THEN
+            stMotionStage.nEnableMode := ENUM_StageEnableMode.ALWAYS;
+        ELSIF uMoveID = 2 THEN
+            stMotionStage.nEnableMode := ENUM_StageEnableMode.DURING_MOTION;
+        END_IF
+        //start a mode change timer
+        uStates := 30;
+        bTimerOn := TRUE;
+    // mode change timeout
+    30:
+        IF tonModeTimer.Q THEN
+            IF uMoveID = 1 THEN
+                // power should enable
+                bPowAlwaysModeSw := bPowerStatus;
+                uMoveID := 2;
+                uStates := 20;
+            ELSIF uMoveID = 2 THEN
+                // power should be disabled
+                bPowDuringMotionSw := bPowerStatus;
+                // prepare an absolute move
+                uMoveID := 1;
+                // completed
+                uStates := 40;
+            END_IF
+            btimerOn := FALSE;
+        END_IF
+
+    // prepare an absolute move
+    40:
+        stMotionStage.fPosition := 100;
+        stMotionStage.fVelocity := 100;
+        stMotionStage.fAcceleration := 50;
+        stMotionStage.fDeceleration:= 50;
+        // Start Motion
+        stMotionStage.bMoveCmd	:= TRUE;
+        // wait to ensure power been enabled
+        btimerOn := TRUE;
+        uStates := 50;
+    // wait for absolute move done
+    50:
+        // power must be enabled to the drive at this point
+        IF tonModeTimer.Q THEN
+          bPowDuringMotion := bPowerStatus;
+          btimerOn := FALSE;
+        END_IF
+        IF stMotionStage.bDone THEN
+            fActualPosition := stMotionStage.Axis.NCtoPLC.ActPos;
+            uStates := 60;
+        END_IF
+
+    //completed
+    60:
+        AssertEquals ( Expected:=bExpectedAlwaysModeSw, Actual:=bPowAlwaysModeSw , Message:='Power must be enable after ALWAYS mode switch');
+        AssertEquals ( Expected:=bExpectedPowDuringMotionSw, Actual:=bPowDuringMotionSw , Message:='Power must be reset after a DURING_MOTION mode switch');
+        AssertEquals ( Expected:=bExpectedPowDuringMotion, Actual:=bPowDuringMotion , Message:='Power must be enable after a DURING_MOTION motion mode switch');
+        AssertEquals_LREAL ( Expected:= fExpectedPosition, Actual:=fActualPosition , Delta:=0.0, Message:='Drive must have done a 100 units absolute move in DURING_MOTION mode');
+
+        TEST_FINISHED();
+    ELSE
+        ;
+END_CASE
+
+tonModeTimer(IN:=btimerOn, PT:=T#0.2S);
+fbMotionStage(stMotionStage := stMotionStage);
+bPowerStatus := stMotionStage.bEnable;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

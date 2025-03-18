@@ -36,6 +36,7 @@ VAR
     bMoveCmd: BOOL;
     rtMoveCmdShortcut: R_TRIG;
     rtHomeCmdShortcut: R_TRIG;
+    rtEnableMode: R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -50,6 +51,13 @@ rtHomeCmdShortcut(CLK:=stMotionStage.bHomeCmd);
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
+
+    // attempting to move an axis without homing first?
+    IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stMotionStage.bHomed THEN
+        // one can just set bHome here even though no homing was done?
+        stMotionStage.sErrorMessage := 'Axis homing mode set, but homing routine pending';
+    END_IF
+
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
@@ -82,11 +90,16 @@ bNegGoal := stMotionStage.stAxisStatus.fActPosition > stMotionStage.fPosition;
 // Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
 stMotionStage.bSafetyReady S= stMotionStage.bPowerSelf;
 
+// Transition to DURING_MOTION drive mode
+rtEnableMode(CLK:=(stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION));
 // Handle auto-enable timing
 CASE stMotionStage.nEnableMode OF
     E_StageEnableMode.ALWAYS:
         stMotionStage.bEnable := TRUE;
     E_StageEnableMode.DURING_MOTION:
+        IF rtEnableMode.Q THEN
+            stMotionStage.bEnable := FALSE;
+        END_IF
         IF bNewMoveReq THEN
             IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
                 stMotionStage.bEnable := stMotionStage.bSafetyReady;
