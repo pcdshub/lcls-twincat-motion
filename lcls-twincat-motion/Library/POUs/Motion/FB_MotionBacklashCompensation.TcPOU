@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionBacklashCompensation" Id="{8a5f8930-cc79-4651-8951-8645e0708394}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionBacklashCompensation
+(*
+    Handle positive/negative backlash compensation
+    User needs to set the direction of backlash from the sign of the compensation value
+    Backlash compensation is disabled during referencing (homing).
+    When direction is positive/negative, further movement in the negative/positive direction not compensated
+    further movement in the negative/positive direction will be compensated
+*)
+VAR_IN_OUT
+    stMotionStage: ST_MotionStage;
+END_VAR
+VAR_INPUT
+    bHoming: BOOL;
+    bMoving: BOOL;
+END_VAR
+VAR_OUTPUT
+    bError: BOOL;
+    nErrorID: UDINT;
+END_VAR
+VAR
+    fbBacklashCompensation: MC_BacklashCompensation;
+    fPrevCompensation : LREAL := 0.0;
+    bBacklashCompEnable: BOOL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*Note: Configure within the axis parameters set "position correction" to true *)
+(*Directional change for compensation
+  default: positive backlash):
+  TRUE -> Negative backlash compensation *)
+(* Reset Compensation to register a new value change*)
+bBacklashCompEnable R= bHoming OR (stMotionStage.fBacklash<>fPrevCompensation);
+bBacklashCompEnable S= bMoving;
+
+fbBacklashCompensation(Axis:=stMotionStage.Axis,
+    Enable:= ( stMotionStage.bUserBacklashEn AND bBacklashCompEnable),
+    Backlash:=stMotionStage.fBacklash,
+    CompensationInPositiveDirection:=(stMotionStage.fBacklash<0.0),
+    Ramp:=(stMotionStage.fVelocity / 10.0),
+    DisableMode:=DisableModeHold,
+    Enabled=> stMotionStage.bBacklashStatus,
+    Error=>bError,
+    ErrorID=>nErrorID,
+    CurrentBacklash=>stMotionStage.fCurrentBacklash);
+
+fPrevCompensation:=stMotionStage.fBacklash;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
