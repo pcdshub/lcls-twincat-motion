@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionAxisStageStepper" Id="{f6bdb03b-4979-481e-9041-a0e97342735a}" SpecialFunc="None">
+    <Declaration><![CDATA[
+FUNCTION_BLOCK FB_MotionAxisStageStepper IMPLEMENTS I_MotionAxisStage
+VAR
+    stMotionStage : REFERENCE TO ST_MotionStage;
+
+    DummyAxisReference : AXIS_REF;
+
+    fbMotionAxisMoveAbsoluteNC : FB_MotionAxisMoveAbsoluteNC;
+    fbMotionAxisHomeNC : FB_MotionAxisHomeNC;
+    fbMotionAxisResetNC : FB_MotionAxisResetNC;
+    fbMotionAxisNC : FB_MotionAxisNC(
+        AxisReference := DummyAxisReference,
+        MotionAxisMoveAbsolute := fbMotionAxisMoveAbsoluteNC,
+        MotionAxisHome := fbMotionAxisHomeNC,
+        MotionAxisMoveAbsolute := fbMotionAxisResetNC
+    );
+    fbMotionAxisStageNC : FB_MotionAxisStageNC(
+        MotionAxis := fbMotionAxisNC
+    );
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="FB_Init" Id="{ece06ee6-16d7-4eae-9126-0d9b683882c1}">
+      <Declaration><![CDATA[
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+
+    MotionStage : REFERENCE TO ST_MotionStage;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+THIS^.stMotionStage REF= MotionStage;
+
+fbMotionAxisNC.FB_Init(
+    bInitRetains := FALSE,
+    bInCopyCode := FALSE,
+    AxisReference := stMotionStage.Axis,
+    MotionAxisMoveAbsolute := fbMotionAxisMoveAbsoluteNC,
+    MotionAxisHome := fbMotionAxisHomeNC,
+    MotionAxisReset := fbMotionAxisResetNC
+);
+
+fbMotionAxisStageNC.FB_Init(
+    bInitRetains := FALSE,
+    bInCopyCode := FALSE,
+    MotionAxis := fbMotionAxisNC
+);
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

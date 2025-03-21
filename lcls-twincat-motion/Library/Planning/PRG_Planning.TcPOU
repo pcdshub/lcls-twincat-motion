@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="PRG_Planning" Id="{f731b889-5613-47ef-a427-f056f64e7c91}" SpecialFunc="None">
+    <Declaration><![CDATA[
+PROGRAM PRG_Planning
+VAR
+    stMotionStage : ST_MotionStage;
+    fbMotionAxisStageStepper : FB_MotionAXisStageStepper(
+        MotionStage := stMotionStage
+    );
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+fbMotionAxisStageStepper();
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
