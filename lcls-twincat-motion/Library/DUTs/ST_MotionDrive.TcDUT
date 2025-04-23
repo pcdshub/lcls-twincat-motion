@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_MotionDrive" Id="{f4cf3312-62a3-4683-ad20-6d4fcdde1d39}">
+    <Declaration><![CDATA[TYPE ST_MotionDrive :
+    // Defines the EPICS interface to moving a motor in TwinCAT
+STRUCT
+    (* Hardware *)
+
+    // NC Forward Limit Switch: TRUE if ok to move
+    bLimitForwardEnable AT %I*: BOOL;
+    // NC Backward Limit Switch: TRUE if ok to move
+    bLimitBackwardEnable AT %I*: BOOL;
+    // NO Home Switch: TRUE if at home
+    bHome AT %I*: BOOL;
+    // NC Brake Output: TRUE to release brake
+    bBrakeRelease AT %Q*: BOOL;
+
+
+    // Raw encoder IO for ULINT (Biss-C)
+    nRawEncoderULINT AT %I*: ULINT;
+    // Raw encoder IO for UINT (Relative Encoders)
+    nRawEncoderUINT AT %I*: UINT;
+    // Raw encoder IO for INT (LVDT)
+    nRawEncoderINT AT %I*: INT;
+    // Raw encoder IO for INT (EL5072 LVDT)
+    nRawEncoderDINT AT %I*: DINT;
+
+    (* Psuedo-hardware *)
+
+    // Forward enable EPS summary
+    bAllForwardEnable: BOOL:=FALSE;
+    // Backward enable EPS summary
+    bAllBackwardEnable: BOOL:=FALSE;
+    // Enable EPS summary encapsulating emergency stop button and any additional motion preventive hardware
+    bAllEnable: BOOL:=FALSE;
+    // Forward virtual gantry limit switch
+    bGantryForwardEnable: BOOL:=FALSE;
+    // Backward virtual gantry limit switch
+    bGantryBackwardEnable: BOOL:=FALSE;
+
+    (* Settings *)
+    // Name to use for log messages, fast faults, etc.
+    sName: STRING;
+    // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
+    bPowerSelf: BOOL:=FALSE;
+    // Determines when we automatically enable the motor
+    nEnableMode: E_StageEnableMode:=E_StageEnableMode.DURING_MOTION;
+    // Determines when we automatically disengage the brake
+    nBrakeMode: E_StageBrakeMode:=E_StageBrakeMode.IF_ENABLED;
+    // Determines our encoder homing strategy
+    nHomingMode: E_EpicsHomeCmd:=E_EpicsHomeCmd.NONE;
+    // Set true to activate gantry EPS
+    bGantryAxis: BOOL:=FALSE;
+
+    // Set to gantry difference tolerance
+    nGantryTol: LINT:=0;
+
+    // Encoder count at which this axis is aligned with other axis
+    nEncRef: ULINT:=0;
+
+    (* Commands *)
+    // Used internally to request enables
+    bEnable: BOOL;
+
+    // Used internally and by the IOC to start or stop a move
+    bExecute: BOOL;
+
+    (* Command Args *)
+    // Used internally and by the IOC to pick what kind of move to do
+    nCommand: INT;
+    // Used internally and by the IOC to pass additional data to some commands
+    nCmdData: INT;
+    // Used internally and by the IOC to pick a destination for the move
+    fPosition: LREAL;
+    // Used internally and by the IOC to pick a move velocity
+    fVelocity: LREAL;
+    // Used internally and by the IOC to pick a move acceleration
+    fAcceleration: LREAL;
+    // Used internally and by the IOC to pick a move deceleration
+    fDeceleration: LREAL;
+
+    (* Info *)
+    // Unique ID assigned to each axis in the NC
+    nMotionAxisID: UDINT:=0;
+
+    (* Returns *)
+    // TRUE if done enabling
+    bEnableDone: BOOL;
+    // TRUE if in the middle of a command
+    bBusy: BOOL;
+    // TRUE if we've done a command and it has finished
+    bDone: BOOL;
+    // TRUE if the motor has been homed, or does not need to be homed
+    bHomed: BOOL;
+    // TRUE if we have safety permission to move
+    bSafetyReady: BOOL;
+
+    // Internal hook for custom error messages
+    sCustomErrorMessage: STRING;
+    // MC_ReadParameterSet Output
+    stAxisParameters: ST_AxisParameterSet;
+
+    // True if we've updated stAxisParameters at least once
+    bAxisParamsInit: BOOL;
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
