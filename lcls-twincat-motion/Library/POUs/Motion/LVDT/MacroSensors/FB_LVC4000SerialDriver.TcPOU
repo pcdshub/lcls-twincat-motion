@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="FB_LVC4000SerialDriver" Id="{ae4b86c1-3ea8-4881-a7dc-2dd9995b4e63}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LVC4000SerialDriver
+VAR_INPUT
+    /// rising edge execute
+    i_xExecute: BOOL;
+    /// Maximum wait time for reply
+    i_tTimeOut: TIME := TIME#1s0ms;
+END_VAR
+VAR_OUTPUT
+    q_xDone: BOOL;
+    q_xError: BOOL;
+    q_xTimeout: BOOL;
+    q_sResult: STRING(255);
+    /// Last String Sent to Serial Device - for debugging
+    q_sLastSentString: STRING;
+    /// Last String Received from Serial Device - for debugging
+    q_sLastReceivedString: STRING;
+END_VAR
+VAR_IN_OUT
+    iq_stLVC4000	:	ST_SerLVC4000;
+    iq_stSerialRXBuffer: ComBuffer;
+    iq_stSerialTXBuffer: ComBuffer;
+END_VAR
+VAR
+    rtExecute: R_TRIG;
+    iStep: INT;
+    sCmd	:	STRING;
+    sSendData : STRING;
+    fbTrans: FB_LVC4000Transaction;
+    fbFormatString: FB_FormatString;
+    sErrMesg : STRING := 'In step %d fbtrans failed with message: %s';
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* This function block performs serial transactions with an LVC 4000 LVDT Signal Conditioner *)
+
+(* rising edge trigger *)
+rtExecute(CLK:= i_xExecute);
+IF rtExecute.Q  THEN
+    q_xDone	:= FALSE;
+    q_xError := FALSE;
+    q_sResult:= '';
+    a_ClearTrans();  (* to provide rising edge for execute *)
+    iStep := 10;
+END_IF
+
+
+CASE iStep OF
+    0: (* idle *)
+        ;
+
+    (* Get output *)
+    10:
+        sCmd := 'getOut';
+        fbtrans.i_xExecute := TRUE;
+        IF fbtrans.q_xDone THEN
+            iq_stLVC4000.i_iOut := STRING_TO_INT(fbtrans.q_sResponseData);
+            iStep := 8000;
+            a_ClearTrans();
+        ELSIF fbtrans.q_xError THEN
+            a_ErrorMesg();
+            iStep := 9000;
+            a_ClearTrans();
+        END_IF
+
+    8000: (* done *)
+        q_xDone := TRUE;
+        IF  i_xExecute = FALSE THEN
+            q_xDone:= FALSE;
+            iStep := 0;
+        END_IF
+
+    9000:
+        q_xError := TRUE;
+
+END_CASE
+
+//call transaction
+fbTrans(
+    i_iAddress:= iq_stLVC4000.iAddr,
+    i_tTimeOut:= i_tTimeOut,
+    i_sCmd:=sCmd,
+    i_sParam:=sSendData,
+    iq_stSerialRXBuffer:= iq_stSerialRXBuffer,
+    iq_stSerialTXBuffer:= iq_stSerialTXBuffer );
+
+iq_stLVC4000.xTimeout := fbtrans.q_xTimeout;
+q_sLastSentString := fbtrans.q_sLastSentString;
+q_sLastReceivedString := fbtrans.q_sLastReceivedString;]]></ST>
+    </Implementation>
+    <Action Name="a_ErrorMesg" Id="{b3a6f4e0-9fb2-41d0-94af-43ceed0c99de}">
+      <Implementation>
+        <ST><![CDATA[fbFormatString( sformat:=sErrMesg,
+    arg1:=F_INT(iStep),
+    arg2:=F_STRING(fbtrans.q_sResult),
+    sOut => q_sResult);]]></ST>
+      </Implementation>
+    </Action>
+    <Action Name="a_ClearTrans" Id="{cbc46b91-bc1a-4d15-840f-cb6f0aaaf34d}">
+      <Implementation>
+        <ST><![CDATA[(* Refactor this action to match your transaction *)
+fbtrans.i_xExecute := TRUE;
+fbtrans.i_sCmd:= '';
+fbtrans.i_sParam := '';
+fbTrans(
+    i_iAddress:= iq_stLVC4000.iAddr,
+    i_tTimeOut:= i_tTimeOut,
+    iq_stSerialRXBuffer:= iq_stSerialRXBuffer,
+    iq_stSerialTXBuffer:= iq_stSerialTXBuffer );
+fbtrans.i_xExecute := FALSE;
+fbTrans(
+    i_iAddress:= iq_stLVC4000.iAddr,
+    i_tTimeOut:= i_tTimeOut,
+    iq_stSerialRXBuffer:= iq_stSerialRXBuffer,
+    iq_stSerialTXBuffer:= iq_stSerialTXBuffer );]]></ST>
+      </Implementation>
+    </Action>
+  </POU>
+</TcPlcObject>

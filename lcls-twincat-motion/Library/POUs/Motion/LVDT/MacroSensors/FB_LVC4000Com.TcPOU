@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4018.5">
+  <POU Name="FB_LVC4000Com" Id="{0781e15c-c75f-440a-a77c-ba1b843f5b88}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LVC4000Com
+(*
+A. Wallace 2016-7-20
+
+This FB is used for communicating with the LVC-4000 LVDT signal conditioners on
+RS-485. It is set up for multiple conditioners on one interface.
+
+Usage:
+Pass the array of your LVC4000 structures to the FB, along with your serial RX and TX buffers.
+Also pass the number of LVC-4000 connected to the bus. This must be less than gcMaxLVC4000.
+
+*)
+VAR_IN_OUT
+    iq_astLVC4000: ARRAY[1..gcMaxLVC4000] OF ST_SerLVC4000;
+    afbLVC4000SerialDriver: ARRAY[1..gcMaxLVC4000] OF FB_LVC4000SerialDriver;
+    SerialRXBuffer: ComBuffer;
+    SerialTXBuffer: ComBuffer;
+END_VAR
+VAR_INPUT
+    i_iQty	:	INT := 0;
+END_VAR
+VAR
+    iUnit: INT := 1;
+    tTimeOut: TIME := TIME#1s0ms;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* This program is called from Serial PTM IO *)
+
+i_iQty := MIN(i_iQty, gcMaxLVC4000);
+
+(* scan the units one at a time *)
+afbLVC4000SerialDriver[iUnit](
+    i_xExecute:= TRUE,
+    i_tTimeOut:= tTimeOut,
+    iq_stLVC4000:=iq_astLVC4000[iUnit] ,
+    iq_stSerialRXBuffer:= SerialRXBuffer,
+    iq_stSerialTXBuffer:=  SerialTXBuffer,
+    );
+
+IF afbLVC4000SerialDriver[iUnit].q_xDone
+OR afbLVC4000SerialDriver[iUnit].q_xError
+THEN
+        (* reset for next time *)
+        afbLVC4000SerialDriver[iUnit]( i_xExecute:= FALSE, iq_stLVC4000:=iq_astLVC4000[iUnit], iq_stSerialRXBuffer:= SerialRXBuffer, iq_stSerialTXBuffer:=  SerialTXBuffer);
+        (* select next pump *)
+        iUnit := iUnit + 1;
+        IF iUnit > i_iQty THEN
+            iUnit:= 1;
+        END_IF
+END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
