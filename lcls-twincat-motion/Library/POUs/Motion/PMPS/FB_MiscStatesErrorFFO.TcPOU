@@ -97,7 +97,7 @@ ffUnknown(
 ftTripCount(CLK:=ffBeamParamsOk.i_xOK);
 
 IF ftTripCount.Q THEN
-    nTripCount := nTripCount + 1;
+    nTripCount := MAX(nTripCount + 1, 5);
 END_IF
 
 tonTripCount(
@@ -112,7 +112,7 @@ END_IF
 ffDebounce.i_xReset S= bFirstCycle;
 ffDebounce(
     i_xOK := nTripCount < 5,
-    i_xAutoReset := FALSE,
+    i_xAutoReset := TRUE,
     i_DevName := sDeviceName,
     i_Desc := 'Tripped beam parameter mismatch off/on too many times, hold off',
     i_TypeCode := E_MotionFFType.TOO_MANY_TRIPS,
