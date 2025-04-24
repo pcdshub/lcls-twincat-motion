@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_LVC4000Transaction" Id="{7f68d6c9-2d15-48e7-9147-99c051549076}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LVC4000Transaction
+VAR_INPUT
+    /// rising edge execute
+    i_xExecute: BOOL;
+    /// RS-485 Address of LVC 4000
+    i_iAddress: INT;
+    /// Maximum wait time for reply
+    i_tTimeOut: TIME := TIME#1s0ms;
+    // Command field
+    i_sCmd: T_MAXSTRING;
+    // Parameter field
+    i_sParam: T_MAXSTRING;
+END_VAR
+VAR_OUTPUT
+    q_xDone: BOOL;
+    q_sResponseData: STRING;
+    q_xError: BOOL;
+    q_xTimeout: BOOL;
+    q_sResult: T_MAXSTRING;
+    /// Last String Sent to Serial Device - for debugging
+    q_sLastSentString: STRING;
+    /// Last String Received from Serial Device - for debugging
+    q_sLastReceivedString: STRING;
+END_VAR
+VAR_IN_OUT
+    iq_stSerialRXBuffer: ComBuffer;
+    iq_stSerialTXBuffer: ComBuffer;
+END_VAR
+VAR
+    rtExecute: R_TRIG;
+    iStep: INT;
+    fbClearComBuffer: ClearComBuffer;
+    sSendString: STRING;
+    fbFormatString: FB_FormatString;
+    iChecksum: INT;
+    fbSendString: SendString;
+    fbReceiveString: ReceiveString;
+    sReceivedString: STRING;
+    tonTimeout: TON;
+    sRXStringForChecksum: STRING;
+    sReceiveStringWOChecksum: STRING;
+    sRXCheckSum: STRING;
+    sRXAddress: STRING;
+    sRXParmNum: STRING;
+    CarRtn : BYTE :=16#0D;
+    rAddress: REAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* This function block performs serial transactions with an LVC 4000 LVDT Signal Conditioner *)
+
+(* rising edge trigger *)
+rtExecute(CLK:= i_xExecute);
+IF rtExecute.Q THEN
+    q_xDone	:= FALSE;
+    q_sResponseData := '';
+    q_xError := FALSE;
+    //q_xTimeout := FALSE;
+    q_sResult:= '';
+    q_sLastSentString := '';
+    q_sLastReceivedString:= '';
+    iStep := 10;
+END_IF
+
+CASE iStep OF
+    0:
+        ; (* idle *)
+
+    10: (* clear com buffers *)
+        fbClearComBuffer(Buffer:= iq_stSerialRXBuffer);
+        fbClearComBuffer(Buffer:= iq_stSerialTXBuffer);
+        rAddress := INT_TO_REAL(i_iAddress);
+        (* build the send string *)
+        IF i_sParam = '' THEN
+            fbFormatString( sFormat:= ':%02.0f %s $R',
+                arg1:= F_REAL(rAddress),
+                arg2:= F_STRING(i_sCmd),
+                sOut=> sSendString);
+        ELSE
+            fbFormatString( sFormat:= ':%02.0f %s %s $R',
+            arg1:= F_REAL(rAddress),
+            arg2:= F_STRING(i_sCmd),
+            arg3:= F_STRING(i_sParam),
+            sOut=> sSendString);
+        END_IF
+        (* send it *)
+        fbSendString( SendString:= sSendString, TXbuffer:= iq_stSerialTXBuffer );
+        q_sLastSentString := sSendString;
+        iStep := iStep + 10;
+
+    20: (* Finish sending the String *)
+        IF fbSendString.Busy THEN
+            fbSendString( SendString:= sSendString, TXbuffer:= iq_stSerialTXBuffer );
+        ELSIF fbSendString.Error <> 0 THEN
+            q_sResult := CONCAT('In step 20 fbSendString resulted in error: ', INT_TO_STRING(fbSendString.Error));
+            iStep := 9000;
+        ELSIF NOT fbSendString.Busy THEN
+            IF i_sCmd = 'getOut' THEN
+            iStep := iStep + 10;
+            ELSE
+            iStep := 100; //no response?
+            END_IF
+        END_IF
+        (* Reset receive *)
+        fbReceiveString(
+            Reset:= TRUE,
+            ReceivedString:= sReceivedString,
+            RXbuffer:= iq_stSerialRXBuffer );
+        tonTimeout(IN:= FALSE);
+
+    30: (* Get reply *)
+        fbReceiveString(
+            Prefix:= ,
+            Suffix:= '$R',
+            Timeout:= i_tTimeOut,
+            Reset:= FALSE,
+            ReceivedString:= sReceivedString,
+            RXbuffer:= iq_stSerialRXBuffer );
+        tonTimeout(IN:= TRUE, PT:= i_tTimeOut);
+        IF fbReceiveString.Error <> 0 AND fbReceiveString.Error <> 16#1008 THEN //16#1008 is timeout error
+            q_sResult := CONCAT('In step 30 fbReceiveString resulted in error: ', INT_TO_STRING(fbReceiveString.Error));
+            iStep := 9000;
+        ELSIF fbReceiveString.RxTimeout OR tonTimeout.Q THEN
+            q_sResult := 'Device failed to reply within timeout period';
+            q_xTimeout := TRUE;
+            iStep := 9000;
+        ELSIF fbReceiveString.StringReceived THEN
+            q_xTimeout := FALSE; //no timeout
+            q_sLastReceivedString := sReceivedString;
+            q_sResponseData := sReceivedString;
+            q_sResult := 'Success.';
+            q_xDone:= TRUE;
+            iStep := 100;
+        END_IF
+
+    100: (* done *)
+        IF  i_xExecute = FALSE THEN
+            q_xDone:= FALSE;
+            iStep := 0;
+        END_IF
+
+    9000:
+        q_xError := TRUE;
+
+
+
+
+END_CASE]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
