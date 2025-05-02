@@ -24,6 +24,9 @@ END_VAR
     <Method Name="TestMotionBacklashCompensation" Id="{9b7279ed-7c75-4a1d-8b3b-393205deaf83}">
       <Declaration><![CDATA[METHOD PRIVATE TestMotionBacklashCompensation
 VAR_INST
+
+tonTimeout : TON := (PT := T#5s);
+
 tonHomeSwitchSim : TON;
 uStates	: UINT := 10;
 bLimitBackward : BOOL := TRUE;
@@ -177,6 +180,15 @@ stMotionStage.bLimitForwardEnable := bLimitForward;
 
 tonHomeSwitchSim(PT:=ptWaitTime);
 fbMotionStage(stMotionStage := stMotionStage);
+
+tonTimeout(IN := TRUE);
+IF tonTimeout.Q THEN
+    AssertTrue(
+        Condition := FALSE,
+        Message := 'Test timer timed out.'
+    );
+    TEST_FINISHED();
+END_IF
 ]]></ST>
       </Implementation>
     </Method>

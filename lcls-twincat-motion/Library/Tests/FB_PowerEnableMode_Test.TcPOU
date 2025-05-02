@@ -23,6 +23,8 @@ TestModeEnableSwitchAndAbsoluteMove();]]></ST>
       <Declaration><![CDATA[METHOD PRIVATE TestModeEnableSwitchAndAbsoluteMove
 VAR_INST
 
+tonTimeout : TON := (PT := T#5s);
+
 tonModeTimer : TON;
 bCompleted   : BOOL;
 
@@ -121,7 +123,17 @@ END_CASE
 
 tonModeTimer(IN:=btimerOn, PT:=T#0.2S);
 fbMotionStage(stMotionStage := stMotionStage);
-bPowerStatus := stMotionStage.bEnable;]]></ST>
+bPowerStatus := stMotionStage.bEnable;
+
+tonTimeout(IN := TRUE);
+IF tonTimeout.Q THEN
+    AssertTrue(
+        Condition := FALSE,
+        Message := 'Test timer timed out.'
+    );
+    TEST_FINISHED();
+END_IF
+]]></ST>
       </Implementation>
     </Method>
   </POU>
