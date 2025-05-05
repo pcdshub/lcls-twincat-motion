@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+<TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MotionVirtualFrame" Id="{db4a3323-bc78-4bca-8918-99f0e2117f18}" SpecialFunc="None">
     <Declaration><![CDATA[
 FUNCTION_BLOCK FB_MotionVirtualFrame
@@ -75,9 +75,9 @@ fAlphaRadians := DegToRad(fAlphaDegrees);
 fBetaRadians := DegToRad(fBetaDegrees);
 fGammaRadians := DegToRad(fGammaDegrees);
 
-rtExecuteVx(CLK := stMotionStageVx.bExecute);
-rtExecuteVy(CLK := stMotionStageVy.bExecute);
-rtExecuteVz(CLK := stMotionStageVz.bExecute);
+rtExecuteVx(CLK := stMotionStageVx.bBusy);
+rtExecuteVy(CLK := stMotionStageVy.bBusy);
+rtExecuteVz(CLK := stMotionStageVz.bBusy);
 
 fbRealActPositionVec3.x := stMotionStageRx.Axis.NcToPlc.ActPos;
 fbRealActPositionVec3.y := stMotionStageRy.Axis.NcToPlc.ActPos;

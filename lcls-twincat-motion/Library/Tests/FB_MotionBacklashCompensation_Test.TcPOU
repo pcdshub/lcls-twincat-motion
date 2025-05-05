@@ -25,6 +25,7 @@ END_VAR
       <Declaration><![CDATA[METHOD PRIVATE TestMotionBacklashCompensation
 VAR_INST
 tonHomeSwitchSim : TON;
+tonTestTimer : TON;
 uStates	: UINT := 10;
 bLimitBackward : BOOL := TRUE;
 bLimitForward  : BOOL := TRUE;
@@ -43,7 +44,7 @@ bBacklashCompensationActPos  : LREAL :=4.0;
 bBacklashCompensationActNeg  : LREAL :=-4.0;
 bBacklashCompensationNotAct  : LREAL :=0.0;
 ptWaitTime: TIME:=T#1S;
-
+rtMotionInProgress : R_TRIG;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -55,7 +56,7 @@ CASE uStates OF
         //  start homming and get backalsh status.
         stMotionStage.bHomeCmd := TRUE;
         tonHomeSwitchSim.IN:=TRUE;
-        ptWaitTime:=T#1S;
+        ptWaitTime:=T#100MS;
         uStates := 20;
     20:
         IF stMotionStage.bBusy THEN
@@ -69,13 +70,15 @@ CASE uStates OF
             tonHomeSwitchSim.IN:=FALSE;
         END_IF
 
-        //  Homing switch pulse detected motion is reverse release the the backward limit switch for completion.
+        //  Homing switch pulse detected motion is reverse release the backward limit switch for completion.
         IF stMotionStage.Axis.NcToPlc.StateDWord.9 AND NOT stMotionStage.Axis.NcToPlc.StateDWord.3 THEN
             bLimitBackward := TRUE;
         END_IF
 
         // Homing is done
         IF stMotionStage.bHomed THEN
+            // set initial position
+            //fbSetPos(Axis:=stMotionStage.Axis, Execute:=TRUE, Position:=0.0, Mode:=FALSE);
             uStates := 40;
         END_IF
     40:
@@ -87,49 +90,43 @@ CASE uStates OF
         uStates := 50;
     50:
         // Initate Positive backlash compensation
-        stMotionStage.fPosition := 100.0;
-        stMotionStage.fVelocity := 100.0;
-        stMotionStage.fAcceleration := 100.0;
-        stMotionStage.fDeceleration:= 100.0;
+        stMotionStage.fPosition := 50.0;
+        stMotionStage.fVelocity := 500.0;
+        stMotionStage.fAcceleration := 1000.0;
+        stMotionStage.fDeceleration:= 1000.0;
         stMotionStage.bMoveCmd:=TRUE;
         uStates := 60;
 
     60:
-        IF stMotionStage.bBusy THEN
+        IF rtMotionInProgress.Q THEN
             // At this point the backlash compensation is enabled
             bBacklashCompensationStatus:=stMotionStage.bBacklashStatus;
             tonHomeSwitchSim.IN:=TRUE;
             ptWaitTime:=T#0.1S;
-        END_IF
 
-        // if compensation bloack not active here return
-        IF tonHomeSwitchSim.Q AND NOT bBacklashCompensationStatus THEN
-            RETURN;
-        END_IF
+        // if compensation not active complete test
+        ELSIF tonHomeSwitchSim.Q AND NOT bBacklashCompensationStatus THEN
+            uStates := 130;
 
         // No backlash compensation expected in this direction
-        IF stMotionStage.bDone THEN
+        ELSIF stMotionStage.bDone THEN
             bBacklashCompensationPosFwd:=(stMotionStage.Axis.NcToPlc.ActPos - stMotionStage.Axis.NcToPlc.ActPosWithoutPosCorrection);
             tonHomeSwitchSim.IN:=FALSE;
             uStates := 70;
         END_IF
 
     70:
-
         // reverse movement
-        stMotionStage.fPosition := 50.0;
+        stMotionStage.fPosition := 25.0;
         stMotionStage.bMoveCmd:=TRUE;
         uStates := 80;
     80:
-
         // this move has been compensated
         IF stMotionStage.bDone THEN
             bBacklashCompensationPosRev:=(stMotionStage.Axis.NcToPlc.ActPos - stMotionStage.Axis.NcToPlc.ActPosWithoutPosCorrection);
             uStates := 90;
         END_IF
-
     90:
-
         // Initiate compensation for Negative Backlash
         stMotionStage.fBacklash:=-4.0;
         stMotionStage.fPosition:=10.0;
@@ -144,9 +141,8 @@ CASE uStates OF
         END_IF
 
     110:
-
         // this move will be compensated
-        stMotionStage.fPosition:=50.0;
+        stMotionStage.fPosition:=25.0;
         stMotionStage.bMoveCmd:=TRUE;
         uStates:=120;
 
@@ -157,14 +153,8 @@ CASE uStates OF
             uStates:=130;
         END_IF
 
-    130:
-        AssertEquals ( Expected:=bBacklashCompensationHomeExp, Actual:=bBacklashCompensationHomeStatus , Message:='Error:Backlash compensation enable in while homming');
-        AssertEquals ( Expected:=bBacklashCompensationStatusExp, Actual:=bBacklashCompensationStatus , Message:='Error:Backlash compensation disabled in absolute move mode');
-        AssertEquals_LREAL ( Expected:=bBacklashCompensationNotAct, Actual:=bBacklashCompensationPosFwd , Delta:=0.0, Message:='Error: Positive compensation enabled: Not compensation must be applied');
-        AssertEquals_LREAL ( Expected:=bBacklashCompensationActPos,    Actual:=bBacklashCompensationPosRev , Delta:=0.0, Message:='Error: Positive compensation enabled: Compensation must be applied');
-        AssertEquals_LREAL ( Expected:=bBacklashCompensationNotAct, Actual:=bBacklashCompensationNegFwd , Delta:=0.0, Message:='Error: Negative compensation enabled: Not compensation should be applied');
-        AssertEquals_LREAL ( Expected:=bBacklashCompensationActNeg,    Actual:=bBacklashCompensationNegRev , Delta:=0.0, Message:='Error: Negative compensation enabled: Compensation must be applied');
-        TEST_FINISHED();
+    130:;
+
     ELSE
         ;
 END_CASE
@@ -176,7 +166,22 @@ stMotionStage.bLimitBackwardEnable := bLimitBackward;
 stMotionStage.bLimitForwardEnable := bLimitForward;
 
 tonHomeSwitchSim(PT:=ptWaitTime);
+tonTestTimer(IN:=TRUE, PT:=T#5S);
+rtMotionInProgress(CLK:=stMotionStage.bBusy);
 fbMotionStage(stMotionStage := stMotionStage);
+
+// watchdog timer: override state machine and complete tests
+IF tonTestTimer.Q OR (uStates = 130) THEN
+        AssertEquals ( Expected:=bBacklashCompensationHomeExp, Actual:=bBacklashCompensationHomeStatus , Message:='Error:Backlash compensation enable in while homming');
+        AssertEquals ( Expected:=bBacklashCompensationStatusExp, Actual:=bBacklashCompensationStatus , Message:='Error:Backlash compensation disabled in absolute move mode');
+        AssertEquals_LREAL ( Expected:=bBacklashCompensationNotAct, Actual:=bBacklashCompensationPosFwd , Delta:=0.0, Message:='Error: Positive compensation enabled: Not compensation must be applied');
+        AssertEquals_LREAL ( Expected:=bBacklashCompensationActPos,    Actual:=bBacklashCompensationPosRev , Delta:=0.0, Message:='Error: Positive compensation enabled: Compensation must be applied');
+        AssertEquals_LREAL ( Expected:=bBacklashCompensationNotAct, Actual:=bBacklashCompensationNegFwd , Delta:=0.0, Message:='Error: Negative compensation enabled: Not compensation should be applied');
+        AssertEquals_LREAL ( Expected:=bBacklashCompensationActNeg,    Actual:=bBacklashCompensationNegRev , Delta:=0.0, Message:='Error: Negative compensation enabled: Compensation must be applied');
+
+        TEST_FINISHED();
+END_IF
+
 ]]></ST>
       </Implementation>
     </Method>
