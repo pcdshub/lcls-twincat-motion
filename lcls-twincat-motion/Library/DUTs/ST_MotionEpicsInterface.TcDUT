@@ -4,8 +4,7 @@
     <Declaration><![CDATA[TYPE ST_MotionEpicsInterface :
     // Defines the EPICS interface to moving a motor in TwinCAT
 STRUCT
-
-    // NC STO Input: TRUE if ok to move
+   // NC STO Input: TRUE if ok to move
     {attribute 'pytmc' := '
         pv: PLC:bHardwareEnable
         io: i
@@ -44,7 +43,13 @@ STRUCT
     '}
     stEPSPowerEnable: DUT_EPS;
 
-      (* Commands *)
+    // Set to gantry difference tolerance
+    nGantryTol: LINT:=0;
+
+    // Encoder count at which this axis is aligned with other axis
+    nEncRef: ULINT:=0;
+
+    (* Commands *)
     // Used internally to request enables
     bEnable: BOOL;
     // Used internally to reset errors and other state
@@ -69,8 +74,7 @@ STRUCT
     bUserEnable: BOOL := 1;
 
     (* Shortcut Commands *)
-    // Start a move to fPosition with fVelocity
-    bMoveCmd: BOOL;
+
     // Start the homing routine
     {attribute 'pytmc' := '
         pv: PLC:bHomeCmd
@@ -100,21 +104,8 @@ STRUCT
     '}
     fHomePosition: LREAL;
 
-    (* Info *)
-    // Unique ID assigned to each axis in the NC
-    nMotionAxisID: UDINT:=0;
-
     (* Returns *)
-    // TRUE if done enabling
-    bEnableDone: BOOL;
-    // TRUE if in the middle of a command
-    bBusy: BOOL;
-    // TRUE if we've done a command and it has finished
-    bDone: BOOL;
-    // TRUE if the motor has been homed, or does not need to be homed
-    bHomed: BOOL;
-    // TRUE if we have safety permission to move
-    bSafetyReady: BOOL;
+
     // TRUE if we're in an error state
     {attribute 'pytmc' := '
         pv: PLC:bError
@@ -141,10 +132,7 @@ STRUCT
         update: 100Hz notify
     '}
     sErrorMessage: STRING;
-    // Internal hook for custom error messages
-    sCustomErrorMessage: STRING;
-    // MC_ReadParameterSet Output
-    stAxisParameters: ST_AxisParameterSet;
+
     // NC parameters that are exposed with pytmc pragmas
     {attribute 'pytmc' := '
         pv: PLC:AxisPar
@@ -152,8 +140,7 @@ STRUCT
         field: DESC Axis configuration parameters in the numerical controller.
     '}
     stAxisParametersExposed: ST_AxisParameterSetExposed;
-    // True if we've updated stAxisParameters at least once
-    bAxisParamsInit: BOOL;
+
 
     // Misc axis status information for the IOC
     stAxisStatus: DUT_AxisStatus_v0_01;

@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionAxisCommon" Id="{b2f4c148-bcde-4ca5-a7a9-abd4413ce8ab}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisCommon IMPLEMENTS I_MotionAxisCommon
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    stMotionDriveReference : REFERENCE TO ST_MotionDrive;
+    stMotionEpicsInterfaceReference : REFERENCE TO ST_MotionEpicsInterface;
+
+    mcReadParams: MC_ReadParameterSet;
+    // MC_ReadParameterSet Output
+    stAxisParameters: ST_AxisParameterSet;
+    stAxisParameterSetExposed : ST_AxisParameterSetExposed;
+    bNcParamsReadDone   : BOOL;
+    bError				: BOOL;
+    nErrorCode			: UDINT;
+    nEncoderCount 		: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[THIS^.NCParams(TRUE, tRefreshDelay:=T#1S);
+THIS^.CalibrateRawEncValue();]]></ST>
+    </Implementation>
+    <Property Name="AxisParameterSetExposed" Id="{bd38f88c-c219-4363-856f-6d4d63c13ec4}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY AxisParameterSetExposed : ST_AxisParameterSetExposed
+]]></Declaration>
+      <Get Name="Get" Id="{50330633-1a97-458e-b8ef-ffa028d8a61b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[AxisParameterSetExposed := stAxisParameterSetExposed;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{6b74fee6-0826-4088-8509-987679c32e97}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[stAxisParameterSetExposed := AxisParameterSetExposed;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="CalibrateRawEncValue" Id="{1731f1b4-fc8d-48cd-81d7-d75b2a571773}">
+      <Declaration><![CDATA[METHOD CalibrateRawEncValue
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// IF init failed to get a valid reference then dont proceed here.
+IF NOT __ISVALIDREF(stMotionDriveReference) OR NOT __ISVALIDREF(stMotionEpicsInterfaceReference) THEN
+    RETURN;
+END_IF
+
+IF stMotionDriveReference.nRawEncoderULINT <> 0 THEN
+    IF stMotionDriveReference.nRawEncoderULINT < 4294967296 THEN
+        stMotionEpicsInterfaceReference.nEncoderCount := ULINT_TO_UDINT(stMotionDriveReference.nRawEncoderULINT);
+    ELSE
+        stMotionEpicsInterfaceReference.nEncoderCount := ULINT_TO_UDINT(18446744073709551615 - stMotionDriveReference.nRawEncoderULINT);
+    END_IF
+ELSIF stMotionDriveReference.nRawEncoderUINT <> 0 THEN
+    stMotionEpicsInterfaceReference.nEncoderCount := UINT_TO_UDINT(stMotionDriveReference.nRawEncoderUINT);
+ELSIF stMotionDriveReference.nRawEncoderINT <> 0 THEN
+    stMotionEpicsInterfaceReference.nEncoderCount := INT_TO_UDINT(stMotionDriveReference.nRawEncoderINT);
+ELSIF stMotionDriveReference.nRawEncoderDINT <> 0 THEN
+    stMotionEpicsInterfaceReference.nEncoderCount := DINT_TO_UDINT(stMotionDriveReference.nRawEncoderDINT);
+ELSE
+    stMotionEpicsInterfaceReference.nEncoderCount := 0;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="EncoderCount" Id="{5225d004-dac1-4dfa-90f6-2aa283ea59c1}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY EncoderCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{4699599a-607a-4379-8415-7f67e45880a3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[EncoderCount := nEncoderCount;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5916a47b-3bdc-477b-b2e2-fa22d0699a1c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nEncoderCount := EncoderCount;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Error" Id="{2819c2f0-b6fd-42b1-b42d-175038209c48}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL]]></Declaration>
+      <Get Name="Get" Id="{c757a456-f781-4926-9229-39a5572ee16c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := bError;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{ccc50871-05d6-40ce-aca3-048fcd2bfa2b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bError := Error;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="ErrorCode" Id="{b7569608-1ea8-4914-a3b4-543b15f7c860}">
+      <Declaration><![CDATA[PROPERTY ErrorCode : UDINT]]></Declaration>
+      <Get Name="Get" Id="{37935438-07d0-4e35-a5a0-50e5e1f3d03b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorCode := nErrorCode;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{53062068-e81d-4dce-b763-5cd409ed4079}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nErrorCode := ErrorCode;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="FB_Init" Id="{8bc50fb9-2f4e-4094-860c-18b3654dc16c}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisReference : REFERENCE TO AXIS_REF;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[AxisRef REF= AxisReference;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetDriveAndEpicsItfRefs" Id="{521243a9-080c-4717-80a3-4aef48e01826}">
+      <Declaration><![CDATA[METHOD GetDriveAndEpicsItfRefs
+VAR_INPUT
+    stMotionDriveRef : REFERENCE TO ST_MotionDrive;
+    stMotionEpicsInterfaceRef : REFERENCE TO ST_MotionEpicsInterface;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[    stMotionDriveReference REF= stMotionDriveRef;
+    stMotionEpicsInterfaceReference REF= stMotionEpicsInterfaceRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="NCParams" Id="{dd5f801a-4004-4e64-a8a8-d3052d398ddb}">
+      <Declaration><![CDATA[METHOD NCParams : BOOL;
+VAR_INPUT
+    bEnable: BOOL;
+    tRefreshDelay: TIME;
+END_VAR
+
+VAR_INST
+    timer: TON;
+    bExecute: BOOL := TRUE;
+    nLatchErrId: UDINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[timer(
+    IN:=bEnable AND NOT bExecute,
+    PT:=tRefreshDelay);
+bExecute S= timer.Q;
+mcReadParams(
+    Parameter:=THIS^.stAxisParameters,
+    Axis:= AxisRef,
+    Execute:=bEnable AND bExecute );
+
+IF mcReadParams.Error THEN
+    Error := TRUE;
+    ErrorCode := mcReadParams.ErrorID;
+    // Log this error
+END_IF
+
+(* IF mcReadParams.ErrorID <> 0 THEN
+    nLatchErrId := 0;
+END_IF *)
+
+// Copy axis parameters that we want to expose to the EPICS layer.
+THIS^.stAxisParameterSetExposed.bCtrlEnablePosDiffControl     := THIS^.stAxisParameters.bCtrlEnablePosDiffControl;
+THIS^.stAxisParameterSetExposed.bEncEnableSoftEndMaxControl   := THIS^.stAxisParameters.bEncEnableSoftEndMaxControl;
+THIS^.stAxisParameterSetExposed.bEncEnableSoftEndMinControl   := THIS^.stAxisParameters.bEncEnableSoftEndMinControl;
+THIS^.stAxisParameterSetExposed.fAccelerationMax              := THIS^.stAxisParameters.fAccelerationMax;
+THIS^.stAxisParameterSetExposed.fCtrlPosDiffMax               := THIS^.stAxisParameters.fCtrlPosDiffMax;
+THIS^.stAxisParameterSetExposed.fCtrlPosDiffMaxTime           := THIS^.stAxisParameters.fCtrlPosDiffMaxTime;
+THIS^.stAxisParameterSetExposed.fDecelerationMax              := THIS^.stAxisParameters.fDecelerationMax;
+THIS^.stAxisParameterSetExposed.fEncSoftEndMax                := THIS^.stAxisParameters.fEncSoftEndMax;
+THIS^.stAxisParameterSetExposed.fEncSoftEndMin                := THIS^.stAxisParameters.fEncSoftEndMin;
+THIS^.stAxisParameterSetExposed.fVeloMaximum                  := THIS^.stAxisParameters.fVeloMaximum;
+THIS^.stAxisParameterSetExposed.fEncOffset               	  := THIS^.stAxisParameters.fEncOffset;
+THIS^.stAxisParameterSetExposed.fEncScaleFactorInternal       := THIS^.stAxisParameters.fEncScaleFactorInternal;
+
+bExecute R= mcReadParams.Done OR mcReadParams.Error;
+NCParamsReadDone S= mcReadParams.Done;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="NCParamsReadDone" Id="{fc8144c2-ca29-4700-853c-a4a1e0fc319a}">
+      <Declaration><![CDATA[PROPERTY NCParamsReadDone : BOOL]]></Declaration>
+      <Get Name="Get" Id="{bf6c53f4-cc0b-4a81-96a0-d612250516fd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[NCParamsReadDone := bNCParamsReadDone;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{05cf4a9b-1c44-4464-9615-25d3dfbdef0f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bNCParamsReadDone := NCParamsReadDone;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

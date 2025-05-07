@@ -15,7 +15,6 @@ STRUCT
     // NC Brake Output: TRUE to release brake
     bBrakeRelease AT %Q*: BOOL;
 
-
     // Raw encoder IO for ULINT (Biss-C)
     nRawEncoderULINT AT %I*: ULINT;
     // Raw encoder IO for UINT (Relative Encoders)
@@ -62,23 +61,6 @@ STRUCT
     // Used internally to request enables
     bEnable: BOOL;
 
-    // Used internally and by the IOC to start or stop a move
-    bExecute: BOOL;
-
-    (* Command Args *)
-    // Used internally and by the IOC to pick what kind of move to do
-    nCommand: INT;
-    // Used internally and by the IOC to pass additional data to some commands
-    nCmdData: INT;
-    // Used internally and by the IOC to pick a destination for the move
-    fPosition: LREAL;
-    // Used internally and by the IOC to pick a move velocity
-    fVelocity: LREAL;
-    // Used internally and by the IOC to pick a move acceleration
-    fAcceleration: LREAL;
-    // Used internally and by the IOC to pick a move deceleration
-    fDeceleration: LREAL;
-
     (* Info *)
     // Unique ID assigned to each axis in the NC
     nMotionAxisID: UDINT:=0;
@@ -94,11 +76,8 @@ STRUCT
     bHomed: BOOL;
     // TRUE if we have safety permission to move
     bSafetyReady: BOOL;
-
     // Internal hook for custom error messages
     sCustomErrorMessage: STRING;
-    // MC_ReadParameterSet Output
-    stAxisParameters: ST_AxisParameterSet;
 
     // True if we've updated stAxisParameters at least once
     bAxisParamsInit: BOOL;

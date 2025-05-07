@@ -10,7 +10,8 @@ VAR
     stMotionDrive : ST_MotionDrive;
     stMotionEpicsInterface : ST_MotionEpicsInterface;
 
-    iAxis : I_MotionAxis;
+    iMotionAxis : I_MotionAxis;
+    iMotionAxisCommon : I_MotionAxisCommon;
     iBrake :I_Brake;
     iMotionInterlocks: I_MotionInterlocks;
     iMotionLogger : I_MotionLogger;
@@ -19,7 +20,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[THIS^.NCParamsExposed();]]></ST>
     </Implementation>
     <Property Name="Error" Id="{9e9f8ffe-6e96-4b18-9522-dd45ebc471b8}">
       <Declaration><![CDATA[{warning 'Add property implementation'}
@@ -72,9 +73,24 @@ METHOD FB_Init: BOOL
 VAR_INPUT
     bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
     bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    //Declaration
+    iMotionAxis: I_MotionAxis;
+    iMotionAxisCommon : I_MotionAxisCommon;
+    iBrake : I_Brake;
+    iMotionInterlocks : I_MotionInterlocks;
+    iMotionLogger : I_MotionLogger;
+    iPersistantDataStorage: I_PersistantDataStorage;
+
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[// Body
+THIS^.iMotionAxis:=iMotionAxis;
+THIS^.iBrake:=iBrake;
+THIS^.iMotionInterlocks:=iMotionInterlocks;
+THIS^.iPersistantDataStorage:=iPersistantDataStorage;
+THIS^.iMotionAxisCommon := iMotionAxisCommon;
+// Passed Local Drive and Epics Interface structures to common axis
+THIS^.iMotionAxisCommon.GetDriveAndEpicsItfRefs(stMotionDriveRef:=THIS^.stMotionDrive, stMotionEpicsInterfaceRef:=THIS^.stMotionEpicsInterface);]]></ST>
       </Implementation>
     </Method>
     <Method Name="GetInterlocksRef" Id="{519cf572-57b6-4265-8a35-8e40f4725969}">
@@ -140,6 +156,17 @@ METHOD MoveCmd
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="NCParamsExposed" Id="{a32b8f9b-a550-4cf6-9dc3-5c1e587d0657}">
+      <Declaration><![CDATA[METHOD  NCParamsExposed
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Copy axis parameters that we want to expose to the EPICS layer.
+stMotionEpicsInterface.stAxisParametersExposed := iMotionAxisCommon.AxisParameterSetExposed;
+stMotionDrive.bAxisParamsInit := iMotionAxisCommon.NCParamsReadDone;]]></ST>
       </Implementation>
     </Method>
     <Method Name="ProcessMoveReq" Id="{1da2dc9d-4406-4cb4-be2e-a29a35f201c7}">
