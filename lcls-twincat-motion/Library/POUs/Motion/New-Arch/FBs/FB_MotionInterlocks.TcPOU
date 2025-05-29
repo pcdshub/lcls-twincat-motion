@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionInterlocks" Id="{b69073ed-2a55-41fc-84a9-b8fe79332e5e}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocks IMPLEMENTS I_MotionInterlocks
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    {attribute 'hide'}
+    iMotionLogger 		: I_MotionLogger;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Enable" Id="{5e777124-e85d-4bc1-9cc7-f940b9634831}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+(* this comes from I_MotionDriveShareData or could be provided by iMotionAxisCommon MC_Power Status block for non sync operation*)
+PROPERTY Enable : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{36317b78-df89-474e-a3ad-fb269ff58820}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d56aaaf7-2912-4098-b065-2c9d1e566da5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Error" Id="{0e139e64-82f7-44db-b026-c8b3a3ce7de8}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{3d402358-4896-4b22-86f8-09f4d880f427}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{dc1898a9-f714-4f91-b9c5-eb1143afddd3}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{acbadcd5-5050-4f73-a022-6b7291e0c444}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorMessage" Id="{3c6151d2-7e95-4fde-9e74-00243a7324b7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ErrorMessage : STRING
+]]></Declaration>
+      <Get Name="Get" Id="{36059109-c6c7-449c-9aad-333c51d4e917}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{ee1048d7-3a0b-4701-a887-c2bc01c18e00}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+
+    iMotionLogger 		: I_MotionLogger;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.iMotionLogger := iMotionLogger;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="LimHit" Id="{11c64e2e-c564-4a6a-bd1e-57f757d7d3f2}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY LimHit : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{aff28c18-5350-4ec7-9e29-ba09ee43f79a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="LimHitIdling" Id="{5c745e97-7981-46b1-b2e9-e41ad03a1329}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY LimHitIdling : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{67d3de4b-49d8-4d56-97ad-2cc7e36e5776}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="LimHitMoving" Id="{fe846bb2-f0f1-4de6-b3d7-f7dd2578d007}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY LimHitMoving : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f18f53ab-40f0-4176-8298-33b8c2c8157d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

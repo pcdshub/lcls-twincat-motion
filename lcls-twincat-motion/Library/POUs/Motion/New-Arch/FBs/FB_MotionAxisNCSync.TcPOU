@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionAxisNCSync" Id="{477f6798-7fc8-4596-8c36-16b6c43130e8}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisNCSync EXTENDS FB_MotionAxisNC
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    {attribute 'hide'}
+    iMotionAxisShareData : I_MotionAxisShareData;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// extract share data
+
+SUPER^();
+
+// update shared data]]></ST>
+    </Implementation>
+    <Method Name="FB_Init" Id="{a75d0e18-791c-4a12-ac24-96cd017f8cf2}">
+      <Declaration><![CDATA[(*FB_Init is always available implicitly and it is used primarily for initialization.
+The return value is not evaluated. For a specific influence, you can also declare the
+methods explicitly and provide additional code there with the standard initialization
+code. You can evaluate the return value.*)
+METHOD FB_Init : BOOL
+VAR_INPUT
+    (* TRUE: the retain variables are initialized (reset warm / reset cold)*)
+    bInitRetains	: BOOL;
+    (* TRUE: the instance will be copied to the copy code afterward (online change)*)
+    bInCopyCode	: BOOL;
+    AxisRef	: REFERENCE TO AXIS_REF;
+    iPersistentDataStorage	: I_PersistentDataStorage;
+    iMotionLogger	: I_MotionLogger;
+    iMotionAxisShareData : I_MotionAxisShareData;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.iMotionAxisShareData :=  iMotionAxisShareData;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

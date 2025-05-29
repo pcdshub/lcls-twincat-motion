@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_BrakeSync" Id="{87d12178-801b-4134-9683-d7501d15411d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_BrakeSync EXTENDS FB_Brake
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    {attribute 'hide'}
+    iBrakeShareData : I_BrakeShareData;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Read external private data
+eMotionState := iBrakeShareData.AxisState;
+// call super body.
+SUPER^();
+// update shared data]]></ST>
+    </Implementation>
+    <Method Name="FB_Init" Id="{bb399138-4c9f-428f-a198-771a72bba52c}">
+      <Declaration><![CDATA[(*FB_Init is always available implicitly and it is used primarily for initialization.
+The return value is not evaluated. For a specific influence, you can also declare the
+methods explicitly and provide additional code there with the standard initialization
+code. You can evaluate the return value.*)
+METHOD FB_Init : BOOL
+VAR_INPUT
+    (* TRUE: the retain variables are initialized (reset warm / reset cold)*)
+    bInitRetains	: BOOL;
+    (* TRUE: the instance will be copied to the copy code afterward (online change)*)
+    bInCopyCode	: BOOL;
+    iBrakeShareData : I_BrakeShareData;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.iBrakeShareData := iBrakeShareData ;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

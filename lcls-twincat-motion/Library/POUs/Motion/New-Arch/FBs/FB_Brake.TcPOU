@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_Brake" Id="{54a1ce6e-4604-4795-a15a-9475ea6f5ca5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Brake IMPLEMENTS I_Brake
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    // Determines when we automatically disengage the brake
+    nBrakeMode: E_StageBrakeMode:=E_StageBrakeMode.IF_ENABLED;
+    // NC Brake Output: TRUE to release brake
+    bBrakeRelease AT %Q*: BOOL;
+    eMotionState : MC_AxisStates;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Handle the brake. TRUE means brake disabled/released
+IF nBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
+    CASE eMotionState OF
+        MC_AXISSTATE_UNDEFINED,
+        MC_AXISSTATE_DISABLED,
+        MC_AXISSTATE_ERRORSTOP:
+            bBrakeRelease := FALSE;
+        MC_AXISSTATE_STANDSTILL:
+            IF nBrakeMode = E_StageBrakeMode.IF_MOVING THEN
+                bBrakeRelease := FALSE;
+            ELSE
+                bBrakeRelease := TRUE;
+            END_IF
+        ELSE
+            bBrakeRelease := TRUE;
+    END_CASE
+END_IF]]></ST>
+    </Implementation>
+    <Property Name="AxisState" Id="{202a7fa2-fd05-4f87-9da0-bfc0914918f1}">
+      <Declaration><![CDATA[// Must be provided by non synced application
+PROPERTY AxisState : MC_AxisStates
+]]></Declaration>
+      <Get Name="Get" Id="{0bab72e3-5fba-477c-87c0-7aaa39ec1386}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{96fa3e6e-cd0b-4be6-95f7-c03b44accf54}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="BrakeMode" Id="{d2a89635-e044-45f2-b897-1fb228591295}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY BrakeMode : E_StageBrakeMode
+]]></Declaration>
+      <Get Name="Get" Id="{87438a61-12a9-4977-b899-109dc02b161b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{ce177ab8-12d5-44b3-b42b-64a86bd5c208}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="BrakeRelease" Id="{4e9e8280-09ed-4b6e-b3d2-3824c4845e47}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY BrakeRelease : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{89896f71-d183-47a2-830c-dc2b8ef91af6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

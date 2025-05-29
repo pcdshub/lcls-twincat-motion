@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionAxisDS402NC" Id="{89fef5ac-f21f-4b51-b225-9ff16c28749c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisDS402NC EXTENDS FB_MotionAxisCommon
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    iDS402DriveCommon 	: I_DS402DriveCommon;
+    eModeOfOperation 	: E_DS402OpMode;
+    bStartReady : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[THIS^.iDS402DriveCommon.HomeDS402(	Start := SUPER^.bCommandedMoveHome,
+                                    HomingMethod := SUPER^.eHomingMethod,
+                                    HomingSpeedsFast := SUPER^.fHomingSpeedsFast,
+                                    HomingSpeedsSlow := SUPER^.fHomingSpeedsSlow,
+                                    HomingAcceleration := SUPER^.fHomingAcceleration,
+                                    HomeOffset := SUPER^.fHomeOffset,
+                                    UserAbort := SUPER^.bInterrupted,
+                                    MostRecentModeofOperation:=eModeOfOperation );
+
+SUPER^.bHomeBusy :=	THIS^.iDS402DriveCommon.DS402HomeBusy;
+SUPER^.bHomeDone:=	THIS^.iDS402DriveCommon.DS402HomeDone;
+SUPER^.bHomeError:=	THIS^.iDS402DriveCommon.DS402HomeError;
+SUPER^.nHomeErrorID:=	THIS^.iDS402DriveCommon.DS402HomeErrorID;
+SUPER^.bHomeInterrupted:= THIS^.iDS402DriveCommon.DS402HomeAborted;
+(*
+  Set Home position
+  in Sync derivation update the shared fHomePosition variable so drive can update EPICS data
+*)
+
+// Call base class body
+SUPER^();
+]]></ST>
+    </Implementation>
+    <Method Name="FB_Init" Id="{bf2ee28c-14f4-427d-8356-8d4c95249368}">
+      <Declaration><![CDATA[(*FB_Init is always available implicitly and it is used primarily for initialization.
+The return value is not evaluated. For a specific influence, you can also declare the
+methods explicitly and provide additional code there with the standard initialization
+code. You can evaluate the return value.*)
+METHOD FB_Init : BOOL
+VAR_INPUT
+    (* TRUE: the retain variables are initialized (reset warm / reset cold)*)
+    bInitRetains	: BOOL;
+    (* TRUE: the instance will be copied to the copy code afterward (online change)*)
+    bInCopyCode	: BOOL;
+    AxisRef	: REFERENCE TO AXIS_REF;
+    iPersistentDataStorage	: I_PersistentDataStorage;
+    iMotionLogger	: I_MotionLogger;
+    iDS402DriveCommon 	: I_DS402DriveCommon;
+    ModeOfOperation : E_DS402OpMode;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.iDS402DriveCommon := iDS402DriveCommon;
+THIS^.ModeOfOperation := ModeOfOperation;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StartMove" Id="{04beed87-ecbf-46f2-ac0b-87255641b197}">
+      <Declaration><![CDATA[(*
+    Check all post condition before updating bCommandedMoveAbsolute
+    The implmentatation will depend on the axis type
+    DS402 NC/Direct axis : Implementation need to check that the drive is in the correct mode before initaiting the move then set bCommandedMoveAbsolute
+    MP NC axis : will immediately write to bCommandedMoveAbsolute
+*)
+METHOD StartMove : BOOL
+VAR_INPUT
+    MoveMode : E_EpicsMotorCmd;
+    CmdExecute : BOOL;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF THIS^.iDs402DriveCommon.SetModeOfOperation(THIS^.eModeOfOperation) THEN
+    CASE MoveMode  OF
+        E_EpicsMotorCmd.MOVE_ABSOLUTE:
+            SUPER^.bCommandedMoveAbsolute := CmdExecute;
+        E_EpicsMotorCmd.HOME:
+            SUPER^.bCommandedMoveHome:= CmdExecute;
+    END_CASE
+    // for typical NC axis no further test is needed
+    StartMove := CmdExecute;
+ELSE
+    StartMove := FALSE;
+END_IF
+
+StartMove := THIS^.bStartReady;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
