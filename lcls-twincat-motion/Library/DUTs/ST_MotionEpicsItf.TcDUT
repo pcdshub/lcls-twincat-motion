@@ -1,0 +1,202 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_MotionEpicsItf" Id="{390b004d-460d-4cb0-a5a0-186b7a61fbf1}">
+    <Declaration><![CDATA[TYPE ST_MotionEpicsItf :
+    // Defines the EPICS interface to moving a motor in TwinCAT
+STRUCT
+   // NC STO Input: TRUE if ok to move
+    {attribute 'pytmc' := '
+        pv: PLC:bHardwareEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if STO not hit
+    '}
+    bHardwareEnable AT %I*: BOOL;
+
+    // Encoder count summary, if linked above
+    {attribute 'pytmc' := '
+        pv: PLC:nEncoderCount
+        io: i
+        field: DESC Count from encoder hardware
+    '}
+    nEncoderCount: UDINT;
+    // Forward Enable EPS struct
+    {attribute 'pytmc' := '
+        pv: PLC:stEPSF
+        io: i
+        field: DESC Forward Enable Interlocks
+    '}
+    stEPSForwardEnable: DUT_EPS;
+    // Backward Enable EPS struct
+    {attribute 'pytmc' := '
+        pv: PLC:stEPSB
+        io: i
+        field: DESC Backward Enable Interlocks
+    '}
+    stEPSBackwardEnable: DUT_EPS;
+    // Power Enable EPS struct
+    {attribute 'pytmc' := '
+        pv: PLC:stEPSP
+        io: i
+        field: DESC Power Interlocks
+    '}
+    stEPSPowerEnable: DUT_EPS;
+
+    // Set to gantry difference tolerance
+    nGantryTol: LINT:=0;
+
+    // Encoder count at which this axis is aligned with other axis
+    nEncRef: ULINT:=0;
+
+    (* Commands *)
+    // Used internally to reset errors and other state
+    {attribute 'pytmc' := '
+        pv: PLC:bReset
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Used internally to reset errors
+    '}
+    bReset: BOOL;
+    // Used internally and by the IOC to start or stop a move
+    bExecute: BOOL;
+    // Used by the IOC to disable an axis
+    {attribute 'pytmc' := '
+        pv: PLC:bUserEnable
+        io: io
+        field: ZNAM DISABLE
+        field: ONAM ENABLE
+        field: DESC Used to disable power entirely for an axis
+    '}
+    bUserEnable: BOOL := 1;
+
+    (* Shortcut Commands *)
+
+    // Start the homing routine
+    {attribute 'pytmc' := '
+        pv: PLC:bHomeCmd
+        io: io
+        field: DESC Start the homing routine
+    '}
+    bHomeCmd: BOOL;
+
+    (* Command Args *)
+    // Used internally and by the IOC to pick what kind of move to do
+    nCommand: INT;
+    // Used internally and by the IOC to pass additional data to some commands
+    nCmdData: INT;
+    // Used internally and by the IOC to pick a destination for the move
+    fPosition: LREAL;
+    // Used internally and by the IOC to pick a move velocity
+    fVelocity: LREAL;
+    // Used internally and by the IOC to pick a move acceleration
+    fAcceleration: LREAL;
+    // Used internally and by the IOC to pick a move deceleration
+    fDeceleration: LREAL;
+    // this keep for legacy State Positioning
+    bBusy : BOOL;
+    bDone : BOOL;
+    // Used internally and by the IOC to pick a home position
+    {attribute 'pytmc' := '
+        pv: PLC:fHomePosition
+        io: io
+        field: DESC Used internally and by the IOC to pick home position
+    '}
+    fHomePosition: LREAL;
+
+    (* Settings *)
+    // Name to use for log messages, fast faults, etc.
+    sName: STRING;
+
+    (* Returns *)
+
+    // TRUE if we're in an error state
+    {attribute 'pytmc' := '
+        pv: PLC:bError
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if we are in an error state
+        update: 100Hz notify
+    '}
+    bError: BOOL;
+    // Error code if nonzero
+    {attribute 'pytmc' := '
+        pv: PLC:nErrorId
+        io: i
+        field: DESC Error code if nonzero
+        update: 100Hz notify
+    '}
+    nErrorId: UDINT;
+    // Message to identify the error state
+    {attribute 'pytmc' := '
+        pv: PLC:sErrorMessage
+        io: i
+        field: DESC Message to identify the error state
+        update: 100Hz notify
+    '}
+    sErrorMessage: STRING;
+
+    // NC parameters that are exposed with pytmc pragmas
+    {attribute 'pytmc' := '
+        pv: PLC:AxisPar
+        io: i
+        field: DESC Axis configuration parameters in the numerical controller.
+    '}
+    stAxisParametersExposed: ST_AxisParameterSetExposed;
+
+
+    // Misc axis status information for the IOC
+    stAxisStatus: DUT_AxisStatus_v0_01;
+
+    (* Other status information for users of the IOC *)
+    // Position lag difference
+    {attribute 'pytmc' := '
+        pv: PLC:fPosDiff
+        io: i
+        field: DESC Position lag difference
+    '}
+    fPosDiff: LREAL;
+
+    (* Backlash compensation*)
+    // Enabled axis backlash compensation
+    {attribute 'pytmc' := '
+        pv: PLC:bBacklashEn
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Enable Backlash compensation
+    '}
+    bUserBacklashEn: BOOL;
+
+    // backlash compensation status
+    {attribute 'pytmc' := '
+        pv: PLC:bBacklasStatus
+        io: i
+        field: ZNAM DISABLED
+        field: ONAM ENABLED
+        field: DESC Backlash compensation status
+    '}
+    bBacklashStatus: BOOL;
+
+    // Backlash compensation value
+    {attribute 'pytmc' := '
+        pv: PLC:fBacklash
+        io: io
+        field: DESC Backlash compensation
+    '}
+    fBacklash: LREAL;
+
+    // Current Backlash compensation value ?
+    {attribute 'pytmc' := '
+        pv: PLC:fCurrentBacklash
+        io: i
+        field: DESC Currently applied compensation
+    '}
+    fCurrentBacklash: LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
