@@ -9,72 +9,23 @@ END_VAR
 VAR
     {attribute 'hide'}
     iMotionLogger 		: I_MotionLogger;
+    {attribute 'hide'}
+    iMotionInterlocksShareData : I_MotionInterlocksShareData;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IF ( iMotionInterlocksShareData = 0 ) OR ( iMotionLogger = 0) THEN
+    // throw an exception
+    RETURN;
+END_IF
+
+// read share
+
+
+
+
+// update share]]></ST>
     </Implementation>
-    <Property Name="Enable" Id="{5e777124-e85d-4bc1-9cc7-f940b9634831}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-(* this comes from I_MotionDriveShareData or could be provided by iMotionAxisCommon MC_Power Status block for non sync operation*)
-PROPERTY Enable : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{36317b78-df89-474e-a3ad-fb269ff58820}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-      <Set Name="Set" Id="{d56aaaf7-2912-4098-b065-2c9d1e566da5}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
-    <Property Name="Error" Id="{0e139e64-82f7-44db-b026-c8b3a3ce7de8}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Error : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{3d402358-4896-4b22-86f8-09f4d880f427}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="ErrorID" Id="{dc1898a9-f714-4f91-b9c5-eb1143afddd3}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY ErrorID : UDINT
-]]></Declaration>
-      <Get Name="Get" Id="{acbadcd5-5050-4f73-a022-6b7291e0c444}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="ErrorMessage" Id="{3c6151d2-7e95-4fde-9e74-00243a7324b7}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY ErrorMessage : STRING
-]]></Declaration>
-      <Get Name="Get" Id="{36059109-c6c7-449c-9aad-333c51d4e917}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Method Name="FB_Init" Id="{ee1048d7-3a0b-4701-a887-c2bc01c18e00}">
       <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
 //The return value is not evaluated. For a specific influence, you can also declare the
@@ -86,12 +37,53 @@ VAR_INPUT
     bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
 
     iMotionLogger 		: I_MotionLogger;
+    iMotionInterlocksShareData : I_MotionInterlocksShareData;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[THIS^.iMotionLogger := iMotionLogger;
+THIS^.iMotionInterlocksShareData := iMotionInterlocksShareData;
 ]]></ST>
       </Implementation>
     </Method>
+    <Property Name="InterlocksError" Id="{0e139e64-82f7-44db-b026-c8b3a3ce7de8}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY InterlocksError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{3d402358-4896-4b22-86f8-09f4d880f427}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="InterlocksErrorID" Id="{dc1898a9-f714-4f91-b9c5-eb1143afddd3}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY InterlocksErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{acbadcd5-5050-4f73-a022-6b7291e0c444}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="InterlocksErrorMessage" Id="{3c6151d2-7e95-4fde-9e74-00243a7324b7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY InterlocksErrorMessage : STRING
+]]></Declaration>
+      <Get Name="Get" Id="{36059109-c6c7-449c-9aad-333c51d4e917}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="LimHit" Id="{11c64e2e-c564-4a6a-bd1e-57f757d7d3f2}">
       <Declaration><![CDATA[{warning 'Add property implementation'}
 PROPERTY LimHit : BOOL
@@ -123,6 +115,58 @@ END_VAR
 PROPERTY LimHitMoving : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{f18f53ab-40f0-4176-8298-33b8c2c8157d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveBackwardEnabled" Id="{73228441-2498-4cbf-b7a0-4009813e3963}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveBackwardEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f4731fcf-cdb2-4505-9bf3-b0970507bbd1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveForwardEnabled" Id="{dbd2e5c0-7ee3-4d69-bfac-0c4778db19bb}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveForwardEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b2fba177-14e5-4ae4-b487-6f6969050bec}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MoveOk" Id="{3c80f11d-c026-4b06-9cfb-6a7a45c3d176}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD MoveOk : BOOL
+VAR_INPUT
+    NewMoveReq	: BOOL;
+    Enable	: BOOL;
+    Execute	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="PowerEnabled" Id="{6a435248-a266-41ef-9b9c-8e0bf7663a4b}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{c27ac7b3-d93e-4dca-97d4-f9f71a18aff4}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>

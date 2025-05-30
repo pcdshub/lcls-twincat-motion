@@ -7,14 +7,16 @@ END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
-
+    {attribute 'hide'}
+    iMotionAxisShareData : I_MotionAxisShareData;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[THIS^.HomeNC(SUPER^.bCommandedMoveHome);
+      <ST><![CDATA[// Read share data
+THIS^.HomeNC(SUPER^.bCommandedMoveHome);
 // Call base class body
 SUPER^();
-]]></ST>
+// update share data]]></ST>
     </Implementation>
     <Method Name="FB_Init" Id="{77133afc-c7e9-4d68-9e55-a5f682bc52af}">
       <Declaration><![CDATA[(*FB_Init is always available implicitly and it is used primarily for initialization.
@@ -30,10 +32,11 @@ VAR_INPUT
     AxisRef	: REFERENCE TO AXIS_REF;
     iPersistentDataStorage	: I_PersistentDataStorage;
     iMotionLogger : I_MotionLogger;
+    iMotionAxisShareData : I_MotionAxisShareData;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[THIS^.iMotionAxisShareData :=  iMotionAxisShareData;]]></ST>
       </Implementation>
     </Method>
     <Method Name="HomeNC" Id="{33ae7160-6fd9-4351-881c-ff032354b4f0}">
@@ -60,7 +63,14 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[]]></ST>
+        <ST><![CDATA[CASE MoveMode  OF
+    E_EpicsMotorCmd.MOVE_ABSOLUTE:
+        SUPER^.bCommandedMoveAbsolute := CmdExecute;
+    E_EpicsMotorCmd.HOME:
+        SUPER^.bCommandedMoveHome:= CmdExecute;
+END_CASE
+// for typical NC axis no further test is needed
+StartMove := CmdExecute;]]></ST>
       </Implementation>
     </Method>
   </POU>

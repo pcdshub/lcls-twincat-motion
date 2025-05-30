@@ -7,6 +7,13 @@ END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
+    (* Hardware *)
+   // NC Forward Limit Switch: TRUE if ok to move
+    bLimitForwardEnable AT %I*: BOOL;
+    // NC Backward Limit Switch: TRUE if ok to move
+    bLimitBackwardEnable AT %I*: BOOL;
+    // NO Home Switch: TRUE if at home
+    bHome AT %I*: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -162,6 +169,19 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Property Name="BrakeError" Id="{b9794475-3295-45c0-b288-6d33ca0368ce}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY BrakeError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{62ef9884-1fbf-41d5-b658-cf66ef51b265}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="CmdExecute" Id="{fc8308fb-2fb8-4ee2-8c20-4b5547792a17}">
       <Declaration><![CDATA[{warning 'Add property implementation'}
 PROPERTY CmdExecute : BOOL
@@ -267,6 +287,27 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Property Name="GlobalReset" Id="{323a9cf3-a3b0-42dc-b822-f29eb0e15c95}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY GlobalReset : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{e42e6468-57d6-4eab-9213-e7eb1faa8826}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{fc8bced8-d33a-40ea-b8e4-9002dc5933ad}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Property Name="HomeBusy" Id="{47aec562-24c8-4255-ab98-d9218f40240f}">
       <Declaration><![CDATA[{warning 'Add property implementation'}
 PROPERTY HomeBusy : BOOL
@@ -301,6 +342,19 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Property Name="LimBackward" Id="{38e5cd98-f346-4d1d-b128-21f2a07d0784}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY LimBackward : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{28999aa8-3674-4ecb-837f-ebb6de69864a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="LimBwdEnable" Id="{f6c9be89-9e8e-43ba-b22f-6910f8c266ad}">
       <Declaration><![CDATA[{warning 'Add property implementation'}
 PROPERTY LimBwdEnable : BOOL
@@ -321,6 +375,19 @@ END_VAR
           <ST><![CDATA[]]></ST>
         </Implementation>
       </Set>
+    </Property>
+    <Property Name="LimForward" Id="{58508ad6-a56e-4f16-90a2-2e7368217430}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY LimForward : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{6df200ef-9186-43a2-ab57-1b46b7ba3ed7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
     </Property>
     <Property Name="LimFwdEnable" Id="{7abd22ed-a794-45d0-86da-9a21cd25e8a9}">
       <Declaration><![CDATA[{warning 'Add property implementation'}

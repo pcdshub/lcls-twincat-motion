@@ -7,13 +7,21 @@ END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
+    iMotionAxisShareData : I_MotionAxisShareData;
     iDS402DriveCommon 	: I_DS402DriveCommon;
-    eModeOfOperation 	: E_DS402OpMode;
+    eModeOfOperation 	: E_DS402OpMode := E_DS402OpMode.CSV;
     bStartReady : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[THIS^.iDS402DriveCommon.HomeDS402(	Start := SUPER^.bCommandedMoveHome,
+      <ST><![CDATA[IF ( iMotionAxisShareData = 0 ) OR  ( iDS402DriveCommon = 0) THEN
+    // throw and exception here
+    RETURN;
+END_IF
+
+// Extract share data
+
+THIS^.iDS402DriveCommon.HomeDS402(	Start := SUPER^.bCommandedMoveHome,
                                     HomingMethod := SUPER^.eHomingMethod,
                                     HomingSpeedsFast := SUPER^.fHomingSpeedsFast,
                                     HomingSpeedsSlow := SUPER^.fHomingSpeedsSlow,
@@ -34,7 +42,9 @@ SUPER^.bHomeInterrupted:= THIS^.iDS402DriveCommon.DS402HomeAborted;
 
 // Call base class body
 SUPER^();
-]]></ST>
+
+
+// update share data]]></ST>
     </Implementation>
     <Method Name="FB_Init" Id="{bf2ee28c-14f4-427d-8356-8d4c95249368}">
       <Declaration><![CDATA[(*FB_Init is always available implicitly and it is used primarily for initialization.
@@ -52,10 +62,12 @@ VAR_INPUT
     iMotionLogger	: I_MotionLogger;
     iDS402DriveCommon 	: I_DS402DriveCommon;
     ModeOfOperation : E_DS402OpMode;
+    iMotionAxisShareData : I_MotionAxisShareData;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[THIS^.iDS402DriveCommon := iDS402DriveCommon;
+THIS^.iMotionAxisShareData :=  iMotionAxisShareData;
 THIS^.ModeOfOperation := ModeOfOperation;]]></ST>
       </Implementation>
     </Method>
@@ -81,10 +93,9 @@ END_VAR
         E_EpicsMotorCmd.HOME:
             SUPER^.bCommandedMoveHome:= CmdExecute;
     END_CASE
-    // for typical NC axis no further test is needed
-    StartMove := CmdExecute;
+    THIS^.bStartReady := CmdExecute;
 ELSE
-    StartMove := FALSE;
+    THIS^.bStartReady := FALSE;
 END_IF
 
 StartMove := THIS^.bStartReady;]]></ST>
