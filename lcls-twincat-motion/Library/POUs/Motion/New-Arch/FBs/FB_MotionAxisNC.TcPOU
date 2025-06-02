@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MotionAxisNC" Id="{c6c45e58-0632-4869-96bd-3ee4e21217a8}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisNC EXTENDS FB_MotionAxisCommon
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisNC EXTENDS FB_MotionAxisCommonNC
 VAR_INPUT
 END_VAR
 VAR_OUTPUT
@@ -13,7 +13,7 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Read share data
-THIS^.HomeNC(SUPER^.bCommandedMoveHome);
+THIS^.Home(SUPER^.bCommandedMoveHome);
 // Call base class body
 SUPER^();
 // update share data]]></ST>
@@ -39,8 +39,8 @@ END_VAR
         <ST><![CDATA[THIS^.iMotionAxisShareData :=  iMotionAxisShareData;]]></ST>
       </Implementation>
     </Method>
-    <Method Name="HomeNC" Id="{33ae7160-6fd9-4351-881c-ff032354b4f0}">
-      <Declaration><![CDATA[METHOD HomeNC
+    <Method Name="Home" Id="{33ae7160-6fd9-4351-881c-ff032354b4f0}">
+      <Declaration><![CDATA[METHOD Home
 VAR_INPUT
     bExecute: BOOL;
 END_VAR

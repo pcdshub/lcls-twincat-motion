@@ -1,48 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MotionAxisDS402NC" Id="{89fef5ac-f21f-4b51-b225-9ff16c28749c}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisDS402NC EXTENDS FB_MotionAxisCommon
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisDS402NC EXTENDS FB_MotionAxisCommonNC
 VAR_INPUT
 END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
     iMotionAxisShareData : I_MotionAxisShareData;
-    iDS402DriveCommon 	: I_DS402DriveCommon;
+    iMotionAxisCommonDS402 	: I_MotionAxisCommonDS402;
     eModeOfOperation 	: E_DS402OpMode := E_DS402OpMode.CSV;
     bStartReady : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[IF ( iMotionAxisShareData = 0 ) OR  ( iDS402DriveCommon = 0) THEN
+      <ST><![CDATA[IF ( iMotionAxisShareData = 0 ) OR  ( iMotionAxisCommonDS402 = 0) THEN
     // throw and exception here
     RETURN;
 END_IF
 
 // Extract share data
 
-THIS^.iDS402DriveCommon.HomeDS402(	Start := SUPER^.bCommandedMoveHome,
-                                    HomingMethod := SUPER^.eHomingMethod,
-                                    HomingSpeedsFast := SUPER^.fHomingSpeedsFast,
-                                    HomingSpeedsSlow := SUPER^.fHomingSpeedsSlow,
-                                    HomingAcceleration := SUPER^.fHomingAcceleration,
-                                    HomeOffset := SUPER^.fHomeOffset,
-                                    UserAbort := SUPER^.bInterrupted,
-                                    MostRecentModeofOperation:=eModeOfOperation );
-
-SUPER^.bHomeBusy :=	THIS^.iDS402DriveCommon.DS402HomeBusy;
-SUPER^.bHomeDone:=	THIS^.iDS402DriveCommon.DS402HomeDone;
-SUPER^.bHomeError:=	THIS^.iDS402DriveCommon.DS402HomeError;
-SUPER^.nHomeErrorID:=	THIS^.iDS402DriveCommon.DS402HomeErrorID;
-SUPER^.bHomeInterrupted:= THIS^.iDS402DriveCommon.DS402HomeAborted;
 (*
   Set Home position
   in Sync derivation update the shared fHomePosition variable so drive can update EPICS data
 *)
-
+THIS^.Home(SUPER^.bCommandedMoveHome);
 // Call base class body
 SUPER^();
-
 
 // update share data]]></ST>
     </Implementation>
@@ -60,15 +45,39 @@ VAR_INPUT
     AxisRef	: REFERENCE TO AXIS_REF;
     iPersistentDataStorage	: I_PersistentDataStorage;
     iMotionLogger	: I_MotionLogger;
-    iDS402DriveCommon 	: I_DS402DriveCommon;
+    iMotionAxisCommonDS402 	: I_MotionAxisCommonDS402;
     ModeOfOperation : E_DS402OpMode;
     iMotionAxisShareData : I_MotionAxisShareData;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.iDS402DriveCommon := iDS402DriveCommon;
+        <ST><![CDATA[THIS^.iMotionAxisCommonDS402 := iMotionAxisCommonDS402;
 THIS^.iMotionAxisShareData :=  iMotionAxisShareData;
 THIS^.ModeOfOperation := ModeOfOperation;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Home" Id="{2633e645-bef5-47ce-b5ec-89a14ead13b4}">
+      <Declaration><![CDATA[METHOD Home
+VAR_INPUT
+    bExecute: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+THIS^.iMotionAxisCommonDS402.HomeDS402(	Start := bExecute,
+                                    HomingMethod := SUPER^.eHomingMethod,
+                                    HomingSpeedsFast := SUPER^.fHomingSpeedsFast,
+                                    HomingSpeedsSlow := SUPER^.fHomingSpeedsSlow,
+                                    HomingAcceleration := SUPER^.fHomingAcceleration,
+                                    HomeOffset := SUPER^.fHomeOffset,
+                                    UserAbort := SUPER^.bInterrupted,
+                                    MostRecentModeofOperation:=eModeOfOperation );
+
+SUPER^.bHomeBusy :=	THIS^.iMotionAxisCommonDS402.DS402HomeBusy;
+SUPER^.bHomeDone:=	THIS^.iMotionAxisCommonDS402.DS402HomeDone;
+SUPER^.bHomeError:=	THIS^.iMotionAxisCommonDS402.DS402HomeError;
+SUPER^.nHomeErrorID:=	THIS^.iMotionAxisCommonDS402.DS402HomeErrorID;
+SUPER^.bHomeInterrupted:= THIS^.iMotionAxisCommonDS402.DS402HomeAborted;]]></ST>
       </Implementation>
     </Method>
     <Method Name="StartMove" Id="{04beed87-ecbf-46f2-ac0b-87255641b197}">
@@ -86,7 +95,7 @@ END_VAR
 
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF THIS^.iDs402DriveCommon.SetModeOfOperation(THIS^.eModeOfOperation) THEN
+        <ST><![CDATA[IF THIS^.iMotionAxisCommonDS402.SetModeOfOperation(THIS^.eModeOfOperation) THEN
     CASE MoveMode  OF
         E_EpicsMotorCmd.MOVE_ABSOLUTE:
             SUPER^.bCommandedMoveAbsolute := CmdExecute;
