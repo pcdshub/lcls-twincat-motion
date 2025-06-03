@@ -11,6 +11,61 @@ VAR
     iMotionLogger 		: I_MotionLogger;
     {attribute 'hide'}
     iMotionInterlocksShareData : I_MotionInterlocksShareData;
+    {attribute 'hide'}
+    bAllForwardEnabled: BOOL:=FALSE;
+    // Backward enable EPS summary
+    {attribute 'hide'}
+    bAllBackwardEnabled: BOOL:=FALSE;
+    {attribute 'hide'}
+    {attribute 'hide'}
+    bAllEnabled: BOOL:=FALSE;
+   // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
+    bPowerSelf: BOOL:=FALSE;
+    // TRUE if we have safety permission to move
+    bSafetyReady: BOOL;
+   // NC STO Input: TRUE if ok to move
+    {attribute 'pytmc' := '
+        pv: PLC:bHardwareEnable
+        io: i
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC TRUE if STO not hit
+    '}
+    bHardwareEnable AT %I*: BOOL ;
+
+    // Used by the IOC to disable an axis
+    {attribute 'pytmc' := '
+        pv: PLC:bUserEnable
+        io: io
+        field: ZNAM DISABLE
+        field: ONAM ENABLE
+        field: DESC Used to disable power entirely for an axis
+    '}
+    bUserEnable: BOOL := TRUE;
+    {attribute 'hide'}
+    bHomeBusy : BOOL;
+    {attribute 'hide'}
+    bMoveBusy	: BOOL;
+    {attribute 'hide'}
+    bNewMoveReq	: BOOL;
+    {attribute 'hide'}
+    bEnable: BOOL;
+    {attribute 'hide'}
+    bExecute : BOOL;
+    {attribute 'hide'}
+    sMessage : STRING;
+    {attribute 'hide'}
+    bWarning : BOOL;
+    {attribute 'hide'}
+    nErpicsWarnId : UINT;
+    {attribute 'hide'}
+    bError : BOOL;
+    {attribute 'hide'}
+    nErrorID : BOOL;
+    {attribute 'hide'}
+    bReset : BOOL;
+    {attribute 'hide'}
+    bMoveOk : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -20,11 +75,32 @@ END_VAR
 END_IF
 
 // read share
+bAllEnabled := iMotionInterlocksShareData.DriveEnable AND bHardwareEnable;
+bAllEnabled R= NOT bUserEnable;
+// Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
+bSafetyReady S= bPowerSelf;
 
+IF NOT bUserEnable THEN
+    bError := TRUE;
+    nErrorID:= 1;
+    bMoveOk := FALSE;
+    sMessage := 'User enable interlock triggered!';
+ELSIF NOT bHardwareEnable THEN
+    bError := TRUE;
+    nErrorID:= 1;
+    bMoveOk := FALSE;
+    sMessage := 'Hardware enbale interlocks triggered!';
+END_IF
 
-
-
-// update share]]></ST>
+// wait for global reset event to complete
+bReset := iMotionInterlocksShareData.ResetDone;
+IF bReset THEN
+    bReset := FALSE;
+    bError := FALSE;
+    bWarning := FALSE;
+    nErrorID:= 0;
+    sMessage:='';
+END_IF]]></ST>
     </Implementation>
     <Method Name="FB_Init" Id="{ee1048d7-3a0b-4701-a887-c2bc01c18e00}">
       <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
@@ -76,45 +152,6 @@ END_VAR
 PROPERTY InterlocksErrorMessage : STRING
 ]]></Declaration>
       <Get Name="Get" Id="{36059109-c6c7-449c-9aad-333c51d4e917}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="LimHit" Id="{11c64e2e-c564-4a6a-bd1e-57f757d7d3f2}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimHit : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{aff28c18-5350-4ec7-9e29-ba09ee43f79a}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="LimHitIdling" Id="{5c745e97-7981-46b1-b2e9-e41ad03a1329}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimHitIdling : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{67d3de4b-49d8-4d56-97ad-2cc7e36e5776}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="LimHitMoving" Id="{fe846bb2-f0f1-4de6-b3d7-f7dd2578d007}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimHitMoving : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{f18f53ab-40f0-4176-8298-33b8c2c8157d}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
