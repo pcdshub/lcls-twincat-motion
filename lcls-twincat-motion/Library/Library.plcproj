@@ -28,7 +28,9 @@
     <Folder Include="DUTs" />
     <Folder Include="DUTs\Deprecated" />
     <Folder Include="GVLs" />
-    <Folder Include="POUs\Motion\ITFs" />
+    <Folder Include="POUs\Motion\New-Arch\FBs" />
+    <Folder Include="POUs\Motion\New-Arch\ITFs" />
+    <Folder Include="POUs\Motion\New-Arch" />
     <Folder Include="POUs\Motion\PMPS" />
     <Folder Include="POUs\Motion\States\Examples" />
     <Folder Include="POUs\Motion\States\Helpers" />
@@ -106,6 +108,15 @@
     <Compile Include="DUTs\Deprecated\ENUM_StatePMPSStatus.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\E_DS402HomingMethod.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\E_DS402OpMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\E_MoveState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ST_AxisParameterSetExposed.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -118,7 +129,16 @@
     <Compile Include="DUTs\E_StatePMPSStatus.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\ST_DS402Drive.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_DS402DriveStatus.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ST_MotionDrive.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\ST_MotionEpicsItf.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ST_MotionStage.TcDUT">
@@ -244,19 +264,7 @@
     <Compile Include="POUs\Motion\FB_LogMotionError.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\FB_MotionAxisDS402.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\Motion\FB_MotionAxisDS402NC.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\Motion\FB_MotionAxisNC.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="POUs\Motion\FB_MotionBacklashCompensation.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\Motion\FB_MotionDrive.TcPOU">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\FB_MotionHoming.TcPOU">
@@ -280,9 +288,6 @@
     <Compile Include="POUs\Motion\FB_MotionVirtualFrame.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\FB_PneumaticAxis.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="POUs\Motion\Gantry\FB_GantryAutoCoupling.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -290,22 +295,88 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
-    <Compile Include="POUs\Motion\ITFs\I_Brake.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_Brake.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\ITFs\I_MotionInterlocks.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisCommonDS402.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\ITFs\I_MotionLogger.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisCommonNC.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\ITFs\I_MotionDrive.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisDS402.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\ITFs\I_MotionAxis.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisDS402NC.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\ITFs\I_PersistantDataStorage.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionDrive.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionInterlocks.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionInterlocksLimSw.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionLogger.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionShareData.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_PersistentDataStorage.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\FB_PneumaticAxis.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_Brake.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_BrakeShareData.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisCommonDS402.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisCommon.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisDS402NC.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisNC.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisShareData.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionDrive.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionDriveShareData.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocks.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocksLimSw.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocksShareData.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionLogger.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionShareData.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_PersistentDataStorage.TcIO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\PMPS\FB_EncErrorFFO.TcPOU">
@@ -729,8 +800,8 @@
   <ProjectExtensions>
     <PlcProjectOptions>
       <XmlArchive>
-        <Data>
-          <o xml:space="preserve" t="OptionKey">
+  <Data>
+    <o xml:space="preserve" t="OptionKey">
       <v n="Name">"&lt;ProjectRoot&gt;"</v>
       <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
         <v>{192FAD59-8248-4824-A8DE-9177C94C195A}</v>
@@ -752,6 +823,12 @@
         <o>
           <v n="Name">"{29BD8D0C-3586-4548-BB48-497B9A01693F}"</v>
           <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
+            <v>NamingConventions</v>
+            <o>
+              <v n="Name">"NamingConventions"</v>
+              <d n="SubKeys" t="Hashtable" />
+              <d n="Values" t="Hashtable" />
+            </o>
             <v>Rules</v>
             <o>
               <v n="Name">"Rules"</v>
@@ -797,14 +874,14 @@
       </d>
       <d n="Values" t="Hashtable" />
     </o>
-        </Data>
-        <TypeList>
-          <Type n="Boolean">System.Boolean</Type>
-          <Type n="Hashtable">System.Collections.Hashtable</Type>
-          <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
-          <Type n="String">System.String</Type>
-        </TypeList>
-      </XmlArchive>
+  </Data>
+  <TypeList>
+    <Type n="Boolean">System.Boolean</Type>
+    <Type n="Hashtable">System.Collections.Hashtable</Type>
+    <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+    <Type n="String">System.String</Type>
+  </TypeList>
+</XmlArchive>
     </PlcProjectOptions>
   </ProjectExtensions>
   <!-- 

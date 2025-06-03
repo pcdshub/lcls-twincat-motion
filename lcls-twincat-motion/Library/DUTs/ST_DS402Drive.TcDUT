@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_DS402Drive" Id="{8bbef571-4d77-4f00-9043-0b0ae3e85da0}">
+    <Declaration><![CDATA[TYPE ST_DS402Drive:
+STRUCT
+    (* Global variables for the TPDO data from the drive. Each one is linked to the respective TPDO channel. *)
+    stDS402DriveStatus 		AT %I*	: 	ST_DS402DriveStatus;
+    nModeOfOperationDisplay AT %I*	: 	SINT;
+    //nActualPosition 		AT %I*	: 	DINT;
+    (*CSP drive mode*)
+    nFollowingError 		AT %I*	: 	DINT;
+    (* Global variables for the RPDO data to the drive. Each one is linked to the respective RPDO channel. *)
+    nDS402DriveControl		AT %Q*	:	UINT;
+    nTargetPosition 		AT %Q* 	: 	DINT;
+    nModeOfOperation 		AT %Q* 	: 	SINT;
+    (* Global variables for the RPDO data to the drive. Each one is linked to the respective RPDO channel. *)
+    nProfilVelocity 		AT %Q* 	: 	DINT;
+    nProfilAcceleration		AT %Q* 	: 	DINT;
+    nProfilDecceleration	AT %Q* 	: 	DINT;
+    nVelocityActualValue	AT %Q* 	: 	DINT;
+    (* Global variables for the TPDO data from the drive. Each one is linked to the respective TPDO channel. *)
+    nScantargetPosition		AT %Q*	: 	DINT;
+    uScantargetVelocity		AT %Q*	: 	ULINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStep
+        io: io
+        field: DESC SmartAct: Open Loop Step Count
+    '}
+    nChanStep			: DINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStepFreq
+        io: io
+        field: DESC SmartAct: Open Loop Step Freq
+    '}
+    nChanStepFreq		: UINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStepAmp
+        io: io
+        field: DESC SmartAct: Open Loop Step Amp
+    '}
+    nChanStepAmp		: UINT;
+
+    // timeout for holding actual position in close loop mode
+    {attribute 'pytmc' := '
+        pv: PLC:nHoldTime
+        io: io
+        field: DESC SmartAct: Set servo mode hold time
+    '}
+    nHoldTime						: UDINT := 10000;
+
+    {attribute 'pytmc' := '
+        pv: PLC:bServo
+        io: io
+        field: ZNAM DISABLE
+        field: ONAM ENABLE
+        field: DESC Used to disable close loop mode
+    '}
+    bServo							: BOOL := TRUE;
+
+    (* NetId of EtherCAT Master *)
+    arNetId  				AT %I*	: 	AMSNETID;
+    (* Port Number of EtherCAT Slave *)
+    nSlaveAddr 				AT %I* 	: 	UINT;
+
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

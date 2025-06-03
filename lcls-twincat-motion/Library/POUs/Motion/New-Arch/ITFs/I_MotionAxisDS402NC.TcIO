@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_MotionAxisDS402NC" Id="{245da5fa-2b8b-4997-8294-23517a0558b2}">
+    <Declaration><![CDATA[INTERFACE I_MotionAxisDS402NC  EXTENDS I_MotionAxisCommon
+]]></Declaration>
+    <Method Name="StartMove" Id="{08a6e43a-3d73-4123-9713-aea8773a1f67}">
+      <Declaration><![CDATA[(*
+    Check all post condition before updating bCommandedMoveAbsolute
+    The implmentatation will depend on the axis type
+    DS402 NC/Direct axis : Implementation need to check that the drive is in the correct mode before initaiting the move then set bCommandedMoveAbsolute
+    MP NC axis : will immediately write to bCommandedMoveAbsolute
+*)
+METHOD StartMove : BOOL
+VAR_INPUT
+	MoveMode	: E_EpicsMotorCmd;
+	CmdExecute	: BOOL;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionAxisCommonDS402" Id="{da599580-4fae-4a91-a98c-8fb0225e058f}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK INTERNAL FB_MotionAxisCommonDS402 IMPLEMENTS I_MotionAxisCommonDS402
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    stDS402Drive : ST_DS402Drive;
+    eHomeState	: E_MoveState;
+    bOperational : BOOL;
+    bStartReady : BOOL;
+    tonSyncHoming : TON;
+    bReadyToHold   : BOOL;
+    eMostRecentModeOfOperation : E_DS402OpMode;
+    bHomeBusy	: BOOL;
+    bHomeDone	: BOOL;
+    bHomeInterrupted	: BOOL;
+    bHomeError 	: BOOL;
+    nHomeErrorID : UDINT;
+END_VAR
+
+
+VAR CONSTANT
+    nScaleOffsetBase	: WORD := 16#2007;
+    nScaleInvBase		: WORD := 16#2008;
+    nMotorLoadbase		: WORD := 16#200d;
+    nSoftLimBase		: WORD := 16#200e;
+    nHomeOffsetBase		: WORD := 16#607C;
+    nHomingMethodBase	: WORD := 16#6098;
+    nHomingSpeedBase	: WORD := 16#6099;
+    nhomingAccBase		: WORD := 16#609A;
+    nErrorCodeBase		: WORD := 16#603f;
+    nFErrWinBase		: WORD := 16#6065;
+    nOlStepBase			: WORD := 16#2022;
+    nOlStepAmpBase		: WORD := 16#2023;
+    nOlStepFreqBase		: WORD := 16#2024;
+    // True for SmartAct MCS2 and E-727.
+    nChanOfsBase		: WORD := 16#800;
+    // DS 402 Motor encoder defective code : this is needed for save and restore.
+    nEncErrorCode		: WORD := 16#7300;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="DS402HomeAborted" Id="{19f4f36f-cf05-46a5-af5c-e93b364d9c76}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY DS402HomeAborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{2a55732f-9e73-4dcd-89ea-c0cb985a1e18}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeBusy" Id="{0fa9b81e-cd52-4221-8c30-f91b89b3a80a}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY DS402HomeBusy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{e280f352-d6ab-48ee-a4a8-c84cb49950fd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeDone" Id="{a1fadc86-d762-4237-b0a6-98a8716652df}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY DS402HomeDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{ffc0e69c-2588-40ae-8875-1ca5d69ae157}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeError" Id="{fd77e525-fa35-4963-bc83-b23cb660d9c8}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY DS402HomeError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{cc0aef7e-90af-4daf-a0ac-377da7838828}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeErrorID" Id="{c06fea01-5997-414a-b1a3-b516470d60d2}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY DS402HomeErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{bd132f54-d954-44c2-ac69-01c089164f03}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="HomeDS402" Id="{326bfaed-11e8-475f-9e97-245b187b56ff}">
+      <Declaration><![CDATA[METHOD HomeDS402
+VAR_INPUT
+    Start: BOOL;
+    HomingMethod : E_DS402HomingMethod;
+    HomingSpeedsFast : LREAL;
+    HomingSpeedsSlow : LREAL;
+    HomingAcceleration : LREAL;
+    HomeOffset : LREAL;
+    UserAbort : BOOL;
+    MostRecentModeOfOperation : E_DS402OpMode;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetModeOfOperation" Id="{c44db6b6-67d7-4d5e-89c8-bd1917384e4e}">
+      <Declaration><![CDATA[METHOD SetModeOfOperation : BOOL;
+VAR_INPUT
+    ModeOfOperation : E_DS402OpMode;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Todo: add a retry counter/timer and generate a errors.
+IF THIS^.stDS402Drive.nModeOfOperationDisplay <> ModeOfOperation THEN
+    THIS^.stDS402Drive.nModeOfOperation := ModeOfOperation;
+    THIS^.bStartReady := FALSE;
+ELSE
+    THIS^.bStartReady := TRUE;
+END_IF
+
+SetModeOfOperation := THIS^.bStartReady;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

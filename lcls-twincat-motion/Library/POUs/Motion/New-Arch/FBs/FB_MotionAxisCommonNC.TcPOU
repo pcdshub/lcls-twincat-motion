@@ -1,0 +1,1181 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionAxisCommonNC" Id="{eafb0e6d-b2ea-4f78-9aba-c3a29595f5d4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionAxisCommonNC IMPLEMENTS I_MotionAxisCommon
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    AxisRef : REFERENCE TO AXIS_REF;
+    iPersistentDataStorage : I_PersistentDataStorage;
+    iMotionLogger : I_MotionLogger;
+    bCommandedMoveAbsolute : BOOL;
+    // trying not to duplicate this vars in each derivation
+    bCommandedMoveHome : BOOL;
+    bInterrupted : BOOL;
+    bHomeBusy: BOOL;
+    bHomeDone : BOOL;
+    bHomeInterrupted	: BOOL;
+    bHomeError 			: BOOL;
+    fHomePosition : LREAL :=0.0;
+    fHomingSpeedsFast : LREAL;
+    fHomingSpeedsSlow : LREAL;
+    fHomingAcceleration : LREAL;
+    fHomeOffset : LREAL;
+    nHomeErrorID 		: UDINT;
+    eHomingMethod : E_DS402HomingMethod;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="AbortDone" Id="{99337b3e-e122-4163-92be-c9628a0747e8}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY AbortDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{383a9784-219f-4e54-9559-0dd2de571b7d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="AxisState" Id="{00ab01f4-c909-4ad9-9e19-e9e0f9b5c576}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY AxisState : MC_AxisStates
+]]></Declaration>
+      <Get Name="Get" Id="{b317383e-7afa-40c6-a98f-ac1e887f076d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="BacklashCompensation" Id="{0a0ca488-9f96-4c1f-9d3a-bbfa4ab99ac5}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD BacklashCompensation
+VAR_INPUT
+    User_Enable	: BOOL;
+    Backlash	: LREAL;
+    BakclashRampRatio	: LREAL := 10.0;
+    DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="BufferMode" Id="{778add8f-aa83-44d1-8db7-3684a062acc7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY BufferMode : MC_BufferMode
+]]></Declaration>
+      <Set Name="Set" Id="{a1314b17-0ce4-4ebc-9e50-5a5c2aeea488}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Busy" Id="{3e04a133-d7cd-4682-9539-088d1493ca08}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{89c375b7-fbd4-4a37-8c49-ec3a5634cada}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="CommandAborted" Id="{af20a5b7-c8d4-43f8-b95a-4b2b8df5392e}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY CommandAborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{dbfc2b2f-ed18-4e1f-87d5-78d10622d531}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="CommandedHalt" Id="{7532149e-2f86-4bb6-8cd8-0e159001c3ba}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY CommandedHalt : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{122d030d-7ae5-4b97-bbfb-54524ec49430}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{86b73093-f7ea-44cf-b8d3-55addce2a862}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="CommandedMoveAbsolute" Id="{5d6b4394-4ee5-492a-bf3c-01cf151ce1b9}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY CommandedMoveAbsolute : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{3e323aa8-8d00-4f1b-8c04-154db30e1808}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{ec63e466-09ff-48af-8fa1-c1e90d6a1b5f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="CommandedMoveHome" Id="{de0efd29-d5b5-47fa-a1be-eb600582d68b}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY CommandedMoveHome : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{5098abdc-fcc5-4eec-9eed-a5a25f43be41}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{96e93ef3-a218-4db3-a294-2142a88ea1f2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="CommandedReset" Id="{5b9e06aa-579b-4e16-8232-f79e745f2df7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY CommandedReset : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{430a07fe-720c-46d6-8a5b-3688e0f1e2c2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9b0d82da-0753-484e-8582-0216b8df3f0d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="EncoderCount" Id="{eabc27cb-c902-40a5-bfe4-aed5042e2a84}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY EncoderCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{542ffb94-245d-42c1-9b52-94c18cf97ec1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{6ae4f138-4505-4260-99b9-f2596ca64ac5}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{c6fa7c5e-3579-48ca-8da6-d0146b325dbb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{27a094af-618b-4867-acb2-f7ffb313bd0b}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{1a4bbc2a-e119-458b-bcb8-2ee81013a018}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorMessage" Id="{9af5a2bc-a4e8-4266-bb15-4baa0e5bad54}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ErrorMessage : STRING
+]]></Declaration>
+      <Get Name="Get" Id="{5ad44cdb-162a-4264-971f-44e290e47ac7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{e360ca1f-dc31-4e69-81cc-e5dafd90c4e3}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+
+    AxisRef : REFERENCE TO AXIS_REF;
+    iPersistentDataStorage : I_PersistentDataStorage;
+    iMotionLogger : I_MotionLogger;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+THIS^.iPersistentDataStorage := iPersistentDataStorage;
+THIS^.iMotionLogger := iMotionLogger;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Halt" Id="{f9cd2505-bf39-4cdb-bfd3-2ffb8315325b}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD Halt
+VAR_INPUT
+    Execute	: BOOL;
+    Deceleration	: LREAL := 0.0;
+    Jerk	: LREAL := 0.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="HaltBufferMode" Id="{9848f165-e7b6-46a1-864d-7d06dd19a4c1}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HaltBufferMode : MC_BufferMode
+]]></Declaration>
+      <Get Name="Get" Id="{df29ea59-c561-4aa7-a2ee-b9f9c935f662}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{e0740993-1556-4730-8761-4b80162c1a0c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="HaltBusy" Id="{f67c3493-4c48-414f-97a1-c09a096755c5}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HaltBusy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{bb29b96b-1330-46a1-b82b-3e9b8bd2aa09}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HaltDeceleration" Id="{a6f3fcc9-15dc-4238-bfaf-49cccc4599f7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HaltDeceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{6490be0d-879b-4238-92c8-d342bfded09f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5b63b882-38a0-4ce8-b61e-b0e9b389facc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="HaltDone" Id="{bbbad2d2-fd8a-4213-adc1-d9c0bd38f0c7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HaltDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{7ada0197-db3e-43e5-9a21-fb7c076b2bed}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HaltErrorID" Id="{f2a1da38-1c25-49e2-acbc-2f5bf529c6b0}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HaltErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{d0c53c07-ccd3-4a73-bd56-958121fd4012}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HaltJerk" Id="{aa92d716-b371-4c64-9ba6-ce73ebf39cb5}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HaltJerk : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{309630a2-967c-432a-9375-54e3f2c8988c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{cbaaf279-e540-4b66-b45b-87861b9bdcf4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Home" Id="{cac9d768-0391-49f2-a7ee-360fa6f70aa3}">
+      <Declaration><![CDATA[METHOD Home
+VAR_INPUT
+    bExecute: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="HomeBusy" Id="{8697f3d7-300a-4260-8339-0e1310a2412a}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomeBusy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{ba0e8a5f-95f3-40ab-8688-99e201c89c37}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HomeDone" Id="{e94ddfe1-664b-423b-bd2e-93398a4aa446}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomeDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{cd551903-d028-4eee-a169-692e0665c17d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HomeError" Id="{2d495035-7eb7-47d1-a09a-eff3be362ac7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomeError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{add61728-aef0-4738-ac99-8206c1d54e14}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HomeErrorID" Id="{84e05c19-5422-412e-a27f-651b5f4a77cc}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomeErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{745e273f-60f1-4219-b76e-41e70a096b87}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HomeInterrupted" Id="{5a08690d-0e09-44dd-a330-c6ea05cfdf43}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomeInterrupted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{e0b96cff-a419-47de-bcf7-158e9ff43abe}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="HomeMode" Id="{68df4163-bf78-4f17-b574-d7bc076e6e3f}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomeMode : E_EpicsHomeCmd
+]]></Declaration>
+      <Get Name="Get" Id="{9e19e535-ae24-450f-8dcc-8ff6ccc2986f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{63ac5308-27a5-4f31-b923-c1a67883aa33}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="HomePosition" Id="{a97cb1eb-0848-4c6e-bc5c-b05e14afbbed}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomePosition : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{5a8f18da-65ae-40ae-a34b-884d9a3c2bf9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{54f70e4a-4c37-46b1-b247-40dbef857ae6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="HomingMethod" Id="{4fe499b5-b8f2-45b7-b247-47c8d1ec4e23}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY HomingMethod : E_DS402HomingMethod
+]]></Declaration>
+      <Get Name="Get" Id="{b16845d3-e699-46ee-8fa7-23c81f10a142}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{97ca4597-9de7-42a7-a21a-874e20656b31}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="InTargetPosition" Id="{700df9b8-1707-4308-abb5-d9ce6a8779b3}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY InTargetPosition : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{9761f3e9-b970-469b-866b-c551dab146e3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredAcceleration" Id="{7ada6618-7c68-471e-af3b-2751ca321034}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MeasuredAcceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{090a677a-f27d-4f6f-b42a-3dbcdf46b99d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredPosition" Id="{9584aed0-4b87-4834-b9a0-22feefeeb692}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MeasuredPosition : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{7102c535-6f72-4319-9093-f57afa650018}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredPositionDiff" Id="{a53e7da6-2de7-4834-afbf-0ec4eb3c6637}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MeasuredPositionDiff : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{b5893a80-7470-456b-bb29-6a7c42c36cff}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredVelocity" Id="{9fb897a1-44ed-47d2-b83a-1ca4eaa8903e}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MeasuredVelocity : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{5501d9a4-ae37-40c3-8435-6dabab589307}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ModeOfOperation" Id="{342bf259-e743-4492-ad5c-153edb55ce1d}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ModeOfOperation : SINT
+]]></Declaration>
+      <Get Name="Get" Id="{3de5762f-4682-429b-aea2-93bafb471ef0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{768d0cab-0a88-45f4-9a6c-46dc63c985c8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="MoveAbsolute" Id="{0955f057-7eb6-41d7-8401-efa0950d5f47}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD MoveAbsolute
+VAR_INPUT
+    Execute	: BOOL;
+    Position	: LREAL;
+    Velocity	: LREAL;
+    Acceleration	: LREAL := 0.0;
+    Deceleration	: LREAL := 0.0;
+    Jerk	: LREAL := 0.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="MoveAbsoluteBusy" Id="{e470117b-a320-4717-a34e-7b912b140d33}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteBusy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{9b6e75db-c4c9-40cd-8811-cd3df50019fe}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveAbsoluteDone" Id="{7c6f6d1d-1c7e-418c-8cc6-b0d1b3a1a7f4}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{805af387-1171-4a10-8a57-d07f71451c1e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveAbsoluteError" Id="{1a2759f4-77f3-4c86-a6aa-867d7c9c8373}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{0dcfabcc-6294-4aeb-bf40-11c8b7885835}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveAbsoluteErrorID" Id="{b6ea0536-dfef-432e-ab11-4f3ae0c8c9f4}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{1cd255b0-9003-47d5-829e-467c03b3d13b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveAbsoluteTargetAcceleration" Id="{f46f61ad-9951-4f22-9156-919945390ceb}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteTargetAcceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{4f46d85d-8c2b-4464-864f-b7efc4d15f62}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{33af265b-60cd-40b0-bc93-473b5a8dd7ff}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoveAbsoluteTargetDeceleration" Id="{edf505e7-f6d3-498d-8e64-a174131c0648}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteTargetDeceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{6b00674b-3764-4662-adfc-40ff716e820e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{efd7bc12-80df-49ac-8923-3f0202cea5f7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoveAbsoluteTargetJerk" Id="{75a71f71-1831-45b9-a50e-3c7c552c0834}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteTargetJerk : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{9908742b-3ac1-418a-b567-85de18029c70}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{364e9d4f-a284-40aa-a08f-ccbf2917bb30}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoveAbsoluteTargetPosition" Id="{96022cd9-ac14-41d2-b5c2-0decf9a8b1e2}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteTargetPosition : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{43260523-e96b-4420-8d3f-95517b8913b9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{b44da972-111f-4083-a238-0f7ea17dc7b7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoveAbsoluteTargetVelocity" Id="{9ab1b669-e492-4b75-a292-59bbcc2229ae}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveAbsoluteTargetVelocity : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{e6ed8c0d-7008-440a-a9bd-756ae3dfd138}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{7dd38259-9483-47b4-9130-a3f8e603b1a3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoveDone" Id="{7217612a-991c-4a3d-925a-ec9638a6f1ff}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{79d9c879-8366-4a91-b1b1-b52cba679fb5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MoveMode" Id="{ae7d75fc-2d1a-4a2e-bf73-5c86745d684c}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY MoveMode : E_EpicsMotorCmd
+]]></Declaration>
+      <Get Name="Get" Id="{e9ae0d07-c04d-45a9-8952-12845e2bd84c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Name" Id="{4f28e4d5-8965-4aa8-a96e-6041117b81fa}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Name : STRING
+]]></Declaration>
+      <Get Name="Get" Id="{08013349-5352-4f26-892f-12225a9b2754}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{81cdd04c-5036-4c88-8784-9a8031d25c53}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="NCParamsReadInit" Id="{e4112f49-1416-4574-b622-3e07c96da7b9}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY NCParamsReadInit : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{33e00dea-f28e-4082-9bca-1e325cff2f7c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="NegativeMotionIsEnabled" Id="{5818072b-6397-4cef-a5c3-df26176e140e}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY NegativeMotionIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{cd68b34f-c7c2-4678-b63a-04f56463e7a4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="PositiveMotionIsEnabled" Id="{55f9e305-45c4-4a65-b57b-afd7a7dc0100}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PositiveMotionIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f3760e64-74fd-45ee-b106-b2698197d427}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Power" Id="{483b4736-b5f9-4b56-92da-d89e44e862d1}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD Power
+VAR_INPUT
+    Enable	: BOOL;
+    Enable_Positive	: BOOL;
+    Enable_Negative	: BOOL;
+    (* in percent from 0 to 100 *)
+    Override	: LREAL := 100.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="PowerEnable" Id="{2bc3d398-4a95-4da7-9d57-b6232370eab4}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerEnable : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f3ff8de3-91d8-41b6-97ac-0aea3db5a30a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{1772e194-1ce0-475e-9fb1-d4f14a50fabf}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="PowerEnableNegative" Id="{d6eeeddd-bdc9-40b2-84e0-3229c5f36627}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerEnableNegative : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f9e4dcb8-31c4-4f6f-8d69-eb9c39e8721f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{bd29203f-c8f4-4fb7-8854-d455ed2776bc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="PowerEnablePositive" Id="{66702025-0418-4069-b9fc-b2ed114b4512}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerEnablePositive : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{e77f59b4-07e3-4674-b10b-800f14f931ce}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{9a555c38-7965-4410-8c6e-f62fccd9ae41}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="PowerError" Id="{aa8c297c-2ffd-45b4-9995-830c9acfae39}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{297d4b59-5584-4943-9ebd-5f5f1e104e54}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="PowerErrorID" Id="{a03ea103-5c45-466e-8640-af86fbc76e75}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{c72de654-e963-49ab-ad38-654d99f28e1b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="PowerIsEnabled" Id="{bd3458b4-3a3c-4ac6-92e8-266de30b9183}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{4702760e-eb7b-4eac-a845-8ff8c1830e15}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="PowerOverride" Id="{f231d4b3-cc65-49e2-9cd0-150a3d991114}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerOverride : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{62956b92-40cb-4263-b42c-20963af41481}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d5d17e42-4cc9-499a-9ae2-876900f83e29}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="PowerStatus" Id="{963a2400-9c66-4c17-9d1a-4eca775f9da4}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY PowerStatus : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1d963ddc-78cc-4324-b734-3ecb7c5d0c76}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="RefreshDelay" Id="{376c85ec-acee-4ac4-8c69-9fc62f26cadf}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY RefreshDelay : TIME
+]]></Declaration>
+      <Get Name="Get" Id="{75406b61-0ec5-40f4-8fb3-128efa9279f1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{79b7f527-f347-4eb6-9ca9-b465746a49c9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Reset" Id="{ab2b5a68-e6cd-47bc-aa3a-73d08162132e}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD Reset
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="ResetBusy" Id="{08c3f7a4-9361-4547-b944-17d44319bad0}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ResetBusy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{44bef986-18d1-46ac-88ad-14cca42013ee}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ResetDone" Id="{7ae4c7ba-2ba4-4cbd-b1f1-5b3dece2e38a}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ResetDone : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{13b99075-a6ce-4445-81d8-e0e1dc3743d6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ResetError" Id="{3d60f112-2328-43d2-b7fe-1418c30776d3}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ResetError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{4b970aa1-6257-4e57-bd7b-5e4548f11afd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ResetErrorID" Id="{b65200b8-dc2c-4003-83fb-60f2c53f80b1}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY ResetErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{3ebd7ff6-a118-4578-aaaf-27ace5cf2862}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="RestoreError" Id="{fbd296dc-240f-4e9a-8e3e-7800239c94f3}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY RestoreError : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{eedb1e75-7411-4c78-af37-2a0aaa46aee0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="RestoreErrorID" Id="{152b9f7d-a790-462d-8d7f-025ed6ab877f}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY RestoreErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{7d6a0e03-68de-4214-9452-43c7c6233cbd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="SavedPosition" Id="{4a68d335-2e33-48ce-a679-dc6e25767f56}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY SavedPosition : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{b8b145ba-e5c6-4d8e-b132-cd1615e64e26}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Servo" Id="{282d0175-5a3f-4d8f-b961-2b3d9e6aff7b}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Servo : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{288de6c0-7bae-40ba-94e5-611f7a8d9f1e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{b7dfd3ed-89ed-465a-8575-a474be6e8503}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="StartMove" Id="{273b2927-8144-4b20-a897-c504526ab82c}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+(*
+    Check all post condition before updating bCommandedMoveAbsolute
+    The implmentatation will depend on the axis type
+    DS402 NC/Direct axis : Implementation need to check that the drive is in the correct mode before initaiting the move then set bCommandedMoveAbsolute
+    MP NC axis : will immediately write to bCommandedMoveAbsolute
+*)
+METHOD StartMove : BOOL
+VAR_INPUT
+    MoveMode	: E_EpicsMotorCmd;
+    CmdExecute	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

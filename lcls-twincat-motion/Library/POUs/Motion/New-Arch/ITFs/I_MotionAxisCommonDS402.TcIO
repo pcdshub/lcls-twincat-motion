@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_MotionAxisCommonDS402" Id="{5cfa6b6b-bfba-4af4-97dd-dc8ae67741ad}">
+    <Declaration><![CDATA[INTERFACE I_MotionAxisCommonDS402
+]]></Declaration>
+    <Property Name="DS402HomeAborted" Id="{a5e8251b-8089-4eac-a5a9-25ef9a79ca2a}">
+      <Declaration><![CDATA[PROPERTY DS402HomeAborted : BOOL]]></Declaration>
+      <Get Name="Get" Id="{29a04c4d-e661-4810-b596-8fcc9fb61967}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeBusy" Id="{1b03ac00-4c91-44a8-985f-09513447653c}">
+      <Declaration><![CDATA[PROPERTY DS402HomeBusy : BOOL]]></Declaration>
+      <Get Name="Get" Id="{0139e914-1b93-4b95-9924-c6f893d4fd03}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeDone" Id="{ff764d12-550d-4062-920c-53aa0168080e}">
+      <Declaration><![CDATA[PROPERTY DS402HomeDone : BOOL]]></Declaration>
+      <Get Name="Get" Id="{cccc1c17-8596-4be0-b798-a92a394e274d}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeError" Id="{7046f16c-43d0-4904-8195-d98411855d6e}">
+      <Declaration><![CDATA[PROPERTY DS402HomeError : BOOL]]></Declaration>
+      <Get Name="Get" Id="{2fc129d6-09f6-4711-b79c-76dd0df352c1}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="DS402HomeErrorID" Id="{9c2cad2c-db52-428e-b7bb-6a5288d3b41c}">
+      <Declaration><![CDATA[PROPERTY DS402HomeErrorID : UDINT]]></Declaration>
+      <Get Name="Get" Id="{d46b827f-dbbd-4e59-a309-586db4fec787}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="HomeDS402" Id="{151ad2ee-1947-4db0-a86f-ef1c83f9e99b}">
+      <Declaration><![CDATA[METHOD INTERNAL HomeDS402
+VAR_INPUT
+    Start: BOOL;
+    HomingMethod : E_DS402HomingMethod;
+    HomingSpeedsFast : LREAL;
+    HomingSpeedsSlow : LREAL;
+    HomingAcceleration : LREAL;
+    HomeOffset : LREAL;
+    UserAbort : BOOL;
+    MostRecentModeOfOperation : E_DS402OpMode;
+END_VAR
+
+]]></Declaration>
+    </Method>
+    <Method Name="SetModeOfOperation" Id="{0451dd2e-b000-4bfd-b0c5-aec2705c2ae9}">
+      <Declaration><![CDATA[METHOD SetModeOfOperation : BOOL
+VAR_INPUT
+    ModeOfOperation : E_DS402OpMode;
+END_VAR]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>
