@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_BacklashCompensation" Id="{c0dc76c5-ea53-4a27-aade-dbf12ab6b44d}">
+    <Declaration><![CDATA[INTERFACE I_BacklashCompensation EXTENDS I_Output
+]]></Declaration>
+    <Property Name="ActCompensation" Id="{ff081112-3182-493d-846e-c2192c5f77d6}">
+      <Declaration><![CDATA[PROPERTY ActCompensation : LREAL]]></Declaration>
+      <Get Name="Get" Id="{5dbd065d-c6db-421a-8993-7aa4f3a00024}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="BacklashCompensation" Id="{8dc8359f-12ee-498a-aa0e-4230cfa1b09f}">
+      <Declaration><![CDATA[(*
+    Handle positive/negative backlash compensation
+    User needs to set the direction of backlash from the sign of the compensation value
+    Backlash compensation is disabled during referencing (homing).
+    When direction is positive/negative, further movement in the negative/positive direction not compensated
+    further movement in the negative/positive direction will be compensated
+*)
+METHOD BacklashCompensation
+VAR_INPUT
+    Activate     : BOOL;
+    Compensation	: LREAL;
+    RampVelocity	: LREAL;
+    DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="BacklashCompensationActive" Id="{bf2a0313-baf0-4f23-9d25-649e80700102}">
+      <Declaration><![CDATA[(*synced Fbs need just to activate the compensation with a given ramp speed
+  other parameters are provided via EPICS (declared in this FB) or via the more extended BackalshCompensation method (simulation) *)
+METHOD BacklashCompensationActive
+VAR_INPUT
+    Active     : BOOL;
+    RampVelocity : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="Status" Id="{ad5dd29e-09ce-4214-902d-59b991e685e4}">
+      <Declaration><![CDATA[PROPERTY Status : BOOL]]></Declaration>
+      <Get Name="Get" Id="{a39149e1-eecc-44bb-bc32-b9385b7fdf09}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="UserEnable" Id="{0e887761-1e47-4bcc-b90c-ad725d2076e6}">
+      <Declaration><![CDATA[PROPERTY UserEnable : BOOL]]></Declaration>
+      <Set Name="Set" Id="{87cc7722-3cc9-4268-9f17-c9fd9cad6c1f}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+  </Itf>
+</TcPlcObject>

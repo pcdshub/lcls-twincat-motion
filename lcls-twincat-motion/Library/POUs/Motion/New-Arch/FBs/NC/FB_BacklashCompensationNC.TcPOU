@@ -1,0 +1,296 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_BacklashCompensationNC" Id="{15421978-726d-43ca-8e30-d33510c30e01}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_BacklashCompensationNC IMPLEMENTS I_BacklashCompensation
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+(* Other status information for users of the IOC *)
+    (* Backlash compensation*)
+    // Enabled axis backlash compensation
+    {attribute 'pytmc' := '
+        pv: PLC:bBacklashCompUserEn
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Enable Backlash compensation
+    '}
+    bUserEnable: BOOL;
+
+    // backlash compensation status
+    {attribute 'pytmc' := '
+        pv: PLC:bBacklashCompStatus
+        io: i
+        field: ZNAM DISABLED
+        field: ONAM ENABLED
+        field: DESC Backlash compensation status
+    '}
+    bBacklashCompStatus: BOOL;
+
+    // Backlash compensation value
+    {attribute 'pytmc' := '
+        pv: PLC:fBacklashComp
+        io: io
+        field: DESC Backlash compensation
+    '}
+    fBacklashComp: LREAL := 0.0;
+
+    // Current Backlash compensation value ?
+    {attribute 'pytmc' := '
+        pv: PLC:fMeasuredBacklashComp
+        io: i
+        field: DESC Currently applied compensation
+    '}
+    fActCompensation: LREAL;
+
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcBacklashCompensation: MC_BacklashCompensation;
+    fPrevCompensation : LREAL := 0.0;
+    bActive: BOOL;
+    fRampVelo : LREAL := 0.0;
+    bLocalEnable : BOOL;
+    bError : BOOL;
+    bBusy : BOOL;
+    nErrorID : UDINT;
+    sMessage : T_MAXSTRING;
+    eDisableMode: E_DisableMode := E_DISABLEMODE.DisableModeHold;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{59820488-53e0-4bd0-9746-41b9b903c795}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{af423ed0-d781-4de7-b003-71fdc1e2f7f8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActCompensation" Id="{022a8867-c28c-4e7c-88fa-1c1e1f6f1ad1}">
+      <Declaration><![CDATA[{warning 'add property implementation'}
+PROPERTY ActCompensation : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{bb138911-4f3b-47a1-847c-b5cced113ef6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActCompensation := fActCompensation;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{fa202a56-38e3-4b3a-bf52-57135d76cf34}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{08ef6077-f2d4-42e4-90da-6c52adfa9a0a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="BacklashCompensation" Id="{28619ab5-da60-4dc4-96a8-3e2ae3773706}">
+      <Declaration><![CDATA[(*
+    Handle positive/negative backlash compensation
+    User needs to set the direction of backlash from the sign of the compensation value
+    Backlash compensation is disabled during referencing (homing).
+    When direction is positive/negative, further movement in the negative/positive direction not compensated
+    further movement in the negative/positive direction will be compensated
+*)
+METHOD BacklashCompensation
+VAR_INPUT
+    Activate     : BOOL;
+    Compensation	: LREAL;
+    RampVelocity	: LREAL;
+    DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bActive:= Activate;
+THIS^.fBacklashComp := Compensation;
+THIS^.fRampVelo := RampVelocity;
+THIS^.eDisableMode:=DisableMode;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="BacklashCompensationActive" Id="{dbabc34f-4a46-42a1-a3aa-48ed4e21c0cc}">
+      <Declaration><![CDATA[(*synced Fbs need just to activate the compensation with a given ramp speed
+  other parameters are provided via EPICS (declared in this FB) or via the more extended BackalshCompensation method (simulation) *)
+METHOD BacklashCompensationActive
+VAR_INPUT
+    Active	: BOOL;
+    RampVelocity	: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bActive:= Active;
+THIS^.fRampVelo := RampVelocity;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Busy" Id="{55ee7371-1408-415b-b1f0-122aa6241483}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{7637bb84-185d-4e7a-b993-3057df36bf56}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{59b21a6b-3d1b-46f2-866a-5384398ac207}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Done" Id="{aa40d0fa-7dfa-4048-b1f0-b1c583de1e82}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{9933535c-b83d-458a-8f5e-e58dec905ec5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{0213434a-d40a-49c7-a6b4-a3e9e9a7a41a}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{c1a3c97c-ae91-4276-85b5-feecf9e8d7c5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := bError;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{b6765fc0-40e7-4ce5-aa13-569ea50920db}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{3dbdc77e-7172-4e8a-b541-0b84a6087295}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{86eeb26b-dd4d-42ae-bdf4-cda3d947fa1b}">
+      <Declaration><![CDATA[METHOD FB_Init : BOOL
+VAR_INPUT
+    bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+    bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{799861dc-10f6-42dd-a8b5-747f46787023}">
+      <Declaration><![CDATA[PROPERTY Message : T_MaxString
+]]></Declaration>
+      <Get Name="Get" Id="{b04d60be-1e7a-4ed8-aad3-cee013905d08}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message :=sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Status" Id="{af32d349-40c9-44a6-9a95-336c4eab0563}">
+      <Declaration><![CDATA[PROPERTY Status : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1cbb27e8-07e5-41b6-9a8c-b8f937914736}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Status := bBacklashCompStatus;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="UserEnable" Id="{a9d2d8cc-e94d-4db5-bf54-daa67dbaf501}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY UserEnable : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{2cefc03c-c62d-4e89-aa15-5c5cbbb4411a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bUserEnable := UserEnable;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="FB_BacklashCompensationNC">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Aborted.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.ActCompensation.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Active.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.BacklashCompensation">
+      <LineId Id="1" Count="3" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.BacklashCompensationActive">
+      <LineId Id="1" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Busy.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.CallAfterInit">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Done.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Error.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.ErrorID.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.FB_Init">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Message.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.Status.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_BacklashCompensationNC.UserEnable.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

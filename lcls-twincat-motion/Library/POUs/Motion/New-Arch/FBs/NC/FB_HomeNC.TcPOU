@@ -1,0 +1,324 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_HomeNC" Id="{970a142c-358e-492f-9cec-3782954ac4db}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_HomeNC IMPLEMENTS I_Home
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    iMotionLogger : I_MotionLogger;
+    iLimSwStatus : I_LimSwStatus;
+    //iHomeShareData : I_HomeShareData ;
+    bCommandMoveHome  : BOOL;
+    bBusy			: BOOL;
+    bDone			: BOOL;
+    bError 			: BOOL;
+    bAbort       : BOOL;
+    bAborted       : BOOL;
+    nErrorID 		: UDINT;
+    fRefVeloSearch	: LREAL;
+    fRefVeloSync	: LREAL;
+    fOffset  : LREAL;
+    fPosition	: LREAL;
+    bFirstDirection: BOOL;
+    rtDone				: R_TRIG;
+    rtAborted : R_TRIG;
+    sMessage : T_MAXSTRING;
+    fbMcSetPos: MC_SetPosition;
+    fbMcJog: MC_Jog;
+    rtExec: R_TRIG;
+    ftExec: F_TRIG;
+    nStateMachine: E_HomeStates;
+    nStateAfterStop: E_HomeStates;
+    nMoves: INT;
+    bFirstDir: BOOL;
+    bAtHome: BOOL;
+    bMove: BOOL;
+    nErrCount: INT;
+    eHomeMode: E_EpicsHomeCmd :=E_EpicsHomeCmd.NONE;
+    bLimForward : BOOL;
+    bLimBackward : BOOL;
+    bLimHome : BOOL;
+    rtReset : R_TRIG;
+    bHalted: BOOL;
+    bReset : BOOL;
+END_VAR
+
+VAR CONSTANT
+    (*
+        This is a simpler way of disabling the soft limits that ends up being really obvious if something has gone wrong.
+        If you turn the limits off/on, not only do you need to keep track of if you had soft limits set,
+        but you need to always restore this properly or risk some issue.
+        Instead, I set position to a ridiculous value that can always move forward or backward.
+        If this gets stuck for any reason it's very clear that something has gone wrong,
+        rather than a silent failure of the soft limit marks.
+    *)
+    FWD_START: LREAL := -99999999;
+    BWD_START: LREAL :=  99999999;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{b3440598-2192-4aa3-bd94-648810782f1d}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{6a45fc91-d1f8-4045-827a-687d21932173}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Aborted := bAborted;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{4386ac45-3e88-4c79-8d18-81c7e83c1e8e}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{bdd5f606-f201-4f1a-9491-5ed9fc2ed98d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{c7e43be2-48b0-438b-8ceb-465d60425bfc}">
+      <Declaration><![CDATA[{warning 'add property implementation'}
+PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{cb0740bd-cd32-462e-8d30-3401b18588d5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{bf0efffc-cb26-4144-93d7-4a53b23636d4}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+    iMotionLogger : I_MotionLogger;
+    iLimSwStatus : I_LimSwStatus;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+THIS^.iMotionLogger := iMotionLogger;
+THIS^.iLimSwStatus:= iLimSwStatus;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="CommandMoveHome" Id="{c1145d52-1896-4af8-b2b7-a223c1c65f11}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY CommandMoveHome : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{443e87d8-297e-4ddd-9393-eaac57dec414}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ bCommandMoveHome := CommandMoveHome;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Done" Id="{a400b97e-6245-4667-8036-7fb53f8ce97f}">
+      <Declaration><![CDATA[{warning 'add property implementation'}
+PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{aef52b53-9bff-4703-970f-52b560ffba73}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := THIS^.bDone;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{d9029227-7d8c-4426-821a-d46327fbfa6d}">
+      <Declaration><![CDATA[{warning 'add property implementation'}
+PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{4884c9e1-0ab0-469e-aae8-b83b96b6f583}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.bError;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{cf64e9b6-c8bf-4aa1-9fa1-b62063c78b03}">
+      <Declaration><![CDATA[{warning 'add property implementation'}
+PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{e14def51-9c37-4182-ba09-611583cf679e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.nErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{36203808-aa8e-419d-b89f-47cad560b581}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+    iMotionLogger : I_MotionLogger;
+    iLimSwStatus : I_LimSwStatus;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+THIS^.iMotionLogger := iMotionLogger;
+THIS^.iLimSwStatus:= iLimSwStatus;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="GlobalReset" Id="{00f8b067-c919-41e0-b13e-0ee4b8e73fa7}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY GlobalReset : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{c71b201c-0b06-41a3-a0b3-32975c4371c2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bReset := GlobalReset;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Home" Id="{bc450e32-fe3c-4fef-961a-7ec21133b561}">
+      <Declaration><![CDATA[METHOD  Home
+VAR_INPUT
+    Execute	: BOOL;
+    HomeSpeedFast	: LREAL;
+    HomeSpeedSlow	: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bCommandMoveHome := Execute;
+THIS^.fRefVeloSearch := HomeSpeedFast;
+THIS^.fRefVeloSync := HomeSpeedSlow;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{50dd0817-9d23-4b27-bd5b-fe17ea82eb6e}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{5582f213-525c-49f8-9472-dcc0e7068f61}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Mode" Id="{bacfc68b-674d-49fb-a838-6a7b08d66c8b}">
+      <Declaration><![CDATA[PROPERTY Mode : E_EpicsHomeCmd
+]]></Declaration>
+      <Get Name="Get" Id="{018ebc11-483b-4d91-b1ca-54274e9fa554}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Mode := eHomeMode;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d7a9685a-e050-4fa2-92a8-d25079a18728}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eHomeMode := Mode;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Offset" Id="{48496da5-ced9-4c7a-88b4-656a32aa685b}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Offset : LREAL
+]]></Declaration>
+      <Set Name="Set" Id="{0ef7a418-62f9-4e76-9f2c-837b987f3900}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fOffset := Offset;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Position" Id="{afef80c7-a1a3-4197-a7a0-d9553542477a}">
+      <Declaration><![CDATA[{warning 'Add property implementation'}
+PROPERTY Position : LREAL
+]]></Declaration>
+      <Set Name="Set" Id="{6ac419d4-6add-4703-8089-625e0296877b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fPosition := Position;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <LineIds Name="FB_HomeNC">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Aborted.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Active.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Busy.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.CallAfterInit">
+      <LineId Id="1" Count="2" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.CommandMoveHome.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Done.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Error.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.ErrorID.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.FB_Init">
+      <LineId Id="1" Count="2" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.GlobalReset.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Home">
+      <LineId Id="1" Count="4" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Message.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Mode.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Mode.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Offset.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Position.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
