@@ -7,7 +7,38 @@ END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
-
+    iMotionLogger : I_MotionLogger;
+    //iLimSwStatus : I_LimSwStatus;
+    //iHomeShareData : I_HomeShareData ;
+    bCommandMoveHome  : BOOL;
+    bBusy	: BOOL;
+    bDone	: BOOL;
+    bError 	: BOOL;
+    bAbort   : BOOL;
+    bAborted  : BOOL;
+    nErrorID : UDINT;
+    fOffset  : LREAL;
+    fPosition	: LREAL;
+    rtDone	: R_TRIG;
+    fHomeSpeedFast	: LREAL;
+    fHomeSpeedSlow	: LREAL;
+    bBit13OpModeSpecific	: BOOL;
+    bBit12OpModeSpecific	: BOOL;
+    bTargetReached	: BOOL;
+    nDriveControl : UINT;
+    nModeOfOperation : SINT;
+    nModeOfOperationDisplay : SINT;
+    nMostRecentModeOfOperation : SINT;
+    eHomeMode: E_EpicsHomeCmd :=E_EpicsHomeCmd.AUTOZERO;
+    rtExec: R_TRIG;
+    ftExec: F_TRIG;
+    bMove  : BOOL;
+    tonSyncHoming : TON;
+    {attribute 'hide'}
+    eHomeState	: E_MoveState;
+    rtReset: R_TRIG;
+    bReset: BOOL;
+    sMessage: T_MAXSTRING;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -26,8 +57,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Active" Id="{2ec4b934-b83b-40a1-89e4-42fd9450a9e9}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{5ce1d2b4-0255-47fe-9b81-ea8d68a1187a}">
         <Declaration><![CDATA[VAR
@@ -39,8 +69,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Busy" Id="{08f4c53a-a93f-4c0f-81a4-fc4b91c13ab5}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{a9f0aa36-9754-42d8-8ac1-0e120c0daa7f}">
         <Declaration><![CDATA[VAR
@@ -63,8 +92,7 @@ END_VAR
       </Implementation>
     </Method>
     <Property Name="CommandMoveHome" Id="{ee03e6b2-d0a1-4de6-8b3b-367209048f73}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY CommandMoveHome : BOOL
+      <Declaration><![CDATA[PROPERTY CommandMoveHome : BOOL
 ]]></Declaration>
       <Set Name="Set" Id="{b98b121c-ddb6-47db-8c64-61500ddff177}">
         <Declaration><![CDATA[VAR
@@ -75,9 +103,19 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Property Name="ControlWord" Id="{4033051e-3bcc-421f-84e9-2fa7f78a1b85}">
+      <Declaration><![CDATA[PROPERTY ControlWord : UINT]]></Declaration>
+      <Get Name="Get" Id="{6da058be-1b97-4f09-8c0f-91efc034b490}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ControlWord := nDriveControl;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="Done" Id="{4f9baf15-b527-487e-8710-a14003009a1c}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{0b073f86-ebf7-4ab3-9e80-887fc0329919}">
         <Declaration><![CDATA[VAR
@@ -88,47 +126,8 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="DS402Control" Id="{4033051e-3bcc-421f-84e9-2fa7f78a1b85}">
-      <Declaration><![CDATA[PROPERTY DS402Control : UINT]]></Declaration>
-      <Get Name="Get" Id="{6da058be-1b97-4f09-8c0f-91efc034b490}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[DS402Control := nDriveControl;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="DS402ModeOfOperation" Id="{5f3be5b6-0454-423f-adb3-6186fe16b30b}">
-      <Declaration><![CDATA[PROPERTY DS402ModeOfOperation : SINT]]></Declaration>
-      <Get Name="Get" Id="{aa592275-3499-4171-9be7-f81686ae87bb}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[DS402ModeOfOperation  := nModeOfOperation;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Method Name="DS402Status" Id="{d99216d5-05a0-4090-ab57-79a7bde36202}">
-      <Declaration><![CDATA[METHOD DS402Status
-VAR_INPUT
-    ModeOfOperationDisplay : SINT;
-    Bit13OpModeSpecific	: BOOL;
-    Bit12OpModeSpecific	: BOOL;
-    TargetReached	: BOOL;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[nModeOfOperationDisplay := ModeOfOperationDisplay;
-bBit13OpModeSpecific := Bit13OpModeSpecific;
-bBit12OpModeSpecific := Bit12OpModeSpecific;
-bTargetReached := TargetReached;]]></ST>
-      </Implementation>
-    </Method>
     <Property Name="Error" Id="{032eb170-b5c9-4f58-baf7-a259d7549383}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Error : BOOL
+      <Declaration><![CDATA[PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{1fdeb09e-0529-4586-8f44-e19b71367709}">
         <Declaration><![CDATA[VAR
@@ -140,8 +139,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ErrorID" Id="{d931b1ca-ae52-4471-a302-e9584e38504b}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY ErrorID : UDINT
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{2d6153ac-27f4-46d6-a224-787a0075982c}">
         <Declaration><![CDATA[VAR
@@ -168,19 +166,6 @@ END_VAR]]></Declaration>
 ]]></ST>
       </Implementation>
     </Method>
-    <Property Name="GlobalReset" Id="{8a55c20f-6ca9-433d-9fd5-e4475bd1b3c1}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY GlobalReset : BOOL
-]]></Declaration>
-      <Set Name="Set" Id="{1d005cd5-1cf0-4011-b545-7f7f15def153}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[bReset := GlobalReset;]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
     <Method Name="Home" Id="{e9200b22-57ed-4146-80d4-2882e00b73f4}">
       <Declaration><![CDATA[METHOD Home
 VAR_INPUT
@@ -229,9 +214,19 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Property Name="ModeOfOperation" Id="{5f3be5b6-0454-423f-adb3-6186fe16b30b}">
+      <Declaration><![CDATA[PROPERTY ModeOfOperation : SINT]]></Declaration>
+      <Get Name="Get" Id="{aa592275-3499-4171-9be7-f81686ae87bb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ModeOfOperation  := nModeOfOperation;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <Property Name="Offset" Id="{8c816e30-0a55-412d-a75b-c41529942f5a}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Offset : LREAL
+      <Declaration><![CDATA[PROPERTY Offset : LREAL
 ]]></Declaration>
       <Set Name="Set" Id="{d4b4ef7f-b15c-44ed-8ced-865f552cbcaa}">
         <Declaration><![CDATA[VAR
@@ -243,8 +238,7 @@ END_VAR
       </Set>
     </Property>
     <Property Name="Position" Id="{1a510ee5-ff47-4454-aa3c-a3b17a57e147}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Position : LREAL
+      <Declaration><![CDATA[PROPERTY Position : LREAL
 ]]></Declaration>
       <Set Name="Set" Id="{3dc8b970-b6c7-4d4d-9a14-299692f00a16}">
         <Declaration><![CDATA[VAR
@@ -255,6 +249,34 @@ END_VAR
         </Implementation>
       </Set>
     </Property>
+    <Property Name="Reset" Id="{8a55c20f-6ca9-433d-9fd5-e4475bd1b3c1}">
+      <Declaration><![CDATA[PROPERTY Reset : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{1d005cd5-1cf0-4011-b545-7f7f15def153}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bReset := Reset;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Status" Id="{d99216d5-05a0-4090-ab57-79a7bde36202}">
+      <Declaration><![CDATA[METHOD Status
+VAR_INPUT
+    ModeOfOperationDisplay : SINT;
+    Bit13OpModeSpecific	: BOOL;
+    Bit12OpModeSpecific	: BOOL;
+    TargetReached	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nModeOfOperationDisplay := ModeOfOperationDisplay;
+bBit13OpModeSpecific := Bit13OpModeSpecific;
+bBit12OpModeSpecific := Bit12OpModeSpecific;
+bTargetReached := TargetReached;]]></ST>
+      </Implementation>
+    </Method>
     <LineIds Name="FB_HomeDS402">
       <LineId Id="1" Count="0" />
     </LineIds>
@@ -273,17 +295,11 @@ END_VAR
     <LineIds Name="FB_HomeDS402.CommandMoveHome.Set">
       <LineId Id="1" Count="0" />
     </LineIds>
+    <LineIds Name="FB_HomeDS402.ControlWord.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
     <LineIds Name="FB_HomeDS402.Done.Get">
       <LineId Id="1" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_HomeDS402.DS402Control.Get">
-      <LineId Id="1" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_HomeDS402.DS402ModeOfOperation.Get">
-      <LineId Id="1" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_HomeDS402.DS402Status">
-      <LineId Id="1" Count="3" />
     </LineIds>
     <LineIds Name="FB_HomeDS402.Error.Get">
       <LineId Id="1" Count="0" />
@@ -293,9 +309,6 @@ END_VAR
     </LineIds>
     <LineIds Name="FB_HomeDS402.FB_Init">
       <LineId Id="1" Count="1" />
-    </LineIds>
-    <LineIds Name="FB_HomeDS402.GlobalReset.Set">
-      <LineId Id="1" Count="0" />
     </LineIds>
     <LineIds Name="FB_HomeDS402.Home">
       <LineId Id="1" Count="4" />
@@ -309,11 +322,20 @@ END_VAR
     <LineIds Name="FB_HomeDS402.Mode.Set">
       <LineId Id="1" Count="0" />
     </LineIds>
+    <LineIds Name="FB_HomeDS402.ModeOfOperation.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
     <LineIds Name="FB_HomeDS402.Offset.Set">
       <LineId Id="1" Count="0" />
     </LineIds>
     <LineIds Name="FB_HomeDS402.Position.Set">
       <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeDS402.Reset.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeDS402.Status">
+      <LineId Id="1" Count="3" />
     </LineIds>
   </POU>
 </TcPlcObject>
