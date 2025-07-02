@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MotionInterlocksLimSw" Id="{158cbb88-3b97-40e2-97dc-4d7a82a1299f}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocksLimSw IMPLEMENTS I_MotionInterlocksLimSw
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocksLimSw IMPLEMENTS I_MotionInterlocks
 VAR_INPUT
 END_VAR
 VAR_OUTPUT
@@ -86,8 +86,7 @@ END_IF
 ]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{a1175752-7c2c-4d2c-b0ac-3a4f9f39a027}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Aborted : BOOL
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{972c3d12-c93b-46d8-adca-4ce3ce1b4165}">
         <Declaration><![CDATA[VAR
@@ -99,8 +98,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Active" Id="{3b34c057-b1ec-4bc7-83b1-4a80ec87a88b}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{0ccb4185-7643-4a8c-bdd0-04e775e1ac39}">
         <Declaration><![CDATA[VAR
@@ -120,15 +118,14 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[bPositiveDirection := PositiveDirection;
-bNegativeDirection := NegativeDirection;
-bHomeBusy := HomeBusy;
-//THIS^.iLimSwStatus.AxisStatus(	PositiveDirection:=PositiveDirection,NegativeDirection:=NegativeDirection );]]></ST>
+        <ST><![CDATA[THIS^.bPositiveDirection := PositiveDirection;
+THIS^.bNegativeDirection := NegativeDirection;
+THIS^.bHomeBusy := HomeBusy;
+]]></ST>
       </Implementation>
     </Method>
     <Property Name="Busy" Id="{a6daac7c-9df9-4ab9-ad3d-28aaab54bf26}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{5a6e7c19-94f7-4fad-a884-0cab68944ddd}">
         <Declaration><![CDATA[VAR
@@ -152,8 +149,7 @@ THIS^.iLimSwStatus := iLimSwStatus;]]></ST>
       </Implementation>
     </Method>
     <Property Name="Done" Id="{f89b31f3-ca38-4979-a504-0096d2187a3b}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{a79d952f-6f18-4524-bb34-0541fc9c86b9}">
         <Declaration><![CDATA[VAR
@@ -180,8 +176,7 @@ THIS^.iMotionInterlocksCommon.DriveCommands(Enable:=Enable, NewMoveReq:=NewMoveR
       </Implementation>
     </Method>
     <Property Name="Error" Id="{e499cdfd-969f-4051-8215-bd6b1edef6bb}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Error : BOOL
+      <Declaration><![CDATA[PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{7238505b-9b6a-43fb-ba12-674778d8c8ff}">
         <Declaration><![CDATA[VAR
@@ -193,8 +188,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ErrorID" Id="{9d2ee520-34ec-43b6-bfa3-0b9c47c94f72}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY ErrorID : UDINT
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{a73c59e2-e172-4b19-8c08-958487d94121}">
         <Declaration><![CDATA[VAR
@@ -235,48 +229,20 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="LimBackward" Id="{1c458c2e-9780-4b9e-98d9-d8aa2798da41}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimBackward : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{b39b60c3-059c-4599-840f-64b8bfce32ea}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="LimForward" Id="{9e8e3e69-d0d8-4e3b-b33c-784b55f7e482}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimForward : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{d4f548f0-52b5-4897-87db-50369852d1c2}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Property Name="LimHit" Id="{616009f9-19f9-42ea-8b14-b1761f35e869}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimHit : BOOL
+      <Declaration><![CDATA[PROPERTY LimHit : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b3896752-cee8-4d8e-b9d2-857fe8348810}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Limhit := THIS^.bLimHit;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Property Name="LimHome" Id="{6c566142-67f9-43df-8e4b-bb59f6a41f69}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY LimHome : BOOL
+      <Declaration><![CDATA[PROPERTY LimHome : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{094be525-7bad-4a92-b899-3a12a85229d6}">
         <Declaration><![CDATA[VAR
@@ -348,8 +314,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Warning" Id="{d4f46c69-4dc7-45e7-9978-5602afa06ae3}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Warning : BOOL
+      <Declaration><![CDATA[PROPERTY Warning : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{98755ed6-4331-4fcd-ab91-87a47d6bca9e}">
         <Declaration><![CDATA[VAR
@@ -360,5 +325,70 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <LineIds Name="FB_MotionInterlocksLimSw">
+      <LineId Id="3" Count="33" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Aborted.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Active.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.AxisStatus">
+      <LineId Id="3" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Busy.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.CallAfterInit">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Done.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.DriveCommands">
+      <LineId Id="3" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Error.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.ErrorID.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.FB_Init">
+      <LineId Id="3" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.InterlockEvent.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.LimHit.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.LimHome.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Message.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.MoveBackwardEnabled.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.MoveForwardEnabled.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.MoveOk.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.PowerEnabled.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionInterlocksLimSw.Warning.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>

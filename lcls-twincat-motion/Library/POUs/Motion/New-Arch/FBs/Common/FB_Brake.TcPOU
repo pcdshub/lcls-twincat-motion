@@ -8,7 +8,7 @@ VAR_OUTPUT
 END_VAR
 VAR
     // Determines when we automatically disengage the brake
-    nBrakeMode: E_StageBrakeMode:=E_StageBrakeMode.IF_ENABLED;
+    eBrakeMode: E_StageBrakeMode:=E_StageBrakeMode.IF_ENABLED;
     // NC Brake Output: TRUE to release brake
     bBrakeRelease AT %Q*: BOOL;
     eAxisState : MC_AxisStates;
@@ -17,14 +17,14 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Handle the brake. TRUE means brake disabled/released
-IF nBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
+IF eBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
     CASE eAxisState OF
         MC_AXISSTATE_UNDEFINED,
         MC_AXISSTATE_DISABLED,
         MC_AXISSTATE_ERRORSTOP:
             bBrakeRelease := FALSE;
         MC_AXISSTATE_STANDSTILL:
-            IF nBrakeMode = E_StageBrakeMode.IF_MOVING THEN
+            IF eBrakeMode = E_StageBrakeMode.IF_MOVING THEN
                 bBrakeRelease := FALSE;
             ELSE
                 bBrakeRelease := TRUE;
@@ -35,11 +35,10 @@ IF nBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
 END_IF
 ]]></ST>
     </Implementation>
-    <Property Name="Aborted" Id="{482212d2-7ee4-466e-9032-c3d56b476726}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Aborted : BOOL
+    <Property Name="Aborted" Id="{cd4348e5-7a25-4707-93f8-8d2d43893855}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
 ]]></Declaration>
-      <Get Name="Get" Id="{755ebda7-d1f2-4ec7-ae66-696f788a4add}">
+      <Get Name="Get" Id="{a21beeee-5290-4854-a27e-72aa9c79de2a}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
@@ -49,8 +48,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Active" Id="{1c7b44c5-a744-4915-9af4-e89e1fcc5f05}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{d56f7a66-3316-44cc-a5ae-25ab5d314095}">
         <Declaration><![CDATA[VAR
@@ -62,8 +60,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="AxisState" Id="{f9ae2679-2d4b-422c-bc0d-48c0bf28548e}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY AxisState : MC_AxisStates
+      <Declaration><![CDATA[PROPERTY AxisState : MC_AxisStates
 ]]></Declaration>
       <Set Name="Set" Id="{e59712e9-3a3c-4624-9ab4-c64e0bfb35ed}">
         <Declaration><![CDATA[VAR
@@ -75,15 +72,14 @@ END_VAR
       </Set>
     </Property>
     <Property Name="BrakeMode" Id="{d2a89635-e044-45f2-b897-1fb228591295}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY BrakeMode : E_StageBrakeMode
+      <Declaration><![CDATA[PROPERTY BrakeMode : E_StageBrakeMode
 ]]></Declaration>
       <Get Name="Get" Id="{87438a61-12a9-4977-b899-109dc02b161b}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[BrakeMode  := eBrakeMode ;]]></ST>
         </Implementation>
       </Get>
       <Set Name="Set" Id="{ce177ab8-12d5-44b3-b42b-64a86bd5c208}">
@@ -91,26 +87,24 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[eBrakeMode  := BrakeMode ;]]></ST>
         </Implementation>
       </Set>
     </Property>
     <Property Name="BrakeRelease" Id="{4e9e8280-09ed-4b6e-b3d2-3824c4845e47}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY BrakeRelease : BOOL
+      <Declaration><![CDATA[PROPERTY BrakeRelease : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{89896f71-d183-47a2-830c-dc2b8ef91af6}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[bBrakeRelease := BrakeRelease;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Property Name="Busy" Id="{d689c67d-bc67-4289-91da-60705ab67ac8}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{3ff1187a-77d0-47ee-b494-26cd7da1359b}">
         <Declaration><![CDATA[VAR
@@ -122,8 +116,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Done" Id="{6216ad20-4deb-442e-8a99-58858392d09e}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{145ed9f7-8e7e-4e3e-a0b9-cf1fd5ed1ae4}">
         <Declaration><![CDATA[VAR
@@ -135,8 +128,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Error" Id="{f6662748-f308-48fd-b7e1-7140e892eca9}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Error : BOOL
+      <Declaration><![CDATA[PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{1fcf427b-7f1c-4aba-8f36-862b331f746f}">
         <Declaration><![CDATA[VAR
@@ -148,8 +140,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ErrorID" Id="{34c75ef3-84ca-494c-b695-91ecf1631d70}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY ErrorID : UDINT
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{4d4ee5b4-dd7b-4695-a1bd-3d9ca36e2353}">
         <Declaration><![CDATA[VAR
@@ -175,8 +166,7 @@ END_VAR]]></Declaration>
       </Implementation>
     </Method>
     <Property Name="Message" Id="{8ca24488-75c4-4d81-8837-108b6b796842}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Message : T_MAXSTRING
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
 ]]></Declaration>
       <Get Name="Get" Id="{14dfa477-0d17-4781-9799-75621f18c31e}">
         <Declaration><![CDATA[VAR
@@ -187,5 +177,45 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <LineIds Name="FB_Brake">
+      <LineId Id="20" Count="16" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.Aborted.Get">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.Active.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.AxisState.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.BrakeMode.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.BrakeMode.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.BrakeRelease.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.Busy.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.Done.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.Error.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.ErrorID.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.FB_Init">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Brake.Message.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>
