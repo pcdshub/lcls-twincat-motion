@@ -27,8 +27,8 @@ VAR
     fbMcJog: MC_Jog;
     rtExec: R_TRIG;
     ftExec: F_TRIG;
-    nStateMachine: E_HomeStates;
-    nStateAfterStop: E_HomeStates;
+    nStateMachine: E_MoveState;
+    nStateAfterStop: E_MoveState;
     nMoves: INT;
     bFirstDir: BOOL;
     bAtHome: BOOL;
@@ -72,8 +72,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Active" Id="{4386ac45-3e88-4c79-8d18-81c7e83c1e8e}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{bdd5f606-f201-4f1a-9491-5ed9fc2ed98d}">
         <Declaration><![CDATA[VAR
@@ -85,8 +84,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Busy" Id="{c7e43be2-48b0-438b-8ceb-465d60425bfc}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{cb0740bd-cd32-462e-8d30-3401b18588d5}">
         <Declaration><![CDATA[VAR
@@ -112,8 +110,7 @@ THIS^.iLimSwStatus:= iLimSwStatus;]]></ST>
       </Implementation>
     </Method>
     <Property Name="CommandMoveHome" Id="{c1145d52-1896-4af8-b2b7-a223c1c65f11}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY CommandMoveHome : BOOL
+      <Declaration><![CDATA[PROPERTY CommandMoveHome : BOOL
 ]]></Declaration>
       <Set Name="Set" Id="{443e87d8-297e-4ddd-9393-eaac57dec414}">
         <Declaration><![CDATA[VAR
@@ -125,8 +122,7 @@ END_VAR
       </Set>
     </Property>
     <Property Name="Done" Id="{a400b97e-6245-4667-8036-7fb53f8ce97f}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{aef52b53-9bff-4703-970f-52b560ffba73}">
         <Declaration><![CDATA[VAR
@@ -138,8 +134,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Error" Id="{d9029227-7d8c-4426-821a-d46327fbfa6d}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Error : BOOL
+      <Declaration><![CDATA[PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{4884c9e1-0ab0-469e-aae8-b83b96b6f583}">
         <Declaration><![CDATA[VAR
@@ -151,8 +146,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ErrorID" Id="{cf64e9b6-c8bf-4aa1-9fa1-b62063c78b03}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY ErrorID : UDINT
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{e14def51-9c37-4182-ba09-611583cf679e}">
         <Declaration><![CDATA[VAR
@@ -182,19 +176,6 @@ THIS^.iMotionLogger := iMotionLogger;
 THIS^.iLimSwStatus:= iLimSwStatus;]]></ST>
       </Implementation>
     </Method>
-    <Property Name="GlobalReset" Id="{00f8b067-c919-41e0-b13e-0ee4b8e73fa7}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY GlobalReset : BOOL
-]]></Declaration>
-      <Set Name="Set" Id="{c71b201c-0b06-41a3-a0b3-32975c4371c2}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[bReset := GlobalReset;]]></ST>
-        </Implementation>
-      </Set>
-    </Property>
     <Method Name="Home" Id="{bc450e32-fe3c-4fef-961a-7ec21133b561}">
       <Declaration><![CDATA[METHOD  Home
 VAR_INPUT
@@ -244,8 +225,7 @@ END_VAR
       </Set>
     </Property>
     <Property Name="Offset" Id="{48496da5-ced9-4c7a-88b4-656a32aa685b}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Offset : LREAL
+      <Declaration><![CDATA[PROPERTY Offset : LREAL
 ]]></Declaration>
       <Set Name="Set" Id="{0ef7a418-62f9-4e76-9f2c-837b987f3900}">
         <Declaration><![CDATA[VAR
@@ -257,8 +237,7 @@ END_VAR
       </Set>
     </Property>
     <Property Name="Position" Id="{afef80c7-a1a3-4197-a7a0-d9553542477a}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Position : LREAL
+      <Declaration><![CDATA[PROPERTY Position : LREAL
 ]]></Declaration>
       <Set Name="Set" Id="{6ac419d4-6add-4703-8089-625e0296877b}">
         <Declaration><![CDATA[VAR
@@ -266,6 +245,18 @@ END_VAR
 ]]></Declaration>
         <Implementation>
           <ST><![CDATA[fPosition := Position;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Reset" Id="{00f8b067-c919-41e0-b13e-0ee4b8e73fa7}">
+      <Declaration><![CDATA[PROPERTY Reset : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{c71b201c-0b06-41a3-a0b3-32975c4371c2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bReset := Reset;]]></ST>
         </Implementation>
       </Set>
     </Property>
@@ -299,9 +290,6 @@ END_VAR
     <LineIds Name="FB_HomeNC.FB_Init">
       <LineId Id="1" Count="2" />
     </LineIds>
-    <LineIds Name="FB_HomeNC.GlobalReset.Set">
-      <LineId Id="1" Count="0" />
-    </LineIds>
     <LineIds Name="FB_HomeNC.Home">
       <LineId Id="1" Count="4" />
     </LineIds>
@@ -318,6 +306,9 @@ END_VAR
       <LineId Id="1" Count="0" />
     </LineIds>
     <LineIds Name="FB_HomeNC.Position.Set">
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_HomeNC.Reset.Set">
       <LineId Id="1" Count="0" />
     </LineIds>
   </POU>

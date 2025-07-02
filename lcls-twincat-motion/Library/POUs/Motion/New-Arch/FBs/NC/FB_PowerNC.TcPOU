@@ -26,8 +26,7 @@ END_VAR
       <ST><![CDATA[]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{bde69de1-325d-451d-b0a6-8cb993ec4d33}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Aborted : BOOL
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{8c49db22-f93b-4013-b841-4a43a6216501}">
         <Declaration><![CDATA[VAR
@@ -39,8 +38,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Active" Id="{49693f07-c88b-4b06-be0c-0dc75c8f5fac}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b11a8d39-0dfc-40d5-ab4e-e7fe1f8bda7c}">
         <Declaration><![CDATA[VAR
@@ -52,15 +50,14 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Busy" Id="{1d88cc85-9bbc-4836-b583-4a9d93ccadc7}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{e8b60715-a1d9-4e57-9f76-50ea68243628}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Busy := THIS^.bBusy;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -75,8 +72,7 @@ END_VAR
       </Implementation>
     </Method>
     <Property Name="Done" Id="{47775ab2-32ed-415e-8f00-7dc8c50e6589}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{8a26bdf6-610d-44e7-af87-ff96e882b31e}">
         <Declaration><![CDATA[VAR
@@ -102,8 +98,7 @@ THIS^.bEnableNegative := Enable_Negative;]]></ST>
       </Implementation>
     </Method>
     <Property Name="Error" Id="{5900c701-bb24-4682-9d2c-47b8d2773b46}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Error : BOOL
+      <Declaration><![CDATA[PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{50fb1906-033c-485b-9e5d-f1230f94dfc8}">
         <Declaration><![CDATA[VAR
@@ -141,22 +136,8 @@ END_VAR]]></Declaration>
         <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
       </Implementation>
     </Method>
-    <Property Name="IsEnabled" Id="{7e136934-4440-48f5-a211-011704d8f4f5}">
-      <Declaration><![CDATA[{attribute 'monitoring':= 'variable'}
-PROPERTY IsEnabled : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{fffb35ff-b9f5-44f8-bd6c-842b697893c4}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[IsEnabled := bPowerIsEnabled;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Property Name="Message" Id="{8449188f-1930-49b3-8fe2-2e40bd14ae5f}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Message : T_MAXSTRING
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
 ]]></Declaration>
       <Get Name="Get" Id="{1b9ef192-6b77-407c-a88f-8d85eb8cdc1a}">
         <Declaration><![CDATA[VAR
@@ -198,6 +179,18 @@ THIS^.eBufferMode := BufferMode ;
 ]]></ST>
       </Implementation>
     </Method>
+    <Property Name="PowerIsEnabled" Id="{7e136934-4440-48f5-a211-011704d8f4f5}">
+      <Declaration><![CDATA[PROPERTY PowerIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{fffb35ff-b9f5-44f8-bd6c-842b697893c4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PowerIsEnabled := bPowerIsEnabled;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
     <LineIds Name="FB_PowerNC">
       <LineId Id="1" Count="0" />
     </LineIds>
@@ -228,9 +221,6 @@ THIS^.eBufferMode := BufferMode ;
     <LineIds Name="FB_PowerNC.FB_Init">
       <LineId Id="1" Count="0" />
     </LineIds>
-    <LineIds Name="FB_PowerNC.IsEnabled.Get">
-      <LineId Id="1" Count="0" />
-    </LineIds>
     <LineIds Name="FB_PowerNC.Message.Get">
       <LineId Id="1" Count="0" />
     </LineIds>
@@ -239,6 +229,9 @@ THIS^.eBufferMode := BufferMode ;
     </LineIds>
     <LineIds Name="FB_PowerNC.Power">
       <LineId Id="1" Count="5" />
+    </LineIds>
+    <LineIds Name="FB_PowerNC.PowerIsEnabled.Get">
+      <LineId Id="1" Count="0" />
     </LineIds>
   </POU>
 </TcPlcObject>

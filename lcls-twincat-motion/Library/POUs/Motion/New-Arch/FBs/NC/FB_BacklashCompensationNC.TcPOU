@@ -76,8 +76,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ActCompensation" Id="{022a8867-c28c-4e7c-88fa-1c1e1f6f1ad1}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY ActCompensation : LREAL
+      <Declaration><![CDATA[PROPERTY ActCompensation : LREAL
 ]]></Declaration>
       <Get Name="Get" Id="{bb138911-4f3b-47a1-847c-b5cced113ef6}">
         <Declaration><![CDATA[VAR
@@ -89,15 +88,14 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Active" Id="{fa202a56-38e3-4b3a-bf52-57135d76cf34}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{08ef6077-f2d4-42e4-90da-6c52adfa9a0a}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Active:=fbMcBacklashCompensation.Enabled]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -139,15 +137,14 @@ THIS^.fRampVelo := RampVelocity;]]></ST>
       </Implementation>
     </Method>
     <Property Name="Busy" Id="{55ee7371-1408-415b-b1f0-122aa6241483}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{7637bb84-185d-4e7a-b993-3057df36bf56}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Busy := fbMcBacklashCompensation.Busy;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -162,8 +159,7 @@ END_VAR
       </Implementation>
     </Method>
     <Property Name="Done" Id="{aa40d0fa-7dfa-4048-b1f0-b1c583de1e82}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{9933535c-b83d-458a-8f5e-e58dec905ec5}">
         <Declaration><![CDATA[VAR
@@ -182,7 +178,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.bError;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -194,7 +190,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.nErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -222,21 +218,8 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
-    <Property Name="Status" Id="{af32d349-40c9-44a6-9a95-336c4eab0563}">
-      <Declaration><![CDATA[PROPERTY Status : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{1cbb27e8-07e5-41b6-9a8c-b8f937914736}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[Status := bBacklashCompStatus;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Property Name="UserEnable" Id="{a9d2d8cc-e94d-4db5-bf54-daa67dbaf501}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY UserEnable : BOOL
+      <Declaration><![CDATA[PROPERTY UserEnable : BOOL
 ]]></Declaration>
       <Set Name="Set" Id="{2cefc03c-c62d-4e89-aa15-5c5cbbb4411a}">
         <Declaration><![CDATA[VAR
@@ -284,9 +267,6 @@ END_VAR
       <LineId Id="1" Count="0" />
     </LineIds>
     <LineIds Name="FB_BacklashCompensationNC.Message.Get">
-      <LineId Id="1" Count="0" />
-    </LineIds>
-    <LineIds Name="FB_BacklashCompensationNC.Status.Get">
       <LineId Id="1" Count="0" />
     </LineIds>
     <LineIds Name="FB_BacklashCompensationNC.UserEnable.Set">

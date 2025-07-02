@@ -18,28 +18,26 @@ END_VAR
       <ST><![CDATA[]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{493fe813-f38c-4a72-a412-d39deeb9c5a8}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Aborted : BOOL
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{1469fb36-fb54-4a19-a86a-8276cc2e65dd}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Aborted := THIS^.AxisRef.Status.HasBeenStopped;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Property Name="Active" Id="{939ccabc-9e0d-4a0d-b758-5bd11eddc86f}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Active : BOOL
+      <Declaration><![CDATA[PROPERTY Active : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{1342317a-ef44-4c94-8f98-1f69b4df0f97}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Active := THIS^.AxisRef.Status.HasJob;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -59,8 +57,7 @@ END_CASE]]></ST>
       </Implementation>
     </Method>
     <Property Name="AxisID" Id="{b55ca9d1-a2f2-480e-8cbb-a4c4afcd2415}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY AxisID : UDINT
+      <Declaration><![CDATA[PROPERTY AxisID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{690eb4ae-f09b-4d3e-9b07-69bd8cd447b8}">
         <Declaration><![CDATA[VAR
@@ -72,8 +69,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="AxisState" Id="{4fd0f177-1ed6-45bb-bff4-4341481e5661}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY AxisState : Tc2_MC2.MC_AxisStates
+      <Declaration><![CDATA[PROPERTY AxisState : MC_AxisStates
 ]]></Declaration>
       <Get Name="Get" Id="{97db2c6e-eff4-4d18-9d44-7ecc59764d3a}">
         <Declaration><![CDATA[VAR
@@ -85,15 +81,14 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Busy" Id="{865da216-968d-4f1e-ad29-35664527e8ff}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Busy : BOOL
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b659bc87-af56-4ae3-9e7f-736619183db5}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Busy := THIS^.AxisRef.Status.Moving;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -108,21 +103,19 @@ END_VAR
       </Implementation>
     </Method>
     <Property Name="Done" Id="{6add5887-aab0-48e7-b663-80d51fb4c416}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Done : BOOL
+      <Declaration><![CDATA[PROPERTY Done : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{0cf24b3a-2956-42c5-b678-cce9393578b9}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[]]></ST>
+          <ST><![CDATA[Active := THIS^.AxisRef.Status.InTargetPosition;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Property Name="Error" Id="{548a6916-d1a2-4d00-87ab-a00f5b019e53}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY Error : BOOL
+      <Declaration><![CDATA[PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{74afa849-d130-475a-8341-04da63542fc9}">
         <Declaration><![CDATA[VAR
@@ -134,8 +127,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ErrorID" Id="{368d990c-4118-41ef-8dc7-2a94afb0a374}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY ErrorID : UDINT
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{d4abb0c7-70be-4b55-8227-7b88913acfef}">
         <Declaration><![CDATA[VAR
@@ -164,8 +156,7 @@ END_VAR]]></Declaration>
       </Implementation>
     </Method>
     <Property Name="InTargetPosition" Id="{833e02a9-2ab3-4627-b017-70699d164f13}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY InTargetPosition : BOOL
+      <Declaration><![CDATA[PROPERTY InTargetPosition : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{61009624-f415-45ec-8a11-0cb9f7b4d0aa}">
         <Declaration><![CDATA[VAR
@@ -177,8 +168,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="MeasuredAcceleration" Id="{4119321c-b4b8-4129-b781-b94c8b154a94}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY MeasuredAcceleration : LREAL
+      <Declaration><![CDATA[PROPERTY MeasuredAcceleration : LREAL
 ]]></Declaration>
       <Get Name="Get" Id="{20862a9b-2723-4b7b-bca0-95d5609f10fe}">
         <Declaration><![CDATA[VAR
@@ -190,8 +180,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="MeasuredPosition" Id="{754e7b8a-3eae-48a8-96e0-2df6eb19a0af}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY MeasuredPosition : LREAL
+      <Declaration><![CDATA[PROPERTY MeasuredPosition : LREAL
 ]]></Declaration>
       <Get Name="Get" Id="{741ffe13-80d1-4fb2-909b-14aaf0799800}">
         <Declaration><![CDATA[VAR
@@ -204,8 +193,7 @@ MeasuredPosition:=THIS^.AxisRef.NcToPlc.ActPos;]]></ST>
       </Get>
     </Property>
     <Property Name="MeasuredPositionDiff" Id="{17bea7bf-049e-4340-843e-56e70e8380d9}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY MeasuredPositionDiff : LREAL
+      <Declaration><![CDATA[PROPERTY MeasuredPositionDiff : LREAL
 ]]></Declaration>
       <Get Name="Get" Id="{b3d1805f-9f5c-480e-adf6-246877ce89b9}">
         <Declaration><![CDATA[VAR
@@ -218,8 +206,7 @@ MeasuredPositionDiff:=THIS^.AxisRef.NcToPlc.PosDiff;]]></ST>
       </Get>
     </Property>
     <Property Name="MeasuredVelocity" Id="{089d6dec-53ad-4749-b018-c05930c304c5}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY MeasuredVelocity : LREAL
+      <Declaration><![CDATA[PROPERTY MeasuredVelocity : LREAL
 ]]></Declaration>
       <Get Name="Get" Id="{b2c7b5e2-059e-44db-bbc9-22d66d2ed3b0}">
         <Declaration><![CDATA[VAR
@@ -244,8 +231,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="NegativeMotionIsEnabled" Id="{352ac11a-7d4b-4d2b-b7c7-013ee91633cc}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY NegativeMotionIsEnabled : BOOL
+      <Declaration><![CDATA[PROPERTY NegativeMotionIsEnabled : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{30804582-e098-4034-970d-6e91990daaf1}">
         <Declaration><![CDATA[VAR
@@ -257,8 +243,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="PositiveMotionIsEnabled" Id="{4637d8b1-ec1d-4ec0-be60-4008469f6e35}">
-      <Declaration><![CDATA[{warning 'add property implementation'}
-PROPERTY PositiveMotionIsEnabled : BOOL
+      <Declaration><![CDATA[PROPERTY PositiveMotionIsEnabled : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{295be85a-4e0b-4a6e-8b69-28cb34305fc0}">
         <Declaration><![CDATA[VAR
@@ -282,8 +267,7 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Stopped" Id="{c6375ac0-08b6-4b85-999a-45c5d7a1fa71}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY Stopped : BOOL
+      <Declaration><![CDATA[PROPERTY Stopped : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{abded25b-8407-4890-9c37-9bccdbf06f91}">
         <Declaration><![CDATA[VAR
