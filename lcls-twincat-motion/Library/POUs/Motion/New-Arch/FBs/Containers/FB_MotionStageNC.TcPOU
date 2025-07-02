@@ -8,7 +8,7 @@ VAR
     {attribute 'no_copy'}
     AxisRef : REFERENCE TO AXIS_REF;
     {attribute 'no_copy'}
-    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsItf;
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
     iPersistentDataStorage : I_PersistentDataStorage;
 
     //Brakes : brake fb participate in sync comm with fbMotionDrive, fbMotionAxis and fbMotionInterlocks
@@ -82,8 +82,7 @@ fbBrake();
 ]]></ST>
     </Implementation>
     <Property Name="BrakeMode" Id="{7b563b76-fecc-4885-824b-f91a0bc21af3}">
-      <Declaration><![CDATA[{warning 'Add property implementation'}
-PROPERTY BrakeMode : E_StageBrakeMode
+      <Declaration><![CDATA[PROPERTY BrakeMode : E_StageBrakeMode
 ]]></Declaration>
       <Get Name="Get" Id="{0f26607f-cf71-44b1-9984-79929f233e16}">
         <Declaration><![CDATA[VAR
@@ -150,7 +149,7 @@ THIS^.stMotionEpicsItf.sName := THIS^.sName;
       </Implementation>
     </Method>
     <Property Name="EnableMode" Id="{d2517567-d217-491d-9b68-9264f829d81e}">
-      <Declaration><![CDATA[PROPERTY EnableMode : ENUM_StageEnableMode]]></Declaration>
+      <Declaration><![CDATA[PROPERTY EnableMode : E_StageEnableMode]]></Declaration>
       <Get Name="Get" Id="{71e16d1d-1779-46bd-acad-1d5698e3b457}">
         <Declaration><![CDATA[VAR
 END_VAR
@@ -179,7 +178,7 @@ VAR_INPUT
     bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
     iMotionLogger : I_MotionLogger;
     AxisRef : REFERENCE TO AXIS_REF;
-    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsItf;
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
     iPersistentDataStorage : I_PersistentDataStorage;
     sName : T_MaxString;
 END_VAR]]></Declaration>
