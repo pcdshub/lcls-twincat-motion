@@ -10,9 +10,13 @@ STRUCT
     (*CSP drive mode*)
     nFollowingError 		AT %I*	: 	DINT;
     (* Global variables for the RPDO data to the drive. Each one is linked to the respective RPDO channel. *)
+    // connected to I/O Task 'Control Word'
     nDS402DriveControl		AT %Q*	:	UINT;
+    // Connected to NC task Ctrl 1 and Ctrl 2
+    nDS402DriveControlNC	AT %I*	:	UINT;
     nTargetPosition 		AT %Q* 	: 	DINT;
     nModeOfOperation 		AT %Q* 	: 	SINT;
+    nModeOfOperationNC 		AT %I* 	: 	SINT;
     (* Global variables for the RPDO data to the drive. Each one is linked to the respective RPDO channel. *)
     nProfilVelocity 		AT %Q* 	: 	DINT;
     nProfilAcceleration		AT %Q* 	: 	DINT;
@@ -21,49 +25,6 @@ STRUCT
     (* Global variables for the TPDO data from the drive. Each one is linked to the respective TPDO channel. *)
     nScantargetPosition		AT %Q*	: 	DINT;
     uScantargetVelocity		AT %Q*	: 	ULINT;
-
-    {attribute 'pytmc' := '
-        pv: PLC:nChanStep
-        io: io
-        field: DESC SmartAct: Open Loop Step Count
-    '}
-    nChanStep			: DINT;
-
-    {attribute 'pytmc' := '
-        pv: PLC:nChanStepFreq
-        io: io
-        field: DESC SmartAct: Open Loop Step Freq
-    '}
-    nChanStepFreq		: UINT;
-
-    {attribute 'pytmc' := '
-        pv: PLC:nChanStepAmp
-        io: io
-        field: DESC SmartAct: Open Loop Step Amp
-    '}
-    nChanStepAmp		: UINT;
-
-    // timeout for holding actual position in close loop mode
-    {attribute 'pytmc' := '
-        pv: PLC:nHoldTime
-        io: io
-        field: DESC SmartAct: Set servo mode hold time
-    '}
-    nHoldTime						: UDINT := 10000;
-
-    {attribute 'pytmc' := '
-        pv: PLC:bServo
-        io: io
-        field: ZNAM DISABLE
-        field: ONAM ENABLE
-        field: DESC Used to disable close loop mode
-    '}
-    bServo							: BOOL := TRUE;
-
-    (* NetId of EtherCAT Master *)
-    arNetId  				AT %I*	: 	AMSNETID;
-    (* Port Number of EtherCAT Slave *)
-    nSlaveAddr 				AT %I* 	: 	UINT;
 
 END_STRUCT
 END_TYPE
