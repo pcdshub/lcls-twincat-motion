@@ -7,6 +7,8 @@ VAR
     {attribute 'no_copy'}
     stPiezoStage  : REFERENCE TO ST_MotionStage;
     bSteModeEnable : BOOL;
+    rtStepMoveDone : R_TRIG;
+    rtNewStepMove : R_TRIG;
     {attribute 'hide'}
     fbLogError  :   FB_LogMotionError;
     // Open Loop Operations
@@ -82,7 +84,7 @@ VAR
         io: io
         field: DESC SmartAct: Open Loop Step Count
     '}
-    nChanStep : DINT := 10;
+    nChanStep : DINT := 500;
 
     {attribute 'pytmc' := '
         pv: PLC:nChanStepFreq
@@ -273,7 +275,7 @@ VAR
     {attribute 'hide'}
     ftHomeVeloSlowUpdateDone: F_TRIG;
     {attribute 'hide'}
-    rtPPModeOk: R_TRIG;
+    rtCSPModeOk: R_TRIG;
     {attribute 'hide'}
     rtHomeModeOk: R_TRIG;
     {attribute 'hide'}
@@ -374,6 +376,7 @@ VAR
     {attribute 'hide'}
     nRecentHomeOffset : DINT;
     {attribute 'hide'}
+    fScalededSteps  : LREAL;
     nScalededSteps  : DINT;
     {attribute 'hide'}
     nRecentSteps: DINT;
@@ -470,6 +473,7 @@ VAR
     tonRestoreRetry: TON;
     tRefreshTime : TIME := T#1S;
     rtStepMove: R_TRIG;
+    rtNewServoMove: R_TRIG;
 END_VAR
 
 
@@ -516,6 +520,7 @@ END_IF
 IF bInit THEN
     (*Mandatory must be unique for each MCS2 axis *)
     stPiezoStage.nMotionAxisID := stPiezoStage.Axis.NcToPlc.AxisId;
+    THIS^.stDS402Drive.nDS402DriveControl := 128;
     bInit := FALSE;
 END_IF
 
@@ -527,19 +532,6 @@ rtHomeCmdShortcut(CLK:=stPiezoStage.bHomeCmd);
 // Execute on rising edge
 IF rtMoveCmdShortcut.Q AND NOT stPiezoStage.bExecute THEN
     stPiezoStage.bExecute:=TRUE;
-    IF bServo THEN
-        // Close loop CSP mode
-        stPiezoStage.nCommand:=E_EpicsMotorCmd.MOVE_ABSOLUTE;
-    ELSE
-        // Open Loop Step Mode
-        stPiezoStage.nCommand:=E_EpicsMotorCmd.JOG;
-    END_IF
-
-    // attempting to move an axis without homing first?
-    IF stPiezoStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stPiezoStage.bHomed THEN
-        // one can just set bHome here even though no homing was done?
-        stPiezoStage.sErrorMessage:='Axis homing mode set, but homing routine pending';
-    END_IF
 
 ELSIF rtHomeCmdShortcut.Q AND NOT stPiezoStage.bExecute THEN
     stPiezoStage.bExecute:= NOT ( stPiezoStage.nCmdData = E_EpicsHomeCmd.ABSOLUTE_SET ) OR NOT ( stPiezoStage.nCmdData = E_EpicsHomeCmd.NONE);
@@ -547,10 +539,24 @@ ELSIF rtHomeCmdShortcut.Q AND NOT stPiezoStage.bExecute THEN
     // Automatically fill the correct nCmdData for homing
     stPiezoStage.nCmdData:=stPiezoStage.nHomingMode;
 END_IF
-
 // Handle main execs .  Rising on bMoved should be the ntry point
 // bu this is not the case in production its a rising on bExecute.
 rtUserExec(CLK:=stPiezoStage.bExecute);
+
+IF rtUserExec.Q AND NOT stPiezoStage.bHomeCmd THEN
+    IF bServo THEN
+        // Close loop CSP mode
+        stPiezoStage.nCommand:=E_EpicsMotorCmd.MOVE_ABSOLUTE;
+    ELSE
+        // Open Loop Step Mode
+        stPiezoStage.nCommand:=E_EpicsMotorCmd.JOG;
+    END_IF
+    // attempting to move an axis without homing first?
+    IF stPiezoStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stPiezoStage.bHomed THEN
+        // one can just set bHome here even though no homing was done?
+        stPiezoStage.sErrorMessage:='Axis homing mode set, but homing routine pending';
+    END_IF
+END_IF
 // if a Move/Home Goal is comfirmed and there is no persistant
 // error conditions, then we have a valid move request.
 bNewMoveReq S= NOT stPiezoStage.bBusy AND rtUserExec.Q AND NOT stPiezoStage.bError;
@@ -574,9 +580,23 @@ CASE stPiezoStage.nEnableMode OF
         END_IF
         // Power only enabled with a new move request
         IF rtNewMoveReq.Q THEN
-            stPiezoStage.bEnable S= stPiezoStage.bSafetyReady;
+               // override ongoing holding.
+            bPositionHold := FALSE;
+            tonHoldTime.IN:=FALSE;
         END_IF
 END_CASE
+
+// Step Mode Manual control
+rtNewServoMove(CLK:=bNewMoveReq AND (bCSPModeOk OR bHomeModeOk));
+rtNewStepMove(CLK:=bNewMoveReq AND bStepModeOk);
+IF rtNewStepMove.Q THEN
+    stPiezoStage.bEnable := FALSE;
+    stDS402Drive.nDS402DriveControl.8 := 0;
+END_IF
+
+IF rtNewServoMove.Q THEN
+    stPiezoStage.bEnable S= stPiezoStage.bSafetyReady;
+END_IF
 
 Interlock();
 
@@ -586,7 +606,6 @@ bExecHome:=bLocalExec AND stPiezoStage.nCommand = 10;
 bExecMove:=bLocalExec AND NOT bExecHome;
 
 ModeOperation();
-
 // When we start, set the busy/done appropriately
 // CLose loop control using NC
 rtExec(CLK:=bLocalExec);
@@ -594,24 +613,15 @@ IF rtExec.Q THEN
     stPiezoStage.bDone := FALSE;
 END_IF
 
-// Step Mode Manual control
-IF rtNewMoveReq.Q THEN
-        // override ongoing holding.
-    bPositionHold := FALSE;
-    tonHoldTime.IN:=FALSE;
-    // clear the stop bit from previous interruption
-    IF bStepModeOk THEN
-        bSteModeEnable := stPiezoStage.bEnable;
-        stDS402Drive.nDS402DriveControl.8 := 0;
-    END_IF
-END_IF
-
 // We've got the rising edge clear this flags.
 stPiezoStage.bMoveCmd:=FALSE;
 stPiezoStage.bHomeCmd:=FALSE;
 
 // updated axis status
+IF NOT bStepModeOk THEN
 stPiezoStage.Axis.ReadStatus();
+END_IF
+
 
 // Get a definitive bEnabled reading
 CASE stPiezoStage.Axis.Status.MotionState OF
@@ -632,8 +642,12 @@ IF stPiezoStage.bReset THEN
     stPiezoStage.sErrorMessage:='';
     stPiezoStage.sCustomErrorMessage:='';
     stPiezoStage.bEnable:=FALSE;
+    IF bStepModeOk THEN
+    stDS402Drive.nDS402DriveControl := 128;
+    END_IF
 END_IF
-//
+// we need to allow the NC to perform proper initialization of the drive
+// can be done manually, but we using NC weather step mode or not.
 IF NOT bStepModeOk THEN
     stDS402Drive.nDS402DriveControl := stDS402Drive.nDS402DriveControlNC;
 END_IF
@@ -644,8 +658,11 @@ CASE stPiezoStage.nCommand  OF
 
         bCommandMoveAbsolute := bExecMove AND fbMcPower.Status AND bCSPModeOk;
         IF fbMcMoveAbsolute.Done THEN
-            bPositionHold := TRUE;
-            tonHoldTime.IN:=TRUE;
+            IF (stPiezoStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+                bPositionHold := TRUE;
+                tonHoldTime.IN:=TRUE;
+            END_IF
+
         END_IF
 
     E_EpicsMotorCmd.HOME:;
@@ -658,11 +675,12 @@ CASE stPiezoStage.nCommand  OF
         Home();
     E_EpicsMotorCmd.JOG:
         // Override power enable
-        bSteModeEnable := bSteModeEnable AND bServoOffparamsSetDone AND NOT bWrongParameter;
+        bSteModeEnable := bNewMoveReq AND bServoOffparamsSetDone AND NOT bWrongParameter;
         THIS^.StepMove(Enable:=bSteModeEnable);
 
-END_CASE
 
+END_CASE
+StateMachine(Enable:=bStepModeOk);
 THIS^.Halt();
 THIS^.Power();
 THIS^.MoveAbsolute();
@@ -673,25 +691,26 @@ stPiezoStage.bBusy:=bHomeBusy OR fbMcMoveAbsolute.Busy OR bStepMoveBusy;
 // user override aka stop FROM EPICS ?
 // Check done moving via user stop, Target Position Monitoring, or from homing.
 // set/reset stPiezoStage.bDone after move absolute/Relative
-rtMoveDone(CLK:=fbMcMoveAbsolute.Done OR bStepMoveDone);
+rtMoveDone(CLK:=fbMcMoveAbsolute.Done);
+rtStepMoveDone(CLK:=bStepMoveDone);
 rtHomeDone(CLK:=bHomeDone);
-rtStopDone(CLK:=fbMcHalt.Done OR bLimOverride);
-rtAborted(CLK:=fbMcMoveAbsolute.CommandAborted);
-IF rtAborted.Q OR rtStopDone.Q OR rtMoveDone.Q OR rtHomeDone.Q THEN
+rtStopDone(CLK:=fbMcHalt.Done);
+rtAborted(CLK:=fbMcMoveAbsolute.CommandAborted  OR bLimOverride);
+IF rtAborted.Q OR rtStopDone.Q OR rtMoveDone.Q OR rtHomeDone.Q OR rtStepMoveDone.Q THEN
     IF NOT stPiezoStage.bDone THEN
-          stPiezoStage.bHomed := bHomeDone;
-        bMove := FALSE;
-        bStop := FALSE;
-        stPiezoStage.bExecute:=FALSE;
-        bCommandMoveAbsolute := FALSE;
-        stPiezoStage.bDone := fbMcMoveAbsolute.Done OR bHomeDone OR bStepMoveDone;
-        IF bHomeDone THEN
-            WriteParameterNC( 	Execute:=bRecentEnPosLagStatus,
-                                ParameterNumber:=MC_AxisParameter.AxisEnPositionLagMonitoring,
-                                  ParameterValue:=BOOL_TO_LREAL(bRecentEnPosLagStatus) );
-        END_IF
-        // Release the endstop override
-        bLimOverride := FALSE;
+       stPiezoStage.bHomed := bHomeDone;
+       bMove := FALSE;
+       bStop := FALSE;
+       stPiezoStage.bExecute:=FALSE;
+       bCommandMoveAbsolute := FALSE;
+       stPiezoStage.bDone := fbMcMoveAbsolute.Done OR bHomeDone OR bStepMoveDone;
+       IF bHomeDone THEN
+           WriteParameterNC( 	Execute:=bRecentEnPosLagStatus,
+                               ParameterNumber:=MC_AxisParameter.AxisEnPositionLagMonitoring,
+                                 ParameterValue:=BOOL_TO_LREAL(bRecentEnPosLagStatus) );
+       END_IF
+       // Release the endstop override
+       bLimOverride := FALSE;
     END_IF
 END_IF
 (* hold position with closed loop operation active before timeout *)
@@ -703,7 +722,7 @@ IF tonHoldTime.Q THEN
     // open loop mode is not compatible with MC_Power, MC _Halt...
     // thus we want get axis standstill to clear the enable bit.
     IF bStepModeOk THEN
-        THIS^.stPiezoStage.bEnable := FALSE;
+        bSteModeEnable := FALSE;
         stDS402Drive.nDS402DriveControl := 6;
     END_IF
 END_IF
@@ -837,7 +856,7 @@ bStop := ftExec.Q AND ((bHomeBusy AND (stPiezoStage.nCommand=10))
 
 fbMcHalt(
     Axis := stPiezoStage.Axis,
-    Execute := bStop AND bCSPModeOk,
+    Execute := bStop AND (bCSPModeOk OR bHomeModeOk),
     Deceleration := stPiezoStage.fDeceleration,
     BufferMode := eBufferMode,
 );]]></ST>
@@ -914,8 +933,10 @@ IF bMove THEN
         E_MoveState.DONE:
             bHomeBusy:=FALSE;
             tonSyncHoming.IN := FALSE;
-            tonHoldTime.IN := TRUE;
-            bPositionHold := TRUE;
+            IF (stPiezoStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+                bPositionHold := TRUE;
+                tonHoldTime.IN:=TRUE;
+            END_IF
             bHomeDone:=TRUE;
             stPiezoStage.fPosition:=0.0;
             eHomeState:=E_MoveState.IDLING;
@@ -956,13 +977,19 @@ ftBackwardEnabled(CLK:=stPiezoStage.bLimitBackwardEnable);
 IF  NOT bHomeBusy AND ftForwardEnabled.Q THEN
     // Not an error, just a warning
     stPiezoStage.sCustomErrorMessage:='Cannot move past positive limit.';
-    bLimOverride := TRUE;
+    IF NOT bStepModeOk THEN
+        bLimOverride := TRUE;
+        bStop := TRUE;
+    END_IF
 END_IF
 
 IF NOT bHomeBusy AND ftBackwardEnabled.Q THEN
     // Not an error, just a warning
     stPiezoStage.sCustomErrorMessage:='Cannot move past Negative limit.';
-    bLimOverride := TRUE;
+    IF NOT bStepModeOk THEN
+        bLimOverride := TRUE;
+        bStop := TRUE;
+    END_IF
 END_IF
 
 IF NOT stPiezoStage.bError AND stPiezoStage.bExecute AND NOT stPiezoStage.bUserEnable THEN
@@ -983,11 +1010,11 @@ SetEnables();]]></ST>
 METHOD ModeOperation
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[rtPPModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.CSP));
+        <ST><![CDATA[rtCSPModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.CSP));
 rtHomeModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.HOME));
 rtStepModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.MCS2_OL_STEP_MODE));
 // transition to close loop mode
-IF rtPPModeOk.Q THEN
+IF rtCSPModeOk.Q THEN
     bStepModeOk := FALSE;
     bHomeModeOk := FALSE;
     bCSPModeOk := TRUE;
@@ -1002,19 +1029,23 @@ ELSIF rtStepModeOk.Q THEN
         bServo := FALSE;
 END_IF
 
-IF NOT bFault AND bServo AND rtUserExec.Q AND stPiezoStage.bHomeCmd THEN
+IF rtUserExec.Q AND stPiezoStage.bHomeCmd THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.HOME) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.HOME;
+// 		IF THIS^.bPositionHold THEN
+//
+// 		END_IF
     ELSE
         bHomeModeOk := TRUE;
     END_IF
-ELSIF NOT bFault AND bServo AND rtUserExec.Q THEN
+ELSIF rtUserExec.Q AND bServo THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.CSP) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
+        stDS402Drive.nDS402DriveControl := 6;
     ELSE
         bCSPModeOk := TRUE;
     END_IF
-ELSIF NOT bFault AND NOT bServo AND rtUserExec.Q THEN
+ELSIF rtUserExec.Q AND NOT bServo THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.MCS2_OL_STEP_MODE) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.MCS2_OL_STEP_MODE;
     ELSE
@@ -1099,7 +1130,7 @@ bInit := TRUE;
       <Implementation>
         <ST><![CDATA[fbMcPower(
     Axis := stPiezoStage.Axis,
-    Enable := stPiezoStage.bAllEnable AND bCSPModeOk,
+    Enable := stPiezoStage.bAllEnable AND (bCSPModeOk OR bHomeModeOk),
     Enable_Positive := stPiezoStage.bAllForwardEnable,
     Enable_Negative := stPiezoStage.bAllBackwardEnable,
     Override := 100.0,
@@ -1277,11 +1308,13 @@ END_VAR
     OR nChanStepFreq = 0 THEN
     bWrongParameter := TRUE;
 ELSE
-    nScalededSteps:=LIMIT(-100000, nChanStep, 100000);
+    fScalededSteps := (THIS^.stPiezoStage.fPosition * 827.31) - 837.63;
+    nScalededSteps:=LIMIT(-100000, LREAL_TO_DINT(fScalededSteps), 100000);
     nScalededStepAmp:=REAL_TO_UINT(LIMIT(1, nChanStepAmp, 100) * 655.35);
     nScaledStepFreq:=REAL_TO_UINT(LIMIT(1.0, nChanStepFreq, 1000.0));
     bWrongParameter := FALSE;
-END_IF]]></ST>
+END_IF
+//827.31x-837.63]]></ST>
       </Implementation>
     </Method>
     <Method Name="ScaleServoOnMotionParams" Id="{5254f6ed-ad88-4355-8b1a-4b3573416d58}">
@@ -1328,33 +1361,76 @@ stPiezoStage.bAllEnable R= NOT stPiezoStage.bUserEnable;]]></ST>
     <Method Name="StateMachine" Id="{08b990dd-982c-4d9b-9ed0-d47355966885}">
       <Declaration><![CDATA[METHOD StateMachine
 VAR_INPUT
+    Enable : BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[(*Operation enbaled*)
-IF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
-         bFault := FALSE;
-        bOperational:=TRUE;
-ELSIF  NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
-    bFault := TRUE;
-END_IF
+        <ST><![CDATA[IF Enable THEN
 
-IF eDriveState<>E_DS402DriveState.OPERATION_ENABLED THEN
-    bOperational:=FALSE;
-END_IF
-]]></ST>
+    (*switch on disable*)
+    IF NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
+        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+        AND NOT stDS402Drive.stDS402DriveStatus.Fault
+        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+        AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
+        AND  stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+
+        THIS^.stDS402Drive.nDS402DriveControl := 6;
+    END_IF
+
+    (*Ready to switch*)
+    IF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
+        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+        AND NOT stDS402Drive.stDS402DriveStatus.Fault
+        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+        AND stDS402Drive.stDS402DriveStatus.QuickStopActive
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+        bFault := FALSE;
+        THIS^.stDS402Drive.nDS402DriveControl := 7;
+    END_IF
+
+    (*Switch on*)
+    IF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+        AND  stDS402Drive.stDS402DriveStatus.SwitchedOn
+        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+        AND NOT stDS402Drive.stDS402DriveStatus.Fault
+        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+        AND stDS402Drive.stDS402DriveStatus.QuickStopActive
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+
+        //THIS^.stDS402Drive.nDS402DriveControl := 15;
+    END_IF
+
+    (*Operation enbaled*)
+    IF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+        AND stDS402Drive.stDS402DriveStatus.SwitchedOn
+        AND stDS402Drive.stDS402DriveStatus.OperationEnabled
+        AND NOT stDS402Drive.stDS402DriveStatus.Fault
+        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+        AND stDS402Drive.stDS402DriveStatus.QuickStopActive
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+        //
+    END_IF
+
+    (*Fault*)
+    IF  NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
+        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+        AND stDS402Drive.stDS402DriveStatus.Fault
+        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+        AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
+        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+        bFault := TRUE;
+
+    END_IF
+
+    IF eDriveState<>E_DS402DriveState.OPERATION_ENABLED THEN
+        bOperational:=FALSE;
+    END_IF
+
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="StepMove" Id="{74869c9c-654c-4a5a-9a50-bfad55265981}">
@@ -1389,16 +1465,14 @@ CASE eMotionState OF
         IF bStop THEN
             bStepMoveBusy:=FALSE;
             eMotionState:=E_MoveState.INTERRUPTED;
-            // Genral Motion error i.e Following error ?
         ELSIF stDS402Drive.stDS402DriveStatus.Bit13_OpModeSpecific THEN
             stPiezoStage.bError := TRUE;
             eMotionState:=E_MoveState.ERROR;
         ELSE
             // Reached ?
-            IF 	bStepModeOk
-                AND stDS402Drive.stDS402DriveStatus.TargetReached
+            IF stDS402Drive.stDS402DriveStatus.TargetReached
                  AND NOT stDS402Drive.stDS402DriveStatus.Bit12_OpModeSpecific THEN
-                      eMotionState:=E_MoveState.REACHED;
+                eMotionState:=E_MoveState.REACHED;
             END_IF
         END_IF
 
@@ -1412,8 +1486,10 @@ CASE eMotionState OF
         // Release the endstop override
         bLimOverride := FALSE;
         bStepMoveBusy:=FALSE;
-        tonHoldTime.IN := TRUE;
-        bPositionHold := TRUE;
+        IF (stPiezoStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+            bPositionHold := TRUE;
+            tonHoldTime.IN:=TRUE;
+        END_IF
         bStepMoveDone:=TRUE;
         stDS402Drive.nDS402DriveControl:=15;
         IF stPiezoStage.bDone THEN
