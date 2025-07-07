@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PersistentDataStorage" Id="{2ca67009-f1a6-0f4b-04ed-aa4438edc345}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'reflection'}
+FUNCTION_BLOCK FB_PersistentDataStorage IMPLEMENTS I_PersistentDataStorage
+VAR
+    nNumberOfFails : LINT := 0;
+    bTriggerWriteOfPersistentData : BOOL;
+    fbWritePersistentData : WritePersistentData := (NETID := '127.0.0.1.1.1', PORT := 851, TMOUT := T#20S);
+    eWritePersistentDataState : (WAITING, TRIGGER_WRITE, CONFIRM_WRITE);
+END_VAR
+VAR_TEMP
+    sConcatString : T_MaxString;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE eWritePersistentDataState OF
+    WAITING :
+        IF bTriggerWriteOfPersistentData THEN
+            eWritePersistentDataState := TRIGGER_WRITE;
+        END_IF
+
+    TRIGGER_WRITE :
+        fbWritePersistentData(START := TRUE);
+        eWritePersistentDataState := CONFIRM_WRITE;
+
+    CONFIRM_WRITE :
+        fbWritePersistentData(START := FALSE);
+        IF fbWritePersistentData.ERR THEN
+            IF nNumberOfFails < 3 THEN
+                nNumberOfFails := nNumberOfFails + 1;
+            ELSE
+                sConcatString := CONCAT(STR1 := 'Not possible to write persistent data, got the following ErrorId from the function block $'WritePersistentData$': ',
+                                        STR2 := TO_STRING(fbWritePersistentData.ERRID));
+                GVL_Logger.fbRootLogger(sMsg := sConcatString,
+                                        eSevr := TcEventSeverity.Warning,
+                                        eSubsystem := E_SubSystem.MOTION);
+                nNumberOfFails := 0;
+            END_IF
+            eWritePersistentDataState := WAITING;
+        ELSIF NOT fbWritePersistentData.BUSY THEN
+            nNumberOfFails := 0;
+            eWritePersistentDataState := WAITING;
+        END_IF
+END_CASE
+
+IF bTriggerWriteOfPersistentData AND nNumberOfFails = 0 THEN
+    bTriggerWriteOfPersistentData := FALSE;
+END_IF]]></ST>
+    </Implementation>
+    <Property Name="TriggerWriteOfPersistentData" Id="{aecaa310-41a4-469f-a0dd-e6a6a61dc554}">
+      <Declaration><![CDATA[PROPERTY TriggerWriteOfPersistentData : BOOL]]></Declaration>
+      <Get Name="Get" Id="{55768e0a-44e4-419f-9ee6-efba9e153b28}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TriggerWriteOfPersistentData := bTriggerWriteOfPersistentData;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{35fd6c21-6334-4fbc-a968-a5b125f671f2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bTriggerWriteOfPersistentData := TriggerWriteOfPersistentData;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,237 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_ParamsSaveRestoreNC" Id="{7f8d36cc-18a1-4d6c-99dd-bd0795394dcd}" SpecialFunc="None">
+    <Declaration><![CDATA[{attribute 'call_after_init'}
+FUNCTION_BLOCK FB_ParamsSaveRestoreNC IMPLEMENTS I_ParamSaveRestore
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    iPersistentDataStorage : I_PersistentDataStorage;
+
+    // save and restore
+    fbSetPos: MC_SetPosition;
+    bClearPositionLag : BOOL := TRUE;
+
+    nLatchErrId : BOOL;
+    bRestoreDone 	: BOOL;
+    bRestoreError 	: BOOL;
+    nRestoreErrorID : UDINT;
+    // save and Restore
+    RestoreTimer: TON;
+    bRestoreInit: BOOL;
+    bRestoreLoad: BOOL;
+    nLatchError: UDINT;
+    bEncError: BOOL;
+    tRetryDelay: TIME := T#1S;
+    tRefreshDelay: TIME := T#1S;
+    bUpdateEnable : BOOL;
+    bExecute : BOOL;
+    nMaxRetries: UINT := 10;
+    nCurrTries: UINT := 0;
+    bRestoreWaitRetry: BOOL;
+    tonRestoreRetry: TON;
+    tRefreshTime : TIME := T#1S;
+    bError				: BOOL;
+    nErrorId			: UDINT:=0;
+    sMessage : T_MAXSTRING;
+
+    bSaveEnabled	: BOOL := TRUE;
+    bDone : BOOL;
+    bBusy    : BOOL;
+END_VAR
+
+VAR PERSISTENT
+    {attribute 'conditionalshow'}
+    bSaved: BOOL;
+    {attribute 'conditionalshow'}
+    fSavedPosition: LREAL;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{6f730b0b-0a56-4d4b-b10c-7aa6d451ffb9}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{195d6a7f-01a2-451b-aa25-a64fd76e79b7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{b22df6f2-a22f-4a34-ae94-cfb631a24757}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{d1a9a3ed-fe85-4bb0-87cf-89cdb316a968}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{e5dec030-d598-46fd-afca-22fd9bde3a46}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{51885e31-af8a-4a94-a215-169272d4b781}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{1d48b6b6-5d18-47cf-8816-5058ff3a06eb}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+    iPersistentDataStorage : I_PersistentDataStorage;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+THIS^.iPersistentDataStorage := iPersistentDataStorage;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Done" Id="{a3a56a42-9da7-40a8-925f-55df107c55cd}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{ec9b7af9-7f82-4fed-872e-fdb89505987f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := bRestoreDone;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{239ac2b3-3c2a-4399-a932-e6c718d2e1bb}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{4e85ac84-f8ba-45e9-84c6-7c5588481cb5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := bError;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{7fc4dd77-9990-47fb-a3f3-15f5d1c36a93}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{d39cb682-a948-4eed-b151-61c04c28fc87}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{6c116c09-ef45-432c-8e07-3fe37fad5966}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+    iPersistentDataStorage : I_PersistentDataStorage;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+THIS^.iPersistentDataStorage := iPersistentDataStorage;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{32b322a0-2932-4424-b95e-453b6c119c35}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{e135d05b-80a3-4ab1-9f4a-39e3dfbcfa43}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="RestoreAxisParams" Id="{68aa741c-8d0b-49b0-a5c7-e5cb1bf9c532}">
+      <Declaration><![CDATA[{attribute 'call_after_init'}
+METHOD RestoreAxisParams
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Trigger a load if anything was saved at all
+IF NOT bRestoreInit THEN
+    bRestoreInit := TRUE;
+    bRestoreLoad S= bSaved;
+    fbSetPos.Options.ClearPositionLag := TRUE;
+END_IF
+
+// Set our position if bRestoreLoad is true
+fbSetPos( Axis:=THIS^.AxisRef, Execute:=bRestoreLoad, Position:=fSavedPosition);
+
+// Only load once, at startup
+bRestoreLoad R= fbSetPos.Done OR fbSetPos.Error;
+
+IF fbSetPos.Error THEN
+    // Keep the error latched, it can disappear if Execute is set to FALSE
+    nLatchError := fbSetPos.ErrorID;
+    nCurrTries := nCurrTries + 1;
+    IF nCurrTries >= nMaxRetries THEN
+    // Alert the user that something has gone wrong
+    bError := TRUE;
+        nErrorId := nLatchError;
+        sMessage := 'Error loading previously saved position.';
+    ELSE
+        // Reset the FB for the next retry
+        fbSetPos( Axis:=THIS^.AxisRef, Execute:=bRestoreLoad, Position:=fSavedPosition);
+        // Try again
+        bRestoreWaitRetry := TRUE;
+    END_IF
+ELSE
+    THIS^.bRestoreDone := TRUE;
+END_IF
+
+tonRestoreRetry( IN := bRestoreWaitRetry, PT := tRetryDelay);
+bRestoreLoad S= tonRestoreRetry.Q;
+bRestoreWaitRetry R= tonRestoreRetry.Q;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SaveAxisParams" Id="{29eaeb35-c218-4604-adff-fca8f06a68eb}">
+      <Declaration><![CDATA[METHOD SaveAxisParams
+VAR_INPUT
+    Enable	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bSaveEnabled := Enable;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="SavedPosition" Id="{4a2e7fd2-dff9-49f3-8bb0-6e6d2bbd5bd1}">
+      <Declaration><![CDATA[PROPERTY SavedPosition : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{47036862-e42a-472d-9c02-661c5f9aa886}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[SavedPosition := fSavedPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

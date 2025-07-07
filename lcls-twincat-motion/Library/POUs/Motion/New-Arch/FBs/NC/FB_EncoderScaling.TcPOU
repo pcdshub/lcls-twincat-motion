@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_EncoderScaling" Id="{95bec8ef-0f93-40f8-a095-b0f1f87578f5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EncoderScaling IMPLEMENTS I_EncoderScaling
+VAR
+    nRawEncoderULINT AT %I*: ULINT;
+    // Raw encoder IO for UINT (Relative Encoders)
+    nRawEncoderUINT AT %I*: UINT;
+    // Raw encoder IO for INT (LVDT)
+    nRawEncoderINT AT %I*: INT;
+    // Raw encoder IO for INT (EL5072 LVDT)
+    nRawEncoderDINT AT %I*: DINT;
+    // Encoder count summary, if linked above
+    {attribute 'pytmc' := '
+        pv: PLC:nEncoderCount
+        io: i
+        field: DESC Count from encoder hardware
+    '}
+    nEncoderCount: UDINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF nRawEncoderULINT <> 0 THEN
+    IF nRawEncoderULINT < 4294967296 THEN
+        nEncoderCount := ULINT_TO_UDINT(nRawEncoderULINT);
+    ELSE
+        nEncoderCount := ULINT_TO_UDINT(18446744073709551615 - nRawEncoderULINT);
+    END_IF
+ELSIF nRawEncoderUINT <> 0 THEN
+    nEncoderCount := UINT_TO_UDINT(nRawEncoderUINT);
+ELSIF nRawEncoderINT <> 0 THEN
+    nEncoderCount := INT_TO_UDINT(nRawEncoderINT);
+ELSIF nRawEncoderDINT <> 0 THEN
+    nEncoderCount := DINT_TO_UDINT(nRawEncoderDINT);
+ELSE
+    nEncoderCount := 0;
+END_IF
+]]></ST>
+    </Implementation>
+    <Property Name="EncoderCount" Id="{d037a1ee-0710-43c6-9c19-e326f27a2e77}">
+      <Declaration><![CDATA[PROPERTY EncoderCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{6ca15187-be8d-421d-b3ec-fae13af4e67c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[EncoderCount := nEncoderCount;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="EncoderScaling" Id="{8bb97cd0-64f3-4e9d-9730-11c39c541eb9}">
+      <Declaration><![CDATA[METHOD EncoderScaling : UDINT
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
