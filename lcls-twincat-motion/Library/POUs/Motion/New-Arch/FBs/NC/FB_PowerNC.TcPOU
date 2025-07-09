@@ -2,28 +2,22 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_PowerNC" Id="{82bac45d-f3fb-4090-96f5-9cec57f017c8}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_PowerNC IMPLEMENTS I_Power
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
 VAR
     {attribute 'no_copy'}
     AxisRef : REFERENCE TO AXIS_REF;
     fbMcPower : MC_Power;
-    bEnable	: BOOL;
-    bEnablePositive : BOOL;
-    bEnableNegative : BOOL;
-    bPowerIsEnabled : BOOL;
-    bBusy 		: BOOL;
-    bError 	: BOOL;
-    nErrorID 	: UDINT;
-    fOverride 	: LREAL := 100.0;
-    sMessage : T_MAXSTRING;
-    eBufferMode : MC_BufferMode := MC_BufferMode.MC_Aborting;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+fbMcPower(
+    Axis := AxisRef,
+);]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{bde69de1-325d-451d-b0a6-8cb993ec4d33}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -45,7 +39,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Active := THIS^.bPowerIsEnabled;]]></ST>
+          <ST><![CDATA[Active := THIS^.fbMcPower.Status;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -57,7 +51,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Busy := THIS^.bBusy;]]></ST>
+          <ST><![CDATA[Busy := THIS^.fbMcPower.Busy;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -105,7 +99,7 @@ THIS^.bEnableNegative := Enable_Negative;]]></ST>
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.fbMcPower.Error;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -117,7 +111,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.fbMcPower.ErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -156,12 +150,13 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Override := THIS^.fOverride;]]></ST>
+          <ST><![CDATA[Override := THIS^.fbMcPower.Override;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Method Name="Power" Id="{b859403c-f315-4c59-bb46-554245f47326}">
-      <Declaration><![CDATA[METHOD Power
+      <Declaration><![CDATA[(*When the enable flags are updated externally this must be called cyclicly*)
+METHOD Power
 VAR_INPUT
     Enable	: BOOL;
     Enable_Positive	: BOOL;
@@ -171,11 +166,15 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.bEnable := Enable;
-THIS^.bEnablePositive := Enable_Positive;
-THIS^.bEnableNegative := Enable_Negative;
-THIS^.fOverride := Override;
-THIS^.eBufferMode := BufferMode ;
+        <ST><![CDATA[THIS^.fbMcPower(
+    Axis := THIS^.AxisRef,
+    Enable := Enable,
+    Enable_Positive := Enable_Positive,
+    Enable_Negative := Enable_Negative,
+    BufferMode := BufferMode,
+    Override :=Override
+);
+
 ]]></ST>
       </Implementation>
     </Method>
@@ -187,7 +186,7 @@ THIS^.eBufferMode := BufferMode ;
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[PowerIsEnabled := bPowerIsEnabled;]]></ST>
+          <ST><![CDATA[PowerIsEnabled :=THIS^.fbMcPower.Status;]]></ST>
         </Implementation>
       </Get>
     </Property>

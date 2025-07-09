@@ -2,29 +2,38 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_HaltNC" Id="{c033f4f8-0634-4c06-a30f-6a4c2be036bc}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HaltNC IMPLEMENTS I_Halt
-VAR_INPUT
+VAR
     {attribute 'no_copy'}
     AxisRef : REFERENCE TO AXIS_REF;
     fbMcHalt 		: MC_Halt;
-    bCommandHalt :BOOL;
-    fDeceleration : LREAL;
-    fJerk :LREAL;
     eBufferMode : MC_BufferMode := MC_BufferMode.MC_Aborting;
-    bError : BOOL;
-    bBusy : BOOL;
-    bDone : BOOL;
-    nErrorID : UDINT;
     sMessage : T_MAXSTRING;
-    rtDone : R_TRIG;
-    bAborted : BOOL;
-END_VAR
-VAR_OUTPUT
-END_VAR
-VAR
+    eHaltState : (WaitingHalt, Halting);
+
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+CASE WaitingHalt OF
+    WaitingHalt :
+        fbMcHalt(
+        Axis := AxisRef,
+        Execute := FALSE);
+
+    Halting :
+        fbMcHalt(
+        Axis := AxisRef,
+        Execute := TRUE
+        );
+
+END_CASE
+
+]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{0a3b6722-2eb3-4ccd-aef0-1f467bbcc869}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -34,7 +43,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Aborted := THIS^.bAborted;]]></ST>
+          <ST><![CDATA[Aborted := THIS^.fbMcHalt.CommandAborted;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -58,7 +67,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Busy := bBusy;]]></ST>
+          <ST><![CDATA[Busy := THIS^.fbMcHalt.Busy;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -80,7 +89,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[bCommandHalt := CommandHalt;]]></ST>
+          <ST><![CDATA[THIS^.fbMcHalt.Execute := CommandHalt;]]></ST>
         </Implementation>
       </Set>
     </Property>
@@ -92,7 +101,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Done := bDone;]]></ST>
+          <ST><![CDATA[Done := THIS^.fbMcHalt.Done;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -104,7 +113,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.fbMcHalt.Error;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -116,7 +125,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.fbMcHalt.ErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -138,17 +147,23 @@ END_VAR]]></Declaration>
     <Method Name="Halt" Id="{7d31f5d0-f1cb-401e-ae13-f0dc85da0693}">
       <Declaration><![CDATA[METHOD Halt
 VAR_INPUT
-    Execute	: BOOL;
     Deceleration	: LREAL := 0;
     Jerk	: LREAL := 0;
     BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.bCommandHalt :=  Execute;
-THIS^.fDeceleration := Deceleration;
-THIS^.fJerk := Jerk;
-THIS^.eBufferMode := BufferMode;]]></ST>
+        <ST><![CDATA[// Clear previous status
+fbMcHalt(Execute := FALSE,  Axis := THIS^.AxisRef);
+// initiate a new halting request
+fbMcHalt(Execute := TRUE,
+    Axis := THIS^.AxisRef,
+    Execute := TRUE,
+    Deceleration := Deceleration,
+    Jerk := Jerk,
+    BufferMode := THIS^.eBufferMode);
+
+eHaltState := Halting;]]></ST>
       </Implementation>
     </Method>
     <Property Name="Message" Id="{08e92b01-505f-4268-a83e-cb2252382ca8}">
