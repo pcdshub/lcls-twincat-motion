@@ -20,27 +20,9 @@
 METHOD BacklashCompensation
 VAR_INPUT
     Activate     : BOOL;
-    Compensation	: LREAL;
-    RampVelocity	: LREAL;
     DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="BacklashCompensationActive" Id="{bf2a0313-baf0-4f23-9d25-649e80700102}">
-      <Declaration><![CDATA[(*synced Fbs need just to activate the compensation with a given ramp speed
-  other parameters are provided via EPICS (declared in this FB) or via the more extended BackalshCompensation method (simulation) *)
-METHOD BacklashCompensationActive
-VAR_INPUT
-    Active     : BOOL;
-    RampVelocity : LREAL;
-END_VAR
-]]></Declaration>
-    </Method>
-    <Property Name="UserEnable" Id="{0e887761-1e47-4bcc-b90c-ad725d2076e6}">
-      <Declaration><![CDATA[PROPERTY UserEnable : BOOL]]></Declaration>
-      <Set Name="Set" Id="{87cc7722-3cc9-4268-9f17-c9fd9cad6c1f}">
-        <Declaration><![CDATA[]]></Declaration>
-      </Set>
-    </Property>
   </Itf>
 </TcPlcObject>

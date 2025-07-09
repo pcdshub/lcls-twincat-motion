@@ -98,33 +98,15 @@ END_VAR
 METHOD BacklashCompensation
 VAR_INPUT
     Active     : BOOL;
-    Compensation	: LREAL;
-    RampVelocity	: LREAL;
     DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
 END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[THIS^.iBacklashCompensation.BacklashCompensation(	Activate:=Active,
-                                                    Compensation:=Compensation,
-                                                    RampVelocity:=RampVelocity,
                                                     DisableMode:=DisableMode
                                                 );
 
  ]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="BacklashCompensationActive" Id="{249091f7-411d-402a-a0c1-ddf05e2aa802}">
-      <Declaration><![CDATA[(*synced Fbs need just to activate the compensation with a given ramp speed
-  other parameters are provided via EPICS (declared in this FB) or via the more extended BackalshCompensation method (simulation) *)
-METHOD BacklashCompensationActive
-VAR_INPUT
-    Active	: BOOL;
-    RampVelocity	: LREAL;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[THIS^.iBacklashCompensation.BacklashCompensationActive( Active:=Active,
-                                                        RampVelocity:=RampVelocity );]]></ST>
       </Implementation>
     </Method>
     <Property Name="BacklashCompStatus" Id="{dbd09ba7-4925-432d-bcb3-61c45f839987}">
@@ -138,18 +120,6 @@ END_VAR
           <ST><![CDATA[BacklashCompStatus := THIS^.iBacklashCompensation.Active;]]></ST>
         </Implementation>
       </Get>
-    </Property>
-    <Property Name="BacklashCompUserEn" Id="{fae7a9bc-a750-48ff-9dba-132733462610}">
-      <Declaration><![CDATA[PROPERTY BacklashCompUserEn : BOOL
-]]></Declaration>
-      <Set Name="Set" Id="{5efe3d01-f75c-478c-b255-d9375b2da321}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[THIS^.iBacklashCompensation.UserEnable:=BacklashCompUserEn;]]></ST>
-        </Implementation>
-      </Set>
     </Property>
     <Property Name="Busy" Id="{5e27d325-7e15-4c88-bfdb-3053f10f134b}">
       <Declaration><![CDATA[PROPERTY Busy : BOOL
@@ -338,15 +308,13 @@ THIS^.iBacklashCompensation  := iBacklashCompensation ;
     <Method Name="Halt" Id="{8e589b74-150e-4146-8760-2ce7cd4c1a23}">
       <Declaration><![CDATA[METHOD Halt
 VAR_INPUT
-    Execute	: BOOL;
     Deceleration	: LREAL := 0;
     Jerk	: LREAL := 0;
     BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.iHalt.Halt( Execute:=Execute,
-                     Deceleration:=Deceleration,
+        <ST><![CDATA[THIS^.iHalt.Halt( 	Deceleration:=Deceleration,
                     Jerk:=Jerk ,
                     BufferMode:=BufferMode );]]></ST>
       </Implementation>
@@ -525,7 +493,6 @@ END_VAR
     <Method Name="MoveAbsolute" Id="{9a42793a-a8b6-4f1b-b7c4-807fd1695cd6}">
       <Declaration><![CDATA[METHOD MoveAbsolute
 VAR_INPUT
-    Execute     : BOOL;
     Position	: LREAL;
     Velocity	: LREAL;
     Acceleration	: LREAL := 0.0;
@@ -535,8 +502,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.iMoveAbsolute.MoveAbsolute( 	Execute:=Execute,
-                                    Position:=Position,
+        <ST><![CDATA[THIS^.iMoveAbsolute.MoveAbsolute( 	Position:=Position,
                                        Velocity := Velocity,
                                     Acceleration := Acceleration,
                                     Deceleration := Deceleration,
@@ -706,11 +672,10 @@ END_VAR
     <Method Name="Reset" Id="{cd94c4b8-6191-42de-a670-30cee1e2d839}">
       <Declaration><![CDATA[METHOD Reset
 VAR_INPUT
-    Execute	: BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.iReset.Reset(Execute:=Execute);]]></ST>
+        <ST><![CDATA[THIS^.iReset.Reset();]]></ST>
       </Implementation>
     </Method>
     <Property Name="ResetBusy" Id="{7f23536f-87d1-4a85-bf32-65e736b0c8b1}">
