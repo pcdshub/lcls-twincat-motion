@@ -14,25 +14,27 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Handle the brake. TRUE means brake disabled/released
-IF eBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
-    CASE eAxisState OF
-        MC_AXISSTATE_UNDEFINED,
-        MC_AXISSTATE_DISABLED,
-        MC_AXISSTATE_ERRORSTOP:
-            bBrakeRelease := FALSE;
-        MC_AXISSTATE_STANDSTILL:
-            IF eBrakeMode = E_StageBrakeMode.IF_MOVING THEN
+CASE eBrakeMode OF
+    E_StageBrakeMode.NO_BRAKE:
+        bBrakeRelease := TRUE;
+    ELSE
+        CASE eAxisState OF
+            MC_AXISSTATE_UNDEFINED,
+            MC_AXISSTATE_DISABLED,
+            MC_AXISSTATE_ERRORSTOP:
+                // Brake applied
                 bBrakeRelease := FALSE;
+            MC_AXISSTATE_STANDSTILL:
+                IF eBrakeMode = E_StageBrakeMode.IF_MOVING THEN
+                    bBrakeRelease := FALSE;
+                ELSE
+                    // Brake Released
+                    bBrakeRelease := TRUE;
+                END_IF
             ELSE
                 bBrakeRelease := TRUE;
-            END_IF
-        ELSE
-            bBrakeRelease := TRUE;
-    END_CASE
-ELSE
-    bBrakeRelease := TRUE;
-END_IF
-]]></ST>
+        END_CASE
+END_CASE]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{cd4348e5-7a25-4707-93f8-8d2d43893855}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -98,7 +100,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[bBrakeRelease := BrakeRelease;]]></ST>
+          <ST><![CDATA[BrakeRelease := THIS^.bBrakeRelease;]]></ST>
         </Implementation>
       </Get>
     </Property>

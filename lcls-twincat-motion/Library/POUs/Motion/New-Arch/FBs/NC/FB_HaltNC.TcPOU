@@ -9,6 +9,7 @@ VAR
     eBufferMode : MC_BufferMode := MC_BufferMode.MC_Aborting;
     sMessage : T_MAXSTRING;
     eHaltState : (WaitingHalt, Halting);
+    bDone : BOOL;
 
 END_VAR
 ]]></Declaration>
@@ -19,7 +20,7 @@ END_IF
 
 AxisRef.ReadStatus();
 
-CASE WaitingHalt OF
+CASE eHaltState OF
     WaitingHalt :
         fbMcHalt(
         Axis := AxisRef,
@@ -153,7 +154,7 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// Clear previous status
+        <ST><![CDATA[// Clear previous status: MC_Halt auto clear this bit when Done is set.
 fbMcHalt(Execute := FALSE,  Axis := THIS^.AxisRef);
 // initiate a new halting request
 fbMcHalt(Execute := TRUE,
