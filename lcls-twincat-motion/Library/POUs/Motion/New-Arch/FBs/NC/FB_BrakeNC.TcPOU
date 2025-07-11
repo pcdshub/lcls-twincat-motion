@@ -1,39 +1,40 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <POU Name="FB_Brake" Id="{54a1ce6e-4604-4795-a15a-9475ea6f5ca5}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_Brake IMPLEMENTS I_Brake
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
+  <POU Name="FB_BrakeNC" Id="{54a1ce6e-4604-4795-a15a-9475ea6f5ca5}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_BrakeNC IMPLEMENTS I_Brake
 VAR
     // Determines when we automatically disengage the brake
     eBrakeMode: E_StageBrakeMode:=E_StageBrakeMode.IF_ENABLED;
     // NC Brake Output: TRUE to release brake
     bBrakeRelease AT %Q*: BOOL;
+    // pass it an AXIS_REF.
     eAxisState : MC_AxisStates;
 
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Handle the brake. TRUE means brake disabled/released
-IF eBrakeMode <> E_StageBrakeMode.NO_BRAKE THEN
-    CASE eAxisState OF
-        MC_AXISSTATE_UNDEFINED,
-        MC_AXISSTATE_DISABLED,
-        MC_AXISSTATE_ERRORSTOP:
-            bBrakeRelease := FALSE;
-        MC_AXISSTATE_STANDSTILL:
-            IF eBrakeMode = E_StageBrakeMode.IF_MOVING THEN
+CASE eBrakeMode OF
+    E_StageBrakeMode.NO_BRAKE:
+        bBrakeRelease := TRUE;
+    ELSE
+        CASE eAxisState OF
+            MC_AXISSTATE_UNDEFINED,
+            MC_AXISSTATE_DISABLED,
+            MC_AXISSTATE_ERRORSTOP:
+                // Brake applied
                 bBrakeRelease := FALSE;
+            MC_AXISSTATE_STANDSTILL:
+                IF eBrakeMode = E_StageBrakeMode.IF_MOVING THEN
+                    bBrakeRelease := FALSE;
+                ELSE
+                    // Brake Released
+                    bBrakeRelease := TRUE;
+                END_IF
             ELSE
                 bBrakeRelease := TRUE;
-            END_IF
-        ELSE
-            bBrakeRelease := TRUE;
-    END_CASE
-END_IF
-]]></ST>
+        END_CASE
+END_CASE]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{cd4348e5-7a25-4707-93f8-8d2d43893855}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -99,7 +100,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[bBrakeRelease := BrakeRelease;]]></ST>
+          <ST><![CDATA[BrakeRelease := THIS^.bBrakeRelease;]]></ST>
         </Implementation>
       </Get>
     </Property>

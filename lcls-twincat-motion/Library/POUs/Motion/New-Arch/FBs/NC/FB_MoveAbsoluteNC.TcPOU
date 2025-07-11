@@ -5,30 +5,32 @@
 VAR
     {attribute 'no_copy'}
     AxisRef : REFERENCE TO AXIS_REF;
-    // MoveABsolute
     fbMcMoveAbsolute : MC_MoveAbsolute;
-    fTargetPosition	: LREAL;
-    fTargetVelocity	: LREAL;
-    fTargetAcceleration	: LREAL := 0.0;
-    fTargetDeceleration	: LREAL := 0.0;
-    fTargetJerk	: LREAL := 0.0;
-    eBufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
-    rtBusy : R_TRIG;
-    ftBusy : F_TRIG;
-    rtDone : R_TRIG;
-    rtAborted : R_TRIG;
-    bCommandMoveAbsolute : BOOL;
-    bAborted : BOOL;
-    bError : BOOL;
-    bBusy : BOOL;
-    bDone : BOOL;
-    bActive : BOOL;
-    nErrorID : UDINT;
     sMessage : T_MAXSTRING;
+    eMoveAbsoluteState : (WaitingMoveAbsolute, MovingAbsolute);
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+CASE eMoveAbsoluteState OF
+    WaitingMoveAbsolute :
+        fbMcMoveAbsolute(
+        Axis := AxisRef,
+        Execute := FALSE);
+
+    MovingAbsolute :
+        fbMcMoveAbsolute(
+        Axis := AxisRef,
+        Execute := TRUE
+        );
+END_CASE
+
+]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{e282a52e-140a-4032-b49e-bebd36434e55}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -38,7 +40,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Aborted := THIS^.bAborted;]]></ST>
+          <ST><![CDATA[Aborted := THIS^.fbMcMoveAbsolute.CommandAborted;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -50,7 +52,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Active := bActive;]]></ST>
+          <ST><![CDATA[Active := THIS^.fbMcMoveAbsolute.Active;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -62,7 +64,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Busy := THIS^.bBusy;]]></ST>
+          <ST><![CDATA[Busy := THIS^.fbMcMoveAbsolute.Busy;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -84,7 +86,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[bCommandMoveAbsolute := CommandMoveAbsolute;]]></ST>
+          <ST><![CDATA[THIS^.fbMcMoveAbsolute.Execute := CommandMoveAbsolute;]]></ST>
         </Implementation>
       </Set>
     </Property>
@@ -96,7 +98,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Done := THIS^.bDone;]]></ST>
+          <ST><![CDATA[Done := THIS^.fbMcMoveAbsolute.Done;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -108,7 +110,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := THIS^.bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.fbMcMoveAbsolute.Error;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -120,7 +122,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := THIS^.nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.fbMcMoveAbsolute.ErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -151,7 +153,6 @@ END_VAR
     <Method Name="MoveAbsolute" Id="{ec9e8694-906a-4f94-b53d-2b2ff2681c1a}">
       <Declaration><![CDATA[METHOD MoveAbsolute
 VAR_INPUT
-    Execute     : BOOL;
     Position	: LREAL;
     Velocity	: LREAL;
     Acceleration	: LREAL := 0.0;
@@ -161,13 +162,18 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.bCommandMoveAbsolute := Execute;
-THIS^.fTargetPosition := Position;
-THIS^.fTargetVelocity := Velocity;
-THIS^.fTargetAcceleration := Acceleration;
-THIS^.fTargetDeceleration := Deceleration;
-THIS^.fTargetJerk := Jerk;
-THIS^.eBufferMode := BufferMode;]]></ST>
+        <ST><![CDATA[fbMcMoveAbsolute(Execute := FALSE,
+                 Axis := THIS^.AxisRef);
+
+fbMcMoveAbsolute(Execute := TRUE,
+        Axis := THIS^.AxisRef,
+    Position := Position,
+    Velocity := Velocity,
+    Acceleration := Acceleration,
+    Deceleration := Deceleration,
+    Jerk := Jerk,
+    BufferMode := BufferMode);
+eMoveAbsoluteState := MovingAbsolute;]]></ST>
       </Implementation>
     </Method>
   </POU>

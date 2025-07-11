@@ -46,19 +46,7 @@
 METHOD BacklashCompensation
 VAR_INPUT
     Active     : BOOL;
-    Compensation	: LREAL;
-    RampVelocity	: LREAL;
     DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
-END_VAR
-]]></Declaration>
-    </Method>
-    <Method Name="BacklashCompensationActive" Id="{3e7bc661-61f7-4e53-a6c1-341c4d84a32c}">
-      <Declaration><![CDATA[(*synced Fbs need just to activate the compensation with a given ramp speed
-  other parameters are provided via EPICS (declared in this FB) or via the more extended BackalshCompensation method (simulation) *)
-METHOD BacklashCompensationActive
-VAR_INPUT
-    Active     : BOOL;
-    RampVelocity : LREAL;
 END_VAR
 ]]></Declaration>
     </Method>
@@ -68,13 +56,6 @@ END_VAR
       <Get Name="Get" Id="{f6a45633-a1fa-4659-887f-31976f0aa6aa}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
-    </Property>
-    <Property Name="BacklashCompUserEn" Id="{94812ccc-d5c4-49f8-aaf1-b91b9d04b484}">
-      <Declaration><![CDATA[PROPERTY BacklashCompUserEn : BOOL
-]]></Declaration>
-      <Set Name="Set" Id="{84ab6711-b0cf-4074-b1dd-0d70c79947a1}">
-        <Declaration><![CDATA[]]></Declaration>
-      </Set>
     </Property>
     <Property Name="Busy" Id="{e7b6e4ab-4416-4b8c-96c2-adc2e111b093}">
       <Declaration><![CDATA[PROPERTY Busy : BOOL
@@ -116,7 +97,6 @@ END_VAR
     <Method Name="Halt" Id="{c05fa9c9-1bb9-49f8-8b3e-d44f26433d64}">
       <Declaration><![CDATA[METHOD Halt
 VAR_INPUT
-	Execute : BOOL;
     Deceleration : LREAL := 0.0;
     Jerk : LREAL := 0.0;
     BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
@@ -225,7 +205,6 @@ END_VAR
     <Method Name="MoveAbsolute" Id="{f743ae03-cd9d-4d7e-828a-ea2cf453a8e8}">
       <Declaration><![CDATA[METHOD MoveAbsolute
 VAR_INPUT
-    Execute     : BOOL;
     Position	: LREAL;
     Velocity	: LREAL;
     Acceleration	: LREAL := 0.0;
@@ -320,7 +299,6 @@ END_VAR
     <Method Name="Reset" Id="{45e1cd61-ad60-413b-ade5-3a5bb31fcab7}">
       <Declaration><![CDATA[METHOD Reset
 VAR_INPUT
-	Execute : BOOL;
 END_VAR
 ]]></Declaration>
     </Method>

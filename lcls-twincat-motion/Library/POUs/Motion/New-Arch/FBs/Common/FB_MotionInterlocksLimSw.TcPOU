@@ -2,10 +2,6 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MotionInterlocksLimSw" Id="{158cbb88-3b97-40e2-97dc-4d7a82a1299f}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocksLimSw IMPLEMENTS I_MotionInterlocks
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
 VAR
     iMotionInterlocksCommon : I_MotionInterlocksCommon;
     iLimSwStatus : I_LimSwStatus;
@@ -20,9 +16,13 @@ VAR
     bReset : BOOL;
     {attribute 'hide'}
     bMoveOk : BOOL;
+    {attribute 'hide'}
     bMoveBackwardEnabled : BOOL;
+    {attribute 'hide'}
     bMoveForwardEnabled  : BOOL;
+    {attribute 'hide'}
     bPowerEnable : BOOL;
+    {attribute 'hide'}
     Enable: BOOL;
     {attribute 'hide'}
     bLimHit : BOOL;
@@ -50,8 +50,8 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Read Limits status and update shared space
-bMoveBackwardEnabled := THIS^.iLimSwStatus.MoveBackwardEnabled;
-bMoveForwardEnabled := THIS^.iLimSwStatus.MoveForwardEnabled;
+bMoveBackwardEnabled := THIS^.iLimSwStatus.LimBackward;
+bMoveForwardEnabled := THIS^.iLimSwStatus.LimForward;
 
 rtReset(CLK:=bReset);
 rtUserExec (CLK:=bNewMoveReq);
@@ -76,7 +76,6 @@ ELSIF rtUserExec.Q OR rtReset.Q THEN
     THIS^.sMessage := '';
     THIS^.bWarning := FALSE;
 END_IF
-
 
 IF THIS^.iMotionInterlocksCommon.Error THEN
     bError := THIS^.iMotionInterlocksCommon.Error;
@@ -176,7 +175,8 @@ THIS^.iMotionInterlocksCommon.DriveCommands(Enable:=Enable, NewMoveReq:=NewMoveR
       </Implementation>
     </Method>
     <Property Name="Error" Id="{e499cdfd-969f-4051-8215-bd6b1edef6bb}">
-      <Declaration><![CDATA[PROPERTY Error : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY Error : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{7238505b-9b6a-43fb-ba12-674778d8c8ff}">
         <Declaration><![CDATA[VAR
@@ -188,7 +188,8 @@ END_VAR
       </Get>
     </Property>
     <Property Name="ErrorID" Id="{9d2ee520-34ec-43b6-bfa3-0b9c47c94f72}">
-      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY ErrorID : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{a73c59e2-e172-4b19-8c08-958487d94121}">
         <Declaration><![CDATA[VAR
@@ -217,7 +218,8 @@ THIS^.iLimSwStatus := iLimSwStatus;]]></ST>
       </Implementation>
     </Method>
     <Property Name="InterlockEvent" Id="{1b30ac20-f930-48f6-8ea2-fc10757db2a2}">
-      <Declaration><![CDATA[PROPERTY InterlockEvent : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY InterlockEvent : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b809f3cc-6e7f-4e61-b45d-cf84d0c8cc87}">
         <Declaration><![CDATA[
@@ -266,31 +268,34 @@ END_VAR
       </Get>
     </Property>
     <Property Name="MoveBackwardEnabled" Id="{b178f46f-0443-44d6-a91f-16b15ef2cae5}">
-      <Declaration><![CDATA[PROPERTY MoveBackwardEnabled : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY MoveBackwardEnabled : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{a268efd3-4ad6-49eb-932a-a234343d2af7}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[MoveBackwardEnabled := THIS^.iLimSwStatus.MoveBackwardEnabled;]]></ST>
+          <ST><![CDATA[MoveBackwardEnabled := THIS^.bMoveBackwardEnabled;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Property Name="MoveForwardEnabled" Id="{faed5261-6d75-4261-803b-7f0e96c07091}">
-      <Declaration><![CDATA[PROPERTY MoveForwardEnabled : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY MoveForwardEnabled : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b3fa4ff6-04dc-4a45-b2b8-d5535c7132d2}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[MoveForwardEnabled := THIS^.iLimSwStatus.MoveForwardEnabled;]]></ST>
+          <ST><![CDATA[MoveForwardEnabled := THIS^.bMoveForwardEnabled;]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Property Name="MoveOk" Id="{7e64ea4a-5623-4e42-ad55-52145a4215f0}">
-      <Declaration><![CDATA[PROPERTY MoveOk : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY MoveOk : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{bb84aff3-ebbf-450c-8040-87d9eb667555}">
         <Declaration><![CDATA[VAR
@@ -302,7 +307,8 @@ END_VAR
       </Get>
     </Property>
     <Property Name="PowerEnabled" Id="{9511d4c7-e78d-40e2-9d5a-6ecffc43a003}">
-      <Declaration><![CDATA[PROPERTY PowerEnabled : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY PowerEnabled : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{69aad844-8aea-4c31-a561-377909ac709b}">
         <Declaration><![CDATA[VAR
@@ -314,7 +320,8 @@ END_VAR
       </Get>
     </Property>
     <Property Name="Warning" Id="{d4f46c69-4dc7-45e7-9978-5602afa06ae3}">
-      <Declaration><![CDATA[PROPERTY Warning : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY Warning : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{98755ed6-4331-4fcd-ab91-87a47d6bca9e}">
         <Declaration><![CDATA[VAR

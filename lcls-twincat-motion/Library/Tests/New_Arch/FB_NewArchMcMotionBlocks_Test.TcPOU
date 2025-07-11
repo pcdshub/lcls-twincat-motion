@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_NewArchMcMotionBlocks_Test" Id="{dc41a27c-ab9f-47fb-bcb5-3fed2b1c906b}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_NewArchMcMotionBlocks_Test EXTENDS FB_TestSuite
+VAR
+
+    fbMyAxisRef_Test1 : AXIS_REF;
+    // Common tests vars
+    fbPower : MC_Power;
+    eMCUnderTest : (MoveAbsolute, MoveAbsoluteAndHalt, MoveAbsoluteAndReset, BacklashCompensation);
+    fbTestTimer : TON := (PT := T#2S, IN := TRUE);
+    fbInMotionTimer : TON := (PT := T#250MS, IN := FALSE);
+    nTestStateStep : INT;
+    // Common Subjects under test
+    fbMoveAbsoluteNC : FB_MoveAbsoluteNC(AxisRef := fbMyAxisRef_Test1);
+    // To do
+    //fbBacklashCompensationNC : FB_BacklashCompensationNC(AxisRef := fbMyAxisRef_Test1);
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// All tests need this call
+fbMoveAbsoluteNC();
+fbPower(Axis := fbMyAxisRef_Test1,  Override := 100);
+
+(*Add all MoveAbslute test here and then define the condition to move to next subject under test*)
+GivenThatWeStartMoveAbsoluteExpectToBeDoneAndRetainDone(eMCUnderTest=MoveAbsolute);
+GivenThatWeStartMoveAbsoluteAndHaltExpectToBeAbortedAndRetainHaltDone(eMCUnderTest=MoveAbsoluteAndHalt);
+GivenThatWeStartMoveAbsoluteAndResetExpectToBeAbortedAndRetainResetDone(eMCUnderTest=MoveAbsoluteAndReset);
+
+]]></ST>
+    </Implementation>
+    <Method Name="GivenThatWeStartMoveAbsoluteAndHaltExpectToBeAbortedAndRetainHaltDone" Id="{b69b45e8-b2d6-406e-88d9-5d68b04e79a5}">
+      <Declaration><![CDATA[METHOD PRIVATE GivenThatWeStartMoveAbsoluteAndHaltExpectToBeAbortedAndRetainHaltDone
+VAR_INPUT
+    Ready : BOOL;
+END_VAR
+VAR_INST
+    // Subject under test
+    fbHaltNC : FB_HaltNC(AxisRef := fbMyAxisRef_Test1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Ready THEN
+
+    TEST(__POUNAME());
+
+    fbTestTimer();
+
+    CASE nTestStateStep OF
+        0 :
+            fbMoveAbsoluteNC.MoveAbsolute(Position := 100,
+                                          Velocity := 200,
+                                          Acceleration := 200,
+                                      Deceleration := 200);
+            fbTestTimer.IN := TRUE;
+            fbInMotionTimer.IN := TRUE;
+            nTestStateStep := nTestStateStep + 1;
+        1 :
+
+            IF fbInMotionTimer.Q THEN
+                fbHaltNC.Halt(    Deceleration:=100, Jerk:=0 );
+                fbInMotionTimer.IN := FALSE;
+                nTestStateStep := nTestStateStep + 1;
+            END_IF
+        2 :
+            // Do nothing
+    END_CASE
+
+    fbInMotionTimer();
+    fbHaltNC();
+    IF fbTestTimer.Q THEN
+        AssertTrue(Condition := fbMoveAbsoluteNC.Aborted,
+                   Message := 'Expected CommandAborted');
+        AssertTrue(Condition := fbHaltNC.Done,
+                    Message := 'Expected Done');
+        AssertFalse(Condition := fbHaltNC.Busy,
+                    Message := 'Expected not busy');
+        fbTestTimer.IN:=FALSE;
+        // put this line at the end the the latest Moveabsolute test to start halt tests
+        eMCUnderTest := MoveAbsoluteAndReset;
+        fbTestTimer.IN:=FALSE;
+        fbInMotionTimer.IN:=FALSE;
+        nTestStateStep := 0;
+        TEST_FINISHED();
+    END_IF
+
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenThatWeStartMoveAbsoluteAndResetExpectToBeAbortedAndRetainResetDone" Id="{92ac79f2-3e81-4622-8597-aa483d9ef4da}">
+      <Declaration><![CDATA[METHOD PRIVATE GivenThatWeStartMoveAbsoluteAndResetExpectToBeAbortedAndRetainResetDone
+VAR_INPUT
+    Ready : BOOL;
+END_VAR
+VAR_INST
+    // Subject under test
+    fbResetNC : FB_ResetNC(AxisRef := fbMyAxisRef_Test1);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Ready THEN
+
+    TEST(__POUNAME());
+
+    fbTestTimer();
+    fbInMotionTimer();
+    CASE nTestStateStep OF
+        0 :
+            fbMoveAbsoluteNC.MoveAbsolute(Position := 200,
+                                          Velocity := 400,
+                                          Acceleration := 400,
+                                      Deceleration := 400);
+            fbTestTimer.IN := TRUE;
+            fbInMotionTimer.IN := TRUE;
+            nTestStateStep := nTestStateStep + 1;
+        1 :
+            IF fbInMotionTimer.Q THEN
+                fbResetNC.Reset( );
+                fbInMotionTimer.IN := FALSE;
+                nTestStateStep := nTestStateStep + 1;
+            END_IF
+        2 :
+            // Do nothing
+    END_CASE
+
+    fbResetNC();
+
+    IF fbTestTimer.Q THEN
+        AssertTrue(Condition := fbMoveAbsoluteNC.Aborted,
+                   Message := 'Expected CommandAborted');
+        AssertTrue(Condition := fbResetNC.Done,
+                    Message := 'Expected Done');
+        AssertFalse(Condition := fbResetNC.Busy,
+                    Message := 'Expected not busy');
+        fbTestTimer.IN:=FALSE;
+        // put this line at the end the the latest Moveabsolute test to start Reset tests
+        eMCUnderTest := 4;
+        TEST_FINISHED();
+    END_IF
+
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenThatWeStartMoveAbsoluteExpectToBeDoneAndRetainDone" Id="{d6224050-ec2d-4785-a811-d10c9555be8b}">
+      <Declaration><![CDATA[METHOD PRIVATE GivenThatWeStartMoveAbsoluteExpectToBeDoneAndRetainDone
+VAR_INPUT
+    Ready : BOOL;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Ready THEN
+TEST(__POUNAME());
+
+CASE nTestStateStep OF
+    0 :
+        fbPower(Axis := fbMyAxisRef_Test1,
+                Enable := TRUE,
+                Enable_Positive := TRUE,
+                Enable_Negative := TRUE,
+                Override := 100);
+        IF fbPower.Status THEN
+            nTestStateStep := nTestStateStep + 1;
+        END_IF
+
+    1 :
+        fbMoveAbsoluteNC.MoveAbsolute(Position := 50,
+                                      Velocity := 100,
+                                      Acceleration := 200,
+                                      Deceleration := 200);
+        nTestStateStep := nTestStateStep + 1;
+
+    2 :
+        // Do nothing
+END_CASE
+
+fbTestTimer();
+
+IF fbTestTimer.Q THEN
+    // put this line at the end the the latest Moveabsolute test to start halt tests
+    fbTestTimer.IN:=FALSE;
+    nTestStateStep := 0;
+    eMCUnderTest := MoveAbsoluteAndHalt;
+
+    AssertTrue(Condition := fbMoveAbsoluteNC.Done,
+               Message := 'Expected done');
+    AssertFalse(Condition := fbMoveAbsoluteNC.Busy,
+                Message := 'Expected not busy');
+
+    TEST_FINISHED();
+END_IF
+
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

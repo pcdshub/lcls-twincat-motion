@@ -6,19 +6,32 @@ VAR
     {attribute 'no_copy'}
     AxisRef : REFERENCE TO AXIS_REF;
     fbMcReset 	: MC_Reset;
-    bExecute : BOOL;
-    bError : BOOL;
-    bBusy : BOOL;
-    bDone : BOOL;
-    nErrorID : UDINT;
-    sMessage : T_MAXSTRING;
-    rtDone : R_TRIG;
-    rtBusy : R_TRIG;
-    btest : BOOL;
+    eResetState : (WaitingReset, Resetting);
+
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+CASE eResetState OF
+    WaitingReset :
+        fbMcReset(
+        Axis := AxisRef,
+        Execute := FALSE);
+
+    Resetting :
+        fbMcReset(
+        Axis := AxisRef,
+        Execute := TRUE
+        );
+
+END_CASE
+
+]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{2aa8b146-892b-4eda-90ec-32907f9020a6}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -52,7 +65,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Busy := bBusy;]]></ST>
+          <ST><![CDATA[Busy := THIS^.fbMcReset.Busy;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -74,7 +87,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Done := bDone;]]></ST>
+          <ST><![CDATA[Done := THIS^.fbMcReset.Done;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -86,7 +99,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.fbMcReset.Error;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -98,7 +111,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.fbMcReset.ErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -122,18 +135,23 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Message :=sMessage;]]></ST>
+          <ST><![CDATA[]]></ST>
         </Implementation>
       </Get>
     </Property>
     <Method Name="Reset" Id="{b05fc0aa-59e5-483e-8e1e-55eb45708bf0}">
       <Declaration><![CDATA[METHOD Reset
 VAR_INPUT
-    Execute	: BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.bExecute := Execute;]]></ST>
+        <ST><![CDATA[// Clear previous status
+fbMcReset(Execute := FALSE,  Axis := THIS^.AxisRef);
+// initiate a new Resetting request
+fbMcReset(   Axis := THIS^.AxisRef,
+             Execute := TRUE );
+
+eResetState := Resetting;]]></ST>
       </Implementation>
     </Method>
   </POU>

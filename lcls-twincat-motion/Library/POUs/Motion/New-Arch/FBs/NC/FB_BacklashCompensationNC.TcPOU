@@ -2,13 +2,11 @@
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_BacklashCompensationNC" Id="{15421978-726d-43ca-8e30-d33510c30e01}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_BacklashCompensationNC IMPLEMENTS I_BacklashCompensation
-VAR_INPUT
-END_VAR
-VAR_OUTPUT
-END_VAR
 VAR
-(* Other status information for users of the IOC *)
-    (* Backlash compensation*)
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcBacklashCompensation: MC_BacklashCompensation;
+    (* Other status information for users of the IOC *)
     // Enabled axis backlash compensation
     {attribute 'pytmc' := '
         pv: PLC:bBacklashCompUserEn
@@ -37,6 +35,14 @@ VAR
     '}
     fBacklashComp: LREAL := 0.0;
 
+    // Backlash Ramp Velocity
+    {attribute 'pytmc' := '
+        pv: PLC:fRampVelo
+        io: io
+        field: DESC Backlash compensation Ramp Velocity
+    '}
+     fRampVelo : LREAL := 10.0;
+
     // Current Backlash compensation value ?
     {attribute 'pytmc' := '
         pv: PLC:fMeasuredBacklashComp
@@ -45,23 +51,38 @@ VAR
     '}
     fActCompensation: LREAL;
 
-    {attribute 'no_copy'}
-    AxisRef : REFERENCE TO AXIS_REF;
-    fbMcBacklashCompensation: MC_BacklashCompensation;
     fPrevCompensation : LREAL := 0.0;
     bActive: BOOL;
-    fRampVelo : LREAL := 0.0;
-    bLocalEnable : BOOL;
-    bError : BOOL;
-    bBusy : BOOL;
-    nErrorID : UDINT;
-    sMessage : T_MAXSTRING;
-    eDisableMode: E_DisableMode := E_DISABLEMODE.DisableModeHold;
 
+    bLocalEnable : BOOL;
+    sMessage : T_MAXSTRING;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+(*Note: Configure within the axis parameters set "position correction" to true
+    Directional compensation change
+      FALSE -> positive backlash
+      TRUE  -> Negative backlash compensation
+    Reset Compensation to register a new value change
+    fRampVelocity : a tenth of Moveabsolute velocity is a good starting point
+*)
+bLocalEnable R= NOT bActive OR (fBacklashComp<>fPrevCompensation);
+bLocalEnable S= bActive;
+
+fbMcBacklashCompensation(Axis:=AxisRef,
+    Enable:= bLocalEnable AND bUserEnable,
+    Backlash:= fBacklashComp,
+    CompensationInPositiveDirection:=(fBacklashComp < 0.0),
+    Ramp:=fRampVelo,
+    CurrentBacklash=>fActCompensation
+);
+fPrevCompensation:=fBacklashComp;]]></ST>
     </Implementation>
     <Property Name="Aborted" Id="{59820488-53e0-4bd0-9746-41b9b903c795}">
       <Declaration><![CDATA[PROPERTY Aborted : BOOL
@@ -83,7 +104,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ActCompensation := fActCompensation;]]></ST>
+          <ST><![CDATA[ActCompensation := THIS^.fbMcBacklashCompensation.CurrentBacklash;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -95,7 +116,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Active:=fbMcBacklashCompensation.Enabled;]]></ST>
+          <ST><![CDATA[]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -110,30 +131,14 @@ END_VAR
 METHOD BacklashCompensation
 VAR_INPUT
     Activate     : BOOL;
-    Compensation	: LREAL;
-    RampVelocity	: LREAL;
     DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[THIS^.bActive:= Activate;
-THIS^.fBacklashComp := Compensation;
-THIS^.fRampVelo := RampVelocity;
-THIS^.eDisableMode:=DisableMode;]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="BacklashCompensationActive" Id="{dbabc34f-4a46-42a1-a3aa-48ed4e21c0cc}">
-      <Declaration><![CDATA[(*synced Fbs need just to activate the compensation with a given ramp speed
-  other parameters are provided via EPICS (declared in this FB) or via the more extended BackalshCompensation method (simulation) *)
-METHOD BacklashCompensationActive
-VAR_INPUT
-    Active	: BOOL;
-    RampVelocity	: LREAL;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[THIS^.bActive:= Active;
-THIS^.fRampVelo := RampVelocity;]]></ST>
+        <ST><![CDATA[fbMcBacklashCompensation(Axis:=AxisRef,
+    Enable:= Activate,
+    DisableMode:=DisableMode
+);]]></ST>
       </Implementation>
     </Method>
     <Property Name="Busy" Id="{55ee7371-1408-415b-b1f0-122aa6241483}">
@@ -144,7 +149,8 @@ THIS^.fRampVelo := RampVelocity;]]></ST>
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Busy := fbMcBacklashCompensation.Busy;]]></ST>
+          <ST><![CDATA[Busy := THIS^.fbMcBacklashCompensation.Busy;
+]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -178,7 +184,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := THIS^.bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.fbMcBacklashCompensation.Error;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -190,7 +196,7 @@ END_VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := THIS^.nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.fbMcBacklashCompensation.ErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -217,18 +223,6 @@ END_VAR
           <ST><![CDATA[Message :=sMessage;]]></ST>
         </Implementation>
       </Get>
-    </Property>
-    <Property Name="UserEnable" Id="{a9d2d8cc-e94d-4db5-bf54-daa67dbaf501}">
-      <Declaration><![CDATA[PROPERTY UserEnable : BOOL
-]]></Declaration>
-      <Set Name="Set" Id="{2cefc03c-c62d-4e89-aa15-5c5cbbb4411a}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[bUserEnable := UserEnable;]]></ST>
-        </Implementation>
-      </Set>
     </Property>
   </POU>
 </TcPlcObject>

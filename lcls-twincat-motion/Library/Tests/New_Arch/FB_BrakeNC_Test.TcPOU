@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_BrakeNC_Test" Id="{50ef14f4-0b92-45ff-96d4-50e34285aa58}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_BrakeNC_Test EXTENDS FB_TestSuite
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[GivenBrakeModeIfEnabledThenOnlyReleaseBrakeWhenEnabled();
+GivenBrakeModeNoBrakeAlwaysReleaseBrake();
+GivenBrakeModeIfMovingThenOnlyReleaseBrakeWhenInMotion();]]></ST>
+    </Implementation>
+    <Method Name="GivenBrakeModeIfEnabledThenOnlyReleaseBrakeWhenEnabled" Id="{fd26cdcb-b501-4d6c-b3fd-4b561d1112d1}">
+      <Declaration><![CDATA[METHOD PRIVATE GivenBrakeModeIfEnabledThenOnlyReleaseBrakeWhenEnabled
+VAR_INST
+    // Subject under test
+    fbBrakeNC : FB_BrakeNC;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_DISABLED;
+fbBrakeNC.BrakeMode := E_StageBrakeMode.IF_ENABLED;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #1');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_ERRORSTOP;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+            Message := 'Not correct brake #2');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_UNDEFINED;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+            Message := 'Not correct brake #3');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_STANDSTILL;
+
+fbBrakeNC();
+
+AssertTrue(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #4');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_CONTINOUSMOTION;
+
+fbBrakeNC();
+
+AssertTrue(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #5');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenBrakeModeIfMovingThenOnlyReleaseBrakeWhenInMotion" Id="{637ab5c4-7bd3-4d72-b4e6-f3c38adb5657}">
+      <Declaration><![CDATA[METHOD PRIVATE GivenBrakeModeIfMovingThenOnlyReleaseBrakeWhenInMotion
+VAR_INST
+    // Subject under test
+    fbBrakeNC : FB_BrakeNC;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_DISABLED;
+fbBrakeNC.BrakeMode := E_StageBrakeMode.IF_MOVING;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #1');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_ERRORSTOP;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+            Message := 'Not correct brake #2');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_UNDEFINED;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+            Message := 'Not correct brake #3');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_STANDSTILL;
+
+fbBrakeNC();
+
+AssertFalse(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #4');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_CONTINOUSMOTION;
+
+fbBrakeNC();
+
+AssertTrue(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #5');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_DISCRETEMOTION;
+
+fbBrakeNC();
+
+AssertTrue(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #6');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenBrakeModeNoBrakeAlwaysReleaseBrake" Id="{1008283e-3367-42f3-aee3-027ec3748991}">
+      <Declaration><![CDATA[METHOD PRIVATE GivenBrakeModeNoBrakeAlwaysReleaseBrake
+VAR_INST
+    // Subject under test
+    fbBrakeNC : FB_BrakeNC;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_HOMING;
+fbBrakeNC.BrakeMode := E_StageBrakeMode.NO_BRAKE;
+
+fbBrakeNC();
+
+AssertTrue(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #1');
+
+fbBrakeNC.AxisState := MC_AxisStates.MC_AXISSTATE_STOPPING;
+
+fbBrakeNC();
+
+AssertTrue(Condition := fbBrakeNC.BrakeRelease,
+           Message := 'Not correct brake #2');
+
+TEST_FINISHED();]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
