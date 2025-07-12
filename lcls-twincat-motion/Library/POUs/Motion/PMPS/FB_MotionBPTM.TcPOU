@@ -69,8 +69,8 @@ IF NOT bMotorCountError THEN
     SetDoneMoving();
     IF bEnable THEN
         RunBPTM();
-        HandleTimeout();
     END_IF
+    HandleTimeout();
 END_IF
 ]]></ST>
     </Implementation>
@@ -96,9 +96,10 @@ bTransitionAuthorized := bInternalAuth OR (bArbiterTimeout AND bMoveOnArbiterTim
 
 // Trip the beam for BPTM timeouts if we want to move
 // Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
-ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout);
+ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout AND bEnable);
 ffBPTMTimeoutAndMove.i_xReset S= bResetBPTMTimeout OR (bptm.bDone AND NOT bptm.bError);
 ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
+ffBPTMTimeoutAndMove.i_xReset := ffBPTMTimeoutAndMove.i_xReset OR NOT bEnable;
 ffBPTMTimeoutAndMove(
     i_DevName := sDeviceName,
     i_Desc := 'BPTM Timeout',
