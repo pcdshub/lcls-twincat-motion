@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_HomeDS402" Id="{fbf9953c-abc4-4ff2-b40d-41861c6228fc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_HomeDS402 IMPLEMENTS I_HomeDS402
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    iMotionLogger : I_MotionLogger;
+    //iLimSwStatus : I_LimSwStatus;
+    //iHomeShareData : I_HomeShareData ;
+    bCommandMoveHome  : BOOL;
+    bBusy	: BOOL;
+    bDone	: BOOL;
+    bError 	: BOOL;
+    bAbort   : BOOL;
+    bAborted  : BOOL;
+    nErrorID : UDINT;
+    fOffset  : LREAL;
+    fPosition	: LREAL;
+    rtDone	: R_TRIG;
+    fHomeSpeedFast	: LREAL;
+    fHomeSpeedSlow	: LREAL;
+    bBit13OpModeSpecific	: BOOL;
+    bBit12OpModeSpecific	: BOOL;
+    bTargetReached	: BOOL;
+    nDriveControl : UINT;
+    nModeOfOperation : SINT;
+    nModeOfOperationDisplay : SINT;
+    nMostRecentModeOfOperation : SINT;
+    eHomeMode: E_EpicsHomeCmd :=E_EpicsHomeCmd.AUTOZERO;
+    rtExec: R_TRIG;
+    ftExec: F_TRIG;
+    bMove  : BOOL;
+    tonSyncHoming : TON;
+    {attribute 'hide'}
+    eHomeState	: E_MoveState;
+    rtReset: R_TRIG;
+    bReset: BOOL;
+    sMessage: T_MAXSTRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{f628076d-da64-46a3-9b2e-51ef77ba2849}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f866410a-aefc-4817-8d05-a7966bf27315}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Aborted := bAborted;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{2ec4b934-b83b-40a1-89e4-42fd9450a9e9}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{5ce1d2b4-0255-47fe-9b81-ea8d68a1187a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{08f4c53a-a93f-4c0f-81a4-fc4b91c13ab5}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{a9f0aa36-9754-42d8-8ac1-0e120c0daa7f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{fe9db625-490b-485d-a2d4-bb34c240c290}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    iMotionLogger : I_MotionLogger;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.iMotionLogger := iMotionLogger;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="CommandMoveHome" Id="{ee03e6b2-d0a1-4de6-8b3b-367209048f73}">
+      <Declaration><![CDATA[PROPERTY CommandMoveHome : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{b98b121c-ddb6-47db-8c64-61500ddff177}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bCommandMoveHome := CommandMoveHome;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="ControlWord" Id="{4033051e-3bcc-421f-84e9-2fa7f78a1b85}">
+      <Declaration><![CDATA[PROPERTY ControlWord : UINT]]></Declaration>
+      <Get Name="Get" Id="{6da058be-1b97-4f09-8c0f-91efc034b490}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ControlWord := nDriveControl;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Done" Id="{4f9baf15-b527-487e-8710-a14003009a1c}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{0b073f86-ebf7-4ab3-9e80-887fc0329919}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := THIS^.bDone;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{032eb170-b5c9-4f58-baf7-a259d7549383}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1fdeb09e-0529-4586-8f44-e19b71367709}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.bError;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{d931b1ca-ae52-4471-a302-e9584e38504b}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{2d6153ac-27f4-46d6-a224-787a0075982c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.nErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{8f57f631-0cc5-486a-b712-0c732bc45c46}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    iMotionLogger : I_MotionLogger;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.iMotionLogger := iMotionLogger;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Home" Id="{e9200b22-57ed-4146-80d4-2882e00b73f4}">
+      <Declaration><![CDATA[METHOD Home
+VAR_INPUT
+    Execute	: BOOL;
+    HomeSpeedFast	: LREAL;
+    HomeSpeedSlow	: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bCommandMoveHome := Execute;
+THIS^.fHomeSpeedFast := HomeSpeedFast;
+THIS^.fHomeSpeedSlow := HomeSpeedSlow;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{8a09e656-584e-42d0-b55b-a832eece117d}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{ad47af60-da43-4f64-8c36-cc22f2c3972a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Mode" Id="{ae75dbc7-8132-452c-bcd4-63471502db3c}">
+      <Declaration><![CDATA[PROPERTY Mode : E_EpicsHomeCmd
+]]></Declaration>
+      <Get Name="Get" Id="{77995d4e-8083-4845-ada0-e17537ce5f9a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Mode := eHomeMode;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{eb23e651-ed2b-47ef-a422-ccd55362cca4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eHomeMode := Mode;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="ModeOfOperation" Id="{5f3be5b6-0454-423f-adb3-6186fe16b30b}">
+      <Declaration><![CDATA[PROPERTY ModeOfOperation : SINT]]></Declaration>
+      <Get Name="Get" Id="{aa592275-3499-4171-9be7-f81686ae87bb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ModeOfOperation  := nModeOfOperation;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Offset" Id="{8c816e30-0a55-412d-a75b-c41529942f5a}">
+      <Declaration><![CDATA[PROPERTY Offset : LREAL
+]]></Declaration>
+      <Set Name="Set" Id="{d4b4ef7f-b15c-44ed-8ced-865f552cbcaa}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fOffset := Offset;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Position" Id="{1a510ee5-ff47-4454-aa3c-a3b17a57e147}">
+      <Declaration><![CDATA[PROPERTY Position : LREAL
+]]></Declaration>
+      <Set Name="Set" Id="{3dc8b970-b6c7-4d4d-9a14-299692f00a16}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[fPosition := Position;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Reset" Id="{8a55c20f-6ca9-433d-9fd5-e4475bd1b3c1}">
+      <Declaration><![CDATA[PROPERTY Reset : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{1d005cd5-1cf0-4011-b545-7f7f15def153}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bReset := Reset;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="Status" Id="{d99216d5-05a0-4090-ab57-79a7bde36202}">
+      <Declaration><![CDATA[METHOD Status
+VAR_INPUT
+    ModeOfOperationDisplay : SINT;
+    Bit13OpModeSpecific	: BOOL;
+    Bit12OpModeSpecific	: BOOL;
+    TargetReached	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nModeOfOperationDisplay := ModeOfOperationDisplay;
+bBit13OpModeSpecific := Bit13OpModeSpecific;
+bBit12OpModeSpecific := Bit12OpModeSpecific;
+bTargetReached := TargetReached;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_PowerNC" Id="{82bac45d-f3fb-4090-96f5-9cec57f017c8}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_PowerNC IMPLEMENTS I_Power
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcPower : MC_Power;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+fbMcPower(
+    Axis := AxisRef,
+);]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{bde69de1-325d-451d-b0a6-8cb993ec4d33}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{8c49db22-f93b-4013-b841-4a43a6216501}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{49693f07-c88b-4b06-be0c-0dc75c8f5fac}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b11a8d39-0dfc-40d5-ab4e-e7fe1f8bda7c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active := THIS^.fbMcPower.Status;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{1d88cc85-9bbc-4836-b583-4a9d93ccadc7}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{e8b60715-a1d9-4e57-9f76-50ea68243628}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.fbMcPower.Busy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{b807f150-fc9f-4aa5-9d8d-b294c818c5aa}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Done" Id="{47775ab2-32ed-415e-8f00-7dc8c50e6589}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{8a26bdf6-610d-44e7-af87-ff96e882b31e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{5900c701-bb24-4682-9d2c-47b8d2773b46}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{50fb1906-033c-485b-9e5d-f1230f94dfc8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.fbMcPower.Error;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{1fe914ad-7f24-41a0-bde2-d4d693aeb73f}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{8f8eef06-c2be-4844-866a-ef0542739cd8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.fbMcPower.ErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{cf7caa46-f1e4-49f9-addf-eba93ec02164}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{8449188f-1930-49b3-8fe2-2e40bd14ae5f}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{1b9ef192-6b77-407c-a88f-8d85eb8cdc1a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Override" Id="{a7a1e83f-16ea-4038-8048-9acd1171492b}">
+      <Declaration><![CDATA[PROPERTY Override : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{c098132b-e311-41da-b640-f143b09d83d2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Override := THIS^.fbMcPower.Override;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Power" Id="{b859403c-f315-4c59-bb46-554245f47326}">
+      <Declaration><![CDATA[(*When the enable flags are updated externally this must be called cyclicly*)
+METHOD Power
+VAR_INPUT
+    Enable	: BOOL;
+    Enable_Positive	: BOOL;
+    Enable_Negative	: BOOL;
+    Override	: LREAL := 100.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.fbMcPower(
+    Axis := THIS^.AxisRef,
+    Enable := Enable,
+    Enable_Positive := Enable_Positive,
+    Enable_Negative := Enable_Negative,
+    BufferMode := BufferMode,
+    Override :=Override
+);
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="PowerIsEnabled" Id="{7e136934-4440-48f5-a211-011704d8f4f5}">
+      <Declaration><![CDATA[PROPERTY PowerIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{fffb35ff-b9f5-44f8-bd6c-842b697893c4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PowerIsEnabled :=THIS^.fbMcPower.Status;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

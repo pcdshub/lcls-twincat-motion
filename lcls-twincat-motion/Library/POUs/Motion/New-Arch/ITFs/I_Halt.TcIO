@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_Halt" Id="{14029942-f501-4700-ae44-ffd198ee0804}">
+    <Declaration><![CDATA[INTERFACE I_Halt EXTENDS I_Output
+]]></Declaration>
+    <Property Name="Active" Id="{931a7ba1-a94e-4370-afcb-3d6e40f3a0e7}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL]]></Declaration>
+      <Get Name="Get" Id="{2f305331-f614-4dee-9034-de312cec5ae6}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="CommandHalt" Id="{5c8521dd-762c-4d7a-b33c-999816b31f14}">
+      <Declaration><![CDATA[PROPERTY CommandHalt : BOOL]]></Declaration>
+      <Set Name="Set" Id="{323aeaa4-e9fd-40f3-904c-33931674b910}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
+    </Property>
+    <Method Name="Halt" Id="{d4ac7148-c266-4f03-80ec-1cc697d63c31}">
+      <Declaration><![CDATA[METHOD Halt
+VAR_INPUT
+    Deceleration : LREAL := 0.0;
+    Jerk : LREAL := 0.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

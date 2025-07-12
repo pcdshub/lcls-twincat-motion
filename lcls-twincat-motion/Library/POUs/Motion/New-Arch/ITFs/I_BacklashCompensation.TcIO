@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_BacklashCompensation" Id="{c0dc76c5-ea53-4a27-aade-dbf12ab6b44d}">
+    <Declaration><![CDATA[INTERFACE I_BacklashCompensation EXTENDS I_Output
+]]></Declaration>
+    <Property Name="ActCompensation" Id="{ff081112-3182-493d-846e-c2192c5f77d6}">
+      <Declaration><![CDATA[PROPERTY ActCompensation : LREAL]]></Declaration>
+      <Get Name="Get" Id="{5dbd065d-c6db-421a-8993-7aa4f3a00024}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="BacklashCompensation" Id="{8dc8359f-12ee-498a-aa0e-4230cfa1b09f}">
+      <Declaration><![CDATA[(*
+    Handle positive/negative backlash compensation
+    User needs to set the direction of backlash from the sign of the compensation value
+    Backlash compensation is disabled during referencing (homing).
+    When direction is positive/negative, further movement in the negative/positive direction not compensated
+    further movement in the negative/positive direction will be compensated
+*)
+METHOD BacklashCompensation
+VAR_INPUT
+    Activate     : BOOL;
+    DisableMode	: E_DISABLEMODE := E_DISABLEMODE.DisableModeHold;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

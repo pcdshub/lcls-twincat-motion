@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <DUT Name="E_EpicsHomeCmd" Id="{97391387-6673-4061-a135-1a0002888344}">
+  <DUT Name="E_EpicsHomeCmd" Id="{5b99003f-e7b7-4d14-9ac5-0be5ae1ff947}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE E_EpicsHomeCmd :
@@ -11,8 +11,11 @@ TYPE E_EpicsHomeCmd :
     HOME_VIA_LOW := 3, // Home switch via low switch
     HOME_VIA_HIGH := 4, // Home switch via high switch
     ABSOLUTE_SET := 15, // Set here to be fHomePosition
-    NONE := -1 // Do not home, ever
-);
+    // MCS2
+    AUTOZERO := -1,
+    CURRENT_POSITION_METHOD := 37,
+    NONE := -99 // Do not home, ever
+) := NONE;
 END_TYPE
 ]]></Declaration>
   </DUT>

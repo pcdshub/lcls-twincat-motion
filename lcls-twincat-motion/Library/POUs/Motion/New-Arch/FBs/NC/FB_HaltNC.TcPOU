@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_HaltNC" Id="{c033f4f8-0634-4c06-a30f-6a4c2be036bc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_HaltNC IMPLEMENTS I_Halt
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcHalt 		: MC_Halt;
+    eBufferMode : MC_BufferMode := MC_BufferMode.MC_Aborting;
+    sMessage : T_MAXSTRING;
+    eHaltState : (WaitingHalt, Halting);
+    bDone : BOOL;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+CASE eHaltState OF
+    WaitingHalt :
+        fbMcHalt(
+        Axis := AxisRef,
+        Execute := FALSE);
+
+    Halting :
+        fbMcHalt(
+        Axis := AxisRef,
+        Execute := TRUE
+        );
+
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{0a3b6722-2eb3-4ccd-aef0-1f467bbcc869}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{af5a55f0-647d-40ab-98bd-8c3f9ba0c756}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Aborted := THIS^.fbMcHalt.CommandAborted;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{04d62f93-14c5-45c5-834a-45619c35235a}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{4a5fb9e3-eee2-4c86-aac7-88671ef9bcae}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active := THIS^.fbMcHalt.Active;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{2883f0f4-4b95-4139-8a36-d2b2f3dcc31b}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{5b77bc7a-e864-4e13-ae17-e0016b7d86c8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.fbMcHalt.Busy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{7068fa57-7e79-4554-a691-c8e89ace2f96}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="CommandHalt" Id="{bbacc6b5-2150-42a2-9054-67af9aca1473}">
+      <Declaration><![CDATA[PROPERTY CommandHalt : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{32dd52a4-4349-46b9-ad3d-b8776ebebd30}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[THIS^.fbMcHalt.Execute := CommandHalt;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Done" Id="{be7dfb74-7669-4f3f-93f0-cda14723d1f0}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{0f32e8ae-880b-42bd-b635-3e016d1c20ba}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := THIS^.fbMcHalt.Done;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{45d4ccdb-82f3-4b2c-ae9a-f7a118e27ac3}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{bbf7cb10-277f-4907-9b37-03e01cec3c96}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.fbMcHalt.Error;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{336845aa-0c0a-4c8a-b21e-bc9fafd47d20}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{d0994f69-d16e-4cfd-8b2d-204ea0c00d54}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.fbMcHalt.ErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{18cebc01-b938-405d-8b68-4f57807b525a}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Halt" Id="{7d31f5d0-f1cb-401e-ae13-f0dc85da0693}">
+      <Declaration><![CDATA[METHOD Halt
+VAR_INPUT
+    Deceleration	: LREAL := 0;
+    Jerk	: LREAL := 0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Clear previous status: MC_Halt auto clear this bit when Done is set.
+fbMcHalt(Execute := FALSE,  Axis := THIS^.AxisRef);
+// initiate a new halting request
+fbMcHalt(Execute := TRUE,
+    Axis := THIS^.AxisRef,
+    Execute := TRUE,
+    Deceleration := Deceleration,
+    Jerk := Jerk,
+    BufferMode := BufferMode);
+
+eHaltState := Halting;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{08e92b01-505f-4268-a83e-cb2252382ca8}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{8eca0745-b604-4b2a-98ba-3971c670c893}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message  := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

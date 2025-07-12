@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_AxisStatusNC" Id="{48b2ca9e-7e0c-4a40-afd9-65beb0d8f7fb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_AxisStatusNC IMPLEMENTS I_AxisStatus
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    bDone : BOOL;
+    bBusy    : BOOL;
+    sMessage : T_MAXSTRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{493fe813-f38c-4a72-a412-d39deeb9c5a8}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1469fb36-fb54-4a19-a86a-8276cc2e65dd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Aborted := THIS^.AxisRef.Status.HasBeenStopped;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{939ccabc-9e0d-4a0d-b758-5bd11eddc86f}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1342317a-ef44-4c94-8f98-1f69b4df0f97}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active := THIS^.AxisRef.Status.HasJob;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="AxisEnabled" Id="{2a14e841-fea3-4b30-9123-2945a0231bb1}">
+      <Declaration><![CDATA[METHOD AxisEnabled : BOOL
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Get a definitive bEnabled reading
+CASE THIS^.AxisRef.Status.MotionState OF
+    // We are not enabled if there is an issue
+    MC_AXISSTATE_UNDEFINED, MC_AXISSTATE_DISABLED, MC_AXISSTATE_ERRORSTOP:
+        AxisEnabled := FALSE;
+    ELSE
+        AxisEnabled := TRUE;
+END_CASE]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="AxisID" Id="{b55ca9d1-a2f2-480e-8cbb-a4c4afcd2415}">
+      <Declaration><![CDATA[PROPERTY AxisID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{690eb4ae-f09b-4d3e-9b07-69bd8cd447b8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[AxisId:=THIS^.AxisRef.NcToPlc.AxisId;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="AxisState" Id="{4fd0f177-1ed6-45bb-bff4-4341481e5661}">
+      <Declaration><![CDATA[PROPERTY AxisState : MC_AxisStates
+]]></Declaration>
+      <Get Name="Get" Id="{97db2c6e-eff4-4d18-9d44-7ecc59764d3a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[AxisState := THIS^.AxisRef.Status.MotionState;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{865da216-968d-4f1e-ad29-35664527e8ff}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b659bc87-af56-4ae3-9e7f-736619183db5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.AxisRef.Status.Moving;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{6e051d1f-04b5-4dd5-9dad-cf07d281461d}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Done" Id="{6add5887-aab0-48e7-b663-80d51fb4c416}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{0cf24b3a-2956-42c5-b678-cce9393578b9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := THIS^.AxisRef.Status.InTargetPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{548a6916-d1a2-4d00-87ab-a00f5b019e53}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{74afa849-d130-475a-8341-04da63542fc9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.AxisRef.Status.Error;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{368d990c-4118-41ef-8dc7-2a94afb0a374}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{d4abb0c7-70be-4b55-8227-7b88913acfef}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.AxisRef.Status.ErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{30149fc9-8e6b-4cfe-b3d9-a8df4e5fe0ba}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="InTargetPosition" Id="{833e02a9-2ab3-4627-b017-70699d164f13}">
+      <Declaration><![CDATA[PROPERTY InTargetPosition : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{61009624-f415-45ec-8a11-0cb9f7b4d0aa}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[InTargetPosition := THIS^.AxisRef.Status.InTargetPosition;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredAcceleration" Id="{4119321c-b4b8-4129-b781-b94c8b154a94}">
+      <Declaration><![CDATA[PROPERTY MeasuredAcceleration : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{20862a9b-2723-4b7b-bca0-95d5609f10fe}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MeasuredAcceleration := THIS^.AxisRef.NcToPlc.ActAcc;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredPosition" Id="{754e7b8a-3eae-48a8-96e0-2df6eb19a0af}">
+      <Declaration><![CDATA[PROPERTY MeasuredPosition : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{741ffe13-80d1-4fb2-909b-14aaf0799800}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[// (*Actual Position*)
+MeasuredPosition:=THIS^.AxisRef.NcToPlc.ActPos;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredPositionDiff" Id="{17bea7bf-049e-4340-843e-56e70e8380d9}">
+      <Declaration><![CDATA[PROPERTY MeasuredPositionDiff : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{b3d1805f-9f5c-480e-adf6-246877ce89b9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[// (*Actual Position Diff*)
+MeasuredPositionDiff:=THIS^.AxisRef.NcToPlc.PosDiff;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MeasuredVelocity" Id="{089d6dec-53ad-4749-b018-c05930c304c5}">
+      <Declaration><![CDATA[PROPERTY MeasuredVelocity : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{b2c7b5e2-059e-44db-bbc9-22d66d2ed3b0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[// (*Actual Velocity*)
+MeasuredVelocity:=THIS^.AxisRef.NcToPlc.ActVelo;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Message" Id="{5ab8dd75-11ac-4ef7-9841-ea47e6bb03ef}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{1f07d7ce-3842-4eaf-b982-a682ff02bbfa}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="NegativeMotionIsEnabled" Id="{352ac11a-7d4b-4d2b-b7c7-013ee91633cc}">
+      <Declaration><![CDATA[PROPERTY NegativeMotionIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{30804582-e098-4034-970d-6e91990daaf1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[NegativeMotionIsEnabled := THIS^.AxisRef.Status.NegativeDirection;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="PositiveMotionIsEnabled" Id="{4637d8b1-ec1d-4ec0-be60-4008469f6e35}">
+      <Declaration><![CDATA[PROPERTY PositiveMotionIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{295be85a-4e0b-4a6e-8b69-28cb34305fc0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PositiveMotionIsEnabled := THIS^.AxisRef.Status.PositiveDirection;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="StandStill" Id="{f49bd614-c508-4377-a6b7-0f9eab982958}">
+      <Declaration><![CDATA[PROPERTY StandStill : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f3718d17-a0bb-4000-88b4-c7094834adc0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[StandStill := THIS^.AxisRef.Status.StandStill;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Stopped" Id="{c6375ac0-08b6-4b85-999a-45c5d7a1fa71}">
+      <Declaration><![CDATA[PROPERTY Stopped : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{abded25b-8407-4890-9c37-9bccdbf06f91}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Stopped := THIS^.AxisRef.Status.HasBeenStopped;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

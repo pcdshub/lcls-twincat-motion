@@ -20,6 +20,9 @@
     <Title>lcls-twincat-motion</Title>
     <ProjectVersion>0.0.0</ProjectVersion>
     <WriteProductVersion>false</WriteProductVersion>
+    <AllowChecksForLibrary>false</AllowChecksForLibrary>
+    <POUsForPropertyAccessIncluded>false</POUsForPropertyAccessIncluded>
+    <GlobalVersionStructureIncluded>false</GlobalVersionStructureIncluded>
     <!--    <OutputType>Exe</OutputType>
     <RootNamespace>MyApplication</RootNamespace>
     <AssemblyName>MyApplication</AssemblyName>-->
@@ -27,8 +30,13 @@
   <ItemGroup>
     <Folder Include="DUTs" />
     <Folder Include="DUTs\Deprecated" />
+    <Folder Include="DUTs\DS402" />
     <Folder Include="GVLs" />
     <Folder Include="POUs\Motion\New-Arch\FBs" />
+    <Folder Include="POUs\Motion\New-Arch\FBs\Common" />
+    <Folder Include="POUs\Motion\New-Arch\FBs\DS402" />
+    <Folder Include="POUs\Motion\New-Arch\FBs\NC" />
+    <Folder Include="POUs\Motion\New-Arch\FBs\Containers" />
     <Folder Include="POUs\Motion\New-Arch\ITFs" />
     <Folder Include="POUs\Motion\New-Arch" />
     <Folder Include="POUs\Motion\PMPS" />
@@ -60,6 +68,7 @@
     <Folder Include="tc_mca_std_lib\POUs\Motion" />
     <Folder Include="tc_mca_std_lib\POUs\Motion\Homing" />
     <Folder Include="Tests\Helpers" />
+    <Folder Include="Tests\New_Arch" />
     <Folder Include="Version" />
     <Folder Include="tc_mca_std_lib\DUTs" />
     <Folder Include="tc_mca_std_lib\POUs" />
@@ -108,13 +117,40 @@
     <Compile Include="DUTs\Deprecated\ENUM_StatePMPSStatus.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\DS402\ENUM_AxisStates.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_DS402DriveState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_DS402EGU.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_DS402OpMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_HomeStates.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_Module.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_MoveMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\E_MoveState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\ST_DS402Drive.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\DS402\ST_DS402DriveStatus.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\E_DS402HomingMethod.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\E_DS402OpMode.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\E_MoveState.TcDUT">
+    <Compile Include="DUTs\E_EpicsHomeCmd.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ST_AxisParameterSetExposed.TcDUT">
@@ -129,22 +165,10 @@
     <Compile Include="DUTs\E_StatePMPSStatus.TcDUT">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DUTs\ST_DS402Drive.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\ST_DS402DriveStatus.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\ST_MotionDrive.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\ST_MotionEpicsItf.TcDUT">
+    <Compile Include="DUTs\ST_MotionEpicsInterface.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ST_MotionStage.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\ST_MotionEpicsInterface.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ST_PositionState.TcDUT">
@@ -160,9 +184,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\ST_EL5042_Status.TcDUT">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DUTs\E_EpicsHomeCmd.TcDUT">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DUTs\E_EpicsInOut.TcDUT">
@@ -295,88 +316,142 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_Brake.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\Common\FB_LimSwStatus.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisCommonDS402.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\Common\FB_MotionDrive.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisCommonNC.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\Common\FB_MotionInterlocksCommon.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisDS402.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\Common\FB_MotionInterlocksLimSw.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisDS402NC.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\Common\FB_MotionLogger.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionAxisNC.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\Common\FB_PersistentDataStorage.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionDrive.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\DS402\FB_HomeDS402.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionInterlocks.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\DS402\FB_MotionStageMCS2CSP.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionInterlocksLimSw.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_AxisStatusNC.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionLogger.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_BacklashCompensationNC.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_MotionShareData.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_BrakeNC.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_PersistentDataStorage.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_EncoderScaling.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\FBs\FB_PneumaticAxis.TcPOU">
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_HaltNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_HomeNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_MotionAxisNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_MoveAbsoluteNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_ParamsSaveRestoreNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_PowerNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_ReadParameterNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_ResetNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\NC\FB_WriteParameterNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\Containers\FB_MotionStageNC.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\FBs\Containers\Demo.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_AxisStatus.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_BacklashCompensation.TcIO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\New-Arch\ITFs\I_Brake.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_BrakeShareData.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_DS402GenericDrive.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisCommonDS402.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_EncoderScaling.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisCommon.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_Halt.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisDS402NC.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_Home.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisNC.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_HomeDS402.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisShareData.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_LimSwStatus.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxis.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionAxisDS402.TcIO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionDrive.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionDriveShareData.TcIO">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocks.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocksLimSw.TcIO">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocksShareData.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionInterlocksCommon.TcIO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionLogger.TcIO">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MotionShareData.TcIO">
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_MoveAbsolute.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_Output.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_ParamSaveRestore.TcIO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\New-Arch\ITFs\I_PersistentDataStorage.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_Power.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_ReadParameter.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_Reset.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\Motion\New-Arch\ITFs\I_WriteParameter.TcIO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\Motion\PMPS\FB_EncErrorFFO.TcPOU">
@@ -727,11 +802,15 @@
     <Compile Include="Tests\Helpers\FB_TestHelperSetAndMove.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Tests\PRG_TEST.TcPOU">
+    <Compile Include="Tests\New_Arch\FB_BrakeNC_Test.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Version\Global_Version.TcGVL">
+    <Compile Include="Tests\New_Arch\FB_NewArchMcMotionBlocks_Test.TcPOU">
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\PRG_TEST.TcPOU">
+      <SubType>Code</SubType>
+      <ExcludeFromBuild>false</ExcludeFromBuild>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -823,16 +902,74 @@
         <o>
           <v n="Name">"{29BD8D0C-3586-4548-BB48-497B9A01693F}"</v>
           <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
-            <v>NamingConventions</v>
-            <o>
-              <v n="Name">"NamingConventions"</v>
-              <d n="SubKeys" t="Hashtable" />
-              <d n="Values" t="Hashtable" />
-            </o>
             <v>Rules</v>
             <o>
               <v n="Name">"Rules"</v>
-              <d n="SubKeys" t="Hashtable" />
+              <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
+                <v>167</v>
+                <o>
+                  <v n="Name">"167"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+                <v>175</v>
+                <o>
+                  <v n="Name">"175"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+                <v>27</v>
+                <o>
+                  <v n="Name">"27"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+                <v>28</v>
+                <o>
+                  <v n="Name">"28"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+                <v>33</v>
+                <o>
+                  <v n="Name">"33"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+                <v>4</v>
+                <o>
+                  <v n="Name">"4"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+                <v>6</v>
+                <o>
+                  <v n="Name">"6"</v>
+                  <d n="SubKeys" t="Hashtable" />
+                  <d n="Values" t="Hashtable" ckt="String" cvt="Boolean">
+                    <v>bActive</v>
+                    <v>False</v>
+                  </d>
+                </o>
+              </d>
               <d n="Values" t="Hashtable" />
             </o>
           </d>

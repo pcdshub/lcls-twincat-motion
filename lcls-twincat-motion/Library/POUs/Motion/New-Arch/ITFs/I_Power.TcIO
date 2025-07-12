@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_Power" Id="{3e27e6e8-6685-424d-9ead-eda513d1c175}">
+    <Declaration><![CDATA[INTERFACE I_Power  EXTENDS I_Output
+]]></Declaration>
+    <Property Name="Override" Id="{961843bf-f471-4df9-93bb-5367e5ad1298}">
+      <Declaration><![CDATA[PROPERTY Override : LREAL]]></Declaration>
+      <Get Name="Get" Id="{680fd513-de2f-4508-bf7e-cee66bf848d5}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="Power" Id="{6ec5953f-7853-4ae8-b7bf-ca6c5f20defd}">
+      <Declaration><![CDATA[METHOD Power
+VAR_INPUT
+    Enable	: BOOL;
+    Enable_Positive	: BOOL;
+    Enable_Negative	: BOOL;
+    Override	: LREAL := 100.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="PowerIsEnabled" Id="{51943bc5-fd82-4d37-a623-d1f89afd6f2e}">
+      <Declaration><![CDATA[PROPERTY PowerIsEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f6f920c1-2a15-45fb-99e2-22914eacf6cf}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

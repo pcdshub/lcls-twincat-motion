@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_ResetNC" Id="{d5a33439-9af6-4b4b-814e-6ef8d170f497}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ResetNC IMPLEMENTS I_Reset
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcReset 	: MC_Reset;
+    eResetState : (WaitingReset, Resetting);
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+CASE eResetState OF
+    WaitingReset :
+        fbMcReset(
+        Axis := AxisRef,
+        Execute := FALSE);
+
+    Resetting :
+        fbMcReset(
+        Axis := AxisRef,
+        Execute := TRUE
+        );
+
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{2aa8b146-892b-4eda-90ec-32907f9020a6}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{236b2987-0f8e-4912-a72b-8f244392ed75}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{afb1cb16-ce6f-476a-872b-292391db0ba9}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{5ec9be53-31c3-46c8-9997-d5f8c475074f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{5f2cceba-7134-4efe-8841-ecba923dca52}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{85f46149-33a8-4c33-ba36-19cb1218e31e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.fbMcReset.Busy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{771e705c-7d5a-4ab1-a753-7d7642187d6b}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Done" Id="{83716cc5-e3e4-4a0e-9a01-85c819af47e4}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{d0f9a103-0936-46aa-8fa2-cde1fa260a72}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := THIS^.fbMcReset.Done;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{78cdb70e-09fe-40ab-8a68-7cb4953ca907}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{2ba6de77-2d92-47f3-802e-65abb1e872ab}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.fbMcReset.Error;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{bfe921c1-e744-48fe-ba23-596c2a44a3af}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{50a11289-cfb4-4cf4-a1ea-ea391b17d488}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.fbMcReset.ErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{0ffde760-6475-4a6a-8e1c-babbb252f4cc}">
+      <Declaration><![CDATA[METHOD FB_Init : BOOL
+VAR_INPUT
+    bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+    bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{a5706ef5-f74c-4bf4-9005-1b34aba004a5}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{e44fad7f-c952-4ca6-9097-837dc45b6378}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Reset" Id="{b05fc0aa-59e5-483e-8e1e-55eb45708bf0}">
+      <Declaration><![CDATA[METHOD Reset
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Clear previous status
+fbMcReset(Execute := FALSE,  Axis := THIS^.AxisRef);
+// initiate a new Resetting request
+fbMcReset(   Axis := THIS^.AxisRef,
+             Execute := TRUE );
+
+eResetState := Resetting;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

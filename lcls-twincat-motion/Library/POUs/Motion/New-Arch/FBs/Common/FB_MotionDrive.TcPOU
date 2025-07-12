@@ -1,0 +1,311 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionDrive" Id="{60d91316-04e3-4af1-aaa1-6a890af932f7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionDrive IMPLEMENTS I_MotionDrive
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+   // EPICS Interface
+    {attribute 'no_copy'}
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
+    {attribute 'hide'}
+    iMotionAxis: I_MotionAxis;
+    {attribute 'hide'}
+    iBrake 				: I_Brake;
+    {attribute 'hide'}
+    iMotionInterlocks	: I_MotionInterlocks;
+    {attribute 'hide'}
+    iMotionLogger 		: I_MotionLogger;
+    {attribute 'hide'}
+    eMoveMode : E_EpicsMotorCmd := E_EpicsMotorCmd.MOVE_ABSOLUTE;
+    // Determines when we automatically enable the motor
+    //{attribute 'hide'}
+    eEnableMode: E_StageEnableMode:=E_StageEnableMode.DURING_MOTION;
+
+    (* Shortcut Commands *)
+    // Start a move to fPosition with fVelocity
+    bMoveCmd: BOOL;
+    // Start the homing routine
+    {attribute 'pytmc' := '
+        pv: PLC:bHomeCmd
+        io: io
+        field: DESC Start the homing routine
+    '}
+    bHomeCmd: BOOL;
+    // Close or open loop operation ( DS402 Piezo axis )
+    {attribute 'pytmc' := '
+        pv: PLC:bServo
+        io: io
+        field: ZNAM FALSE
+        field: ONAM TRUE
+        field: DESC Used internally to reset errors
+    '}
+    bServo : BOOL;
+
+    sName : STRING;
+    {attribute 'hide'}
+    eMoveState	: E_MoveState;
+    {attribute 'hide'}
+    bNewMoveReq : BOOL;
+    {attribute 'hide'}
+    bExecHome 	: BOOL;
+    {attribute 'hide'}
+    bExecMove 	: BOOL;
+    {attribute 'hide'}
+    rtMoveCmdShortcut	: R_TRIG;
+    {attribute 'hide'}
+    rtHomeCmdShortcut 	: R_TRIG;
+    {attribute 'hide'}
+    rtUserExec 			: R_TRIG;
+    {attribute 'hide'}
+    rtNewMoveReq 		: R_TRIG;
+    {attribute 'hide'}
+    rtTarget			: R_TRIG;
+    {attribute 'hide'}
+    rtHomed				: R_TRIG;
+    {attribute 'hide'}
+    rtValidExec 	: R_TRIG;
+    {attribute 'hide'}
+    rtReset 			: R_TRIG;
+    {attribute 'hide'}
+    ftStopExec 			: F_TRIG;
+    {attribute 'hide'}
+    ftError 			: F_TRIG;
+    {attribute 'hide'}
+    nCommandLocal: UINT;
+    {attribute 'hide'}
+    nCmdDataLocal: UINT;
+    {attribute 'hide'}
+    ftLocalStart : F_TRIG;
+    {attribute 'hide'}
+    bInitStart : BOOL;
+    {attribute 'hide'}
+    bLocalExec : BOOL;
+    {attribute 'hide'}
+    bEnableDone : BOOL;
+    {attribute 'hide'}
+    bPrepareDisable : BOOL;
+    {attribute 'hide'}
+    rtEnableMode : R_TRIG;
+    {attribute 'hide'}
+    rtStopExec : R_TRIG;
+    {attribute 'hide'}
+    rtInterlockEvent : R_TRIG;
+    {attribute 'hide'}
+    bCmdExecute : BOOL;
+    {attribute 'hide'}
+    bHaltAbort : BOOL;
+    {attribute 'hide'}
+    ftHaltAbort : F_TRIG;
+    {attribute 'hide'}
+    rtRestoreDone : R_TRIG;
+    {attribute 'hide'}
+    bHaltEvent : BOOL;
+    // move state machine to error state in case a move command gets stuck after
+    // the corresponding start signal was forwarded. the start signal should yeild a busy true response.
+    // the move processing block may get stuck and return no errors. this is a contingency to make sure that reset would reinit all state machines.
+    tonSyncTimer : TON;
+    bLocalError : BOOL;
+    bLocalMessage : T_MAXSTRING;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF( THIS^.stMotionEpicsItf ) THEN
+   RETURN;
+END_IF
+// Restore axis parameters
+THIS^.RestoreSettings();
+
+// catch high priority message
+// an extended error message from FB_MotionLogger will display cyclic errors and warning
+IF iMotionAxis.Error THEN
+   stMotionEpicsItf.bError := iMotionAxis.Error;
+   stMotionEpicsItf.nErrorId := iMotionAxis.ErrorID;
+   stMotionEpicsItf.sErrorMessage := iMotionAxis.Message;
+ELSIF iMotionInterlocks.Error THEN
+   stMotionEpicsItf.bError := iMotionInterlocks.Error;
+   stMotionEpicsItf.nErrorId := iMotionInterlocks.ErrorID;
+   stMotionEpicsItf.sErrorMessage := iMotionInterlocks.Message;
+ELSIF bLocalError THEN
+   stMotionEpicsItf.bError := bLocalError;
+   stMotionEpicsItf.sErrorMessage := bLocalMessage;
+// Warnings have lowest priority
+ELSIF iMotionInterlocks.Warning THEN
+   stMotionEpicsItf.sErrorMessage := iMotionInterlocks.Message;
+ELSE
+       stMotionEpicsItf.bError := FALSE;
+       stMotionEpicsItf.nErrorId := 0;
+       stMotionEpicsItf.sErrorMessage := '';
+
+END_IF
+
+// Drive state machine
+THIS^.StateMachine();
+//
+THIS^.PostHandling();
+// update EPICS status
+THIS^.UpdateParamAndStatus();]]></ST>
+    </Implementation>
+    <Method Name="CallAfterInit" Id="{f39ddf47-4815-43e7-8049-e534fb9f6092}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
+    iBrake : I_Brake;
+    iMotionInterlocks : I_MotionInterlocks;
+    iMotionLogger : I_MotionLogger;
+    iMotionAxis: I_MotionAxis;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.stMotionEpicsItf REF=stMotionEpicsItf;
+THIS^.iMotionAxis := iMotionAxis;
+THIS^.iMotionLogger:=iMotionLogger;
+THIS^.iBrake:=iBrake;
+THIS^.iMotionInterlocks:=iMotionInterlocks;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ClearVars" Id="{fc3a5981-a4d7-4a2d-bb30-c09c583c9e55}">
+      <Declaration><![CDATA[METHOD ClearVars
+VAR_INPUT
+    Done : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stMotionEpicsItf.bDone := Done;
+stMotionEpicsItf.bBusy := FALSE;
+// falling edge here when target is reached, move halted
+stMotionEpicsItf.bExecute := FALSE;
+THIS^.bLocalExec := FALSE;
+// release the cmds
+THIS^.bHomeCmd:=FALSE;
+THIS^.bMoveCmd:=FALSE;
+THIS^.binitStart := FALSE;
+THIS^.bCmdExecute := FALSE;
+THIS^.tonSyncTimer.IN:=FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="EnableMode" Id="{b16f2630-6990-4b39-b9f8-520a45141d0c}">
+      <Declaration><![CDATA[PROPERTY EnableMode : ENUM_StageEnableMode
+]]></Declaration>
+      <Get Name="Get" Id="{7a51a46e-96ce-4c74-a79d-9c4933dd0bbb}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[EnableMode := eEnableMode;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{45f0a372-ebc2-415b-8bac-12fafdac995e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[eEnableMode := EnableMode;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="FB_Init" Id="{927f7c72-9006-42d1-8ac3-5d4ce66d6511}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
+    iBrake : I_Brake;
+    iMotionInterlocks : I_MotionInterlocks;
+    iMotionLogger : I_MotionLogger;
+    iMotionAxis: I_MotionAxis;
+   // iLimSwStatus : I_LimSwStatus;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.stMotionEpicsItf REF=stMotionEpicsItf;
+THIS^.iMotionAxis := iMotionAxis;
+THIS^.iMotionLogger:=iMotionLogger;
+THIS^.iBrake:=iBrake;
+//THIS^.iLimSwStatus:=iLimSwStatus;
+THIS^.iMotionInterlocks:=iMotionInterlocks;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Instances" Id="{d9be84d7-fa96-4fa1-bfc2-ca22602705a2}">
+      <Declaration><![CDATA[{attribute 'call_after_init'}
+METHOD Instances
+VAR_INPUT
+END_VAR
+
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// bMotionAxisNC  := __QUERYINTERFACE(iMotionAxisCommon, iMotionAxisNC) AND NOT __QUERYINTERFACE(iMotionAxisCommon,iMotionAxisCommonDS402);
+// bMotionAxisNCDS402  := __QUERYINTERFACE(iMotionAxisCommon,iMotionAxisNCDS402) AND __QUERYINTERFACE(iMotionAxisCommon,iMotionAxisCommonDS402);
+// bMotionAxisDS402  := __QUERYINTERFACE(iMotionAxisCommon, iMotionAxisDS402);
+// bMotionInterlocks  := __QUERYINTERFACE(iMotionInterlocks,iMotionInterlocks) AND NOT __QUERYINTERFACE(iMotionInterlocks,iLimSw);
+// bMotionInterlocksLimSw  := __QUERYINTERFACE(iMotionInterlocks,iMotionInterlocks) AND __QUERYINTERFACE(iMotionInterlocks,iLimSw);;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Name" Id="{0539b87b-757a-4783-8076-20784ec838b8}">
+      <Declaration><![CDATA[PROPERTY Name : STRING
+]]></Declaration>
+      <Get Name="Get" Id="{de5a88c8-697f-4c59-899f-a942f6da58ae}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Name := sName;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{b5eeddf9-6a45-438a-aa8f-016a0e45ff45}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sName := Name;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="PostHandling" Id="{c18eec9d-05c9-4186-8155-d464e6e1ef71}">
+      <Declaration><![CDATA[METHOD PostHandling
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PreHandling" Id="{b70d40df-94ce-4a86-890c-8d206ac7e676}">
+      <Declaration><![CDATA[METHOD PreHandling
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="RestoreSettings" Id="{d72becd9-0474-4aeb-9ec0-8e4cee03f8d2}">
+      <Declaration><![CDATA[METHOD RestoreSettings
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StateMachine" Id="{7234df4d-6700-4cf9-89b9-9798d5355b81}">
+      <Declaration><![CDATA[METHOD StateMachine
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UpdateParamAndStatus" Id="{bec7d97e-d393-4df3-816c-df000a420230}">
+      <Declaration><![CDATA[METHOD UpdateParamAndStatus]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

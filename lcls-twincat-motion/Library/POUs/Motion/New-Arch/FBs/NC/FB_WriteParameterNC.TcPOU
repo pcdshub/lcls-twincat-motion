@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_WriteParameterNC" Id="{0679c878-968f-4ee3-8aff-2faeff13e47d}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_WriteParameterNC IMPLEMENTS I_WriteParameter
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcWriteParameter : MC_WriteParameter;
+    bExecute : BOOL;
+    bError	: BOOL;
+    nErrorId : UDINT:=0;
+    sMessage : T_MAXSTRING;
+    bDone : BOOL;
+    bBusy    : BOOL;
+    nParameterNumber : MC_AxisParameter;
+    fParameterValue	: LREAL;
+    rtDone : R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{f52af151-81e4-48c0-82b3-d134b4156503}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{03eb80ef-e801-4fff-a65d-0d9229d8252a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{824a777c-274a-4b39-b3d1-4b81419b8e3f}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{14128639-f785-44c3-a881-c1e8898264c0}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{689d767c-9451-409d-982f-e679c1698c39}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b6389b3c-c280-4a93-8376-167edebc1e0d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := bBusy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{ca43dfad-ac50-4575-8b64-6970ea3f1d83}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Done" Id="{f44dcb9d-0f8d-47a5-8e58-9c89c3d77b1f}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{77452b75-ba03-46f8-84f3-fdea597ad768}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := bDone;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{c9191ff3-7d54-481e-bd0e-085f07076ac5}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{e236ffbe-e93b-4330-a2a7-87a3bdba3f40}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := bError;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{c54fe213-c89c-4e15-9e30-ab92181d765b}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{da8685c2-085f-49d9-b2c8-58acbd1b7bdc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{b16dbebc-f0a9-4e32-b34d-5ca644d13615}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{ea739561-c14f-4498-86ea-fb7bf263407f}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{083044c6-d0c6-4302-8c9a-f1ae2a3033f6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="WriteParameter" Id="{f9ee03f3-bb6f-48b4-9d12-fddbaab7f994}">
+      <Declaration><![CDATA[METHOD WriteParameter
+VAR_INPUT
+    Execute         : BOOL;
+    ParameterNumber : MC_AxisParameter;
+    ParameterValue	: LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bExecute := Execute;
+THIS^.nParameterNumber := ParameterNumber;
+THIS^.fParameterValue	:= ParameterValue;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

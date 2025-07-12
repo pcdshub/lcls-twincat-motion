@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MoveAbsoluteNC" Id="{e71196e8-5955-4e1c-a924-f415b73d00ec}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MoveAbsoluteNC IMPLEMENTS I_MoveAbsolute
+VAR
+    {attribute 'no_copy'}
+    AxisRef : REFERENCE TO AXIS_REF;
+    fbMcMoveAbsolute : MC_MoveAbsolute;
+    sMessage : T_MAXSTRING;
+    eMoveAbsoluteState : (WaitingMoveAbsolute, MovingAbsolute);
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(AxisRef) THEN
+    RETURN;
+END_IF
+
+AxisRef.ReadStatus();
+
+CASE eMoveAbsoluteState OF
+    WaitingMoveAbsolute :
+        fbMcMoveAbsolute(
+        Axis := AxisRef,
+        Execute := FALSE);
+
+    MovingAbsolute :
+        fbMcMoveAbsolute(
+        Axis := AxisRef,
+        Execute := TRUE
+        );
+END_CASE
+
+]]></ST>
+    </Implementation>
+    <Property Name="Aborted" Id="{e282a52e-140a-4032-b49e-bebd36434e55}">
+      <Declaration><![CDATA[PROPERTY Aborted : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{d29e9ff4-92f9-427a-9ec7-fa6fbbe474b3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Aborted := THIS^.fbMcMoveAbsolute.CommandAborted;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Active" Id="{dd75b655-9142-4732-8a04-757a4f64e51a}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{a477c2f4-fc88-4b80-b4f4-7805da1fb7a8}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active := THIS^.fbMcMoveAbsolute.Active;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Busy" Id="{1ae87be5-03cb-4a25-b603-7a901b104320}">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{9d197ce2-8fd9-4bc1-99a9-01c16a01edb5}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := THIS^.fbMcMoveAbsolute.Busy;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="CallAfterInit" Id="{00377abf-4ca1-4aa0-a1c2-987e6f8750e8}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="CommandMoveAbsolute" Id="{7bbe24c9-46f3-48a9-9a5a-f238ba708042}">
+      <Declaration><![CDATA[PROPERTY CommandMoveAbsolute : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{5ca86cbe-838d-4ff0-b334-f0d7b6e6a752}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[THIS^.fbMcMoveAbsolute.Execute := CommandMoveAbsolute;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Done" Id="{a764e9fb-e6d3-4787-bb5e-f18a571f3537}">
+      <Declaration><![CDATA[PROPERTY Done : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{50c96990-1ca2-4598-9b3c-4ce1d489107b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Done := THIS^.fbMcMoveAbsolute.Done;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Error" Id="{0185f2b2-2e6f-442f-b749-2bbd8da7d055}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{1e0b343f-fb19-4817-9dd8-a79547d284ae}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := THIS^.fbMcMoveAbsolute.Error;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{765d4df4-ef37-4baf-a5b2-0caf395dd3d5}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{616d42e5-15ca-457d-9573-bf6beb7c1f43}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := THIS^.fbMcMoveAbsolute.ErrorID;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="FB_Init" Id="{e87d7c58-75a2-4628-877e-343a902489c2}">
+      <Declaration><![CDATA[METHOD FB_Init : BOOL
+VAR_INPUT
+    bInitRetains : BOOL; // if TRUE, the retain variables are initialized (warm start / cold start)
+    bInCopyCode : BOOL;  // if TRUE, the instance afterwards gets moved into the copy code (online change)
+    AxisRef : REFERENCE TO AXIS_REF;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.AxisRef REF= AxisRef;]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Message" Id="{13938688-fe04-4182-8021-54fdd58e055d}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{59125684-2209-4efb-a11e-261b597d4642}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MoveAbsolute" Id="{ec9e8694-906a-4f94-b53d-2b2ff2681c1a}">
+      <Declaration><![CDATA[METHOD MoveAbsolute
+VAR_INPUT
+    Position	: LREAL;
+    Velocity	: LREAL;
+    Acceleration	: LREAL := 0.0;
+    Deceleration	: LREAL := 0.0;
+    Jerk	: LREAL := 0.0;
+    BufferMode	: MC_BufferMode := MC_BufferMode.MC_Aborting;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbMcMoveAbsolute(Execute := FALSE,
+                 Axis := THIS^.AxisRef);
+
+fbMcMoveAbsolute(Execute := TRUE,
+        Axis := THIS^.AxisRef,
+    Position := Position,
+    Velocity := Velocity,
+    Acceleration := Acceleration,
+    Deceleration := Deceleration,
+    Jerk := Jerk,
+    BufferMode := BufferMode);
+eMoveAbsoluteState := MovingAbsolute;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

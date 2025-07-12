@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_LimSwStatus" Id="{322e8186-deb9-4a53-b303-d1d3662306db}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LimSwStatus IMPLEMENTS I_LimSwStatus
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+    (* Hardware *)
+   // NC Forward Limit Switch: TRUE if ok to move
+    bLimitForwardEnable AT %I*: BOOL;
+    // NC Backward Limit Switch: TRUE if ok to move
+    bLimitBackwardEnable AT %I*: BOOL;
+    // NO Home Switch: TRUE if at home
+    bHome AT %I*: BOOL;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="LimBackward" Id="{35aa245a-d874-4916-85c5-42c60fad40f0}">
+      <Declaration><![CDATA[PROPERTY LimBackward : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{5fbf77a3-1565-4123-a7e4-8abd4560ecb2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LimBackward := bLimitBackwardEnable;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="LimForward" Id="{60bb8d48-4b37-425b-923e-b1e7d0d2cba8}">
+      <Declaration><![CDATA[PROPERTY LimForward : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{c6fce77e-af19-46cd-b898-ad9a07ade412}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LimForward := bLimitForwardEnable;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="LimHome" Id="{1b597d59-cd48-4a23-82a2-a38399b4eb9e}">
+      <Declaration><![CDATA[PROPERTY LimHome : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{a5e85be1-90e3-408d-830c-f40a8296404c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LimHome :=  bHome ;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>
