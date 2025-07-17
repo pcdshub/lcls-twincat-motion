@@ -2,7 +2,7 @@
 <TcPlcObject Version="1.1.0.1">
   <Itf Name="I_MotionInterlocks" Id="{f1e8e58f-70bb-485c-99bb-95a56820fdb6}">
     <Declaration><![CDATA[// User API for interlocks, add each new interlocks interface here
-INTERFACE I_MotionInterlocks EXTENDS __SYSTEM.IQueryInterface, I_Output
+INTERFACE I_MotionInterlocks
 ]]></Declaration>
     <Method Name="AxisStatus" Id="{dacb7d42-f913-4c3c-8725-5ac4315a091a}">
       <Declaration><![CDATA[METHOD AxisStatus
@@ -13,15 +13,28 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
     </Method>
-    <Method Name="DriveCommands" Id="{d7c1514a-b63b-49b9-8dfe-65e9ec49c9be}">
+    <Method Name="DriveCommands" Id="{4eadfef4-5c7c-464f-b3d8-85555ae4b8ba}">
       <Declaration><![CDATA[METHOD DriveCommands
 VAR_INPUT
 	Enable: BOOL;
 	NewMoveReq : BOOL;
 	Reset: BOOL;
 END_VAR
+
 ]]></Declaration>
     </Method>
+    <Property Name="Error" Id="{cb8c4f4f-26d3-4070-a3b0-01084a7b31fd}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL]]></Declaration>
+      <Get Name="Get" Id="{3c954f64-0417-4db1-abeb-dec4d46a007d}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ErrorID" Id="{3679fc85-f898-430b-b18e-92a8643354fe}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT]]></Declaration>
+      <Get Name="Get" Id="{f7bc3532-00ad-4cf2-8f15-5d20c5cbe6d9}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
     <Property Name="InterlockEvent" Id="{4626fde1-1a12-4e8c-af56-a81a21e2e625}">
       <Declaration><![CDATA[PROPERTY InterlockEvent : BOOL]]></Declaration>
       <Get Name="Get" Id="{46f4e7d2-165f-43e2-b11a-41b0ae0b097d}">
@@ -31,6 +44,12 @@ END_VAR
     <Property Name="LimHome" Id="{afb29fce-e002-4581-b44c-7cdfce3976d7}">
       <Declaration><![CDATA[PROPERTY LimHome : BOOL]]></Declaration>
       <Get Name="Get" Id="{c5ce7826-2bcf-4ef7-a3c3-f2af2474caae}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Message" Id="{9f0d5caf-5e8b-49a6-9cb6-a74ac978daca}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING]]></Declaration>
+      <Get Name="Get" Id="{5e7d9b57-4a23-4d1a-ae3d-a3c1e73b4ad0}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
     </Property>
