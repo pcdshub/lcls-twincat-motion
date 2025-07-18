@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <Itf Name="I_MotionInterlocksCommon" Id="{6906b881-f15f-4df2-99d8-615248381a43}">
-    <Declaration><![CDATA[INTERFACE I_MotionInterlocksCommon  EXTENDS I_Output
+    <Declaration><![CDATA[INTERFACE I_MotionInterlocksCommon  EXTENDS I_Error
 ]]></Declaration>
     <Method Name="DriveCommands" Id="{b62a5c4b-ba10-475e-b112-d1bdb58ba629}">
       <Declaration><![CDATA[METHOD DriveCommands
@@ -10,19 +10,14 @@ VAR_INPUT
 	NewMoveReq : BOOL;
 	Reset: BOOL;
 END_VAR
+
 ]]></Declaration>
     </Method>
-    <Property Name="MoveBackwardEnabled" Id="{e3ee648b-fd51-40f3-87e1-17d73723ed7e}">
-      <Declaration><![CDATA[PROPERTY MoveBackwardEnabled : BOOL]]></Declaration>
-      <Get Name="Get" Id="{c5835754-8da6-4e97-893c-242616c7061b}">
+    <Property Name="HardwareEnable" Id="{340fc236-f476-43a5-8232-685aab4a5a0e}">
+      <Declaration><![CDATA[PROPERTY HardwareEnable : BOOL]]></Declaration>
+      <Set Name="Set" Id="{dc5d0d52-5e0c-47bc-95ab-8f6b05507bf4}">
         <Declaration><![CDATA[]]></Declaration>
-      </Get>
-    </Property>
-    <Property Name="MoveForwardEnabled" Id="{308b532c-29be-4a14-bac5-95405da37b39}">
-      <Declaration><![CDATA[PROPERTY MoveForwardEnabled : BOOL]]></Declaration>
-      <Get Name="Get" Id="{9886590f-6d94-4a8a-aff8-1df9f5cd93a3}">
-        <Declaration><![CDATA[]]></Declaration>
-      </Get>
+      </Set>
     </Property>
     <Property Name="MoveOk" Id="{1afd93f7-f2a6-41c4-917d-1b6c9a77ea87}">
       <Declaration><![CDATA[PROPERTY MoveOk : BOOL]]></Declaration>
@@ -35,6 +30,12 @@ END_VAR
       <Get Name="Get" Id="{05bad098-7800-4d94-a94a-923a51852e71}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
+    </Property>
+    <Property Name="UserEnable" Id="{16b82871-fb73-4df5-80f5-08b1172c1b10}">
+      <Declaration><![CDATA[PROPERTY UserEnable : BOOL]]></Declaration>
+      <Set Name="Set" Id="{e08ffba2-63ce-4002-9296-5aee47ddb046}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Set>
     </Property>
   </Itf>
 </TcPlcObject>

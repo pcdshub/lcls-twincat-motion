@@ -1,0 +1,197 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionInterlocksCommon_TestDouble" Id="{0e1c2779-867c-4949-8b00-00663dc282f6}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocksCommon_TestDouble IMPLEMENTS I_MotionInterlocksCommon
+VAR
+    bPowerEnabled: BOOL:=FALSE;
+   // NC STO Input: TRUE if ok to move
+    bHardwareEnable : BOOL ;
+    bUserEnable: BOOL := TRUE;
+    bEnable: BOOL;
+    bReset : BOOL;
+    sMessage : STRING;
+    bError : BOOL;
+    nErrorID : UDINT;
+    // Set by default, an error condition will reset this
+    bMoveOk : BOOL := TRUE;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="DriveCommands" Id="{01a235bb-6a8d-4b51-8c0a-3d8136ab49a6}">
+      <Declaration><![CDATA[METHOD DriveCommands
+VAR_INPUT
+    Enable: BOOL;
+    NewMoveReq : BOOL;
+    Reset: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bEnable := Enable;
+THIS^.bReset := Reset;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Error" Id="{68ade204-75fc-4d54-adb8-ed5abf657582}">
+      <Declaration><![CDATA[PROPERTY Error : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{f1934e38-0a7e-47f5-9782-5973b0818453}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Error := bError;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d41f6317-6d37-4c46-8c7c-2e1ee780d122}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bError := Error;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="ErrorID" Id="{6ab6af77-b85e-4d3a-a1c5-a28baa23967c}">
+      <Declaration><![CDATA[PROPERTY ErrorID : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{b8d97dab-8e94-4574-a6de-28883ff7eca3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{496fd04b-6a6f-45d3-8611-0cd595ec417b}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[nErrorID := ErrorID;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="HardwareEnable" Id="{b61e843a-e16f-4bf9-a751-e2ee9ca06f64}">
+      <Declaration><![CDATA[PROPERTY HardwareEnable : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{198c931d-a063-4af8-8ab2-5c27a9ebe0d5}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d2f9e458-e833-43c5-9f95-fd2c6475a0fd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bHardwareEnable := HardwareEnable;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="Message" Id="{fb98df5d-fd1f-44f8-a156-a62ef268f09b}">
+      <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
+]]></Declaration>
+      <Get Name="Get" Id="{98cdbec5-2a77-434d-917c-50ee0e45ed7d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Message := sMessage;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{56003863-6094-41be-8870-2fd02e9f9b1e}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[sMessage := Message;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="MoveOk" Id="{567a542a-8bff-430c-bb26-a30f927d8d8a}">
+      <Declaration><![CDATA[PROPERTY MoveOk : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{bd01effb-06eb-4d8c-a796-aa7890a0db64}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MoveOk := bMoveOk;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{5f738456-0381-45f9-8495-6f474b182629}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="PowerEnabled" Id="{c3ce75de-aded-4122-b66c-ef67e08fdb8d}">
+      <Declaration><![CDATA[PROPERTY PowerEnabled : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{edb6f6ad-751d-422f-8834-d24703acdb9e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PowerEnabled :=bPowerEnabled;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{6564c5fa-a989-44af-8901-719e1b37e561}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Method Name="ResetErrors" Id="{f36f7e3b-4b1e-4387-89e2-e52b4f418e83}">
+      <Declaration><![CDATA[METHOD ResetErrors
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[bError := FALSE;
+nErrorID:= 0;
+sMessage:='';
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="UserEnable" Id="{b67c8bc2-c5d8-44a8-a2c7-8252c58bf9ac}">
+      <Declaration><![CDATA[PROPERTY UserEnable : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{222086fa-1659-43ab-aa5a-6b671d1bafd5}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{d6a210bb-b3eb-46b0-93df-85780ce3e949}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bUserEnable := UserEnable;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

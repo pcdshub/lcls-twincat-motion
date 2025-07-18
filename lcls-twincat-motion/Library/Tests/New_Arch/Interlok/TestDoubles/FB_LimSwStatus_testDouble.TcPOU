@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_LimSwStatus_testDouble" Id="{70960280-1575-4989-a963-b01a3910fbdc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LimSwStatus_testDouble IMPLEMENTS I_LimSwStatus
+VAR
+   // NC Forward Limit Switch: TRUE if ok to move
+    bLimitForwardEnable : BOOL;
+    // NC Backward Limit Switch: TRUE if ok to move
+    bLimitBackwardEnable : BOOL;
+    // NO Home Switch: TRUE if at home
+    bHome : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Property Name="LimBackward" Id="{28e716fb-4cd1-40e4-8576-b647717a5062}">
+      <Declaration><![CDATA[PROPERTY LimBackward : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{b69eedf2-23f9-4507-93d5-1b56ab38615d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LimBackward := bLimitBackwardEnable;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{96af2482-9e4a-46c5-954f-4aa47f4efe5b}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bLimitBackwardEnable := LimBackward;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="LimForward" Id="{94d01c11-2835-4a77-869c-e37196b02038}">
+      <Declaration><![CDATA[PROPERTY LimForward : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{dcbc549b-c86c-4198-ad11-9e83448e0922}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LimForward := bLimitForwardEnable;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{55b3cb2d-deb6-4811-a76c-1c504a6f46c0}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bLimitForwardEnable := LimForward;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="LimHome" Id="{e76f8bd1-7a05-4eac-bf90-76b44ef399a2}">
+      <Declaration><![CDATA[PROPERTY LimHome : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{a49f8d60-57a6-4b05-b188-1b8613fd3fb4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ LimHome := bHome;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{2cf8e61a-e230-43f8-95fa-8485ce107d19}">
+        <Declaration><![CDATA[
+VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ bHome := LimHome;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,302 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MotionInterlocksLimSw_Test" Id="{da3c97b2-4b6a-442f-b566-7fa9056337b4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocksLimSw_Test EXTENDS FB_TestSuite
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[GivenPositiveLimHitEventIfGlobalResetOrNewMoveReqClearLocalFlags();
+GivenLimSwStatusEventIfStandStillUpdateBackwardAndFowardEnable();
+GivenCommonInterlockErrorsThenSetLocalErrors();
+GivenLimForwardAndBackwardActiveAxisMovingInNegativeDirectionIfPosiveLimishitThenNoLimHitEvent();
+GivenLimForwardAndBackwardActiveAxisMovingInPosiveDirectionIfPosiveLimishitThenLimHitEventOccured();
+GivenLimSwStatusActiveAndAxisHomingInPosOrNegDirectionThenNoLimHitEvent();
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Method Name="GivenCommonInterlockErrorsThenSetLocalErrors" Id="{94ef42a6-f7bb-4549-ab69-eec32e85b91b}">
+      <Declaration><![CDATA[METHOD GivenCommonInterlockErrorsThenSetLocalErrors
+VAR
+    nExpectedErrorId: UDINT := 1;
+    nActErrorId: UDINT;
+    sExpectedMessage: STRING := 'User enable interlock triggered!';
+    sActMessage: STRING;
+    fbLimSwStatus_testDouble : FB_LimSwStatus_testDouble;
+    fbMotionInterlocksCommon_TestDouble : FB_MotionInterlocksCommon_TestDouble;
+    fbMotionInterlocksLimSw : FB_MotionInterlocksLimSw(iMotionInterlocksCommon:=fbMotionInterlocksCommon_TestDouble, iLimSwStatus:=fbLimSwStatus_testDouble);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+// Test UserEnable interlock trigger
+fbMotionInterlocksCommon_TestDouble.Error := TRUE;
+fbMotionInterlocksCommon_TestDouble.ErrorID:=1;
+fbMotionInterlocksCommon_TestDouble.Message:=sExpectedMessage;
+fbMotionInterlocksCommon_TestDouble();
+fbMotionInterlocksLimSw();
+
+AssertTrue(Condition := fbMotionInterlocksLimSw.Error,
+           Message := 'Common interlock event must set this error #1');
+
+nActErrorId := fbMotionInterlocksLimSw.ErrorID;
+AssertEquals ( Expected:=nExpectedErrorId, Actual:=nActErrorId ,
+            Message:='Common interlock event must set this errorId #2');
+
+sActMessage := fbMotionInterlocksLimSw.Message;
+AssertEquals ( Expected:=sExpectedMessage, Actual:=sActMessage,
+            Message:='Common interlock event must set this error msg #3');
+
+fbMotionInterlocksCommon_TestDouble.ResetErrors();
+fbMotionInterlocksCommon_TestDouble();
+fbMotionInterlocksLimSw();
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenLimForwardAndBackwardActiveAxisMovingInNegativeDirectionIfPosiveLimishitThenNoLimHitEvent" Id="{ed589f98-23fe-4027-ac60-fcf98aa8e006}">
+      <Declaration><![CDATA[METHOD GivenLimForwardAndBackwardActiveAxisMovingInNegativeDirectionIfPosiveLimishitThenNoLimHitEvent
+VAR
+    tonLimSwStatusEvent : TON := (IN:=TRUE, PT:=T#0S);
+    fbLimSwStatus_testDouble : FB_LimSwStatus_testDouble;
+    fbMotionInterlocksCommon_TestDouble : FB_MotionInterlocksCommon_TestDouble;
+    fbMotionInterlocksLimSw : FB_MotionInterlocksLimSw(iMotionInterlocksCommon:=fbMotionInterlocksCommon_TestDouble, iLimSwStatus:=fbLimSwStatus_testDouble);
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+tonLimSwStatusEvent();
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=FALSE, NegativeDirection:=TRUE);
+fbMotionInterlocksLimSw();
+
+
+IF tonLimSwStatusEvent.Q THEN
+    fbLimSwStatus_testDouble.LimForward := FALSE;
+    fbLimSwStatus_testDouble();
+    tonLimSwStatusEvent.IN:=FALSE;
+END_IF
+
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.Warning,
+           Message := 'No Warning event expected #1');
+AssertFalse(Condition := fbMotionInterlocksLimSw.LimHit,
+           Message := 'No Lim Hit event expected #2');
+TEST_FINISHED();
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenLimForwardAndBackwardActiveAxisMovingInPosiveDirectionIfPosiveLimishitThenLimHitEventOccured" Id="{cde5b974-2818-4742-bb16-32a8067eb591}">
+      <Declaration><![CDATA[METHOD GivenLimForwardAndBackwardActiveAxisMovingInPosiveDirectionIfPosiveLimishitThenLimHitEventOccured
+VAR
+    tonLimSwStatusEvent : TON := (IN:=TRUE, PT:=T#0S);
+    fbLimSwStatus_testDouble : FB_LimSwStatus_testDouble;
+    fbMotionInterlocksCommon_TestDouble : FB_MotionInterlocksCommon_TestDouble;
+    fbMotionInterlocksLimSw : FB_MotionInterlocksLimSw(iMotionInterlocksCommon:=fbMotionInterlocksCommon_TestDouble, iLimSwStatus:=fbLimSwStatus_testDouble);
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+tonLimSwStatusEvent();
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=TRUE, NegativeDirection:=FALSE);
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+IF tonLimSwStatusEvent.Q THEN
+    fbLimSwStatus_testDouble.LimForward := FALSE;
+    tonLimSwStatusEvent.IN := FALSE;
+END_IF
+
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+AssertTrue(Condition := fbMotionInterlocksLimSw.Warning,
+                   Message := 'Expecting a Warning event after positive lim hit #1');
+AssertTrue(Condition := fbMotionInterlocksLimSw.LimHit,
+                   Message := 'Expecting a Limit hit event after positive lim hit #2');
+TEST_FINISHED();
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenLimSwStatusActiveAndAxisHomingInPosOrNegDirectionThenNoLimHitEvent" Id="{48a68bdb-791b-428f-85bd-1be319b9fa11}">
+      <Declaration><![CDATA[METHOD GivenLimSwStatusActiveAndAxisHomingInPosOrNegDirectionThenNoLimHitEvent
+VAR
+    fbLimSwStatus_testDouble : FB_LimSwStatus_testDouble;
+    fbMotionInterlocksCommon_TestDouble : FB_MotionInterlocksCommon_TestDouble;
+    fbMotionInterlocksLimSw : FB_MotionInterlocksLimSw(iMotionInterlocksCommon:=fbMotionInterlocksCommon_TestDouble, iLimSwStatus:=fbLimSwStatus_testDouble);
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=TRUE, PositiveDirection:=TRUE, NegativeDirection:=FALSE);
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.Warning,
+           Message := 'Warning event while homing unexpected #1');
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.LimHit,
+           Message := 'Lim hit event while homing unexpected #2');
+
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=TRUE, PositiveDirection:=FALSE, NegativeDirection:=TRUE);
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.Warning,
+           Message := 'Warning event while homing unexpected #3');
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.LimHit,
+           Message := 'Lim hit event while homing unexpected #4');
+TEST_FINISHED();
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenLimSwStatusEventIfStandStillUpdateBackwardAndFowardEnable" Id="{cf0a87d6-b613-4bab-bdaf-73e10f361f1f}">
+      <Declaration><![CDATA[METHOD GivenLimSwStatusEventIfStandStillUpdateBackwardAndFowardEnable
+VAR
+    fbLimSwStatus_testDouble : FB_LimSwStatus_testDouble;
+    fbMotionInterlocksCommon_TestDouble : FB_MotionInterlocksCommon_TestDouble;
+    fbMotionInterlocksLimSw : FB_MotionInterlocksLimSw(iMotionInterlocksCommon:=fbMotionInterlocksCommon_TestDouble, iLimSwStatus:=fbLimSwStatus_testDouble);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+// Test LimSwStatus Events and update backward and forward Enable
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=FALSE, NegativeDirection:=FALSE);
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+AssertTrue(Condition := fbMotionInterlocksLimSw.MoveBackwardEnabled,
+           Message := 'MoveBackwardEnabled must be set #1');
+
+AssertTrue(Condition := fbMotionInterlocksLimSw.MoveForwardEnabled,
+           Message := 'MoveForwardwardEnabled must be set #2');
+
+fbLimSwStatus_testDouble.LimForward := FALSE;
+fbLimSwStatus_testDouble.LimBackward := FALSE;
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=FALSE, NegativeDirection:=FALSE);
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.MoveBackwardEnabled,
+           Message := 'MoveBackwardEnabled must not be set #3');
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.MoveForwardEnabled,
+           Message := 'MoveForwardwardEnabled must not be set #4');
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GivenPositiveLimHitEventIfGlobalResetOrNewMoveReqClearLocalFlags" Id="{c69f1b81-3118-4011-9ebf-118fdb3c44fe}">
+      <Declaration><![CDATA[METHOD GivenPositiveLimHitEventIfGlobalResetOrNewMoveReqClearLocalFlags
+VAR
+    fbLimSwStatus_testDouble : FB_LimSwStatus_testDouble;
+    fbMotionInterlocksCommon_TestDouble : FB_MotionInterlocksCommon_TestDouble;
+    fbMotionInterlocksLimSw : FB_MotionInterlocksLimSw(iMotionInterlocksCommon:=fbMotionInterlocksCommon_TestDouble, iLimSwStatus:=fbLimSwStatus_testDouble);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST(__POUNAME());
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=TRUE, NegativeDirection:=FALSE);
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+// Create Forward limit hit event
+fbLimSwStatus_testDouble.LimForward := FALSE;
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+// Reset Flags
+fbMotionInterlocksLimSw.DriveCommands(Enable:=FALSE, NewMoveReq:=FALSE, Reset:=fbMotionInterlocksLimSw.Warning);
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.Warning,
+               Message := 'Warning should be cleared #1');
+AssertFalse(Condition := fbMotionInterlocksLimSw.LimHit,
+               Message := 'Limit hit flag should be cleared #2');
+
+
+
+
+//Rest axis
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw.DriveCommands(Enable:=FALSE, NewMoveReq:=FALSE, Reset:=FALSE);
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=FALSE, NegativeDirection:=FALSE);
+fbMotionInterlocksLimSw();
+
+// Discrete motion in negative direction
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=FALSE, NegativeDirection:=TRUE);
+fbMotionInterlocksLimSw();
+
+// Create backward limit hit event
+fbLimSwStatus_testDouble.LimBackward := FALSE;
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+// clear Flags from global reset
+fbMotionInterlocksLimSw.DriveCommands(Enable:=FALSE, NewMoveReq:=FALSE, Reset:=fbMotionInterlocksLimSw.Warning);
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.Warning,
+               Message := 'Warning should be cleared #3');
+AssertFalse(Condition := fbMotionInterlocksLimSw.LimHit,
+               Message := 'Limit hit flag should be cleared #4');
+
+
+
+//Rest axis
+fbLimSwStatus_testDouble.LimForward := TRUE;
+fbLimSwStatus_testDouble.LimBackward := TRUE;
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw.DriveCommands(Enable:=FALSE, NewMoveReq:=FALSE, Reset:=FALSE);
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=FALSE, NegativeDirection:=FALSE);
+fbMotionInterlocksLimSw();
+
+// Discrete motion in positive direction
+fbMotionInterlocksLimSw.AxisStatus(HomeBusy:=FALSE, PositiveDirection:=TRUE, NegativeDirection:=FALSE);
+fbMotionInterlocksLimSw();
+
+// Create forward limit hit event
+fbLimSwStatus_testDouble.LimForward := FALSE;
+fbLimSwStatus_testDouble();
+fbMotionInterlocksLimSw();
+
+// clear Flags from global reset
+fbMotionInterlocksLimSw.DriveCommands(Enable:=FALSE, NewMoveReq:=TRUE, Reset:=FALSE);
+fbMotionInterlocksLimSw();
+
+AssertFalse(Condition := fbMotionInterlocksLimSw.Warning,
+               Message := 'Warning should be cleared #5');
+AssertFalse(Condition := fbMotionInterlocksLimSw.LimHit,
+               Message := 'Limit hit flag should be cleared #6');
+
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

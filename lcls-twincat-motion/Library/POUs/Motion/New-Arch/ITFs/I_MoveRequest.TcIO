@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_MoveRequest" Id="{7f2bf668-7795-4732-abfe-92b1b5451f34}">
+    <Declaration><![CDATA[INTERFACE I_MoveRequest
+]]></Declaration>
+    <Property Name="CmdDataLocal" Id="{fcff2249-b200-44eb-9f96-6cb5bc83921e}">
+      <Declaration><![CDATA[PROPERTY CmdDataLocal : INT]]></Declaration>
+      <Get Name="Get" Id="{1c4329ef-d531-4392-9e27-0cd2326400d2}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="CommandLocal" Id="{ff575df4-2712-49bd-a091-e554dc9c7695}">
+      <Declaration><![CDATA[PROPERTY CommandLocal : INT]]></Declaration>
+      <Get Name="Get" Id="{87095f97-68c4-4075-b598-9daa477a690f}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ExecHome" Id="{362397d9-2cef-4a21-ab22-3e22ae487e1b}">
+      <Declaration><![CDATA[PROPERTY ExecHome : BOOL]]></Declaration>
+      <Get Name="Get" Id="{94c5f5c4-fed7-4eb2-827f-3bffcf797c53}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ExecMove" Id="{9e36fae6-3fd3-4b56-8fc1-138339deafa8}">
+      <Declaration><![CDATA[PROPERTY ExecMove : BOOL]]></Declaration>
+      <Get Name="Get" Id="{8de9d8e3-0b79-4ce0-ae45-e7c59d2505b2}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Execute" Id="{1123b736-778d-41ce-95a9-5fd77af1bf97}">
+      <Declaration><![CDATA[PROPERTY Execute : BOOL]]></Declaration>
+      <Get Name="Get" Id="{d7026abf-3879-40a3-91c9-9d021dcbfe0e}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="MotionRequest" Id="{58511dad-93d5-4b51-bc77-4695caf17dd6}">
+      <Declaration><![CDATA[METHOD MotionRequest
+VAR_INPUT
+	(* From Drive*)
+	HomeCmd	: BOOL;
+	MoveCmd	: BOOL;
+	HomeMode	: E_EpicsHomeCmd;
+	EnableMode	: E_StageEnableMode;
+	// From Axis through the drive
+	EnableDone	: BOOL;
+	// From Interlock through the drive
+	MoveOk  : BOOL;
+	PowerEnabled : BOOL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="NewMoveReq" Id="{6425b75f-89f5-4728-a795-4bd6ecca6f80}">
+      <Declaration><![CDATA[PROPERTY NewMoveReq : BOOL]]></Declaration>
+      <Get Name="Get" Id="{7fae8107-f383-43a5-b6c2-2832c5d131de}">
+        <Declaration><![CDATA[]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>
