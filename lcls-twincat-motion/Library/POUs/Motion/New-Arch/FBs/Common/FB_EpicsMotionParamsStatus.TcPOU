@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_EpicsMotionParamsStatus" Id="{9e14aba8-1e00-4525-b1a9-7974cec06878}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_EpicsMotionParamsStatus IMPLEMENTS I_EpicsMotionParamsStatus
+VAR
+       // EPICS Interface
+    {attribute 'no_copy'}
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
+
+    bPowerEnabled: BOOL;
+    bPowerIsEnabled: BOOL;
+    bExecute: BOOL;
+    bLimHome: BOOL;
+    bMoveBackwardEnabled: BOOL;
+    bMoveForwardEnabled: BOOL;
+    fPowerOverride: LREAL;
+    bBusy: BOOL;
+    bHomeDone: BOOL;
+    fMeasuredPositionDiff: LREAL;
+    fMeasuredPosition: LREAL;
+    fMeasuredVelocity: LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[//////////////////////////////////////////////////////////////////
+// Transfer NC parameter status to EPICS
+//////////////////////////////////////////////////////////////////
+stMotionEpicsItf.stAxisStatus.bEnable:=bPowerEnabled;
+stMotionEpicsItf.stAxisStatus.bEnabled:=bPowerIsEnabled;
+stMotionEpicsItf.stAxisStatus.bExecute:=bExecute;
+stMotionEpicsItf.stAxisStatus.bHomeSensor:=bLimHome;
+
+stMotionEpicsItf.stAxisStatus.bLimitBwd:=bMoveBackwardEnabled;
+stMotionEpicsItf.stAxisStatus.bLimitFwd:=bMoveForwardEnabled;
+stMotionEpicsItf.stAxisStatus.fActDiff:=fMeasuredPositionDiff;
+stMotionEpicsItf.stAxisStatus.fActPosition:=fMeasuredPosition;
+stMotionEpicsItf.stAxisStatus.fActVelocity:=fMeasuredVelocity;
+stMotionEpicsItf.stAxisStatus.fOverride:=fPowerOverride;
+stMotionEpicsItf.stAxisStatus.bBusy:=bBusy;
+stMotionEpicsItf.stAxisStatus.bHomed:=bHomeDone;
+//stMotionEpicsInterface.stAxisStatus.bJogBwd:=bJogBwd;
+//stMotionEpicsInterface.stAxisStatus.bJogFwd:=bJogFwd;
+stMotionEpicsItf.stAxisStatus.bReset:=stMotionEpicsItf.bReset;
+stMotionEpicsItf.stAxisStatus.bError:=stMotionEpicsItf.bError;
+stMotionEpicsItf.stAxisStatus.fAcceleration:=stMotionEpicsItf.fAcceleration;
+stMotionEpicsItf.stAxisStatus.fDeceleration:=stMotionEpicsItf.fDeceleration;
+stMotionEpicsItf.stAxisStatus.fPosition:=stMotionEpicsItf.fPosition;
+stMotionEpicsItf.stAxisStatus.fVelocity:=stMotionEpicsItf.fVelocity;
+stMotionEpicsItf.stAxisStatus.nCmdData:=INT_TO_UINT(stMotionEpicsItf.nCmdData);  //Or nCmdDataLocal
+stMotionEpicsItf.stAxisStatus.nCommand:=INT_TO_UINT(stMotionEpicsItf.nCommand);  //Or nCommandLocal
+stMotionEpicsItf.stAxisStatus.nErrorId:=stMotionEpicsItf.nErrorId;]]></ST>
+    </Implementation>
+    <Method Name="CallAfterInit" Id="{37f41f22-86ac-4ee8-bb54-b88af0913c76}">
+      <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
+VAR_INPUT
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.stMotionEpicsItf REF=stMotionEpicsItf;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FB_Init" Id="{9e59ffaa-a1a6-49d7-8f81-8083125ba204}">
+      <Declaration><![CDATA[//FB_Init is always available implicitly and it is used primarily for initialization.
+//The return value is not evaluated. For a specific influence, you can also declare the
+//methods explicitly and provide additional code there with the standard initialization
+//code. You can evaluate the return value.
+METHOD FB_Init: BOOL
+VAR_INPUT
+    bInitRetains: BOOL; // TRUE: the retain variables are initialized (reset warm / reset cold)
+    bInCopyCode: BOOL;  // TRUE: the instance will be copied to the copy code afterward (online change)
+    stMotionEpicsItf : REFERENCE TO ST_MotionEpicsInterface;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.stMotionEpicsItf REF=stMotionEpicsItf;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MotionParamsAndStatus" Id="{f134f110-1d08-4330-b5d0-f1fa3db27f4f}">
+      <Declaration><![CDATA[{warning 'Add method implementation '}
+METHOD MotionParamsAndStatus
+VAR_INPUT
+    PowerEnabled	: BOOL;
+    PowerIsEnabled	: BOOL;
+    Execute	: BOOL;
+    LimHome	: BOOL;
+    MoveBackwardEnabled	: BOOL;
+    MoveForwardEnabled	: BOOL;
+    MeasuredPositionDiff	: LREAL;
+    MeasuredPosition	: LREAL;
+    MeasuredVelocity	: LREAL;
+    PowerOverride	: LREAL;
+    Busy	: BOOL;
+    HomeDone	: BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[PowerEnabled := bPowerEnabled;
+PowerIsEnabled := bPowerIsEnabled;
+Execute := bExecute;
+LimHome := bLimHome;
+MoveBackwardEnabled := bMoveBackwardEnabled;
+MoveForwardEnabled := bMoveForwardEnabled;
+MeasuredPositionDiff := fMeasuredPositionDiff;
+MeasuredPosition := fMeasuredPosition;
+MeasuredVelocity := fMeasuredVelocity;
+PowerOverride := fPowerOverride;
+Busy := bBusy;
+HomeDone := bHomeDone;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
