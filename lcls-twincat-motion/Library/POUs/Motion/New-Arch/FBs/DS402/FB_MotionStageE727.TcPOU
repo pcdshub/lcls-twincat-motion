@@ -308,8 +308,10 @@ IF stMotionStage.bReset THEN
     (*Manual Drive reset*)
     IF bDS402ManualEnabled THEN
         stDS402Drive.nDS402DriveControl := 128;
+    ELSE
+        bLocalReset := TRUE;
     END_IF
-    bLocalReset := TRUE;
+
     stMotionStage.bReset:=FALSE;
 END_IF
 
@@ -334,17 +336,13 @@ CASE nCommandLocal OF
         MoveAbsolute();
         (*IN CSP mode the drive control word is update via the NC
           Manual step mode and Homing will override this *)
-        //IF bCSPModeEnabled THEN
-            stDS402Drive.nDS402DriveControl := stDS402Drive.nDS402DriveControlNC;
-        //END_IF
+         stDS402Drive.nDS402DriveControl := stDS402Drive.nDS402DriveControlNC;
     E_EpicsMotorCmd.HOME:
         (*DS402 Manual Homing*)
        Home();
 END_CASE
 
 stMotionStage.bBusy := bHomeBusy OR fbMcMoveAbsolute.Busy;
-(*Handle correct startup procedure for manual move*)
-StateMachine(Enable:=1);
 
 (* Check done moving via user stop, limit hit, Target Position reached, or from homing.*)
 rtMoveDone(CLK:=fbMcMoveAbsolute.Done);
@@ -380,10 +378,8 @@ ftExec(CLK:=stMotionStage.bExecute);
 bPrepareDisable S= stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION AND ftExec.Q;
 (* Delay the disable until we reach standstill *)
 IF bPrepareDisable AND stMotionStage.Axis.Status.StandStill THEN
-    IF NOT bPositionHold THEN
-        bPrepareDisable:=FALSE;
-        stMotionStage.bEnable:=FALSE;
-    END_IF
+    bPrepareDisable:=FALSE;
+    stMotionStage.bEnable:=FALSE;
 END_IF
 
 (* update encoder value and calibrated position*)
@@ -513,14 +509,7 @@ THIS^.eModule := eModule;
     Deceleration := stMotionStage.fDeceleration,
     BufferMode := eBufferMode,
 );
-
-IF fbMcHalt.Done (*OR fbMcReset.Done*) THEN
-    (*Hold the position in close loop before dropping power, a positional drift will occur then*)
-    IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
-        bPositionHold := TRUE;
-        tonHoldTime.IN:=TRUE;
-    END_IF
-END_IF]]></ST>
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="Home" Id="{33a0ebff-5827-46e7-8879-a94910cac0f9}">
@@ -592,7 +581,13 @@ IF bMove THEN
             bHomeBusy:=FALSE;
             bHomeDone:=TRUE;
             stMotionStage.fPosition:=0.0;
-            stDS402Drive.nDS402DriveControl.4:=FALSE;
+
+            IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+                stDS402Drive.nDS402DriveControl.4:=FALSE;
+
+            ELSE
+                stDS402Drive.nDS402DriveControl:=6;
+            END_IF
             eHomeState:=E_MoveState.IDLING;
         E_MoveState.ERROR:
             bHomeDone:=FALSE;
@@ -640,19 +635,19 @@ ftBackwardEnabled(CLK:=stMotionStage.bLimitBackwardEnable);
 IF  NOT bHomeBusy AND ftForwardEnabled.Q THEN
     // Not an error, just a warning
     stMotionStage.sCustomErrorMessage:='Cannot move past positive limit.';
-    IF NOT bStepModeEnabled THEN
+    //IF NOT bStepModeEnabled THEN
         bLimOverride := TRUE;
-        bStop := TRUE;
-    END_IF
+    //    bStop := TRUE;
+    //END_IF
 END_IF
 
 IF NOT bHomeBusy AND ftBackwardEnabled.Q THEN
     // Not an error, just a warning
     stMotionStage.sCustomErrorMessage:='Cannot move past Negative limit.';
-    IF NOT bStepModeEnabled THEN
+    //IF NOT bStepModeEnabled THEN
         bLimOverride := TRUE;
-        bStop := TRUE;
-    END_IF
+    //    bStop := TRUE;
+    //END_IF
 END_IF
 
 IF NOT stMotionStage.bError AND stMotionStage.bExecute AND NOT stMotionStage.bUserEnable THEN
@@ -674,6 +669,7 @@ METHOD ModeOperation
 
 VAR_INST
     tonSwitching : TON;
+    bManualTransition: BOOL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[rtCSPModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.CSP));
@@ -685,35 +681,34 @@ IF rtCSPModeOk.Q THEN
 ELSIF rtHomeModeEnable.Q THEN
     bHomeModeEnabled := TRUE;
     bCSPModeEnabled := FALSE;
+    stDS402Drive.nDS402DriveControl := 0;
 END_IF
 
 IF rtUserExec.Q AND stMotionStage.bHomeCmd THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.HOME) THEN
-        //stDS402Drive.nModeOfOperation := E_DS402OpMode.HOME;
-        tonSwitching.IN:=TRUE;
-        stDS402Drive.nDS402DriveControl := 0;
+        stDS402Drive.nModeOfOperation := E_DS402OpMode.HOME;
+        stDS402Drive.nDS402DriveControl := 128;
         // clear previous operational from switching away from this mode.
         bOperational := FALSE;
         bCSPModeEnabled := FALSE;
+        bManualTransition := TRUE;
     ELSE
         bHomeModeEnabled := TRUE;
     END_IF
 ELSIF rtUserExec.Q THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.CSP) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
-        stDS402Drive.nDS402DriveControl := 15;
+        stDS402Drive.nDS402DriveControl := 128;
         bHomeModeEnabled := FALSE;
+        bManualTransition := FALSE;
     ELSE
         bCSPModeEnabled := TRUE;
     END_IF
 END_IF
 
 bDS402ManualEnabled :=bHomeModeEnabled;
-tonSwitching(PT:=T#50MS);;
-IF tonSwitching.Q THEN
-    stDS402Drive.nModeOfOperation := E_DS402OpMode.HOME;
-    tonSwitching.IN:=FALSE;
-END_IF]]></ST>
+(*Handle correct startup procedure for manual move*)
+StateMachine(Enable:=1);]]></ST>
       </Implementation>
     </Method>
     <Method Name="MoveAbsolute" Id="{ef6438a6-2f51-4fcb-8e79-4996ce368252}">
@@ -731,14 +726,7 @@ fbMcMoveAbsolute(
     BufferMode := eBufferMode,
 );
 
-
-IF fbMcMoveAbsolute.Done (*OR fbMcReset.Done*) THEN
-    (*Hold the position in close loop before dropping power, a positional drift will occur then*)
-    IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
-        bPositionHold := TRUE;
-        tonHoldTime.IN:=TRUE;
-    END_IF
-END_IF]]></ST>
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="PersistParameters" Id="{dbd76dd7-3eb8-45e8-8529-04cd577902f3}">
