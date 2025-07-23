@@ -635,19 +635,13 @@ ftBackwardEnabled(CLK:=stMotionStage.bLimitBackwardEnable);
 IF  NOT bHomeBusy AND ftForwardEnabled.Q THEN
     // Not an error, just a warning
     stMotionStage.sCustomErrorMessage:='Cannot move past positive limit.';
-    //IF NOT bStepModeEnabled THEN
-        bLimOverride := TRUE;
-    //    bStop := TRUE;
-    //END_IF
+    bLimOverride := TRUE;
 END_IF
 
 IF NOT bHomeBusy AND ftBackwardEnabled.Q THEN
     // Not an error, just a warning
     stMotionStage.sCustomErrorMessage:='Cannot move past Negative limit.';
-    //IF NOT bStepModeEnabled THEN
-        bLimOverride := TRUE;
-    //    bStop := TRUE;
-    //END_IF
+    bLimOverride := TRUE;
 END_IF
 
 IF NOT stMotionStage.bError AND stMotionStage.bExecute AND NOT stMotionStage.bUserEnable THEN
