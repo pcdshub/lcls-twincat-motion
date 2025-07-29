@@ -35,39 +35,6 @@ VAR
     fbMcWriteParameter 	: MC_WriteParameter;
     {attribute 'hide'}
     fbMcReadParams		: MC_ReadParameterSet;
-    {attribute 'hide'}
-    fbSetPos			: MC_SetPosition;
-    {attribute 'hide'}
-    fbLogError  		: FB_LogMotionError;
-    // Open Loop Operations
-    {attribute 'hide'}
-    fbSetSteps			: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetStepFreq 		: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetStepAmp  		: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbErrorRead			: FB_EcCoESdoRead;
-    {attribute 'hide'}
-    fbReadFErrWin		: FB_EcCoESdoRead;
-    {attribute 'hide'}
-    fbReadSoftLimMax	: FB_EcCoESdoRead;
-    {attribute 'hide'}
-    fbReadSoftLimMin  	: FB_EcCoESdoRead;
-    {attribute 'hide'}
-    fbSetFErrorWin		: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetSoftLimMin		: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetSoftLimMax		: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetHomeOffs 		: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetHomeVeloFast 	: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetHomeVeloSlow 	: FB_EcCoESdoWrite;
-    {attribute 'hide'}
-    fbSetHomeAcc		: FB_EcCoESdoWrite;
     // MCS2 OL PVs
     {attribute 'pytmc' := '
         pv: PLC:nChanStep
@@ -113,6 +80,8 @@ VAR
     '}
     bServo  			: BOOL := TRUE;
    {attribute 'hide'}
+    bLastHoltTimeOut : BOOL;
+   {attribute 'hide'}
     bEnPosLag 			: BOOL;
     {attribute 'hide'}
     bWrongParameter 	: BOOL;
@@ -145,23 +114,7 @@ VAR
     {attribute 'hide'}
     bInit				: BOOL;
     {attribute 'hide'}
-    bLoad				: BOOL;
-    {attribute 'hide'}
-    bEncError			: BOOL;
-    {attribute 'hide'}
-    bPositiveDirection  : BOOL;
-    {attribute 'hide'}
-    bNegativeDirection  : BOOL;
-    {attribute 'hide'}
-    bReadErrDone		: BOOL;
-    {attribute 'hide'}
-    bFault				: BOOL;
-    {attribute 'hide'}
-    bParamReadTimer 	: BOOL := TRUE;
-    {attribute 'hide'}
     bHomeDone 			: BOOL;
-    {attribute 'hide'}
-    bMove 				: BOOL;
     {attribute 'hide'}
     bStepModeEnabled	: BOOL;
     {attribute 'hide'}
@@ -171,14 +124,8 @@ VAR
     {attribute 'hide'}
     bSteModeEnable 		: BOOL;
     {attribute 'hide'}
-    bRestoreDone 		: BOOL;
-    {attribute 'hide'}
-    bRestoreInit		: BOOL;
-    {attribute 'hide'}
     bRestoreLoad		: BOOL;
-    {attribute 'hide'}
-    bRestoreWaitRetry	: BOOL;
-    {attribute 'hide'}
+   {attribute 'hide'}
     bStepModeparamsSetDone	: BOOL;
     {attribute 'hide'}
     bExecParamsRead			: BOOL;
@@ -186,10 +133,15 @@ VAR
     bCommandMoveAbsolute 	: BOOL;
     {attribute 'hide'}
     bRecentEnPosLagStatus 	: BOOL;
+    {attribute 'hide'}
     bDS402ManualAborted : BOOL;
+    {attribute 'hide'}
     bStepMoveAborted : BOOL;
+    {attribute 'hide'}
     bHomeAborted : BOOL;
-    bDS402ManualOk : BOOL;
+    {attribute 'hide'}
+    bDS402ManualEnabled : BOOL;
+    {attribute 'hide'}
     fScalededSteps  	: LREAL;
     {attribute 'hide'}
     fMeasuredVelo		: LREAL;
@@ -197,72 +149,32 @@ VAR
     fMeasuredAcc		: LREAL;
     {attribute 'hide'}
     fScalingFactor		: LREAL:= 0.000001;
+   {attribute 'hide'}
     fHomeAcc  			: LREAL := 0.8;
     fParameterValue : LREAL;
     {attribute 'hide'}
     fMeasuredPos 		: LREAL;
     {attribute 'hide'}
-    fOverride 			: LREAL;
+    nScalededStepAmp  	: UINT;
     {attribute 'hide'}
-    nPiezoErrorCode   	: UDINT;
+    nScaledStepFreq   	: UINT;
     {attribute 'hide'}
-    nHomeOffs			: DINT;
-    {attribute 'hide'}
-    nRecentSoftLimMax 	: LINT;
-    {attribute 'hide'}
-    nRecentSoftLimMin 	: LINT;
+    nHomeVeloFast 		: UDINT;
     {attribute 'hide'}
     nSoftLimMin     	: LINT;
     {attribute 'hide'}
     nSoftLimMax     	: LINT;
     {attribute 'hide'}
-    nLatchError			: UDINT;
-    {attribute 'hide'}
-    nMaxRetries			: UINT := 10;
-    {attribute 'hide'}
-    nCurrTries			: UINT := 0;
-    {attribute 'hide'}
-    nScalededStepAmp  	: UINT;
-    {attribute 'hide'}
-    nScaledStepFreq   	: UINT;
-    {attribute 'hide'}
-    nCounter			: UINT;
-    {attribute 'hide'}
-    nHomeVeloFast 		: UDINT;
-    {attribute 'hide'}
     nHomeVeloSlow  		: UDINT;
-    {attribute 'hide'}
-    nRecentHomeVeloFast : UDINT;
-    {attribute 'hide'}
-    nRecentHomeVeloSlow : UDINT;
     {attribute 'hide'}
     nHomeAcc 			: UDINT;
     {attribute 'hide'}
-    nRecentHomeAcc 		: UDINT;
-    {attribute 'hide'}
-    nScaledHomeVelo   	: DINT;
-    {attribute 'hide'}
-    nScaledHomeAcc  	: DINT;
-    {attribute 'hide'}
-    nChanPrevStep		: DINT;
-    {attribute 'hide'}
-    nfErrWin 			: DINT;
     {attribute 'hide'}
     nScaledFErrWin 		: DINT;
     {attribute 'hide'}
-    nRecentFErrWin		: DINT;
-    {attribute 'hide'}
     nHomeOffset 		: DINT;
     {attribute 'hide'}
-    nRecentHomeOffset 	: DINT;
-    {attribute 'hide'}
     nScalededSteps  	: DINT;
-    {attribute 'hide'}
-    nRecentSteps		: DINT;
-    {attribute 'hide'}
-    nRecentStepAmp		: UINT;
-    {attribute 'hide'}
-    nRecentStepFreq		: UINT;
     {attribute 'hide'}
     tonSyncHoming 		: TON;
     {attribute 'hide'}
@@ -274,13 +186,9 @@ VAR
     {attribute 'hide'}
     tonRestoreRetry		: TON;
     {attribute 'hide'}
-    tRefreshDelay   	: TIME := T#1S;
-    {attribute 'hide'}
     rtAborted 			: R_TRIG;
     {attribute 'hide'}
     rtStepMoveDone 		: R_TRIG;
-    {attribute 'hide'}
-    rtNewStepMove 		: R_TRIG;
     {attribute 'hide'}
     rtStopDone			: R_TRIG;
     {attribute 'hide'}
@@ -302,52 +210,15 @@ VAR
     rtNewMoveReq  		: R_TRIG;
     {attribute 'hide'}
     ftExec      		: F_TRIG;
-    {attribute 'hide'}
-    ftErrorReadDone  	: F_TRIG;
-    {attribute 'hide'}
-    ftForwardEnabled  	: F_TRIG;
-    {attribute 'hide'}
-    ftBackwardEnabled 	: F_TRIG;
-    {attribute 'hide'}
-    ftSetStepsDone		: F_TRIG;
-    {attribute 'hide'}
-    ftSetStepFreqDone 	: F_TRIG;
-    {attribute 'hide'}
-    ftSetStepAmpDone	: F_TRIG;
-    {attribute 'hide'}
-    rtReadError 		: R_TRIG;
+
     {attribute 'hide'}
     rtHomeDone 			: R_TRIG;
     {attribute 'hide'}
-    ftFErrWinSetDone	: F_TRIG;
-    {attribute 'hide'}
-    ftSoftLimMaxSetDone	: F_TRIG;
-    {attribute 'hide'}
-    ftSoftLimMinSetDone	: F_TRIG;
-    {attribute 'hide'}
-    ftHomeVeloFastSetDone: F_TRIG;
-    {attribute 'hide'}
-    ftHomeAccSetDone	: F_TRIG;
-    {attribute 'hide'}
-    ftHomeOffsSetDone	: F_TRIG;
-    {attribute 'hide'}
-    rtHomeOffset		: R_TRIG;
-    {attribute 'hide'}
-    rtHomeVeloSlow		: R_TRIG;
-    {attribute 'hide'}
-    ftHomeVeloSlowSetDone: F_TRIG;
-    {attribute 'hide'}
     rtCSPModeOk			: R_TRIG;
     {attribute 'hide'}
-    rtHomeModeOk		: R_TRIG;
+    rtHomeModeEnable	: R_TRIG;
     {attribute 'hide'}
-    rtStepModeOk		: R_TRIG;
-    {attribute 'hide'}
-    ftStepAmpUpdateDone	: F_TRIG;
-    {attribute 'hide'}
-    ftStepFreqUpdateDone	: F_TRIG;
-    {attribute 'hide'}
-    ftStepUpdateDone	: F_TRIG;
+    rtStepModeEnabled	: R_TRIG;
     {attribute 'hide'}
     rtNewServoMove		: R_TRIG;
     {attribute 'hide'}
@@ -377,9 +248,13 @@ VAR
     {attribute 'hide'}
     nChanhomeAccIdx		: WORD;
     {attribute 'hide'}
-    bStartingUp: BOOL;
+    bLocalReset: BOOL;
     {attribute 'hide'}
-    tonStartUp: TON;
+    nCommandLocal: INT := 3;
+    {attribute 'hide'}
+    nCmdDataLocal: INT;
+   {attribute 'hide'}
+    bManualTransition: BOOL;
 END_VAR
 
 VAR CONSTANT
@@ -427,9 +302,10 @@ IF bInit THEN
     (* Clear drive error/wraning condition, in open loop mode
        this will trigger a correct startup for procedure *)
     stDS402Drive.nDS402DriveControl := 128;
+    // fist cycle reading of NC paramters
+    bExecParamsRead := TRUE;
     bInit := FALSE;
 END_IF
-
 (* Check for the plc shortcut commands
    Used for testing or to circumvent motor record issues*)
 rtMoveCmdShortcut(CLK:=stMotionStage.bMoveCmd);
@@ -438,6 +314,7 @@ rtHomeCmdShortcut(CLK:=stMotionStage.bHomeCmd);
 (* Execute on rising edge*)
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute:=TRUE;
+    stMotionStage.nCommand := E_EpicsMotorCmd.MOVE_ABSOLUTE;
     bEnPosLag := bRecentEnPosLagStatus;
     fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
 
@@ -456,6 +333,7 @@ ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
         bEnPosLag := TRUE;
         fParameterValue := 0;
     END_IF
+
 END_IF
 
 (* entry point for local and EPICS main execs *)
@@ -472,29 +350,31 @@ rtNewMoveReq(CLK:=bNewMoveReq);
 stMotionStage.bSafetyReady S= stMotionStage.bPowerSelf;
 (* Set the proper command for the request move;
    if bservo not set, manual step moves will be performed *)
-IF rtUserExec.Q AND NOT stMotionStage.bHomeCmd THEN
-    IF bServo THEN
-        (* Close loop CSP mode*)
-        stMotionStage.nCommand:=E_EpicsMotorCmd.MOVE_ABSOLUTE;
-    ELSE
-        (* Open Loop Step Mode *)
-        stMotionStage.nCommand:=E_EpicsMotorCmd.JOG;
-    END_IF
-    (* attempting to move an axis without homing first? *)
-    IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stMotionStage.bHomed THEN
-        (* one can just set bHome here even though no homing was done?*)
-        stMotionStage.sErrorMessage:='Axis homing mode set, but homing routine pending';
+IF rtUserExec.Q THEN
+    // Transfer nCommand and nCmdData to local copies at rising edge of bExecute (avoid issues if nCommand or nCmdData are changed during a command)
+    nCmdDataLocal:=stMotionStage.nCmdData;
+    nCommandLocal:=stMotionStage.nCommand;
+    IF NOT stMotionStage.bHomeCmd THEN
+        IF NOT bServo THEN
+            (* Open Loop Step Mode *)
+            stMotionStage.nCommand:=E_EpicsMotorCmd.JOG;
+            nCommandLocal := E_EpicsMotorCmd.JOG;
+        END_IF
+
+        (* attempting to move an axis without homing first? *)
+        IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE AND NOT stMotionStage.bHomed THEN
+            (* one can just set bHome here even though no homing was done?*)
+            stMotionStage.sErrorMessage:='Axis homing mode set, but homing routine pending';
+        END_IF
     END_IF
 END_IF
 
-(* Set the drive in the correct operating mode
-    based on requested move command!
+(* Set the drive in the correct operating mode. based on requested move command!
     NB: bservo must set for close loop motion
 *)
 ModeOperation();
 
-(* Transition to DURING_MOTION drive mode
-    NB: This is the only tested mode of operation so far. also aligned
+(* NB: This is the only tested mode of operation so far. also aligned
     piezo drive position holding feature
 *)
 rtEnableMode(CLK:=(stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION));
@@ -514,6 +394,8 @@ CASE stMotionStage.nEnableMode OF
             (*MC block are not compatible with open loop Motion
                 thus we wathc for correct close loop modes to use NC features *)
             stMotionStage.bEnable S= stMotionStage.bSafetyReady;
+            bLastHoltTimeOut := FALSE;
+            bStop:=FALSE;
         END_IF
 END_CASE
 (*	Interlock mainly react on internal limit conditions inthe ove direction.
@@ -528,10 +410,11 @@ ELSIF bHomeModeEnabled THEN
 ELSIF bStepModeEnabled THEN
     (*Manual, i.e Homing using DS402*)
     bLocalExec:= NOT stMotionStage.bError AND stMotionStage.bExecute AND stMotionStage.bAllEnable AND  bOperational AND  stMotionStage.bSafetyReady AND NOT bServo;
+ELSE
+    bLocalExec:= FALSE;
 END_IF
 bExecHome:=bLocalExec AND stMotionStage.nCommand = 10;
 bExecMove:=bLocalExec AND NOT bExecHome;
-
 
 (* When we start, set the busy/done appropriately
    NB: CLose loop control using NC *)
@@ -544,7 +427,7 @@ END_IF
 
 (* updated axis status
    Not needed in manual mode *)
-IF NOT bDS402ManualOk THEN
+IF NOT bDS402ManualEnabled THEN
     stMotionStage.Axis.ReadStatus();
 END_IF
 
@@ -557,123 +440,110 @@ CASE stMotionStage.Axis.Status.MotionState OF
     ELSE
         stMotionStage.bEnableDone := TRUE;
 END_CASE
-
-(* Trigger MC_Reset for close loop operation aka CSP mode *)
-Reset();
-
+//
 IF stMotionStage.bReset THEN
-    stMotionStage.bReset:=FALSE;
     stMotionStage.bExecute:=FALSE;
     stMotionStage.bError := FALSE;
     stMotionStage.nErrorId := 0;
     stMotionStage.sErrorMessage:='';
     stMotionStage.sCustomErrorMessage:='';
-    stMotionStage.bEnable:=FALSE;
     (*Manual Drive reset*)
-    IF bDS402ManualOk THEN
-        stDS402Drive.nDS402DriveControl := 128;
+    IF bDS402ManualEnabled THEN
+        // Clear error/warning
+        bManualTransition:=FALSE;
+        IF NOT stMotionStage.bBusy THEN
+            stDS402Drive.nDS402DriveControl := 128;
+        ELSE
+            // Power off the drive
+            stMotionStage.bEnable:=FALSE;
+            stDS402Drive.nDS402DriveControl := 6;
+        END_IF
+    ELSE
+        bLocalReset := TRUE;
     END_IF
+    stMotionStage.bReset:=FALSE;
 END_IF
-//
-ftExec(CLK:=stMotionStage.bExecute);
 
-// Halt is always a user stop but not an interlock event or a reset, but not a warning condition
-bStop := ftExec.Q AND ((bHomeBusy AND (stMotionStage.nCommand=10))
-                    OR(fbMcMoveAbsolute.Busy AND (stMotionStage.nCommand=3)));
+// Halt is always a user stop during motion
+bStop S= NOT bLocalExec AND NOT bLocalReset AND ((bHomeBusy AND (nCommandLocal=10))
+                        OR(fbMcMoveAbsolute.Busy AND (nCommandLocal=3)) OR (bStepMoveBusy AND (nCommandLocal=0)));
 
-(*NC CSP Move Handling*)
-Halt();
-Power();
 //auto handle position lag monitoring, disable during homing.
 WriteParameterNC(	Execute:=bEnPosLag,
                     ParameterNumber:=MC_AxisParameter.AxisEnPositionLagMonitoring,
                     ParameterValue:=fParameterValue);
 
 (* Requested commands processing *)
-CASE stMotionStage.nCommand  OF
+CASE nCommandLocal OF
     E_EpicsMotorCmd.MOVE_ABSOLUTE:
-    (*IN CSP mode the drive control word is update via the NC
-      Manual step mode and Homing will override this *)
-      IF bCSPModeEnabled THEN
-        stDS402Drive.nDS402DriveControl := stDS402Drive.nDS402DriveControlNC;
-      END_IF
-
+        (*NC CSP Move Handling*)
+        Reset();
+        Power();
+        Halt();
         (*Wait for drive to be in the correct mode after a request was validated *)
         bCommandMoveAbsolute := bExecMove AND fbMcPower.Status AND bCSPModeEnabled;
-        IF fbMcMoveAbsolute.Done THEN
-            (*Hold the position in close loop before dropping power, a positional drift will occur then*)
-            IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
-                bPositionHold := TRUE;
-                tonHoldTime.IN:=TRUE;
-            END_IF
-        END_IF
+        MoveAbsolute();
+        (*IN CSP mode the drive control word is update via the NC
+          Manual step mode and Homing will override this *)
+         stDS402Drive.nDS402DriveControl := stDS402Drive.nDS402DriveControlNC;
     E_EpicsMotorCmd.HOME:
         (*DS402 Manual Homing*)
         Home();
-        stDS402Drive.nDS402DriveControl.8 S= bHomeBusy AND bStop;
-
     E_EpicsMotorCmd.JOG:
         (* Set drive to correct operating mode, ensure motion params are correct
           following a validated open loop mode request.
           NB: bservo must be off. a PV is provided for that
         *)
-        bSteModeEnable := bExecMove AND bStepModeparamsSetDone AND NOT bWrongParameter;
-        StepMove(Enable:=bSteModeEnable);
-        stDS402Drive.nDS402DriveControl.8 S= bStepMoveBusy AND bStop;
+         StepMove(Enable:=bExecMove AND bStepModeparamsSetDone AND NOT bWrongParameter);
 END_CASE
 
-(*Handle correct startup procedure for manual move*)
-StateMachine(Enable:=bStartingUp);
-
-(*NC CSP Move Handling*)
-MoveAbsolute();
-
 stMotionStage.bBusy := bHomeBusy OR fbMcMoveAbsolute.Busy OR bStepMoveBusy;
-bDS402ManualAborted := bHomeAborted OR bStepMoveAborted;
+
 (* Check done moving via user stop, limit hit, Target Position reached, or from homing.*)
 rtMoveDone(CLK:=fbMcMoveAbsolute.Done);
 rtStepMoveDone(CLK:=bStepMoveDone);
 rtHomeDone(CLK:=bHomeDone);
 rtStopDone(CLK:=fbMcHalt.Done);
-rtAborted(CLK:=fbMcMoveAbsolute.CommandAborted  OR bDS402ManualAborted);
+rtAborted(CLK:=bHomeAborted OR bStepMoveAborted);
 IF rtAborted.Q OR rtStopDone.Q OR rtMoveDone.Q OR rtHomeDone.Q OR rtStepMoveDone.Q THEN
     IF NOT stMotionStage.bDone THEN
         stMotionStage.bHomed := bHomeDone;
         stMotionStage.bExecute:=FALSE;
         bCommandMoveAbsolute := FALSE;
         stMotionStage.bDone := fbMcMoveAbsolute.Done OR bHomeDone OR bStepMoveDone;
-        IF bDS402ManualOk THEN
-            // No standstill in Manual Mode
-            stMotionStage.bEnable:=FALSE;
+        IF bDS402ManualEnabled THEN
             (*Restore Postional lag monitoring*)
             bEnPosLag := FALSE;
-            IF bHomeDone OR bStepMoveDone THEN
-                stDS402Drive.nDS402DriveControl := 15;
-            END_IF
         END_IF
         (* Release the internal limit override*)
         bLimOverride := FALSE;
         bHomeAborted := FALSE;
         bStepMoveAborted := FALSE;
-        bMove := FALSE;
-        bStop := FALSE;
     END_IF
 END_IF
 
 (* hold stage in place before timeout *)
 tonHoldTime(PT:=UDINT_TO_TIME(nHoldTime));
-
 IF tonHoldTime.Q THEN
     bPositionHold := FALSE;
     tonHoldTime.IN:=FALSE;
+    bLastHoltTimeOut := TRUE;
     (* open loop mode is not compatible with MC_Power, MC _Halt...*)
     (* Manual power disabling is required*)
-    IF bDS402ManualOk THEN
-        bSteModeEnable := FALSE;
+    IF bDS402ManualEnabled THEN
         stDS402Drive.nDS402DriveControl := 6;
     END_IF
+    stMotionStage.bEnable:=FALSE;
+    bStop := FALSE;
 END_IF
 
+(* updated axis status
+   Not needed in manual mode *)
+IF NOT bDS402ManualEnabled THEN
+    stMotionStage.Axis.ReadStatus();
+END_IF
+//
+ftExec(CLK:=stMotionStage.bExecute);
 (*Handle auto-disable timing*)
 bPrepareDisable S= stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION AND ftExec.Q;
 (* Delay the disable until we reach standstill *)
@@ -683,9 +553,24 @@ IF bPrepareDisable AND stMotionStage.Axis.Status.StandStill THEN
         stMotionStage.bEnable:=FALSE;
     END_IF
 END_IF
+
+(* update encoder value and calibrated position*)
+ScaleEncRawValue();
+(*Drive parameters*)
+ExposedParameters(Enable:=TRUE, tRefreshDelay:=T#2S);
+(* Open Loop Motion paramters Update*)
+UpdateServoOffMotionParams(Enable:=stMotionStage.bAxisParamsInit AND NOT stMotionStage.bBusy AND bStepModeEnabled);
+(*Sync NC setting to drive settings*)
+UpdateDriveMonitoringParams(Enable:=stMotionStage.bAxisParamsInit AND NOT stMotionStage.bBusy);
+(* Save and restore as long as not an absolute encoder*)
+PersistParameters( Enable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);
+(*Restore encoder value at initialization*)
+RestoreMotionParams(Enable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);
+
+(*EPICS Motor record Update*)
+UpdateEpicsStatus();
 (*
-    Error from functions and Nc
-    The error will send to EPICS interface based on predifined
+    Error from functions and Nc. The error will send to EPICS interface based on predifined
     priority: axis, power, backlash, absoluteMove, etc...
 *)
 IF fbMcPower.Error AND fbMcPower.Active THEN
@@ -700,34 +585,18 @@ ELSIF fbMcHalt.Error AND fbMcHalt.Active THEN
 ELSIF fbMcReset.Error  THEN
     stMotionStage.bError:=fbMcReset.Error;
     stMotionStage.nErrorId:=fbMcReset.ErrorID;
+ELSIF fbMcWriteParameter.Error THEN
+    stMotionStage.bError:=fbMcWriteParameter.Error;
+    stMotionStage.nErrorId:=fbMcWriteParameter.ErrorID;
+ELSIF fbMcReadParams.Error AND NOT stMotionStage.bBusy THEN
+    stMotionStage.bError:=fbMcReadParams.Error;
+    stMotionStage.nErrorId:=fbMcReadParams.ErrorID;
 ELSE
     IF stMotionStage.bBusy THEN
         stMotionStage.sErrorMessage := '';
         stMotionStage.sCustomErrorMessage := '';
     END_IF
 END_IF;
-
-(* We've got the rising edge clear this flags.*)
-stMotionStage.bMoveCmd:=FALSE;
-stMotionStage.bHomeCmd:=FALSE;
-
-(* update encoder value and calibrated position*)
-ScaleEncRawValue();
-(*Drive parameters*)
-ExposedParameters(Enable:=TRUE, tRefreshDelay:=T#2S);
-(* Open Loop Motion paramters Update*)
-UpdateServoOffMotionParams(Enable:=stMotionStage.bAxisParamsInit AND NOT stMotionStage.bBusy AND bStepModeEnabled);
-(*Sync NC setting to drive settings*)
-UpdateDriveMonitoringParams(Enable:=stMotionStage.bAxisParamsInit AND NOT stMotionStage.bBusy);
-(* Save and restore as long as not an absolute encoder*)
-PersistParameters( Enable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);
-
-(*Clear motion flag when error occurs*)
-IF stMotionStage.bError  THEN
-    stMotionStage.bBusy := FALSE;
-    stMotionStage.bDone := FALSE;
-    stMotionStage.bEnable := FALSE;
-END_IF
 
 (*Double function, prioritize NC error otherwise read drive channel error code*)
 ReadDriveCodes();
@@ -737,16 +606,28 @@ IF stMotionStage.sCustomErrorMessage <> ''
     stMotionStage.sErrorMessage := stMotionStage.sCustomErrorMessage;
 END_IF
 
-(*Restore encoder value at initialization*)
-RestoreMotionParams(Enable:=stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE);
-(*EPICS Motor record Update*)
-UpdateEpicsStatus();]]></ST>
+(*Clear motion flag when error occurs*)
+IF stMotionStage.bError  THEN
+    stMotionStage.bBusy := FALSE;
+    stMotionStage.bDone := FALSE;
+    stMotionStage.bEnable := FALSE;
+END_IF
+
+(* We've got the rising edge clear this flags.*)
+stMotionStage.bMoveCmd:=FALSE;
+stMotionStage.bHomeCmd:=FALSE;
+]]></ST>
     </Implementation>
     <Method Name="ExposedParameters" Id="{bfdcb735-2f35-43ca-9b4a-eca418143c19}">
       <Declaration><![CDATA[METHOD PUBLIC  ExposedParameters
 VAR_INPUT
     Enable : BOOL;
     tRefreshDelay: TIME;
+END_VAR
+
+VAR_INST
+    {attribute 'hide'}
+    bParamReadTimer 	: BOOL := TRUE;
 END_VAR
 
 ]]></Declaration>
@@ -806,13 +687,26 @@ THIS^.eModule := eModule;
     Execute := bStop AND bCSPModeEnabled,
     Deceleration := stMotionStage.fDeceleration,
     BufferMode := eBufferMode,
-);]]></ST>
+);
+
+IF fbMcHalt.Done (*OR fbMcReset.Done*) THEN
+    (*Hold the position in close loop before dropping power, a positional drift will occur then*)
+    IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+        bPositionHold := TRUE;
+        tonHoldTime.IN:=TRUE;
+    END_IF
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="Home" Id="{30e09e6f-3e19-461e-88df-b1cd53b15969}">
-      <Declaration><![CDATA[METHOD PUBLIC Home]]></Declaration>
+      <Declaration><![CDATA[METHOD PUBLIC Home
+
+VAR_INST
+    {attribute 'hide'}
+    bMove 				: BOOL;
+END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[tonSyncHoming(PT:=T#150MS);
+        <ST><![CDATA[tonSyncHoming(PT:=T#20MS);
 CASE eHomeMode OF
     E_EpicsHomeCmd.AUTOZERO:
         bMove S=  bExecHome;
@@ -833,15 +727,15 @@ IF bMove THEN
                 bHomeBusy := TRUE;
                 stMotionStage.bDone := FALSE;
                 tonSyncHoming.IN := TRUE;
+                stDS402Drive.nDS402DriveControl :=15;
                 eHomeState := E_MoveState.INIT;
             END_IF
         E_MoveState.INIT:
             IF tonSyncHoming.Q THEN
                 tonSyncHoming.IN := FALSE;
-                                stDS402Drive.nDS402DriveControl :=31;
+                stDS402Drive.nDS402DriveControl :=31;
                 eHomeState:=E_MoveState.STARTED;
             END_IF
-
         E_MoveState.STARTED :
             // this is a comfirmation that routine is ongoing
             IF NOT stDS402Drive.stDS402DriveStatus.TargetReached
@@ -854,6 +748,8 @@ IF bMove THEN
         E_MoveState.IN_PROGRESS :
 
         IF bStop THEN
+          stDS402Drive.nDS402DriveControl.8 :=1;
+          bHomeAborted := TRUE;
           eHomeState:=E_MoveState.INTERRUPTED;
 
         // Genral Motion error i.e Following error ?
@@ -869,10 +765,11 @@ IF bMove THEN
            eHomeState:=E_MoveState.DONE;
         END_IF
         E_MoveState.INTERRUPTED:
-            tonHoldTime.IN:=TRUE;
-            bPositionHold := TRUE;
-                      bHomeBusy:=FALSE;
-            stDS402Drive.nDS402DriveControl := 15;
+            IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+                bPositionHold := TRUE;
+                tonHoldTime.IN:=TRUE;
+            END_IF
+            bHomeBusy:=FALSE;
             eHomeState:=E_MoveState.IDLING;
         E_MoveState.DONE:
             bHomeBusy:=FALSE;
@@ -883,7 +780,7 @@ IF bMove THEN
             END_IF
             bHomeDone:=TRUE;
             stMotionStage.fPosition:=0.0;
-            stDS402Drive.nDS402DriveControl := 15;
+            //stDS402Drive.nDS402DriveControl := 15;
             eHomeState:=E_MoveState.IDLING;
         E_MoveState.ERROR:
             bHomeDone:=FALSE;
@@ -903,7 +800,16 @@ END_IF]]></ST>
     <Method Name="Interlock" Id="{b0516fc0-3ac5-4a37-a4b7-b21194f9b805}">
       <Declaration><![CDATA[METHOD PUBLIC Interlock
 
-VAR
+VAR_INST
+    {attribute 'hide'}
+    bPositiveDirection  : BOOL;
+    {attribute 'hide'}
+    bNegativeDirection  : BOOL;
+    {attribute 'hide'}
+    ftForwardEnabled  	: F_TRIG;
+
+    {attribute 'hide'}
+    ftBackwardEnabled 	: F_TRIG;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// Positive or Negative direction
@@ -956,42 +862,43 @@ METHOD ModeOperation
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[rtCSPModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.CSP));
-rtHomeModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.HOME));
-rtStepModeOk(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.MCS2_OL_STEP_MODE));
+rtHomeModeEnable(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.HOME));
+rtStepModeEnabled(CLK:=( stDS402Drive.nModeOfOperationDisplay=E_DS402OpMode.MCS2_OL_STEP_MODE));
 // transition to close loop mode
 IF rtCSPModeOk.Q THEN
-    bStepModeEnabled := FALSE;
-    bHomeModeEnabled := FALSE;
     bCSPModeEnabled := TRUE;
-ELSIF rtHomeModeOk.Q THEN
-    bStepModeEnabled := FALSE;
+ELSIF rtHomeModeEnable.Q THEN
     bHomeModeEnabled := TRUE;
-    bCSPModeEnabled := FALSE;
-    stDS402Drive.nDS402DriveControl := 0;
-ELSIF rtStepModeOk.Q THEN
+ELSIF rtStepModeEnabled.Q THEN
     bStepModeEnabled := TRUE;
-    bHomeModeEnabled := FALSE;
-    bCSPModeEnabled := FALSE;
     bServo := FALSE;
-    stDS402Drive.nDS402DriveControl := 0;
 END_IF
-
 
 IF rtUserExec.Q AND stMotionStage.bHomeCmd THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.HOME) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.HOME;
-        stDS402Drive.nDS402DriveControl := 128;
+        IF stDS402Drive.nDS402DriveControl.4 THEN
+            stDS402Drive.nDS402DriveControl := 15;
+        ELSE
+            stDS402Drive.nDS402DriveControl := 128;
+        END_IF
+        bManualTransition := TRUE;
+        // clear previous operational from switching away from this mode.
         bOperational := FALSE;
         bStepModeEnabled := FALSE;
         bCSPModeEnabled := FALSE;
-        bStartingUp := TRUE;
     ELSE
         bHomeModeEnabled := TRUE;
     END_IF
 ELSIF rtUserExec.Q AND bServo THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.CSP) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
-        stDS402Drive.nDS402DriveControl := 128;
+        IF stDS402Drive.nDS402DriveControl.4 THEN
+            stDS402Drive.nDS402DriveControl := 15;
+        ELSE
+            stDS402Drive.nDS402DriveControl := 128;
+        END_IF
+        bManualTransition := FALSE;
         bHomeModeEnabled := FALSE;
         bStepModeEnabled := FALSE;
     ELSE
@@ -1001,16 +908,19 @@ ELSIF rtUserExec.Q AND NOT bServo THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.MCS2_OL_STEP_MODE) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.MCS2_OL_STEP_MODE;
         stDS402Drive.nDS402DriveControl := 128;
-        bStartingUp := TRUE;
+        // clear previous operational from switching away from this mode.
         bOperational := FALSE;
         bCSPModeEnabled := FALSE;
         bHomeModeEnabled := FALSE;
     ELSE
         bStepModeEnabled := TRUE;
     END_IF
+    bManualTransition := TRUE;
 END_IF
 
-bDS402ManualOk :=bHomeModeEnabled OR bStepModeEnabled;]]></ST>
+bDS402ManualEnabled :=bHomeModeEnabled OR bStepModeEnabled;
+(*Handle correct startup procedure for manual move*)
+StateMachine(Enable:=1);]]></ST>
       </Implementation>
     </Method>
     <Method Name="MoveAbsolute" Id="{c9986ba7-a025-4f1a-8312-93dc4112a24c}">
@@ -1026,13 +936,30 @@ fbMcMoveAbsolute(
     Acceleration := stMotionStage.fAcceleration,
     Deceleration := stMotionStage.fDeceleration,
     BufferMode := eBufferMode,
-);]]></ST>
+);
+
+
+IF fbMcMoveAbsolute.Done (*OR fbMcReset.Done*) THEN
+    (*Hold the position in close loop before dropping power, a positional drift will occur then*)
+    IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+        bPositionHold := TRUE;
+        tonHoldTime.IN:=TRUE;
+    END_IF
+END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="PersistParameters" Id="{827e19b0-eb90-45f1-a0f0-e397f2f834ae}">
       <Declaration><![CDATA[METHOD PersistParameters
 VAR_INPUT
     Enable	: BOOL;
+END_VAR
+
+VAR_INST
+    {attribute 'hide'}
+    bEncError			: BOOL;
+
+    {attribute 'hide'}
+    bRestoreWaitRetry	: BOOL;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -1098,8 +1025,16 @@ bInit := TRUE;
     <Method Name="ReadDriveCodes" Id="{c8b026c7-a02a-444a-a6c8-2fcd1b30b9c5}">
       <Declaration><![CDATA[(* Read Drive error codes after a motion or fault condition occured *)
 METHOD ReadDriveCodes : BOOL
-
-]]></Declaration>
+VAR_INST
+    {attribute 'hide'}
+    fbErrorRead			: FB_EcCoESdoRead;
+    {attribute 'hide'}
+    nPiezoErrorCode   	: UDINT;
+    {attribute 'hide'}
+    fbLogError  		: FB_LogMotionError;
+    {attribute 'hide'}
+    ftErrorReadDone  	: F_TRIG;
+END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[fbErrorRead( sNetId:= THIS^.stMotionStage.stAxisParameters.sAmsNetId,
              nSlaveAddr:=stDS402Drive.nSlaveAddr,
@@ -1127,14 +1062,42 @@ END_IF
       <Implementation>
         <ST><![CDATA[fbMcReset(
     Axis := stMotionStage.Axis,
-    Execute := stMotionStage.bReset AND bCSPModeEnabled
-);]]></ST>
+    Execute := bLocalReset AND bCSPModeEnabled
+);
+
+IF fbMcReset.Done OR fbMcReset.Error THEN
+    bLocalReset := FALSE;
+    IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+        stMotionStage.bEnable:=FALSE;
+    END_IF
+
+END_IF
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="RestoreMotionParams" Id="{8335d215-fac8-43bf-97f2-e08acc164700}">
       <Declaration><![CDATA[METHOD RestoreMotionParams
 VAR_INPUT
     Enable	: BOOL;
+END_VAR
+
+VAR_INST
+    {attribute 'hide'}
+    fbSetPos			: MC_SetPosition;
+    {attribute 'hide'}
+    bLoad				: BOOL;
+    {attribute 'hide'}
+    bRestoreDone 		: BOOL;
+    {attribute 'hide'}
+    bRestoreInit		: BOOL;
+    {attribute 'hide'}
+    bRestoreWaitRetry	: BOOL;
+    {attribute 'hide'}
+    nMaxRetries			: UINT := 10;
+    {attribute 'hide'}
+    nCurrTries			: UINT := 0;
+    {attribute 'hide'}
+    nLatchError			: UDINT;
 END_VAR
 ]]></Declaration>
       <Implementation>
@@ -1171,7 +1134,7 @@ END_VAR
         IF NOT bRestoreDone THEN
             stMotionStage.fPosition := fSavedPosition;
         END_IF
-        THIS^.bRestoreDone := TRUE;
+        bRestoreDone := TRUE;
     END_IF
 
     tonRestoreRetry( IN := bRestoreWaitRetry, PT := T#100MS);
@@ -1273,69 +1236,79 @@ stMotionStage.bAllEnable R= NOT stMotionStage.bUserEnable;]]></ST>
 VAR_INPUT
     Enable : BOOL;
 END_VAR
-]]></Declaration>
+
+VAR_INST
+    rtFault: R_TRIG;
+    {attribute 'hide'}
+    bFault				: BOOL;
+END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[IF Enable THEN
-
-    (*switch on disable*)
-    IF NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-        AND NOT stDS402Drive.stDS402DriveStatus.Fault
-        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-        AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
-        AND  stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
-        THIS^.bOperational := FALSE;
-        THIS^.stDS402Drive.nDS402DriveControl := 6;
-
-    (*Ready to switch*)
-    ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-        AND NOT stDS402Drive.stDS402DriveStatus.Fault
-        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-        AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+        <ST><![CDATA[(*switch on disable*)
+IF NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDS402DriveStatus.Fault
+    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+    AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
+    AND  stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+        bOperational := FALSE;
+        bFault := FALSE;
+        IF bManualTransition THEN
+            THIS^.stDS402Drive.nDS402DriveControl := 6;
+        END_IF
+(*Ready to switch*)
+ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDS402DriveStatus.Fault
+    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
         bFault := FALSE;
         bOperational := FALSE;
-        THIS^.stDS402Drive.nDS402DriveControl := 7;
-
-    (*Switch on*)
-    ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-        AND  stDS402Drive.stDS402DriveStatus.SwitchedOn
-        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-        AND NOT stDS402Drive.stDS402DriveStatus.Fault
-        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-        AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+        IF bManualTransition THEN
+            THIS^.stDS402Drive.nDS402DriveControl := 7;
+        END_IF
+(*Switch on*)
+ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+    AND  stDS402Drive.stDS402DriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDS402DriveStatus.Fault
+    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
         bOperational := FALSE;
-       THIS^.stDS402Drive.nDS402DriveControl := 15;
-
-    (*Operation enbaled*)
-    ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-        AND stDS402Drive.stDS402DriveStatus.SwitchedOn
-        AND stDS402Drive.stDS402DriveStatus.OperationEnabled
-        AND NOT stDS402Drive.stDS402DriveStatus.Fault
-        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-        AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
-        bStartingUp := FALSE;
+        IF bManualTransition THEN
+            THIS^.stDS402Drive.nDS402DriveControl := 15;
+        END_IF
+(*Operation enbaled*)
+ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+    AND stDS402Drive.stDS402DriveStatus.SwitchedOn
+    AND stDS402Drive.stDS402DriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDS402DriveStatus.Fault
+    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
         THIS^.bOperational := TRUE;
-
-    (*Fault*)
-    ELSIF  NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-        AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-        AND stDS402Drive.stDS402DriveStatus.Fault
-        AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-        AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
-        AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
-        THIS^.bOperational := FALSE;
-        bFault := TRUE;
-    ELSE
+(*Fault*)
+ELSIF  NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
+    AND stDS402Drive.stDS402DriveStatus.Fault
+    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
+    AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
         bOperational := FALSE;
-    END_IF
-END_IF]]></ST>
+        bFault := TRUE;
+
+ELSE
+    bFault := FALSE;
+    bOperational := FALSE;
+END_IF
+
+// wait for parameter init done at startup to read potential error from drive
+stMotionStage.bError := bFault AND stMotionStage.bAxisParamsInit;
+]]></ST>
       </Implementation>
     </Method>
     <Method Name="StepMove" Id="{74869c9c-654c-4a5a-9a50-bfad55265981}">
@@ -1362,12 +1335,14 @@ CASE eMotionState OF
             IF stMotionStage.bError THEN
                 eMotionState:=E_MoveState.ERROR;
             ELSE
-                    stDS402Drive.nDS402DriveControl:=31;
-                    eMotionState:=E_MoveState.IN_PROGRESS;
+                stDS402Drive.nDS402DriveControl:=31;
+                  eMotionState:=E_MoveState.IN_PROGRESS;
             END_IF
 
     E_MoveState.IN_PROGRESS:
         IF bStop THEN
+            stDS402Drive.nDS402DriveControl.8 :=1;
+            bStepMoveAborted := TRUE;
             eMotionState:=E_MoveState.INTERRUPTED;
         ELSIF stDS402Drive.stDS402DriveStatus.Bit13_OpModeSpecific THEN
             stMotionStage.bError := TRUE;
@@ -1379,12 +1354,12 @@ CASE eMotionState OF
                 eMotionState:=E_MoveState.REACHED;
             END_IF
         END_IF
-
     E_MoveState.INTERRUPTED:
-        tonHoldTime.IN:=TRUE;
-        bPositionHold := TRUE;
+        IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
+            bPositionHold := TRUE;
+            tonHoldTime.IN:=TRUE;
+        END_IF
         bStepMoveBusy:=FALSE;
-        bStepMoveAborted := FALSE;
         eMotionState:=E_MoveState.IDLING;
     E_MoveState.REACHED:
         // Release the endstop override
@@ -1425,6 +1400,54 @@ METHOD UpdateDriveMonitoringParams
 VAR_INPUT
     Enable : BOOL;
 END_VAR
+
+VAR_INST
+    {attribute 'hide'}
+    fbSetFErrorWin		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetSoftLimMin		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetSoftLimMax		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetHomeOffs 		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetHomeVeloFast 	: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetHomeVeloSlow 	: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetHomeAcc		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    nRecentSoftLimMax 	: LINT;
+    {attribute 'hide'}
+    nRecentSoftLimMin 	: LINT;
+    {attribute 'hide'}
+    nRecentHomeVeloFast : UDINT;
+    {attribute 'hide'}
+    nRecentHomeVeloSlow : UDINT;
+    {attribute 'hide'}
+    nRecentHomeAcc 		: UDINT;
+    {attribute 'hide'}
+    nRecentFErrWin		: DINT;
+    {attribute 'hide'}
+    nRecentHomeOffset 	: DINT;
+    {attribute 'hide'}
+    nHomeOffs			: DINT;
+    {attribute 'hide'}
+    ftFErrWinSetDone	: F_TRIG;
+
+    {attribute 'hide'}
+    ftSoftLimMaxSetDone	: F_TRIG;
+    {attribute 'hide'}
+    ftSoftLimMinSetDone	: F_TRIG;
+    {attribute 'hide'}
+    ftHomeVeloFastSetDone: F_TRIG;
+    {attribute 'hide'}
+    ftHomeAccSetDone	: F_TRIG;
+    {attribute 'hide'}
+    ftHomeOffsSetDone	: F_TRIG;
+    {attribute 'hide'}
+    ftHomeVeloSlowSetDone: F_TRIG;
+END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF Enable THEN
@@ -1446,7 +1469,7 @@ END_VAR
     nSubIndex  := 0,
     pSrcBuf    := ADR(nScaledFErrWin),
     cbBufLen   := SIZEOF(nScaledFErrWin),
-    bExecute   := (nScaledFErrWin <> nRecentFErrWin)
+    bExecute   := NOT stMotionStage.bBusy AND (nScaledFErrWin <> nRecentFErrWin)
   );
   fbSetSoftLimMin(
     sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
@@ -1455,7 +1478,7 @@ END_VAR
     nSubIndex  := 1,
     pSrcBuf    := ADR(nSoftLimMin),
     cbBufLen   := SIZEOF(nSoftLimMin),
-    bExecute   := (nSoftLimMin <> nRecentSoftLimMin)
+    bExecute   := NOT stMotionStage.bBusy AND (nSoftLimMin <> nRecentSoftLimMin)
   );
   fbSetSoftLimMax(
     sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
@@ -1464,7 +1487,7 @@ END_VAR
     nSubIndex  := 2,
     pSrcBuf    := ADR(nSoftLimMax),
     cbBufLen   := SIZEOF(nSoftLimMax),
-    bExecute   := (nSoftLimMax <> nRecentSoftLimMax)
+    bExecute   := NOT stMotionStage.bBusy AND (nSoftLimMax <> nRecentSoftLimMax)
     );
   fbSetHomeVeloFast(
     sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
@@ -1473,7 +1496,7 @@ END_VAR
     nSubIndex  := 1,
     pSrcBuf    := ADR(nHomeVeloFast),
     cbBufLen   := SIZEOF(nHomeVeloFast),
-    bExecute   := (nHomeVeloFast <> nRecentHomeVeloFast)
+    bExecute   := NOT stMotionStage.bBusy AND (nHomeVeloFast <> nRecentHomeVeloFast)
   );
   fbSetHomeVeloSlow(
     sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
@@ -1482,7 +1505,7 @@ END_VAR
     nSubIndex  := 2,
     pSrcBuf    := ADR(nHomeVeloSlow),
     cbBufLen   := SIZEOF(nHomeVeloSlow),
-    bExecute   := (nHomeVeloSlow <> nRecentHomeVeloSlow)
+    bExecute   := NOT stMotionStage.bBusy AND (nHomeVeloSlow <> nRecentHomeVeloSlow)
   );
   fbSetHomeAcc(
     sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
@@ -1491,7 +1514,7 @@ END_VAR
     nSubIndex  := 0,
     pSrcBuf    := ADR(nHomeAcc),
     cbBufLen   := SIZEOF(nHomeAcc),
-    bExecute   := (nHomeAcc <> nRecentHomeAcc)
+    bExecute   := NOT stMotionStage.bBusy AND (nHomeAcc <> nRecentHomeAcc)
   );
 
   fbSetHomeOffs(
@@ -1501,7 +1524,7 @@ END_VAR
     nSubIndex  := 0,
     pSrcBuf    := ADR(nHomeOffset),
     cbBufLen   := SIZEOF(nHomeOffset),
-    bExecute   := (nHomeOffset <> nRecentHomeOffset)
+    bExecute   := NOT stMotionStage.bBusy AND (nHomeOffset <> nRecentHomeOffset)
   );
 
   ftFErrWinSetDone(CLK:=fbSetFErrorWin.bBusy);
@@ -1603,36 +1626,58 @@ VAR_INPUT
     Enable : BOOL;
 END_VAR
 
+VAR_INST
+    // Open Loop Operations
+    {attribute 'hide'}
+    fbSetSteps			: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetStepFreq 		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetStepAmp  		: FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    nRecentSteps		: DINT;
+    {attribute 'hide'}
+    nRecentStepAmp		: UINT;
+    {attribute 'hide'}
+    nRecentStepFreq		: UINT;
+    {attribute 'hide'}
+    ftStepAmpUpdateDone	: F_TRIG;
+    {attribute 'hide'}
+    ftStepFreqUpdateDone	: F_TRIG;
+    {attribute 'hide'}
+    ftStepUpdateDone	: F_TRIG;
+END_VAR
+
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF Enable THEN
   ScaleServoOffMotionParams();
   fbSetSteps(
-    sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
     nSlaveAddr := stDS402Drive.nSlaveAddr,
     nIndex     := nChanStepIdx,
     nSubIndex  := 0,
     pSrcBuf    := ADR(nScalededSteps),
     cbBufLen   := SIZEOF(nChanStep),
-    bExecute   := (THIS^.nScalededSteps <> THIS^.nRecentSteps)
+    bExecute   := NOT stMotionStage.bBusy AND (nScalededSteps <> nRecentSteps)
   );
   fbSetStepAmp(
-    sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
     nSlaveAddr := stDS402Drive.nSlaveAddr,
     nIndex     := nChanStepAmpIdx,
     nSubIndex  := 0,
     pSrcBuf    := ADR(nScalededStepAmp),
     cbBufLen   := SIZEOF(nChanStepAmp),
-    bExecute   := (THIS^.nScalededStepAmp <> THIS^.nRecentStepAmp)
+    bExecute   := NOT stMotionStage.bBusy AND (nScalededStepAmp <> nRecentStepAmp)
   );
   fbSetStepFreq(
-    sNetId     := THIS^.stMotionStage.stAxisParameters.sAmsNetId,
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
     nSlaveAddr := stDS402Drive.nSlaveAddr,
     nIndex     := nChanStepFreqIdx,
     nSubIndex  := 0,
     pSrcBuf    := ADR(nScaledStepFreq),
     cbBufLen   := SIZEOF(nChanStepFreq),
-    bExecute   := (THIS^.nScaledStepFreq <> THIS^.nRecentStepFreq)
+    bExecute   := NOT stMotionStage.bBusy AND (nScaledStepFreq <> nRecentStepFreq)
   );
   ftStepUpdateDone(CLK:=fbSetSteps.bBusy);
   ftStepAmpUpdateDone(CLK:=fbSetStepAmp.bBusy);
@@ -1643,18 +1688,18 @@ END_VAR
         OR ftStepAmpUpdateDone.Q
         OR ftStepFreqUpdateDone.Q THEN
     IF fbSetSteps.bError THEN
-            THIS^.stMotionStage.bError := fbSetSteps.bError;
-            THIS^.stMotionStage.nErrorId := fbSetSteps.nErrId;
+            stMotionStage.bError := fbSetSteps.bError;
+            stMotionStage.nErrorId := fbSetSteps.nErrId;
         ELSIF fbSetStepFreq.bError THEN
-                THIS^.stMotionStage.bError := fbSetStepFreq.bError;
-                THIS^.stMotionStage.nErrorId := fbSetStepFreq.nErrId;
+                stMotionStage.bError := fbSetStepFreq.bError;
+                stMotionStage.nErrorId := fbSetStepFreq.nErrId;
         ELSIF fbSetStepAmp.bError THEN
-                THIS^.stMotionStage.bError := fbSetStepAmp.bError;
-                THIS^.stMotionStage.nErrorId := fbSetStepAmp.nErrId;
+                stMotionStage.bError := fbSetStepAmp.bError;
+                stMotionStage.nErrorId := fbSetStepAmp.nErrId;
     ELSE
-            THIS^.nRecentSteps := THIS^.nScalededSteps;
-            THIS^.nRecentStepAmp := THIS^.nScalededStepAmp;
-            THIS^.nRecentStepFreq := THIS^.nScaledStepFreq;
+            nRecentSteps := nScalededSteps;
+            nRecentStepAmp := nScalededStepAmp;
+            nRecentStepFreq := nScaledStepFreq;
             bStepModeparamsSetDone S= TRUE;
     END_IF
         fbSetSteps.bExecute := FALSE;
@@ -1672,17 +1717,14 @@ VAR_INPUT
     ParameterNumber : MC_AxisParameter;
     ParameterValue	: LREAL;
 END_VAR
+
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[(*Do not change a moving axis parameter*)
 fbMcWriteParameter(	Axis:=stMotionStage.Axis,
                     Execute:=(Execute AND stMotionStage.Axis.Status.NotMoving),
                     ParameterNumber:=ParameterNumber,
-                    Value:=ParameterValue
-                  );
-
-// Reset execute after when done successfull or after abort reset
-// this way the done and error condition is latched till next move or global reset.
+                    Value:=ParameterValue );
 ]]></ST>
       </Implementation>
     </Method>
