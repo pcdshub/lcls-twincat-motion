@@ -3,10 +3,11 @@
   <POU Name="FB_MotionInterlocksLimSw" Id="{158cbb88-3b97-40e2-97dc-4d7a82a1299f}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MotionInterlocksLimSw IMPLEMENTS I_MotionInterlocks
 VAR
+    {attribute 'hide'}
     iMotionInterlocksCommon : I_MotionInterlocksCommon;
+    {attribute 'hide'}
     iLimSwStatus : I_LimSwStatus;
-    bError : BOOL;
-    nErrorID:UDINT;
+    {attribute 'hide'}
     sMessage : T_MAXSTRING;
     {attribute 'hide'}
     bNewMoveReq : BOOL;
@@ -50,64 +51,39 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// Read Limits status and update shared space
-bMoveBackwardEnabled := THIS^.iLimSwStatus.LimBackward;
-bMoveForwardEnabled := THIS^.iLimSwStatus.LimForward;
+bMoveBackwardEnabled := iLimSwStatus.LimBackward;
+bMoveForwardEnabled :=iLimSwStatus.LimForward;
 
 rtReset(CLK:=bReset);
 rtUserExec (CLK:=bNewMoveReq);
 ftForwardEnabled(CLK:=bMoveForwardEnabled);
 ftBackwardEnabled (CLK:=bMoveBackwardEnabled);
 
-IF NOT THIS^.bHomeBusy AND ((ftForwardEnabled.Q AND THIS^.bPositiveDirection)
-        OR (ftBackwardEnabled.Q AND THIS^.bNegativeDirection))THEN
+IF NOT bHomeBusy AND ((ftForwardEnabled.Q AND bPositiveDirection)
+        OR (ftBackwardEnabled.Q AND bNegativeDirection))THEN
     // Not an error, just a warning
     IF NOT bMoveForwardEnabled THEN
-            THIS^.sMessage:='Cannot move past Positive limit.';
+            sMessage:='Cannot move past Positive limit.';
     ELSIF NOT bMoveBackwardEnabled THEN
-            THIS^.sMessage:='Cannot move past Negative limit.';
+            sMessage:='Cannot move past Negative limit.';
     END_IF
-    THIS^.bWarning:=TRUE;
-    THIS^.bLimHit := TRUE;
-    THIS^.bLimHitMoving:=TRUE;
+    bWarning:=TRUE;
+    bLimHit := TRUE;
+    bLimHitMoving:=TRUE;
 ELSIF rtUserExec.Q OR rtReset.Q THEN
-    THIS^.bLimHit := FALSE;
-    THIS^.bLimHitMoving := bLimHit;
-    THIS^.bLimHitIdling := bLimHit;
-    THIS^.sMessage := '';
-    THIS^.bWarning := FALSE;
+    bLimHit := FALSE;
+    bLimHitMoving := bLimHit;
+    bLimHitIdling := bLimHit;
+    sMessage := '';
+    bWarning := FALSE;
 END_IF
 
-IF THIS^.iMotionInterlocksCommon.Error THEN
-    bError := THIS^.iMotionInterlocksCommon.Error;
-    nErrorID := THIS^.iMotionInterlocksCommon.ErrorID;
-    sMessage := THIS^.iMotionInterlocksCommon.Message;
+// Error Message have higher priority
+IF iMotionInterlocksCommon.Error THEN
+    sMessage := iMotionInterlocksCommon.Message;
 END_IF
 ]]></ST>
     </Implementation>
-    <Property Name="Aborted" Id="{a1175752-7c2c-4d2c-b0ac-3a4f9f39a027}">
-      <Declaration><![CDATA[PROPERTY Aborted : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{972c3d12-c93b-46d8-adca-4ce3ce1b4165}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="Active" Id="{3b34c057-b1ec-4bc7-83b1-4a80ec87a88b}">
-      <Declaration><![CDATA[PROPERTY Active : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{0ccb4185-7643-4a8c-bdd0-04e775e1ac39}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Method Name="AxisStatus" Id="{6d21d504-ee18-4457-abef-61e8d5df9058}">
       <Declaration><![CDATA[METHOD AxisStatus
 VAR_INPUT
@@ -123,18 +99,6 @@ THIS^.bHomeBusy := HomeBusy;
 ]]></ST>
       </Implementation>
     </Method>
-    <Property Name="Busy" Id="{a6daac7c-9df9-4ab9-ad3d-28aaab54bf26}">
-      <Declaration><![CDATA[PROPERTY Busy : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{5a6e7c19-94f7-4fad-a884-0cab68944ddd}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Method Name="CallAfterInit" Id="{04046040-41be-4ab4-ade8-8cbc22051e82}">
       <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
 VAR_INPUT
@@ -147,28 +111,18 @@ END_VAR
 THIS^.iLimSwStatus := iLimSwStatus;]]></ST>
       </Implementation>
     </Method>
-    <Property Name="Done" Id="{f89b31f3-ca38-4979-a504-0096d2187a3b}">
-      <Declaration><![CDATA[PROPERTY Done : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{a79d952f-6f18-4524-bb34-0541fc9c86b9}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Method Name="DriveCommands" Id="{61a4eb92-408d-4d90-8d81-bc9594431b56}">
       <Declaration><![CDATA[METHOD DriveCommands
 VAR_INPUT
-    Enable	: BOOL;
-    NewMoveReq	: BOOL;
-    Reset	: BOOL;
+    Enable: BOOL;
+    NewMoveReq : BOOL;
+    Reset: BOOL;
 END_VAR
+
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[bReset :=  Reset;
+bNewMoveReq := NewMoveReq;
 // Forward drive cmds to Generic interlocks and lim status FB
 THIS^.iMotionInterlocksCommon.DriveCommands(Enable:=Enable, NewMoveReq:=NewMoveReq, Reset:=Reset);
 ]]></ST>
@@ -183,7 +137,7 @@ PROPERTY Error : BOOL
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Error := bError;]]></ST>
+          <ST><![CDATA[Error := THIS^.iMotionInterlocksCommon.Error;;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -196,7 +150,7 @@ PROPERTY ErrorID : UDINT
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[ErrorID := nErrorID;]]></ST>
+          <ST><![CDATA[ErrorID := THIS^.iMotionInterlocksCommon.ErrorID;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -232,14 +186,15 @@ END_VAR
       </Get>
     </Property>
     <Property Name="LimHit" Id="{616009f9-19f9-42ea-8b14-b1761f35e869}">
-      <Declaration><![CDATA[PROPERTY LimHit : BOOL
+      <Declaration><![CDATA[{attribute 'monitoring' := 'variable'}
+PROPERTY LimHit : BOOL
 ]]></Declaration>
       <Get Name="Get" Id="{b3896752-cee8-4d8e-b9d2-857fe8348810}">
         <Declaration><![CDATA[VAR
 END_VAR
 ]]></Declaration>
         <Implementation>
-          <ST><![CDATA[Limhit := THIS^.bLimHit;]]></ST>
+          <ST><![CDATA[Limhit := bLimHit;]]></ST>
         </Implementation>
       </Get>
     </Property>

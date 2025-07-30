@@ -6,18 +6,7 @@ VAR
     {attribute 'hide'}
     iMotionLogger 		: I_MotionLogger;
     {attribute 'hide'}
-    bAllForwardEnabled: BOOL:=FALSE;
-    // Backward enable EPS summary
-    {attribute 'hide'}
-    bAllBackwardEnabled: BOOL:=FALSE;
-    {attribute 'hide'}
     bPowerEnabled: BOOL:=FALSE;
-   // If TRUE, we want to enable the motor independently of PMPS or other safety systems.
-      {attribute 'hide'}
-    bPowerSelf: BOOL:=FALSE;
-    // TRUE if we have safety permission to move
-    {attribute 'hide'}
-    bSafetyReady: BOOL;
    // NC STO Input: TRUE if ok to move
     {attribute 'pytmc' := '
         pv: PLC:bHardwareEnable
@@ -37,12 +26,11 @@ VAR
         field: DESC Used to disable power entirely for an axis
     '}
     bUserEnable: BOOL := TRUE;
+
     {attribute 'hide'}
     bEnable: BOOL;
     {attribute 'hide'}
     bReset : BOOL;
-    {attribute 'hide'}
-    bNewMoveReq : BOOL;
     {attribute 'hide'}
     sMessage : STRING;
     {attribute 'hide'}
@@ -54,10 +42,6 @@ VAR
     bMoveOk : BOOL := TRUE;
     {attribute 'hide'}
     rtGlobalReset : R_TRIG;
-    {attribute 'hide'}
-    bInterlockEvent : BOOL;
-    bMoveForwardEnabled : BOOL := TRUE;
-    bMoveBackwardEnabled : BOOL := TRUE;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -69,20 +53,20 @@ END_IF
 // read share
 bPowerEnabled := bEnable AND bHardwareEnable;
 bPowerEnabled R= NOT bUserEnable;
-// Moves are automatically allowed if no safety hooks. Otherwise, some other code will set this.
-bSafetyReady S= bPowerSelf;
 
-IF NOT bUserEnable THEN
+bMoveOk := bUserEnable AND  bHardwareEnable AND bEnable;
+
+IF NOT bUserEnable OR NOT bHardwareEnable THEN
     bError := TRUE;
     nErrorID:= 1;
     bMoveOk := FALSE;
-    sMessage := 'User enable interlock triggered!';
-ELSIF NOT bHardwareEnable THEN
-    bError := TRUE;
-    nErrorID:= 1;
-    bMoveOk := FALSE;
-    sMessage := 'Hardware enbale interlocks triggered!';
+    IF NOT bUserEnable THEN
+        sMessage := 'User enable interlock triggered!';
+    ELSE
+        sMessage := 'Hardware enbale interlocks triggered!';
+    END_IF
 END_IF
+
 // wait for global reset event to complete
 rtGlobalReset(CLK:=bReset);
 IF rtGlobalReset.Q THEN
@@ -91,42 +75,6 @@ IF rtGlobalReset.Q THEN
     sMessage:='';
 END_IF]]></ST>
     </Implementation>
-    <Property Name="Aborted" Id="{6c740eb9-40f2-43a5-962c-ed5e89b31929}">
-      <Declaration><![CDATA[PROPERTY Aborted : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{48d77cf4-9dfd-41ed-aeba-f955cf151cfe}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="Active" Id="{0ec9f620-3c52-4313-bfdc-2541e072922e}">
-      <Declaration><![CDATA[PROPERTY Active : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{f5a858c4-a143-4ecb-ad84-e2ce0084fb28}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="Busy" Id="{d55880b8-fe7b-4ef7-86fb-317562726a5e}">
-      <Declaration><![CDATA[PROPERTY Busy : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{8f26a97a-35df-44f0-a763-d1f697bff7a3}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Method Name="CallAfterInit" Id="{bb25ce30-2def-4497-bead-4e7295fc730f}">
       <Declaration><![CDATA[METHOD PUBLIC CallAfterInit
 VAR_INPUT
@@ -137,30 +85,19 @@ END_VAR
         <ST><![CDATA[THIS^.iMotionLogger := iMotionLogger;]]></ST>
       </Implementation>
     </Method>
-    <Property Name="Done" Id="{19e5f483-e0b9-42ff-9068-b5fa5e63917b}">
-      <Declaration><![CDATA[PROPERTY Done : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{a228592c-e271-409a-a873-134c01d2e742}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
     <Method Name="DriveCommands" Id="{6d01eab2-7989-4c7e-b542-03db7614d447}">
       <Declaration><![CDATA[METHOD DriveCommands
 VAR_INPUT
-    Enable	: BOOL;
-    NewMoveReq	: BOOL;
-    Reset	: BOOL;
+    Enable: BOOL;
+    NewMoveReq : BOOL;
+    Reset: BOOL;
 END_VAR
+
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[THIS^.bEnable := Enable;
 THIS^.bReset := Reset;
-THIS^.bNewMoveReq := NewMoveReq ;]]></ST>
+]]></ST>
       </Implementation>
     </Method>
     <Property Name="Error" Id="{21f5c9dd-d9f9-4fb7-a70a-688ad37ac74c}">
@@ -204,6 +141,18 @@ END_VAR]]></Declaration>
 ]]></ST>
       </Implementation>
     </Method>
+    <Property Name="HardwareEnable" Id="{d61e5b05-94b6-4b80-bfd7-0d1f07731219}">
+      <Declaration><![CDATA[PROPERTY HardwareEnable : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{997b3317-ecd2-4d78-ab35-890e6b79db96}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bHardwareEnable := HardwareEnable;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
     <Property Name="Message" Id="{fff95902-de95-4707-8ab7-164e983a966f}">
       <Declaration><![CDATA[PROPERTY Message : T_MAXSTRING
 ]]></Declaration>
@@ -213,30 +162,6 @@ END_VAR
 ]]></Declaration>
         <Implementation>
           <ST><![CDATA[Message := sMessage;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="MoveBackwardEnabled" Id="{73228441-2498-4cbf-b7a0-4009813e3963}">
-      <Declaration><![CDATA[PROPERTY MoveBackwardEnabled : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{f4731fcf-cdb2-4505-9bf3-b0970507bbd1}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[MoveBackwardEnabled := bMoveBackwardEnabled;]]></ST>
-        </Implementation>
-      </Get>
-    </Property>
-    <Property Name="MoveForwardEnabled" Id="{dbd2e5c0-7ee3-4d69-bfac-0c4778db19bb}">
-      <Declaration><![CDATA[PROPERTY MoveForwardEnabled : BOOL
-]]></Declaration>
-      <Get Name="Get" Id="{b2fba177-14e5-4ae4-b487-6f6969050bec}">
-        <Declaration><![CDATA[VAR
-END_VAR
-]]></Declaration>
-        <Implementation>
-          <ST><![CDATA[MoveForwardEnabled := bMoveForwardEnabled;]]></ST>
         </Implementation>
       </Get>
     </Property>
@@ -263,6 +188,18 @@ END_VAR
           <ST><![CDATA[PowerEnabled :=bPowerEnabled;]]></ST>
         </Implementation>
       </Get>
+    </Property>
+    <Property Name="UserEnable" Id="{3dd63e54-e47f-4503-9258-eaac8ea1f82e}">
+      <Declaration><![CDATA[PROPERTY UserEnable : BOOL
+]]></Declaration>
+      <Set Name="Set" Id="{1bc1daba-a9ae-4d73-a148-bfc9f891f3f2}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[bUserEnable := UserEnable;]]></ST>
+        </Implementation>
+      </Set>
     </Property>
   </POU>
 </TcPlcObject>
