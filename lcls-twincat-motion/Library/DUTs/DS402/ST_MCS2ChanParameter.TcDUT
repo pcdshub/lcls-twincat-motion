@@ -1,0 +1,213 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <DUT Name="ST_MCS2ChanParameter" Id="{ed228747-71e3-413e-a649-3dc97b8c806c}">
+    <Declaration><![CDATA[TYPE ST_MCS2ChanParameter :
+STRUCT
+// ====== Exposed PVs for EPICS integration ======
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStep
+        io: io
+        field: DESC Open Loop Step Count
+    '}
+    nChanStep	: DINT := 500;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStepEgu
+        io: io
+        field: DESC Step scale factor
+    '}
+    nChanStepEgu	: LREAL := 827.15;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStepFreq
+        io: io
+        field: DESC Step Frequency
+    '}
+    nChanStepFreq	: UINT := 500;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChanStepAmp
+        io: io
+        field: DESC Step Amplitude
+    '}
+    nChanStepAmp	: UINT := 50;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nHoldTime
+        io: io
+        field: DESC Close loop hold time
+    '}
+    nHoldTime	: UDINT := 30000;
+
+    {attribute 'pytmc' := '
+        pv: PLC:bStepMoveCmd
+        io: io
+        field: ZNAM DISABLE
+        field: ONAM ENABLE
+        field: DESC Used to disable close loop mode
+    '}
+    bStepMoveCmd	: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nMaxCloseLoopFreq
+        io: io
+        field: DESC Max Close Loop Freq
+    '}
+    nMaxCloseLoopFreq     : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nPositionerType
+        io: io
+        field: DESC Positioner Type
+    '}
+    nPositionerType	: UDINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nCalibrationOpt
+        io: io
+        field: DESC Calibration Options
+    '}
+    nCalibrationOpt       : DWORD;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nSensorPowerMode
+        io: io
+        field: DESC Sensor Power Mode
+    '}
+    nSensorPowerMode      : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nReferencingOpt
+        io: io
+        field: DESC Referencing Options
+    '}
+    nReferencingOpt       	   : DWORD;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nReferenceType
+        io: i
+        field: DESC Reference Type
+    '}
+    nReferenceType 	: UDINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nSafeDir
+        io: io
+        field: DESC Safe Direction
+    '}
+    nSafeDir	: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nMotorLoad
+        io: i
+        field: DESC Motor Load
+    '}
+    nMotorLoad	: USINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nChannelType
+        io: io
+        field: DESC Channel Type
+    '}
+    nChannelType          : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: PLC:nLogicalScaleOfs
+        io: io
+        field: DESC Logical Scale Offset
+    '}
+    nLogicalScaleOffset   : UDINT; // should LINT
+
+    {attribute 'pytmc' := '
+        pv: PLC:nLogicalScaleInv
+        io: io
+        field: DESC Logical Scale Inversion
+    '}
+    nLogicalScaleInv  	 : BOOL;
+
+    {attribute 'pytmc' := '
+        pv: PLC:bCalibrationCmd
+        io: io
+        field: DESC Logical Scale Offset
+    '}
+    bCalibrationCmd : BOOL;   // External request to switch to calibration mode
+
+    {attribute 'pytmc' := '
+        pv: PLC:chanState
+        io: i
+        field: DESC Channel configuration parameters.
+    '}
+    stChannelState         : ST_ChannelState;
+
+    {attribute 'hide'}
+    nHomeVeloFast         : UDINT;
+    {attribute 'hide'}
+    nSoftLimMin           : LINT;
+    {attribute 'hide'}
+    nSoftLimMax           : LINT;
+    {attribute 'hide'}
+    nHomeVeloSlow         : UDINT;
+    {attribute 'hide'}
+    nHomeAcc              : UDINT;
+    {attribute 'hide'}
+    nScaledFErrWin        : DINT;
+    {attribute 'hide'}
+    nHomeOffset           : DINT;
+    {attribute 'hide'}
+    fScalingFactor		  : LREAL := 0.000001;
+    {attribute 'hide'}
+    fHomeAcc			  : LREAL := 0.8;
+    // ====== Channel-specific object indices ======
+    nSubIndex                : BYTE := 0;        // Main subindex (which channel)
+    {attribute 'hide'}
+    nChanFErrWinIdx          : WORD;
+    {attribute 'hide'}
+    nChanMotorLoadIdx        : WORD;
+    {attribute 'hide'}
+    nChanErrorCodeIdx        : WORD;
+    {attribute 'hide'}
+    nChanStepIdx             : WORD;
+    {attribute 'hide'}
+    nChanStepFreqIdx         : WORD;
+    {attribute 'hide'}
+    nChanStepAmpIdx          : WORD;
+    {attribute 'hide'}
+    nChanSoftLimitIdx        : WORD;
+    {attribute 'hide'}
+    nChanHomeOffsIdx         : WORD;
+    {attribute 'hide'}
+    nChanHomeVeloIdx         : WORD;
+    {attribute 'hide'}
+    nChanhomeAccIdx          : WORD;
+    {attribute 'hide'}
+    nCHanMaxCloseLoopFreqIdx : WORD;
+    {attribute 'hide'}
+    nChanPositionerTypeIdx   : WORD;
+    {attribute 'hide'}
+    nChanCalibrationOptIdx   : WORD;
+    {attribute 'hide'}
+    nChanSensorPowerModeIdx  : WORD;
+    {attribute 'hide'}
+    nChanReferencingOptIdx   : WORD;
+    {attribute 'hide'}
+    nChanReferenceTypeIdx    : WORD;
+    {attribute 'hide'}
+    nChanSafeDirIdx          : WORD;
+    {attribute 'hide'}
+    nChannelTypeIdx          : WORD;
+    {attribute 'hide'}
+    nChanStateIdx            : WORD;
+    {attribute 'hide'}
+    nChanLogicalScaleOfsIdx  : WORD;
+    {attribute 'hide'}
+    nChanLogicalScaleInvIdx  : WORD;
+    fPosition : LREAL;
+    bStageReady : BOOL;
+    // Temporary workaround: Avoid declaring mc_power externally from FB_MotionStage
+    bOverrideDirEnable : BOOL := TRUE;
+    nReadTime : TIME := T#2S;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

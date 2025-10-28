@@ -1,0 +1,397 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_WriteChanParameters" Id="{ba090cc0-f229-497a-a3d8-032477a19a94}" SpecialFunc="None">
+    <Declaration><![CDATA[// ===== Channel/Drive Params SDO Sequence (startup-safe hybrid) =====
+// Performs SDO writes sequentially at boot or when forced; uses parallel (on-demand) logic otherwise.
+
+FUNCTION_BLOCK FB_WriteChanParameters
+VAR_INPUT
+    bEnable : BOOL;
+END_VAR
+VAR_IN_OUT
+    stDS402Drive         : ST_DS402Drive;
+    stMotionStage        : ST_MotionStage;
+    stMCS2ChanParameter	: ST_MCS2ChanParameter;
+END_VAR
+
+VAR_OUTPUT
+   bChanParamsSet : BOOL;
+END_VAR
+VAR
+    {attribute 'hide'}
+    fbSetFErrorWin              : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetSoftLimMin             : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetSoftLimMax             : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbMaxCloseLoopFreqWrite     : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSensorPowerModeWrite      : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbLogicalScaleOffsetWrite   : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbLogicalScaleInvWrite      : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    nRecentSoftLimMax           : LINT;
+    {attribute 'hide'}
+    nRecentSoftLimMin           : LINT;
+    {attribute 'hide'}
+    nRecentFErrWin              : DINT;
+
+    {attribute 'hide'}
+    nRecentMaxCloseLoopFreq     : UDINT;
+    {attribute 'hide'}
+    nRecentSensorPowerMode      : UDINT;
+    {attribute 'hide'}
+    nRecentLogicalScaleOffset   : LINT;
+    {attribute 'hide'}
+    nRecentLogicalScaleInv      : BOOL;
+    {attribute 'hide'}
+    ftFErrWinSetDone            : F_TRIG;
+    {attribute 'hide'}
+    ftSoftLimMaxSetDone         : F_TRIG;
+    {attribute 'hide'}
+    ftSoftLimMinSetDone         : F_TRIG;
+    {attribute 'hide'}
+    ftMaxCloseLoopFreqSetDone   : F_TRIG;
+    {attribute 'hide'}
+    ftSensorPowerModeSetDone    : F_TRIG;
+    {attribute 'hide'}
+    ftLogicalScaleOffsetSetDone : F_TRIG;
+    {attribute 'hide'}
+    ftLogicalScaleInvSetDone : F_TRIG;
+    bForceSequentialSDOs : BOOL := FALSE;
+    bErrorAcknowledge: BOOL;
+    tonStartUp : TON;
+    nChanParamStep : INT := 0; // Drive params: 0=idle, 1..7 steps, 10=done, -1=error
+    {attribute 'hide'}
+    nScalededStepAmp         : UINT;
+    {attribute 'hide'}
+    nScaledStepFreq          : UINT;
+{attribute 'hide'}
+    nScaledFErrWin          : DINT;
+    {attribute 'hide'}
+    nScalededSteps          : DINT;
+    {attribute 'hide'}
+    fScalededSteps          : LREAL;
+
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF bEnable THEN
+
+    tonStartUp(
+        IN := bEnable AND NOT bChanParamsSet,
+        PT := T#4S
+    );
+    IF (NOT tonStartUp.Q) AND (nChanParamStep <> 0) AND (NOT bForceSequentialSDOs) THEN
+        nChanParamStep := 0;
+    END_IF
+
+    IF (nChanParamStep = -1) AND bErrorAcknowledge THEN
+        nChanParamStep := 0;
+        stMotionStage.bError := FALSE;
+        stMotionStage.nErrorId := 0;
+    END_IF
+
+    ScaleDriveParams();
+
+    ftFErrWinSetDone              (CLK := fbSetFErrorWin.bBusy);
+    ftSoftLimMinSetDone           (CLK := fbSetSoftLimMin.bBusy);
+    ftSoftLimMaxSetDone           (CLK := fbSetSoftLimMax.bBusy);
+    ftMaxCloseLoopFreqSetDone     (CLK := fbMaxCloseLoopFreqWrite.bBusy);
+    ftSensorPowerModeSetDone      (CLK := fbSensorPowerModeWrite.bBusy);
+    ftLogicalScaleOffsetSetDone   (CLK := fbLogicalScaleOffsetWrite.bBusy);
+    ftLogicalScaleInvSetDone      (CLK := fbLogicalScaleInvWrite.bBusy);
+
+    IF tonStartUp.Q OR bForceSequentialSDOs THEN
+
+        CASE nChanParamStep OF
+        0:
+            bChanParamsSet := FALSE;
+            fbSetFErrorWin.bExecute            := FALSE;
+            fbSetSoftLimMin.bExecute           := FALSE;
+            fbSetSoftLimMax.bExecute           := FALSE;
+            fbMaxCloseLoopFreqWrite.bExecute   := FALSE;
+            fbSensorPowerModeWrite.bExecute    := FALSE;
+            fbLogicalScaleOffsetWrite.bExecute := FALSE;
+            fbLogicalScaleInvWrite.bExecute    := FALSE;
+            nChanParamStep := 1;
+
+        1: // Following Error Window
+            IF (nScaledFErrWin <> nRecentFErrWin) THEN
+                fbSetFErrorWin.bExecute := TRUE;
+                IF ftFErrWinSetDone.Q THEN
+                    IF fbSetFErrorWin.bError THEN
+                        stMotionStage.bError := fbSetFErrorWin.bError;
+                        stMotionStage.nErrorId := fbSetFErrorWin.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentFErrWin := nScaledFErrWin;
+                        fbSetFErrorWin.bExecute := FALSE;
+                        nChanParamStep := 2;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 2;
+            END_IF
+
+        2: // Soft Limit Min
+            IF (stMCS2ChanParameter.nSoftLimMin <> nRecentSoftLimMin) THEN
+                fbSetSoftLimMin.bExecute := TRUE;
+                IF ftSoftLimMinSetDone.Q THEN
+                    IF fbSetSoftLimMin.bError THEN
+                        stMotionStage.bError := fbSetSoftLimMin.bError;
+                        stMotionStage.nErrorId := fbSetSoftLimMin.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentSoftLimMin := stMCS2ChanParameter.nSoftLimMin;
+                        fbSetSoftLimMin.bExecute := FALSE;
+                        nChanParamStep := 3;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 3;
+            END_IF
+
+        3: // Soft Limit Max
+            IF (stMCS2ChanParameter.nSoftLimMax <> nRecentSoftLimMax) THEN
+                fbSetSoftLimMax.bExecute := TRUE;
+                IF ftSoftLimMaxSetDone.Q THEN
+                    IF fbSetSoftLimMax.bError THEN
+                        stMotionStage.bError := fbSetSoftLimMax.bError;
+                        stMotionStage.nErrorId := fbSetSoftLimMax.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentSoftLimMax := stMCS2ChanParameter.nSoftLimMax;
+                        fbSetSoftLimMax.bExecute := FALSE;
+                        nChanParamStep := 4;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 4;
+            END_IF
+
+        4: // Max Close Loop Freq
+            IF (stMCS2ChanParameter.nMaxCloseLoopFreq <> nRecentMaxCloseLoopFreq) THEN
+                fbMaxCloseLoopFreqWrite.bExecute := TRUE;
+                IF ftMaxCloseLoopFreqSetDone.Q THEN
+                    IF fbMaxCloseLoopFreqWrite.bError THEN
+                        stMotionStage.bError := fbMaxCloseLoopFreqWrite.bError;
+                        stMotionStage.nErrorId := fbMaxCloseLoopFreqWrite.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentMaxCloseLoopFreq := stMCS2ChanParameter.nMaxCloseLoopFreq;
+                        fbMaxCloseLoopFreqWrite.bExecute := FALSE;
+                        nChanParamStep := 5;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 5;
+            END_IF
+
+        5: // Sensor Power Mode
+            IF (stMCS2ChanParameter.nSensorPowerMode <> nRecentSensorPowerMode) THEN
+                fbSensorPowerModeWrite.bExecute := TRUE;
+                IF ftSensorPowerModeSetDone.Q THEN
+                    IF fbSensorPowerModeWrite.bError THEN
+                        stMotionStage.bError := fbSensorPowerModeWrite.bError;
+                        stMotionStage.nErrorId := fbSensorPowerModeWrite.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentSensorPowerMode := stMCS2ChanParameter.nSensorPowerMode;
+                        fbSensorPowerModeWrite.bExecute := FALSE;
+                        nChanParamStep := 6;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 6;
+            END_IF
+
+        6: // Logical Scale Offset
+            IF (stMCS2ChanParameter.nLogicalScaleOffset <> nRecentLogicalScaleOffset) THEN
+                fbLogicalScaleOffsetWrite.bExecute := TRUE;
+                IF ftLogicalScaleOffsetSetDone.Q THEN
+                    IF fbLogicalScaleOffsetWrite.bError THEN
+                        stMotionStage.bError := fbLogicalScaleOffsetWrite.bError;
+                        stMotionStage.nErrorId := fbLogicalScaleOffsetWrite.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentLogicalScaleOffset := stMCS2ChanParameter.nLogicalScaleOffset;
+                        fbLogicalScaleOffsetWrite.bExecute := FALSE;
+                        nChanParamStep := 7;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 7;
+            END_IF
+
+        7: // Logical Scale Inv
+            IF (stMCS2ChanParameter.nLogicalScaleInv <> nRecentLogicalScaleInv) THEN
+                fbLogicalScaleInvWrite.bExecute := TRUE;
+                IF ftLogicalScaleInvSetDone.Q THEN
+                    IF fbLogicalScaleInvWrite.bError THEN
+                        stMotionStage.bError := fbLogicalScaleInvWrite.bError;
+                        stMotionStage.nErrorId := fbLogicalScaleInvWrite.nErrId;
+                        nChanParamStep := -1;
+                    ELSE
+                        nRecentLogicalScaleInv := stMCS2ChanParameter.nLogicalScaleInv;
+                        fbLogicalScaleInvWrite.bExecute := FALSE;
+                        nChanParamStep := 10;
+                    END_IF
+                END_IF
+            ELSE
+                nChanParamStep := 10;
+            END_IF
+
+        10: // Done
+            bChanParamsSet := TRUE;
+        -1:
+            bChanParamsSet := FALSE;
+        ELSE
+            nChanParamStep := 0;
+        END_CASE
+
+    ELSE
+        fbSetFErrorWin.bExecute            := (nScaledFErrWin <> nRecentFErrWin);
+        fbSetSoftLimMin.bExecute           := (stMCS2ChanParameter.nSoftLimMin <> nRecentSoftLimMin);
+        fbSetSoftLimMax.bExecute           := (stMCS2ChanParameter.nSoftLimMax <> nRecentSoftLimMax);
+        fbMaxCloseLoopFreqWrite.bExecute   := (stMCS2ChanParameter.nMaxCloseLoopFreq <> nRecentMaxCloseLoopFreq);
+        fbSensorPowerModeWrite.bExecute    := (stMCS2ChanParameter.nSensorPowerMode <> nRecentSensorPowerMode);
+        fbLogicalScaleOffsetWrite.bExecute := (stMCS2ChanParameter.nLogicalScaleOffset <> nRecentLogicalScaleOffset);
+        fbLogicalScaleInvWrite.bExecute    := (stMCS2ChanParameter.nLogicalScaleInv <> nRecentLogicalScaleInv);
+
+        IF ftFErrWinSetDone.Q OR ftSoftLimMinSetDone.Q OR ftSoftLimMaxSetDone.Q OR
+           ftMaxCloseLoopFreqSetDone.Q OR ftSensorPowerModeSetDone.Q OR
+           ftLogicalScaleOffsetSetDone.Q OR ftLogicalScaleInvSetDone.Q THEN
+
+            IF fbSetFErrorWin.bError THEN
+                stMotionStage.bError := fbSetFErrorWin.bError;
+                stMotionStage.nErrorId := fbSetFErrorWin.nErrId;
+            ELSIF fbSetSoftLimMin.bError THEN
+                stMotionStage.bError := fbSetSoftLimMin.bError;
+                stMotionStage.nErrorId := fbSetSoftLimMin.nErrId;
+            ELSIF fbSetSoftLimMax.bError THEN
+                stMotionStage.bError := fbSetSoftLimMax.bError;
+                stMotionStage.nErrorId := fbSetSoftLimMax.nErrId;
+            ELSIF fbMaxCloseLoopFreqWrite.bError THEN
+                stMotionStage.bError := fbMaxCloseLoopFreqWrite.bError;
+                stMotionStage.nErrorId := fbMaxCloseLoopFreqWrite.nErrId;
+            ELSIF fbSensorPowerModeWrite.bError THEN
+                stMotionStage.bError := fbSensorPowerModeWrite.bError;
+                stMotionStage.nErrorId := fbSensorPowerModeWrite.nErrId;
+            ELSIF fbLogicalScaleOffsetWrite.bError THEN
+                stMotionStage.bError := fbLogicalScaleOffsetWrite.bError;
+                stMotionStage.nErrorId := fbLogicalScaleOffsetWrite.nErrId;
+            ELSIF fbLogicalScaleInvWrite.bError THEN
+                stMotionStage.bError := fbLogicalScaleInvWrite.bError;
+                stMotionStage.nErrorId := fbLogicalScaleInvWrite.nErrId;
+            ELSE
+                nRecentFErrWin           := nScaledFErrWin;
+                nRecentSoftLimMin        := stMCS2ChanParameter.nSoftLimMin;
+                nRecentSoftLimMax        := stMCS2ChanParameter.nSoftLimMax;
+                nRecentMaxCloseLoopFreq  := stMCS2ChanParameter.nMaxCloseLoopFreq;
+                nRecentSensorPowerMode   := stMCS2ChanParameter.nSensorPowerMode;
+                nRecentLogicalScaleOffset:= stMCS2ChanParameter.nLogicalScaleOffset;
+                nRecentLogicalScaleInv   := stMCS2ChanParameter.nLogicalScaleInv;
+                bChanParamsSet := TRUE;
+            END_IF
+
+            fbSetFErrorWin.bExecute            := FALSE;
+            fbSetSoftLimMin.bExecute           := FALSE;
+            fbSetSoftLimMax.bExecute           := FALSE;
+            fbMaxCloseLoopFreqWrite.bExecute   := FALSE;
+            fbSensorPowerModeWrite.bExecute    := FALSE;
+            fbLogicalScaleOffsetWrite.bExecute := FALSE;
+            fbLogicalScaleInvWrite.bExecute    := FALSE;
+        END_IF
+    END_IF
+
+    fbSetFErrorWin(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanFErrWinIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(nScaledFErrWin),
+        cbBufLen   := SIZEOF(nScaledFErrWin)
+    );
+    fbSetSoftLimMin(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanSoftLimitIdx,
+        nSubIndex  := 1,
+        pSrcBuf    := ADR(stMCS2ChanParameter.nSoftLimMin),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nSoftLimMin)
+    );
+    fbSetSoftLimMax(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanSoftLimitIdx,
+        nSubIndex  := 2,
+        pSrcBuf    := ADR(stMCS2ChanParameter.nSoftLimMax),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nSoftLimMax)
+    );
+    fbMaxCloseLoopFreqWrite(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanMaxCloseLoopFreqIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(stMCS2ChanParameter.nMaxCloseLoopFreq),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nMaxCloseLoopFreq)
+    );
+    fbSensorPowerModeWrite(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanSensorPowerModeIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(stMCS2ChanParameter.nSensorPowerMode),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nSensorPowerMode)
+    );
+    fbLogicalScaleOffsetWrite(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanLogicalScaleOfsIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(stMCS2ChanParameter.nLogicalScaleOffset),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nLogicalScaleOffset)
+    );
+    fbLogicalScaleInvWrite(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanLogicalScaleInvIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(stMCS2ChanParameter.nLogicalScaleInv),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nLogicalScaleInv)
+    );
+
+    // Set a busy flag for status
+    bChanParamsSet R= fbSetFErrorWin.bBusy
+        OR fbSetSoftLimMin.bBusy
+        OR fbSetSoftLimMax.bBusy
+        OR fbMaxCloseLoopFreqWrite.bBusy
+        OR fbSensorPowerModeWrite.bBusy
+        OR fbLogicalScaleOffsetWrite.bBusy
+        OR fbLogicalScaleInvWrite.bBusy;
+END_IF]]></ST>
+    </Implementation>
+    <Method Name="ScaleDriveParams" Id="{d0da9ee6-ac11-4834-86fa-47327c456911}">
+      <Declaration><![CDATA[METHOD ScaleDriveParams
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nScaledFErrWin:=LREAL_TO_DINT(( stMotionStage.stAxisParameters.fCtrlPosDiffMax / MAX( stMotionStage.stAxisParameters.fEncScaleFactorInternal, stMCS2ChanParameter.fScalingFactor)));
+
+IF  stMotionStage.stAxisParameters.bEncEnableSoftEndMinControl.0 AND  stMotionStage.stAxisParameters.bEncEnableSoftEndMaxControl.0 THEN
+    stMCS2ChanParameter.nSoftLimMax := LREAL_TO_DINT(( stMotionStage.stAxisParameters.fEncSoftEndMax / MAX( stMotionStage.stAxisParameters.fEncScaleFactorInternal, stMCS2ChanParameter.fScalingFactor)));
+    stMCS2ChanParameter.nSoftLimMin := LREAL_TO_DINT(( stMotionStage.stAxisParameters.fEncSoftEndMin / MAX( stMotionStage.stAxisParameters.fEncScaleFactorInternal, stMCS2ChanParameter.fScalingFactor)));
+ELSE
+    // Soft limit disabled
+    stMCS2ChanParameter.nSoftLimMax := 0;
+    stMCS2ChanParameter.nSoftLimMin := 0;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

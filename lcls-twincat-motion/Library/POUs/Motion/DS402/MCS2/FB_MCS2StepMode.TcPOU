@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MCS2StepMode" Id="{a0cda8fc-6342-4ae1-b3b5-7e5da20f78df}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2StepMode
+VAR_INPUT
+    bEnable : BOOL;
+END_VAR
+VAR_IN_OUT
+    stDS402Drive         : ST_DS402Drive;
+    stMotionStage        : ST_MotionStage;
+END_VAR
+
+VAR_OUTPUT
+    bStepMoveBusy        : BOOL;
+    bStepMoveDone        : BOOL;
+    bStepMoveAborted     : BOOL;
+END_VAR
+VAR
+    eStepState           : E_MoveState := E_MoveState.IDLING;
+    bReset :  BOOL;
+    bHalt : BOOL;
+    tonSettlingTime     : TON;
+    {attribute 'hide'}
+    rtStepMove               : R_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtStepMove(CLK := bEnable);
+
+CASE eStepState OF
+    E_MoveState.IDLING:
+        IF rtStepMove.Q THEN
+            bStepMoveBusy := TRUE;
+            bStepMoveDone := FALSE;
+            bStepMoveAborted := FALSE;
+            tonSettlingTime.IN:=FALSE;
+            stDS402Drive.nDriveControl.3 := TRUE;
+            eStepState := E_MoveState.INIT;
+        END_IF
+
+    E_MoveState.INIT:
+        IF stMotionStage.bError THEN
+            eStepState := E_MoveState.ERROR;
+        ELSE
+            stDS402Drive.nDriveControl.4 := TRUE;
+            tonSettlingTime.IN:=TRUE;
+            eStepState := E_MoveState.IN_PROGRESS;
+        END_IF
+
+    E_MoveState.IN_PROGRESS:
+        IF bHalt OR bReset THEN
+            bStepMoveAborted := TRUE;
+            eStepState := E_MoveState.INTERRUPTED;
+        ELSIF stDS402Drive.stDriveStatus.Bit13_OpModeSpecific THEN
+            stMotionStage.bError := TRUE;
+            eStepState := E_MoveState.ERROR;
+        ELSE
+            IF tonSettlingTime.Q AND stDS402Drive.stDriveStatus.TargetReached THEN
+                eStepState := E_MoveState.REACHED;
+            END_IF
+        END_IF
+
+    E_MoveState.INTERRUPTED:
+        stDS402Drive.nDriveControl.4 := FALSE;
+        bStepMoveBusy := FALSE;
+        eStepState := E_MoveState.IDLING;
+
+    E_MoveState.REACHED:
+        bStepMoveBusy := FALSE;
+        bStepMoveDone := TRUE;
+        stDS402Drive.nDriveControl.4 := FALSE;
+        eStepState := E_MoveState.DONE;
+
+    E_MoveState.DONE:
+        IF stMotionStage.bDone THEN
+            eStepState := E_MoveState.IDLING;
+        END_IF
+
+    E_MoveState.ERROR:
+        bStepMoveBusy := FALSE;
+        bStepMoveDone := FALSE;
+        IF NOT stMotionStage.bError THEN
+            eStepState := E_MoveState.IDLING;
+        END_IF
+END_CASE
+tonSettlingTime(PT:=T#80MS);
+bHalt := FALSE;
+bReset := FALSE;]]></ST>
+    </Implementation>
+    <Method Name="Halt" Id="{404ed7bc-5145-419a-8c32-b3d5cc2b5db5}">
+      <Declaration><![CDATA[METHOD Halt : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bHalt := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Reset" Id="{0f20cf36-480d-4ea2-8024-db9756e7a2d6}">
+      <Declaration><![CDATA[METHOD Reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bReset := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -6,7 +6,7 @@
     set bServo PV to true, fort open loop step mode bServo must be cleared
 *)
 {attribute 'call_after_init'}
-FUNCTION_BLOCK FB_MotionStageE727 IMPLEMENTS I_DS402GenericDrive
+FUNCTION_BLOCK FB_MotionStageE727
 VAR
     {attribute 'no_copy'}
     stMotionStage  : REFERENCE TO ST_MotionStage;
@@ -173,7 +173,7 @@ IF bInit THEN
     stMotionStage.nMotionAxisID := stMotionStage.Axis.NcToPlc.AxisId;
     (* Clear drive error/wraning condition, in open loop mode
        this will trigger a correct startup for procedure *)
-    stDS402Drive.nDS402DriveControl := 128;
+    stDS402Drive.nDriveControl := 128;
     // fist cycle reading of NC paramters
     bExecParamsRead := TRUE;
     bInit := FALSE;
@@ -279,7 +279,7 @@ bExecMove:=bLocalExec AND NOT bExecHome;
 rtExec(CLK:=bLocalExec);
 IF rtExec.Q THEN
     // Release previous interruption if any
-    stDS402Drive.nDS402DriveControl.8 := FALSE;
+    stDS402Drive.nDriveControl.8 := FALSE;
     stMotionStage.bDone := FALSE;
 END_IF
 
@@ -307,7 +307,7 @@ IF stMotionStage.bReset THEN
     stMotionStage.sCustomErrorMessage:='';
     (*Manual Drive reset*)
     IF bDS402ManualEnabled THEN
-        stDS402Drive.nDS402DriveControl := 128;
+        stDS402Drive.nDriveControl := 128;
     ELSE
         bLocalReset := TRUE;
     END_IF
@@ -336,10 +336,10 @@ CASE nCommandLocal OF
         MoveAbsolute();
         (*IN CSP mode the drive control word is update via the NC
           Manual step mode and Homing will override this *)
-         stDS402Drive.nDS402DriveControl := stDS402Drive.nDS402DriveControlNC;
+         stDS402Drive.nDriveControl := stDS402Drive.nDriveControlNC;
     E_EpicsMotorCmd.HOME:
         (*DS402 Manual Homing*)
-       Home();
+       Home(Enable:=TRUE);
 END_CASE
 
 stMotionStage.bBusy := bHomeBusy OR fbMcMoveAbsolute.Busy;
@@ -514,7 +514,9 @@ THIS^.eModule := eModule;
     </Method>
     <Method Name="Home" Id="{33a0ebff-5827-46e7-8879-a94910cac0f9}">
       <Declaration><![CDATA[METHOD PUBLIC Home
-
+VAR_INPUT
+    Enable 				: BOOL;
+END_VAR
 VAR_INST
     {attribute 'hide'}
     bMove 				: BOOL;
@@ -539,16 +541,16 @@ IF bMove THEN
                 bHomeDone := FALSE;
                 bHomeBusy := TRUE;
                 stMotionStage.bDone := FALSE;
-                stDS402Drive.nDS402DriveControl:=15;
+                stDS402Drive.nDriveControl:=15;
                 eHomeState :=  E_MoveState.INIT;
             END_IF
         E_MoveState.INIT:
-                        stDS402Drive.nDS402DriveControl.4:=1;
+                        stDS402Drive.nDriveControl.4:=1;
                                         eHomeState := E_MoveState.STARTED;
         E_MoveState.STARTED :
             // this is a comfirmation that routine is ongoing
-            IF NOT stDS402Drive.stDS402DriveStatus.TargetReached
-                AND NOT stDS402Drive.stDS402DriveStatus.Bit13_OpModeSpecific THEN
+            IF NOT stDS402Drive.stDriveStatus.TargetReached
+                AND NOT stDS402Drive.stDriveStatus.Bit13_OpModeSpecific THEN
                 bHomeBusy:=TRUE;
                 bHomeDone:=FALSE;
 
@@ -558,20 +560,20 @@ IF bMove THEN
         E_MoveState.IN_PROGRESS :
 
         IF bStop THEN
-         stDS402Drive.nDS402DriveControl.8 :=1;
+         stDS402Drive.nDriveControl.8 :=1;
           bHomeAborted := TRUE;
           eHomeState:=E_MoveState.INTERRUPTED;
 
         // Genral Motion error i.e Following error ?
-        ELSIF stDS402Drive.stDS402DriveStatus.Bit13_OpModeSpecific
-                OR stDS402Drive.stDS402DriveStatus.WarningCondition THEN
+        ELSIF stDS402Drive.stDriveStatus.Bit13_OpModeSpecific
+                OR stDS402Drive.stDriveStatus.WarningCondition THEN
             stMotionStage.bError := TRUE;
             eHomeState:=E_MoveState.ERROR;
 
         // Reached
-        ELSIF stDS402Drive.stDS402DriveStatus.TargetReached
-            AND stDS402Drive.stDS402DriveStatus.Bit12_OpModeSpecific
-            AND NOT stDS402Drive.stDS402DriveStatus.Bit13_OpModeSpecific THEN
+        ELSIF stDS402Drive.stDriveStatus.TargetReached
+            AND stDS402Drive.stDriveStatus.Bit12_OpModeSpecific
+            AND NOT stDS402Drive.stDriveStatus.Bit13_OpModeSpecific THEN
            eHomeState:=E_MoveState.DONE;
         END_IF
         E_MoveState.INTERRUPTED:
@@ -583,10 +585,10 @@ IF bMove THEN
             stMotionStage.fPosition:=0.0;
 
             IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION ) THEN
-                stDS402Drive.nDS402DriveControl.4:=FALSE;
+                stDS402Drive.nDriveControl.4:=FALSE;
 
             ELSE
-                stDS402Drive.nDS402DriveControl:=6;
+                stDS402Drive.nDriveControl:=6;
             END_IF
             eHomeState:=E_MoveState.IDLING;
         E_MoveState.ERROR:
@@ -625,8 +627,8 @@ bNegativeDirection:=stMotionStage.bBusy AND stMotionStage.fPosDiff < 0;
 
 // For SmartAct MCS2 these limit are range and enstop limits. however a single bit in the status is used
 // bLimOverride  : act as an override after limit was hit to allow reverse movement
-stMotionStage.bLimitForwardEnable :=  bLimOverride OR NOT( bPositiveDirection AND stDS402Drive.stDS402DriveStatus.InternalLimitActive );
-stMotionStage.bLimitBackwardEnable := bLimOverride OR NOT( bNegativeDirection AND stDS402Drive.stDS402DriveStatus.InternalLimitActive );
+stMotionStage.bLimitForwardEnable :=  bLimOverride OR NOT( bPositiveDirection AND stDS402Drive.stDriveStatus.InternalLimitActive );
+stMotionStage.bLimitBackwardEnable := bLimOverride OR NOT( bNegativeDirection AND stDS402Drive.stDriveStatus.InternalLimitActive );
 
 // use falling trigger to avoid spaming  sErrorMessage
 ftForwardEnabled(CLK:=stMotionStage.bLimitForwardEnable);
@@ -675,13 +677,13 @@ IF rtCSPModeOk.Q THEN
 ELSIF rtHomeModeEnable.Q THEN
     bHomeModeEnabled := TRUE;
     bCSPModeEnabled := FALSE;
-    stDS402Drive.nDS402DriveControl := 0;
+    stDS402Drive.nDriveControl := 0;
 END_IF
 
 IF rtUserExec.Q AND stMotionStage.bHomeCmd THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.HOME) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.HOME;
-        stDS402Drive.nDS402DriveControl := 128;
+        stDS402Drive.nDriveControl := 128;
         // clear previous operational from switching away from this mode.
         bOperational := FALSE;
         bCSPModeEnabled := FALSE;
@@ -692,7 +694,7 @@ IF rtUserExec.Q AND stMotionStage.bHomeCmd THEN
 ELSIF rtUserExec.Q THEN
     IF (stDS402Drive.nModeOfOperationDisplay<>E_DS402OpMode.CSP) THEN
         stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
-        stDS402Drive.nDS402DriveControl := 128;
+        stDS402Drive.nDriveControl := 128;
         bHomeModeEnabled := FALSE;
         bManualTransition := FALSE;
     ELSE
@@ -942,24 +944,6 @@ stMotionStage.fPosDiff:=stMotionStage.Axis.NcToPlc.PosDiff;
 ]]></ST>
       </Implementation>
     </Method>
-    <Method Name="ScaleHomeMotionParams" Id="{ca311234-dfe1-4f79-8d46-d85b94fbe633}">
-      <Declaration><![CDATA[(*Scale Home Move parameters*)
-METHOD ScaleHomeMotionParams
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="ScaleServoOffMotionParams" Id="{c3995288-2bc6-4e2b-80eb-94f29f532c0d}">
-      <Declaration><![CDATA[(*Scaled Open Loop Step mode motion parameters*)
-METHOD ScaleServoOffMotionParams
-VAR_INPUT
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[]]></ST>
-      </Implementation>
-    </Method>
     <Method Name="SetEnables" Id="{40234a90-944e-46f2-a31c-ab09920999d8}">
       <Declaration><![CDATA[METHOD SetEnables
 VAR_INPUT
@@ -987,59 +971,59 @@ END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[rtFault(CLK:=bFault);
 (*switch on disable*)
-IF NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND  stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+IF NOT stDS402Drive.stDriveStatus.ReadyToSwitchOn
+    AND NOT stDS402Drive.stDriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDriveStatus.Fault
+    AND stDS402Drive.stDriveStatus.VoltageEnabled
+    AND NOT stDS402Drive.stDriveStatus.QuickStopActive
+    AND  stDS402Drive.stDriveStatus.SwitchOnDisabled THEN
         bOperational := FALSE;
         IF bDS402ManualEnabled AND NOT bStop  THEN
-            THIS^.stDS402Drive.nDS402DriveControl := 6;
+            THIS^.stDS402Drive.nDriveControl := 6;
         END_IF
 (*Ready to switch*)
-ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+ELSIF stDS402Drive.stDriveStatus.ReadyToSwitchOn
+    AND NOT stDS402Drive.stDriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDriveStatus.Fault
+    AND stDS402Drive.stDriveStatus.VoltageEnabled
+    AND stDS402Drive.stDriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDriveStatus.SwitchOnDisabled THEN
         bFault := FALSE;
         bOperational := FALSE;
         IF bDS402ManualEnabled AND NOT bStop  THEN
-            THIS^.stDS402Drive.nDS402DriveControl := 7;
+            THIS^.stDS402Drive.nDriveControl := 7;
         END_IF
 (*Switch on*)
-ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND  stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+ELSIF stDS402Drive.stDriveStatus.ReadyToSwitchOn
+    AND  stDS402Drive.stDriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDriveStatus.Fault
+    AND stDS402Drive.stDriveStatus.VoltageEnabled
+    AND stDS402Drive.stDriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDriveStatus.SwitchOnDisabled THEN
         bOperational := FALSE;
         IF bDS402ManualEnabled AND NOT bStop  THEN
-            THIS^.stDS402Drive.nDS402DriveControl := 15;
+            THIS^.stDS402Drive.nDriveControl := 15;
         END_IF
 (*Operation enbaled*)
-ELSIF stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+ELSIF stDS402Drive.stDriveStatus.ReadyToSwitchOn
+    AND stDS402Drive.stDriveStatus.SwitchedOn
+    AND stDS402Drive.stDriveStatus.OperationEnabled
+    AND NOT stDS402Drive.stDriveStatus.Fault
+    AND stDS402Drive.stDriveStatus.VoltageEnabled
+    AND stDS402Drive.stDriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDriveStatus.SwitchOnDisabled THEN
         THIS^.bOperational := TRUE;
 (*Fault*)
-ELSIF  NOT stDS402Drive.stDS402DriveStatus.ReadyToSwitchOn
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchedOn
-    AND NOT stDS402Drive.stDS402DriveStatus.OperationEnabled
-    AND stDS402Drive.stDS402DriveStatus.Fault
-    AND stDS402Drive.stDS402DriveStatus.VoltageEnabled
-    AND NOT stDS402Drive.stDS402DriveStatus.QuickStopActive
-    AND NOT stDS402Drive.stDS402DriveStatus.SwitchOnDisabled THEN
+ELSIF  NOT stDS402Drive.stDriveStatus.ReadyToSwitchOn
+    AND NOT stDS402Drive.stDriveStatus.SwitchedOn
+    AND NOT stDS402Drive.stDriveStatus.OperationEnabled
+    AND stDS402Drive.stDriveStatus.Fault
+    AND stDS402Drive.stDriveStatus.VoltageEnabled
+    AND NOT stDS402Drive.stDriveStatus.QuickStopActive
+    AND NOT stDS402Drive.stDriveStatus.SwitchOnDisabled THEN
         bOperational := FALSE;
         bFault := TRUE;
 
@@ -1051,17 +1035,6 @@ END_IF
 // wait for parameter init done at startup to read potential error from drive
 stMotionStage.bError := bFault AND stMotionStage.bAxisParamsInit;
 ]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="StepMove" Id="{beb62377-55f7-4812-963a-214f50a0e0dd}">
-      <Declaration><![CDATA[{warning 'Add method implementation '}
-METHOD StepMove
-VAR_INPUT
-    Enable	: BOOL;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[]]></ST>
       </Implementation>
     </Method>
     <Method Name="UpdateDriveMonitoringParams" Id="{4485f39e-5aab-45c4-94ad-cec5d5ba73c4}">
@@ -1210,22 +1183,6 @@ stMotionStage.stAxisStatus.nCommand:=3; // If this is not 3, the IOC stops updat
 
 
 ]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="UpdateServoOffMotionParams" Id="{1eeb0577-3c90-46e7-82fa-847c998f0d69}">
-      <Declaration><![CDATA[(*	MCS2 OL Step parameters update
-    1- Step
-    2- Step Amplitude
-    3- StepFreq
-*)
-METHOD UpdateServoOffMotionParams
-VAR_INPUT
-    Enable : BOOL;
-END_VAR
-
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[]]></ST>
       </Implementation>
     </Method>
     <Method Name="WriteParameterNC" Id="{820518b9-7c36-46bd-907c-c13e63c9c459}">

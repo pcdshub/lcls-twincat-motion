@@ -1,0 +1,242 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_ReadChanParameters" Id="{08ee74cb-7e7d-468d-8ff5-637be4dc44de}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ReadChanParameters
+VAR_INPUT
+
+END_VAR
+
+VAR_IN_OUT
+    stMotionStage : ST_MotionStage;
+    stMCS2ChanParameter : ST_MCS2ChanParameter;
+    stDS402Drive  	: ST_DS402Drive;
+END_VAR
+
+VAR_OUTPUT
+    bAllReadsComplete : BOOL;
+END_VAR
+
+VAR
+    bChanReadTrigger : BOOL;
+    tonSDOReadTrigger          : TON ;
+    fbMaxCloseLoopFreqRead     : FB_EcCoESdoRead;
+    fbPositionerTypeRead       : FB_EcCoESdoRead;
+    fbCalibrationOptRead       : FB_EcCoESdoRead;
+    fbSensorPowerModeRead      : FB_EcCoESdoRead;
+    fbReferencingOptRead       : FB_EcCoESdoRead;
+    fbReferenceTypeRead        : FB_EcCoESdoRead;
+    fbSafeDirRead              : FB_EcCoESdoRead;
+    fbMotorLoadRead            : FB_EcCoESdoRead;
+    fbChannelTypeRead          : FB_EcCoESdoRead;
+    fbChannelStateRead         : FB_EcCoESdoRead;
+    fbLogicalScaleOffsetRead   : FB_EcCoESdoRead;
+    fbLogicalScaleInvRead      : FB_EcCoESdoRead;
+    ftMaxCloseLoopFreqRead      : F_TRIG;
+    ftPositionerTypeRead        : F_TRIG;
+    ftCalibrationOptRead        : F_TRIG;
+    ftSensorPowerModeRead       : F_TRIG;
+    ftReferencingOptRead        : F_TRIG;
+    ftSafeDirRead               : F_TRIG;
+    ftMotorLoadRead             : F_TRIG;
+    ftChannelTypeRead           : F_TRIG;
+    ftChannelStateRead          : F_TRIG;
+    ftReferenceTypeRead         : F_TRIG;
+    ftLogicalScaleOffsetRead    : F_TRIG;
+    ftLogicalScaleInvRead       : F_TRIG;
+    tonSDORateLimit             : TON;
+    rtExecParamsRead            : R_TRIG;
+    bInternalChanReadTrigger    : BOOL;        // Internal trigger
+    tSDOInterval                : TIME := T#2S;
+    eSDOReadStep : INT := 0; // 0: Idle, 1: Wait-read, 2: Wait-ft, -1: Error
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE eSDOReadStep OF
+
+0:
+    // Timer triggers if ALL reads are complete and (on init) axisParams are initialized
+    bChanReadTrigger := FALSE;
+    IF tonSDOReadTrigger.Q THEN
+        eSDOReadStep := 1;
+    END_IF
+
+1: // Start SDO read (one-shot)
+    bChanReadTrigger := TRUE;
+    eSDOReadStep := 2;
+
+2: // Wait for critical SDO read to complete
+    ftChannelStateRead(CLK := fbChannelStateRead.bBusy);
+
+    IF ftChannelStateRead.Q THEN
+        IF NOT fbChannelStateRead.bError THEN
+            stMCS2ChanParameter.stChannelState.bActivelyMoving        := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000001) <> 0;
+            stMCS2ChanParameter.stChannelState.bClosedLoopActive      := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000002) <> 0;
+            stMCS2ChanParameter.stChannelState.bCalibrating           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000004) <> 0;
+            stMCS2ChanParameter.stChannelState.bReferencing           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000008) <> 0;
+            stMCS2ChanParameter.stChannelState.bMoveDelayed           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000010) <> 0;
+            stMCS2ChanParameter.stChannelState.bSensorPresent         := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000020) <> 0;
+            stMCS2ChanParameter.stChannelState.bIsCalibrated          := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000040) <> 0;
+            stMCS2ChanParameter.stChannelState.bIsReferenced          := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000080) <> 0;
+            stMCS2ChanParameter.stChannelState.bEndStopReached        := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000100) <> 0;
+            stMCS2ChanParameter.stChannelState.bRangeLimitReached     := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000200) <> 0;
+            stMCS2ChanParameter.stChannelState.bFollowingLimitReached := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000400) <> 0;
+            stMCS2ChanParameter.stChannelState.bMovementFailed        := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000800) <> 0;
+            stMCS2ChanParameter.stChannelState.bIsStreaming           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00001000) <> 0;
+            stMCS2ChanParameter.stChannelState.bPositionerOverload    := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00002000) <> 0;
+            stMCS2ChanParameter.stChannelState.bOverTemperature       := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00004000) <> 0;
+            stMCS2ChanParameter.stChannelState.bReferenceMark         := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00008000) <> 0;
+            stMCS2ChanParameter.stChannelState.bIsPhased              := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00010000) <> 0;
+            stMCS2ChanParameter.stChannelState.bPositionerFault       := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00020000) <> 0;
+            stMCS2ChanParameter.stChannelState.bAmplifierEnabled      := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00040000) <> 0;
+            stMCS2ChanParameter.stChannelState.bInPosition            := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00080000) <> 0;
+            stMCS2ChanParameter.stChannelState.bBrakeEnabled          := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00100000) <> 0;
+        ELSE
+            IF NOT stMotionStage.bBusy THEN
+                stMotionStage.sErrorMessage := 'Failed to read ChannelState';
+            END_IF
+        END_IF
+        // RE-trigger the timer (restarts after SDO read is finished and bits decoded)
+        bChanReadTrigger := FALSE;
+        tonSDOReadTrigger(IN := TRUE);
+        eSDOReadStep := 0;
+    END_IF
+
+ELSE
+    eSDOReadStep := 0;
+END_CASE
+
+IF eSDOReadStep = 0 THEN
+    tonSDOReadTrigger(
+        IN := stMotionStage.bAxisParamsInit,
+        PT := stMCS2ChanParameter.nReadTime
+    );
+ELSE
+    tonSDOReadTrigger(
+        IN := FALSE,
+        PT := stMCS2ChanParameter.nReadTime
+    );
+END_IF
+
+
+fbMaxCloseLoopFreqRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanMaxCloseLoopFreqIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nMaxCloseLoopFreq),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nMaxCloseLoopFreq),
+    bExecute    := bChanReadTrigger
+);
+
+fbPositionerTypeRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanPositionerTypeIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nPositionerType),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nPositionerType),
+    bExecute    := bChanReadTrigger
+);
+
+fbCalibrationOptRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanCalibrationOptIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nCalibrationOpt),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nCalibrationOpt),
+    bExecute    := bChanReadTrigger
+);
+//
+fbSensorPowerModeRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanSensorPowerModeIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nSensorPowerMode),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nSensorPowerMode),
+    bExecute    := bChanReadTrigger
+);
+
+fbReferencingOptRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanReferencingOptIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nReferencingOpt),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nReferencingOpt),
+    bExecute    := bChanReadTrigger
+);
+//
+fbReferenceTypeRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanReferenceTypeIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nReferenceType),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nReferenceType),
+    bExecute    := bChanReadTrigger
+);
+
+fbSafeDirRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanSafeDirIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nSafeDir),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nSafeDir),
+    bExecute    := bChanReadTrigger
+);
+
+fbMotorLoadRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanMotorLoadIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nMotorLoad),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nMotorLoad),
+    bExecute    := bChanReadTrigger
+);
+
+fbChannelTypeRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChannelTypeIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nChannelType),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nChannelType),
+    bExecute    := bChanReadTrigger
+);
+
+fbChannelStateRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanStateIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
+    bExecute    := bChanReadTrigger
+);
+
+fbLogicalScaleOffsetRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanLogicalScaleOfsIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nLogicalScaleOffset),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nLogicalScaleOffset),
+    bExecute    := bChanReadTrigger
+);
+
+fbLogicalScaleInvRead(
+    sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr  := stDS402Drive.nSlaveAddr,
+    nIndex      := stMCS2ChanParameter.nChanLogicalScaleInvIdx,
+    nSubIndex   := 0,
+    pDstBuf     := ADR(stMCS2ChanParameter.nLogicalScaleInv),
+    cbBufLen    := SIZEOF(stMCS2ChanParameter.nLogicalScaleInv),
+    bExecute    := bChanReadTrigger
+);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
