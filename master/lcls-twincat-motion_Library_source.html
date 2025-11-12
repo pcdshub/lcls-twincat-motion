@@ -1551,6 +1551,7 @@ STRUCT
         field: ZNAM DISABLE
         field: ONAM ENABLE
         field: DESC Used to disable power entirely for an axis
+        autosave_pass1: VAL
     &#39;}
     bUserEnable: BOOL := 1;
 
@@ -1583,6 +1584,7 @@ STRUCT
         pv: PLC:fHomePosition
         io: io
         field: DESC Used internally and by the IOC to pick home position
+        autosave_pass1: VAL
     &#39;}
     fHomePosition: LREAL;
 
@@ -1608,7 +1610,6 @@ STRUCT
         field: ZNAM FALSE
         field: ONAM TRUE
         field: DESC TRUE if we are in an error state
-        update: 100Hz notify
     &#39;}
     bError: BOOL;
     // Error code if nonzero
@@ -1616,7 +1617,6 @@ STRUCT
         pv: PLC:nErrorId
         io: i
         field: DESC Error code if nonzero
-        update: 100Hz notify
     &#39;}
     nErrorId: UDINT;
     // Message to identify the error state
@@ -1624,7 +1624,6 @@ STRUCT
         pv: PLC:sErrorMessage
         io: i
         field: DESC Message to identify the error state
-        update: 100Hz notify
     &#39;}
     sErrorMessage: STRING;
     // Internal hook for custom error messages
@@ -1661,6 +1660,7 @@ STRUCT
         field: ZNAM FALSE
         field: ONAM TRUE
         field: DESC Enable Backlash compensation
+        autosave_pass1: VAL
     &#39;}
     bUserBacklashEn: BOOL;
 
@@ -1679,6 +1679,7 @@ STRUCT
         pv: PLC:fBacklash
         io: io
         field: DESC Backlash compensation
+        autosave_pass1: VAL
     &#39;}
     fBacklash: LREAL;
 
@@ -1722,6 +1723,7 @@ END_TYPE
         <span class="n">pv</span><span class="p">:</span> <span class="n">SETPOINT</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Axis</span> <span class="n">position</span> <span class="n">associated</span> <span class="k">with</span> <span class="n">this</span> <span class="n">state</span>
+        <span class="n">autosave_pass1</span><span class="p">:</span> <span class="n">VAL</span>
     <span class="s1">&#39;}</span>
     <span class="n">fPosition</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
 
@@ -1740,6 +1742,7 @@ END_TYPE
         <span class="n">pv</span><span class="p">:</span> <span class="n">VELO</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Speed</span> <span class="n">at</span> <span class="n">which</span> <span class="n">to</span> <span class="n">move</span> <span class="n">to</span> <span class="n">this</span> <span class="n">state</span>
+        <span class="n">autosave_pass1</span><span class="p">:</span> <span class="n">VAL</span>
     <span class="s1">&#39;}</span>
     <span class="n">fVelocity</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
 

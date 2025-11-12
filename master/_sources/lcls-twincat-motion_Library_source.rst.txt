@@ -1356,6 +1356,7 @@ ST_MotionStage
             field: ZNAM DISABLE
             field: ONAM ENABLE
             field: DESC Used to disable power entirely for an axis
+            autosave_pass1: VAL
         '}
         bUserEnable: BOOL := 1;
 
@@ -1388,6 +1389,7 @@ ST_MotionStage
             pv: PLC:fHomePosition
             io: io
             field: DESC Used internally and by the IOC to pick home position
+            autosave_pass1: VAL
         '}
         fHomePosition: LREAL;
 
@@ -1413,7 +1415,6 @@ ST_MotionStage
             field: ZNAM FALSE
             field: ONAM TRUE
             field: DESC TRUE if we are in an error state
-            update: 100Hz notify
         '}
         bError: BOOL;
         // Error code if nonzero
@@ -1421,7 +1422,6 @@ ST_MotionStage
             pv: PLC:nErrorId
             io: i
             field: DESC Error code if nonzero
-            update: 100Hz notify
         '}
         nErrorId: UDINT;
         // Message to identify the error state
@@ -1429,7 +1429,6 @@ ST_MotionStage
             pv: PLC:sErrorMessage
             io: i
             field: DESC Message to identify the error state
-            update: 100Hz notify
         '}
         sErrorMessage: STRING;
         // Internal hook for custom error messages
@@ -1466,6 +1465,7 @@ ST_MotionStage
             field: ZNAM FALSE
             field: ONAM TRUE
             field: DESC Enable Backlash compensation
+            autosave_pass1: VAL
         '}
         bUserBacklashEn: BOOL;
 
@@ -1484,6 +1484,7 @@ ST_MotionStage
             pv: PLC:fBacklash
             io: io
             field: DESC Backlash compensation
+            autosave_pass1: VAL
         '}
         fBacklash: LREAL;
 
@@ -1527,6 +1528,7 @@ ST_PositionState
             pv: SETPOINT
             io: io
             field: DESC Axis position associated with this state
+            autosave_pass1: VAL
         '}
         fPosition: LREAL;
 
@@ -1545,6 +1547,7 @@ ST_PositionState
             pv: VELO
             io: io
             field: DESC Speed at which to move to this state
+            autosave_pass1: VAL
         '}
         fVelocity: LREAL;
 
