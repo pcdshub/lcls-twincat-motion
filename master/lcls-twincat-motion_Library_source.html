@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DUTs &mdash; pcdshub/lcls-twincat-motion  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/tree.css?v=837a00b9" />
       <link rel="stylesheet" type="text/css" href="_static/width.css?v=ab210c7a" />
 
@@ -16,8 +16,8 @@
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/docs-versions-menu.js?v=3d6a1aea"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -1265,7 +1265,7 @@
     <span class="n">sErrorMessage</span><span class="p">:</span> <span class="n">STRING</span><span class="p">;</span>
 
     <span class="o">//</span> <span class="n">Misc</span> <span class="n">axis</span> <span class="n">status</span> <span class="n">information</span> <span class="k">for</span> <span class="n">the</span> <span class="n">IOC</span>
-    <span class="n">stAxisStatus</span><span class="p">:</span> <span class="n">ST_AxisStatus</span><span class="p">;</span>
+    <span class="n">stAxisStatus</span><span class="p">:</span> <span class="n">tc2_mc2</span><span class="o">.</span><span class="n">ST_AxisStatus</span><span class="p">;</span>
 <span class="n">END_STRUCT</span>
 <span class="n">END_TYPE</span>
 </pre></div>
@@ -4605,7 +4605,7 @@ END_TYPE
     <span class="n">bHomed</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">nErrorId</span><span class="p">:</span> <span class="n">UDINT</span><span class="p">;</span>
     <span class="n">nMotionAxisID</span><span class="p">:</span><span class="n">UDINT</span><span class="o">:=</span><span class="mi">0</span><span class="p">;</span>  <span class="o">//</span><span class="n">Axis</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">Motion</span> <span class="p">(</span><span class="n">NC</span><span class="p">)</span>
-    <span class="n">Status</span><span class="p">:</span> <span class="n">ST_AxisStatus</span><span class="p">;</span>
+    <span class="n">Status</span><span class="p">:</span> <span class="n">tc2_mc2</span><span class="o">.</span><span class="n">ST_AxisStatus</span><span class="p">;</span>
     <span class="n">fActVelocity</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
     <span class="n">fActPosition</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
     <span class="n">fActDiff</span><span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
@@ -6083,10 +6083,15 @@ END_FUNCTION_BLOCK
   <span class="o">//</span><span class="n">Check</span> <span class="k">if</span> <span class="n">valid</span> <span class="n">nCmdDataLocal</span>
   <span class="n">CASE</span> <span class="n">nCmdDataLocal</span> <span class="n">OF</span>
     <span class="mi">1</span><span class="p">:</span>
+            <span class="p">;</span>
     <span class="mi">2</span><span class="p">:</span>
+            <span class="p">;</span>
     <span class="mi">3</span><span class="p">:</span>
+            <span class="p">;</span>
     <span class="mi">4</span><span class="p">:</span>
+            <span class="p">;</span>
     <span class="mi">15</span><span class="p">:</span>
+            <span class="p">;</span>
     <span class="n">ELSE</span> <span class="o">//</span><span class="n">nCmdData</span> <span class="ow">not</span> <span class="n">valid</span>
       <span class="n">bError</span><span class="o">:=</span><span class="n">TRUE</span><span class="p">;</span>
       <span class="n">nErrorId</span><span class="o">:=</span><span class="mi">16</span><span class="c1">#4FFF;</span>
@@ -9113,7 +9118,7 @@ END_ACTION
 </section>
 <section id="fb-motionstage">
 <h2>FB_MotionStage<a class="headerlink" href="#fb-motionstage" title="Link to this heading"></a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>FUNCTION_BLOCK FB_MotionStage
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>FUNCTION_BLOCK FB_MotionStage IMPLEMENTS I_MotionStage
 (*
     Default implementation for PLC behavior when motor IOC asks for a move
     This can be extended or replaced in your PLC project if you want
@@ -9149,7 +9154,60 @@ VAR
     rtMoveCmdShortcut: R_TRIG;
     rtHomeCmdShortcut: R_TRIG;
     rtEnableMode: R_TRIG;
+
+    {attribute &#39;pytmc&#39; := &#39;pv: &#39;}
+    stMotionStatus : ST_MotionStatus;
+    stMotionCmdPrev : ST_MotionCommand;
+    {attribute &#39;pytmc&#39; := &#39;pv: &#39;}
+    stMotionCmdNow : ST_MotionCommand;
+    {attribute &#39;pytmc&#39; := &#39;pv: &#39;}
+    stExMotionStatus : ST_ExtendedMotionStatus;
+    stMotionStageMethods : REFERENCE TO ST_MotionStage;
 END_VAR
+stMotionStageMethods REF= stMotionStage;
+
+IF NOT __ISVALIDREF(stMotionStage) THEN
+    RETURN;
+END_IF
+
+// Main Motion Command Structure
+IF stMotionCmdNow.bHalt &lt;&gt; stMotionCmdPrev.bHalt THEN
+    stMotionStage.bExecute := NOT stMotionCmdNow.bHalt;
+END_IF
+IF stMotionCmdNow.bHomeCmd &lt;&gt; stMotionCmdPrev.bHomeCmd THEN
+    stMotionStage.bHomeCmd := stMotionCmdNow.bHomeCmd;
+END_IF
+IF stMotionCmdNow.bMoveCmd &lt;&gt; stMotionCmdPrev.bMoveCmd THEN
+    stMotionStage.bMoveCmd := stMotionCmdNow.bMoveCmd;
+END_IF
+IF stMotionCmdNow.bReset &lt;&gt; stMotionCmdPrev.bReset THEN
+    stMotionStage.bReset := stMotionCmdNow.bReset;
+END_IF
+IF stMotionCmdNow.fAcceleration &lt;&gt; stMotionCmdPrev.fAcceleration THEN
+    stMotionStage.fAcceleration := stMotionCmdNow.fAcceleration;
+END_IF
+IF stMotionCmdNow.fDeceleration &lt;&gt; stMotionCmdPrev.fDeceleration THEN
+    stMotionStage.fDeceleration := stMotionCmdNow.fDeceleration;
+END_IF
+IF stMotionCmdNow.fHomePosition &lt;&gt; stMotionCmdPrev.fHomePosition THEN
+    stMotionStage.fHomePosition := stMotionCmdNow.fHomePosition;
+END_IF
+IF stMotionCmdNow.fJerk &lt;&gt; stMotionCmdPrev.fJerk THEN
+    //stMotionStage.fJerk := stMotionCmdNow.fJerk; NOT SUPPORTED BY THIS IMPLEMENTATION
+END_IF
+IF stMotionCmdNow.fPosition &lt;&gt; stMotionCmdPrev.fPosition THEN
+    stMotionStage.fPosition := stMotionCmdNow.fPosition;
+END_IF
+IF stMotionCmdNow.fVelocity &lt;&gt; stMotionCmdPrev.fVelocity THEN
+    stMotionStage.fVelocity := stMotionCmdNow.fVelocity;
+END_IF
+IF stMotionCmdNow.nCmdData &lt;&gt; stMotionCmdPrev.nCmdData THEN
+    stMotionStage.nCmdData := stMotionCmdNow.nCmdData;
+END_IF
+IF stMotionCmdNow.nCommand &lt;&gt; stMotionCmdPrev.nCommand THEN
+    stMotionStage.nCommand := stMotionCmdNow.nCommand;
+END_IF
+
 // Start with an accurate status
 stMotionStage.Axis.ReadStatus();
 
@@ -9438,7 +9496,216 @@ fbSaveRestore(
     stMotionStage:=stMotionStage,
     bEnable:=stMotionStage.nHomingMode &lt;&gt; E_EpicsHomeCmd.NONE);
 
+// Main Motion Status Structure
+stMotionStatus.nMotionAxisID    := stMotionStage.Axis.NcToPlc.AxisId;
+stMotionStatus.bEnabled         := stMotionStage.bAllEnable;
+stMotionStatus.bHomeSensor      := stMotionStage.bHome;
+stMotionStatus.bLimitBwd        := stMotionStage.bAllBackwardEnable;
+stMotionStatus.bLimitFwd        := stMotionStage.bAllForwardEnable;
+stMotionStatus.fActDiff         := stMotionStage.Axis.NcToPlc.PosDiff;
+stMotionStatus.fActPosition     := stMotionStage.Axis.NcToPlc.ActPos;
+stMotionStatus.fActVelocity     := stMotionStage.Axis.NcToPlc.ActVelo;
+stMotionStatus.fOverride        := stMotionStage.Axis.PlcToNc.Override;
+stMotionStatus.bBusy            := stMotionStage.bBusy;
+stMotionStatus.bHomed           := stMotionStage.bHomed;
+stMotionStatus.bWarning         := FALSE; // NOT SUPPORTED BY THIS IMPLEMENTATION
+stMotionStatus.bError           := stMotionStage.bError;
+stMotionStatus.nErrorId         := stMotionStage.nErrorId;
+stMotionStatus.sErrorMessage    := stMotionStage.sErrorMessage;
+
+// Extended Motion Status (Debug, Testing) NOT SUPPORTED BY THIS IMPLEMENTATION
+// stExMotionStatus.bMotionAxisError
+// stExMotionStatus.nMotionAxisErrorId
+// stExMotionStatus.bInterlocksError
+// stExMotionStatus.nInterlocksError
+// stExMotionStatus.eDriveState
+// stExMotionStatus.bAbortDone
+// stExMotionStatus.bAborted
+// stExMotionStatus.bLimHomeDone
+// stExMotionStatus.bDriveWatchDogStatus
+// stExMotionStatus.bNewMoveReq
+// stExMotionStatus.bEnable
+// stExMotionStatus.bIdling
+
+// Main Motion Command Structure
+stMotionCmdNow.bHalt := FALSE;
+stMotionCmdNow.bHomeCmd := FALSE;
+stMotionCmdNow.bMoveCmd := FALSE;
+stMotionCmdNow.bReset := FALSE;
+stMotionCmdNow.fAcceleration := stMotionStage.fAcceleration;
+stMotionCmdNow.fDeceleration := stMotionStage.fDeceleration;
+stMotionCmdNow.fHomePosition := stMotionStage.fHomePosition;
+//stMotionCmdNow.fJerk := stMotionStage.fJerk; NOT SUPPORTED BY THIS IMPLEMENTATION
+stMotionCmdNow.fPosition := stMotionStage.fPosition;
+stMotionCmdNow.fVelocity := stMotionStage.fVelocity;
+stMotionCmdNow.nCmdData := stMotionStage.nCmdData;
+stMotionCmdNow.nCommand := stMotionStage.nCommand;
+
+stMotionCmdPrev := stMotionCmdNow;
+
 END_FUNCTION_BLOCK
+
+METHOD AbsoluteMove
+VAR_INPUT
+    Position        : LREAL;
+    Velocity        : LREAL;
+    Acceleration    : LREAL;
+    Deceleration    : LREAL;
+END_VAR
+IF NOT __ISVALIDREF(THIS^.stMotionStageMethods) THEN
+    RETURN;
+END_IF
+
+THIS^.stMotionStageMethods.fPosition := Position;
+THIS^.stMotionStageMethods.fVelocity := Velocity;
+THIS^.stMotionStageMethods.fAcceleration := Acceleration;
+THIS^.stMotionStageMethods.fDeceleration := Deceleration;
+THIS^.stMotionStageMethods.bMoveCmd := TRUE;
+END_METHOD
+
+METHOD AbsoluteMoveWithBacklashCompensation
+VAR_INPUT
+    Position        : LREAL;
+    Velocity        : LREAL;
+    Acceleration    : LREAL;
+    Deceleration    : LREAL;
+END_VAR
+IF NOT __ISVALIDREF(THIS^.stMotionStageMethods) THEN
+    RETURN;
+END_IF
+
+THIS^.stMotionStageMethods.fPosition := Position;
+THIS^.stMotionStageMethods.fVelocity := Velocity;
+THIS^.stMotionStageMethods.fAcceleration := Acceleration;
+THIS^.stMotionStageMethods.fDeceleration := Deceleration;
+THIS^.stMotionStageMethods.bMoveCmd := TRUE;
+END_METHOD
+
+METHOD Halt
+IF NOT __ISVALIDREF(THIS^.stMotionStageMethods) THEN
+    RETURN;
+END_IF
+
+THIS^.stMotionStageMethods.bExecute := FALSE;
+END_METHOD
+
+METHOD Home
+VAR_INPUT
+    HomePosition    : LREAL;
+    HomeMode        : INT;
+END_VAR
+IF NOT __ISVALIDREF(THIS^.stMotionStageMethods) THEN
+    RETURN;
+END_IF
+
+THIS^.stMotionStageMethods.fHomePosition := HomePosition;
+
+CASE HomeMode OF
+    E_EpicsHomeCmd.ABSOLUTE_SET:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.ABSOLUTE_SET;
+    E_EpicsHomeCmd.AUTOZERO:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.AUTOZERO;
+    E_EpicsHomeCmd.CURRENT_POSITION_METHOD:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.CURRENT_POSITION_METHOD;
+    E_EpicsHomeCmd.HIGH_LIMIT:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.HIGH_LIMIT;
+    E_EpicsHomeCmd.HOME_VIA_HIGH:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.HOME_VIA_HIGH;
+    E_EpicsHomeCmd.HOME_VIA_LOW:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.HOME_VIA_LOW;
+    E_EpicsHomeCmd.LOW_LIMIT:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.LOW_LIMIT;
+    E_EpicsHomeCmd.NONE:
+        THIS^.stMotionStageMethods.nHomingMode := E_EpicsHomeCmd.NONE;
+END_CASE
+
+THIS^.stMotionStageMethods.bHomeCmd := TRUE;
+END_METHOD
+
+METHOD Reset
+IF NOT __ISVALIDREF(THIS^.stMotionStageMethods) THEN
+    RETURN;
+END_IF
+
+THIS^.stMotionStageMethods.bReset := TRUE;
+END_METHOD
+
+METHOD StateMove
+VAR_INPUT
+    Execute : BOOL;
+END_VAR
+IF NOT __ISVALIDREF(stMotionStageMethods) THEN
+    RETURN;
+END_IF
+END_METHOD
+
+PROPERTY BrakeMode : LCLS_OOPMotion.E_StageBrakeMode
+
+CASE THIS^.stMotionStageMethods.nBrakeMode OF
+    E_StageBrakeMode.NO_BRAKE:
+        BrakeMode := LCLS_OOPMotion.E_StageBrakeMode.NO_BRAKE;
+    E_StageBrakeMode.IF_MOVING:
+        BrakeMode := LCLS_OOPMotion.E_StageBrakeMode.IF_MOVING;
+    E_StageBrakeMode.IF_ENABLED:
+        BrakeMode := LCLS_OOPMotion.E_StageBrakeMode.IF_ENABLED;
+END_CASE
+END_PROPERTY
+
+PROPERTY BrakeMode : LCLS_OOPMotion.E_StageBrakeMode
+
+CASE BrakeMode OF
+    LCLS_OOPMotion.E_StageBrakeMode.NO_BRAKE:
+        THIS^.stMotionStageMethods.nBrakeMode := E_StageBrakeMode.NO_BRAKE;
+    LCLS_OOPMotion.E_StageBrakeMode.IF_MOVING:
+        THIS^.stMotionStageMethods.nBrakeMode := E_StageBrakeMode.IF_MOVING;
+    LCLS_OOPMotion.E_StageBrakeMode.IF_ENABLED:
+        THIS^.stMotionStageMethods.nBrakeMode := E_StageBrakeMode.IF_ENABLED;
+END_CASE
+END_PROPERTY
+
+PROPERTY EnableMode : LCLS_OOPMotion.E_StageEnableMode
+
+CASE THIS^.stMotionStageMethods.nEnableMode OF
+    E_StageEnableMode.ALWAYS:
+        EnableMode := LCLS_OOPMotion.E_StageEnableMode.ALWAYS;
+    E_StageEnableMode.DURING_MOTION:
+        EnableMode := LCLS_OOPMotion.E_StageEnableMode.DURING_MOTION;
+    E_StageEnableMode.NEVER:
+        EnableMode := LCLS_OOPMotion.E_StageEnableMode.NEVER;
+END_CASE
+END_PROPERTY
+
+PROPERTY EnableMode : LCLS_OOPMotion.E_StageEnableMode
+
+CASE EnableMode OF
+    LCLS_OOPMotion.E_StageEnableMode.ALWAYS:
+        THIS^.stMotionStageMethods.nEnableMode := E_StageEnableMode.ALWAYS;
+    LCLS_OOPMotion.E_StageEnableMode.DURING_MOTION:
+        THIS^.stMotionStageMethods.nEnableMode := E_StageEnableMode.DURING_MOTION;
+    LCLS_OOPMotion.E_StageEnableMode.NEVER:
+        THIS^.stMotionStageMethods.nEnableMode := E_StageEnableMode.NEVER;
+END_CASE
+END_PROPERTY
+
+PROPERTY ExMotionStatus : REFERENCE TO LCLS_OOPMotion.ST_ExtendedMotionStatus
+
+ExMotionStatus REF= THIS^.stExMotionStatus;
+END_PROPERTY
+
+PROPERTY MotionCmd : REFERENCE TO LCLS_OOPMotion.ST_MotionCommand
+
+MotionCmd REF= THIS^.stMotionCmdNow;
+END_PROPERTY
+
+PROPERTY MotionStatus : REFERENCE TO LCLS_OOPMotion.ST_MotionStatus
+
+MotionStatus REF= THIS^.stMotionStatus;
+END_PROPERTY
+
+PROPERTY SaveAxisParams : BOOL
+
+// NOT SUPPORTED BY THIS IMPLEMENTATION
+END_PROPERTY
 </pre></div>
 </div>
 <dl class="simple">
@@ -14123,7 +14390,7 @@ END_METHOD
 <span class="n">VAR_OUTPUT</span>
     <span class="n">EnO</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bError</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">Status</span><span class="p">:</span> <span class="n">ST_AxisStatus</span><span class="p">;</span>
+    <span class="n">Status</span><span class="p">:</span> <span class="n">tc2_mc2</span><span class="o">.</span><span class="n">ST_AxisStatus</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 <span class="n">VAR</span>
     <span class="n">Axis</span><span class="p">:</span> <span class="n">AXIS_REF</span><span class="p">;</span>
@@ -24199,7 +24466,7 @@ END_METHOD
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2025, SLAC National Accelerator Laboratory.</p>
+    <p>&#169; Copyright 2026, SLAC National Accelerator Laboratory.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
