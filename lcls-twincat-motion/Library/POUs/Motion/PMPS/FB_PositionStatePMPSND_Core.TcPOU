@@ -86,7 +86,7 @@ fbMotionReadPMPSDB(
     bError=>,
 );
 
-bEnable := stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams;
+bEnable := (stPMPSEpicsToPlc.bArbiterEnabled AND bEnableBeamParams) OR (NOT stPMPSEpicsToPlc.bMaintMode);
 rtEnable(CLK:=bEnable);
 fbMotionBPTM(
     astMotionStage:=astMotionStageMax,
@@ -142,6 +142,7 @@ fbMiscStatesErrorFFO(
     sDeviceName:=sDeviceName,
     bKnownState:=stPlcToEpics.nGetValue > 0,
     nTransitionID:=fbMotionReadPMPSDB.astDbStateParams[0].nRequestAssertionID,
+    bMaintenanceMode:=stPMPSEpicsToPlc.bMaintMode
 );
 
 fbPerMotorFFO(
@@ -149,11 +150,20 @@ fbPerMotorFFO(
     fbFFHWO:=fbFFHWO,
     nActiveMotorCount:=nActiveMotorCount,
     sDeviceName:=sDeviceName,
+    bMaintenanceMode:=stPMPSEpicsToPlc.bMaintMode,
     bMotorCountError=>,
 );
 
 stPMPSPlcToEpics.stTransitionDb := fbMotionReadPMPSDB.astDbStateParams[0];
 stDbStateParams := fbMotionReadPMPSDB.astDbStateParams[stPlcToEpics.nGetValue];]]></ST>
     </Implementation>
+    <LineIds Name="FB_PositionStatePMPSND_Core">
+      <LineId Id="3" Count="76" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="80" Count="6" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="87" Count="3" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>

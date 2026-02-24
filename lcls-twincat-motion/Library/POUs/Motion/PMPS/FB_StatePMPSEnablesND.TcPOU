@@ -104,7 +104,7 @@ ffMaint(
 );
 
 ffProgrammerError(
-    i_xOK:=NOT bMotorCountError,
+    i_xOK:=(NOT bMotorCountError) OR THIS^.bMaintMode,
     i_xAutoReset:=TRUE,
     i_DevName:=sDeviceName,
     i_Desc:='Programmer error picking motor count',
@@ -113,5 +113,21 @@ ffProgrammerError(
 );]]></ST>
       </Implementation>
     </Action>
+    <LineIds Name="FB_StatePMPSEnablesND">
+      <LineId Id="3" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnablesND.CheckCount">
+      <LineId Id="2" Count="3" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnablesND.DoLimits">
+      <LineId Id="2" Count="14" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StatePMPSEnablesND.RunFastFaults">
+      <LineId Id="2" Count="16" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>
