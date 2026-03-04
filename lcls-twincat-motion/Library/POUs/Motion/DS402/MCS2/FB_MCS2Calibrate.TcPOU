@@ -28,7 +28,12 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[rtCalibrateMove(CLK := bEnable);
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage) THEN
+   RETURN;
+END_IF
+
+rtCalibrateMove(CLK := bEnable);
 
 CASE eStepState OF
 

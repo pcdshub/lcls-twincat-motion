@@ -33,7 +33,18 @@ VAR
     bPendingManualModeSwitch : BOOL := FALSE;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[bOperational := FALSE;
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage)
+    OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
+   RETURN;
+END_IF
+// no ahrdware ( this just sim mode);
+IF NOT stMCS2ChanParameter.bEnableHardwareOps THEN
+    bCSPModeEnabled := TRUE;
+    RETURN;
+END_IF
+
+bOperational := FALSE;
 bFault := FALSE;
 
 IF     stDS402Drive.stDriveStatus.ReadyToSwitchOn

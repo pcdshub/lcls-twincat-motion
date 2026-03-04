@@ -28,6 +28,8 @@ VAR
     fbChanParams 		: FB_WriteChanParameters;
     fbHomingParams 		: FB_WriteHomeParameters;
     fbCalibrationParams : FB_WriteCalibrationParameters;
+    fbReadDriveCodes : FB_ReadDriveCodes;
+
     {attribute 'hide'}
     eModule                 : E_Module;
     {attribute 'hide'}
@@ -398,28 +400,28 @@ WriteParameterNC(   Execute:=bEnPosLag,
                     ParameterNumber:=MC_AxisParameter.AxisEnPositionLagMonitoring,
                     ParameterValue:=fParameterValue);
 fbChanParams (
-    bEnable:=stMotionStage.bAxisParamsInit,
+    bEnable:=stMotionStage.bAxisParamsInit AND stMCS2ChanParameter.bEnableHardwareOps,
     stMCS2ChanParameter := stMCS2ChanParameter,
     stDS402Drive:=stDS402Drive,
     stMotionStage:=stMotionStage,
 );
 
 fbHomingParams (
-    bEnable:=stMotionStage.bAxisParamsInit,
+    bEnable:=stMotionStage.bAxisParamsInit AND stMCS2ChanParameter.bEnableHardwareOps,
     stMCS2ChanParameter := stMCS2ChanParameter,
     stDS402Drive:=stDS402Drive,
     stMotionStage:=stMotionStage,
 );
 
 fbStepModeParams (
-    bEnable:=stMotionStage.bAxisParamsInit,
+    bEnable:=stMotionStage.bAxisParamsInit AND stMCS2ChanParameter.bEnableHardwareOps,
     stMCS2ChanParameter := stMCS2ChanParameter,
     stDS402Drive:=stDS402Drive,
     stMotionStage:=stMotionStage,
 );
 
 fbCalibrationParams (
-    bEnable:=stMotionStage.bAxisParamsInit,
+    bEnable:=stMotionStage.bAxisParamsInit AND stMCS2ChanParameter.bEnableHardwareOps,
     stMCS2ChanParameter := stMCS2ChanParameter,
     stDS402Drive:=stDS402Drive,
     stMotionStage:=stMotionStage,
@@ -477,6 +479,7 @@ ExposedParameters(Enable:=stMCS2ChanParameter.bStageReady, tRefreshDelay:=T#2S);
 
 (*Read MCS2 Channel Parameters*)
 fbReadChanParams(
+    bEnable:= stMCS2ChanParameter.bEnableHardwareOps,
     stMotionStage:=stMotionStage,
     stMCS2ChanParameter:=stMCS2ChanParameter,
     stDS402Drive:=stDS402Drive,
@@ -520,7 +523,12 @@ ELSE
 END_IF;
 
 (*Double function, prioritize NC error otherwise read drive channel error code*)
-ReadDriveCodes();
+fbReadDriveCodes(
+    bEnable:= stMCS2ChanParameter.bEnableHardwareOps,
+    stMotionStage:=stMotionStage,
+    stMCS2ChanParameter:=stMCS2ChanParameter,
+    stDS402Drive:=stDS402Drive
+);
 
 IF  stMotionStage.sCustomErrorMessage <> ''
     AND  stMotionStage.sErrorMessage = '' THEN
@@ -889,40 +897,6 @@ END_IF]]></ST>
     Override := 100.0,
     BufferMode := MC_BufferMode.MC_Aborting
 );]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="ReadDriveCodes" Id="{c8b026c7-a02a-444a-a6c8-2fcd1b30b9c5}">
-      <Declaration><![CDATA[(* Read Drive error codes after a motion or fault condition occured *)
-METHOD ReadDriveCodes
-VAR_INST
-    {attribute 'hide'}
-    fbErrorRead         : FB_EcCoESdoRead;
-    {attribute 'hide'}
-    nPiezoErrorCode     : UDINT;
-    {attribute 'hide'}
-    fbLogError          : FB_LogMotionError;
-    {attribute 'hide'}
-    ftErrorReadDone     : F_TRIG;
-END_VAR]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[fbErrorRead( sNetId:= THIS^.stMotionStage.stAxisParameters.sAmsNetId,
-             nSlaveAddr:=stDS402Drive.nSlaveAddr,
-             nIndex:=stMCS2ChanParameter.nChanErrorCodeIdx,
-             nSubIndex :=0,
-             pDstBuf:= ADR(nPiezoErrorCode),
-             cbBufLen:=SIZEOF(nPiezoErrorCode),
-             bExecute:= stMotionStage.bError );
-
-ftErrorReadDone(CLK:=fbErrorRead.bBusy);
-IF ftErrorReadDone.Q THEN
-    IF  NOT fbErrorRead.bError AND nPiezoErrorCode <> 0 THEN
-        stMotionStage.nErrorId := nPiezoErrorCode;
-    END_IF
-    stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId:=stMotionStage.nErrorId);
-    fbLogError( stMotionStage:=stMotionStage, bEnable:=stMotionStage.bError);
-END_IF
-
-]]></ST>
       </Implementation>
     </Method>
     <Method Name="Reset" Id="{643b4736-0a43-4a18-8f6b-8a2439ed5e6f}">

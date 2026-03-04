@@ -25,7 +25,12 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[rtStepMove(CLK := bEnable);
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage)  THEN
+   RETURN;
+END_IF
+
+rtStepMove(CLK := bEnable);
 
 CASE eStepState OF
     E_MoveState.IDLING:

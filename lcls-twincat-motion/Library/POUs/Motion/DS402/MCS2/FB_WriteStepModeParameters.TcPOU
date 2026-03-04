@@ -62,7 +62,13 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[IF bEnable THEN
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage)
+    OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
+   RETURN;
+END_IF
+
+IF bEnable THEN
     tonStartUp(
         IN := bEnable AND NOT bStepModeParamsSet,
         PT := T#4S
