@@ -977,13 +977,9 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[(* SmartACT: The encoder count from the Piezo drive is not a raw count from the embeded actuator device
-   we get a calibrated nm value. thus the use of abs() since this value is signed.
-   PI: to be discovered *)
-IF  stMotionStage.nRawEncoderDINT <> 0 THEN
-     stMotionStage.nEncoderCount:=DINT_TO_UDINT(ABS( stMotionStage.nRawEncoderDINT));
-ELSE
-     stMotionStage.nEncoderCount:=0;
-END_IF
+   we get a calibrated nm value. thus the use of abs() since this value is signed.*)
+
+stMotionStage.nEncoderCount:=DINT_TO_UDINT(ABS( stMotionStage.nRawEncoderDINT));
 
 // calibrated encoder readback
 IF NOT fbDriveManager.bStepModeEnabled THEN
@@ -991,10 +987,10 @@ IF NOT fbDriveManager.bStepModeEnabled THEN
     fMeasuredPos:= stMotionStage.Axis.NcToPlc.ActPos;
     fMeasuredVelo := stMotionStage.Axis.NcToPlc.ActVelo;
     fMeasuredAcc :=  stMotionStage.Axis.NcToPlc.ActAcc;
-     stMotionStage.fPosDiff:= stMotionStage.Axis.NcToPlc.PosDiff;
+    stMotionStage.fPosDiff:= stMotionStage.Axis.NcToPlc.PosDiff;
 ELSE
     fMeasuredPos:=DINT_TO_REAL( stMotionStage.nRawEncoderDINT) * MAX( stMotionStage.stAxisParameters.fEncScaleFactorInternal, stMCS2ChanParameter.fScalingFactor);
-     stMotionStage.fPosDiff:= stMotionStage.fPosition - fMeasuredPos;
+    stMotionStage.fPosDiff:= stMotionStage.fPosition - fMeasuredPos;
     // NB: Not actual in open loop
     fMeasuredVelo := stMotionStage.fVelocity;
     fMeasuredAcc :=  stMotionStage.fAcceleration;
