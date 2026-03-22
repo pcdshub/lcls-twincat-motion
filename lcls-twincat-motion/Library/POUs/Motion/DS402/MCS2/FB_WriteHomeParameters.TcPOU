@@ -17,7 +17,7 @@ VAR_OUTPUT
    bHomingParamsSet : BOOL;
 END_VAR
 VAR
-    nHomingStep : INT := 0; // 0: idle, 1~5: write steps, 10: done, -1: error
+    nHomingStep : (IDLE := 0, VELO_FAST := 1, VELO_SLOW := 2, ACC := 3, OFFSET := 4, REF_OPT := 5, DONE := 10, ERROR := -1) := IDLE;
     bForceSequentialSDOs : BOOL := FALSE;
     {attribute 'hide'}
     fbSetHomeOffs               : FB_EcCoESdoWrite;
@@ -60,7 +60,7 @@ END_VAR
       <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
     OR NOT __ISVALIDREF(stMotionStage)
     OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
-   RETURN;
+    RETURN;
 END_IF
 
 IF bEnable THEN
@@ -69,169 +69,174 @@ IF bEnable THEN
         PT := T#4S
     );
 
-    IF (NOT tonStartUp.Q) AND (nHomingStep <> 0) AND (NOT bForceSequentialSDOs) THEN
-        nHomingStep := 0;
+    IF NOT tonStartUp.Q AND nHomingStep <> IDLE AND NOT bForceSequentialSDOs THEN
+        nHomingStep := IDLE;
     END_IF
 
-    IF (nHomingStep = -1) AND bErrorAcknowledge THEN
-        nHomingStep := 0;
-        stMotionStage.bError := FALSE;
+    IF nHomingStep = ERROR AND bErrorAcknowledge THEN
+        nHomingStep            := IDLE;
+        stMotionStage.bError   := FALSE;
         stMotionStage.nErrorId := 0;
-        bErrorAcknowledge := FALSE;
+        bErrorAcknowledge      := FALSE;
     END_IF
 
     ScaleHomingParams();
-    ftHomeVeloFastSetDone(CLK:=fbSetHomeVeloFast.bBusy);
-    ftHomeVeloSlowSetDone(CLK:=fbSetHomeVeloSlow.bBusy);
-    ftHomeAccSetDone(CLK:=fbSetHomeAcc.bBusy);
-    ftHomeOffsSetDone(CLK:=fbSetHomeOffs.bBusy);
-    ftReferencingOptSetDone(CLK:=fbReferencingOptWrite.bBusy);
+
+    ftHomeVeloFastSetDone   (CLK := fbSetHomeVeloFast.bBusy);
+    ftHomeVeloSlowSetDone   (CLK := fbSetHomeVeloSlow.bBusy);
+    ftHomeAccSetDone        (CLK := fbSetHomeAcc.bBusy);
+    ftHomeOffsSetDone       (CLK := fbSetHomeOffs.bBusy);
+    ftReferencingOptSetDone (CLK := fbReferencingOptWrite.bBusy);
 
     IF tonStartUp.Q OR bForceSequentialSDOs THEN
-
         CASE nHomingStep OF
+            IDLE:
+                bHomingParamsSet               := FALSE;
+                fbSetHomeVeloFast.bExecute     := FALSE;
+                fbSetHomeVeloSlow.bExecute     := FALSE;
+                fbSetHomeAcc.bExecute          := FALSE;
+                fbSetHomeOffs.bExecute         := FALSE;
+                fbReferencingOptWrite.bExecute := FALSE;
+                nHomingStep                    := VELO_FAST;
 
-        0:
-            bHomingParamsSet := FALSE;
-            fbSetHomeVeloFast.bExecute := FALSE;
-            fbSetHomeVeloSlow.bExecute := FALSE;
-            fbSetHomeAcc.bExecute := FALSE;
-            fbSetHomeOffs.bExecute := FALSE;
-            fbReferencingOptWrite.bExecute := FALSE;
-            nHomingStep := 1;
-
-        1: // Write Home Velo Fast
-            IF (stMCS2ChanParameter.nHomeVeloFast <> nRecentHomeVeloFast) THEN
-                fbSetHomeVeloFast.bExecute := TRUE;
-                IF ftHomeVeloFastSetDone.Q  THEN
-                    IF fbSetHomeVeloFast.bError THEN
-                         stMotionStage.bError := fbSetHomeVeloFast.bError;
-                         stMotionStage.nErrorId := fbSetHomeVeloFast.nErrId;
-                         nHomingStep := -1;
-                    ELSE
-                        nRecentHomeVeloFast      := stMCS2ChanParameter.nHomeVeloFast;
-                        bHomingParamsSet := TRUE;
+            VELO_FAST:
+                IF stMCS2ChanParameter.nHomeVeloFast <> nRecentHomeVeloFast THEN
+                    fbSetHomeVeloFast.bExecute := TRUE;
+                    IF ftHomeVeloFastSetDone.Q THEN
+                        fbSetHomeVeloFast.bExecute := FALSE;
+                        IF fbSetHomeVeloFast.bError THEN
+                            stMotionStage.bError   := fbSetHomeVeloFast.bError;
+                            stMotionStage.nErrorId := fbSetHomeVeloFast.nErrId;
+                            nHomingStep            := ERROR;
+                        ELSE
+                            nRecentHomeVeloFast := stMCS2ChanParameter.nHomeVeloFast;
+                            nHomingStep         := VELO_SLOW;
+                        END_IF
                     END_IF
-                    fbSetHomeVeloFast.bExecute := FALSE;
-                    nHomingStep := 2;
-                END_IF
-            ELSE
-                nHomingStep := 2;
-            END_IF
-
-        2: // Write Home Velo Slow
-            IF (stMCS2ChanParameter.nHomeVeloSlow <> nRecentHomeVeloSlow) THEN
-                fbSetHomeVeloSlow.bExecute := TRUE;
-
-                IF fbSetHomeVeloSlow.bError THEN
-                         stMotionStage.bError := fbSetHomeVeloSlow.bError;
-                         stMotionStage.nErrorId := fbSetHomeVeloSlow.nErrId;
-                         nHomingStep := -1;
                 ELSE
-                        nRecentHomeVeloSlow      := stMCS2ChanParameter.nHomeVeloSlow;
-                        bHomingParamsSet := TRUE;
+                    nHomingStep := VELO_SLOW;
                 END_IF
-                    fbSetHomeVeloSlow.bExecute := FALSE;
-                    nHomingStep := 3;
-            ELSE
-                nHomingStep := 3;
-            END_IF
 
-        3: // Write Home Acc
-            IF (stMCS2ChanParameter.nHomeAcc <> nRecentHomeAcc) THEN
-                fbSetHomeAcc.bExecute := TRUE;
-                IF fbSetHomeAcc.bError THEN
-                         stMotionStage.bError := fbSetHomeAcc.bError;
-                         stMotionStage.nErrorId := fbSetHomeAcc.nErrId;
-                         nHomingStep := -1;
+            VELO_SLOW:
+                IF stMCS2ChanParameter.nHomeVeloSlow <> nRecentHomeVeloSlow THEN
+                    fbSetHomeVeloSlow.bExecute := TRUE;
+                    IF ftHomeVeloSlowSetDone.Q THEN
+                        fbSetHomeVeloSlow.bExecute := FALSE;
+                        IF fbSetHomeVeloSlow.bError THEN
+                            stMotionStage.bError   := fbSetHomeVeloSlow.bError;
+                            stMotionStage.nErrorId := fbSetHomeVeloSlow.nErrId;
+                            nHomingStep            := ERROR;
+                        ELSE
+                            nRecentHomeVeloSlow := stMCS2ChanParameter.nHomeVeloSlow;
+                            nHomingStep         := ACC;
+                        END_IF
+                    END_IF
                 ELSE
-                        nRecentHomeAcc     := stMCS2ChanParameter.nHomeAcc;
-                        bHomingParamsSet := TRUE;
+                    nHomingStep := ACC;
                 END_IF
-                    fbSetHomeAcc.bExecute := FALSE;
-                    nHomingStep := 4;
-            ELSE
-                nHomingStep := 4;
-            END_IF
 
-        4: // Write Home Offset
-            IF (stMCS2ChanParameter.nHomeOffset <> nRecentHomeOffset) THEN
-                fbSetHomeOffs.bExecute := TRUE;
-                IF fbSetHomeOffs.bError THEN
-                         stMotionStage.bError := fbSetHomeOffs.bError;
-                         stMotionStage.nErrorId := fbSetHomeOffs.nErrId;
-                         nHomingStep := -1;
+            ACC:
+                IF stMCS2ChanParameter.nHomeAcc <> nRecentHomeAcc THEN
+                    fbSetHomeAcc.bExecute := TRUE;
+                    IF ftHomeAccSetDone.Q THEN
+                        fbSetHomeAcc.bExecute := FALSE;
+                        IF fbSetHomeAcc.bError THEN
+                            stMotionStage.bError   := fbSetHomeAcc.bError;
+                            stMotionStage.nErrorId := fbSetHomeAcc.nErrId;
+                            nHomingStep            := ERROR;
+                        ELSE
+                            nRecentHomeAcc := stMCS2ChanParameter.nHomeAcc;
+                            nHomingStep    := OFFSET;
+                        END_IF
+                    END_IF
                 ELSE
-                        nRecentHomeOffset  := stMCS2ChanParameter.nHomeOffset;
-                        bHomingParamsSet := TRUE;
+                    nHomingStep := OFFSET;
                 END_IF
-                    fbSetHomeAcc.bExecute := FALSE;
-                    nHomingStep := 5;
-            ELSE
-                nHomingStep := 5;
-            END_IF
 
-        5: // Write Referencing Option
-            IF (stMCS2ChanParameter.nReferencingOpt <> nRecentReferencingOpt) THEN
-                fbReferencingOptWrite.bExecute := TRUE;
-                IF fbSetHomeOffs.bError THEN
-                    stMotionStage.bError := fbReferencingOptWrite.bError;
-                    stMotionStage.nErrorId := fbReferencingOptWrite.nErrId;
-                    nHomingStep := -1;
+            OFFSET:
+                IF stMCS2ChanParameter.nHomeOffset <> nRecentHomeOffset THEN
+                    fbSetHomeOffs.bExecute := TRUE;
+                    IF ftHomeOffsSetDone.Q THEN
+                        fbSetHomeOffs.bExecute := FALSE;
+                        IF fbSetHomeOffs.bError THEN
+                            stMotionStage.bError   := fbSetHomeOffs.bError;
+                            stMotionStage.nErrorId := fbSetHomeOffs.nErrId;
+                            nHomingStep            := ERROR;
+                        ELSE
+                            nRecentHomeOffset := stMCS2ChanParameter.nHomeOffset;
+                            nHomingStep       := REF_OPT;
+                        END_IF
+                    END_IF
                 ELSE
-                    nRecentReferencingOpt := stMCS2ChanParameter.nReferencingOpt;
-                    bHomingParamsSet := TRUE;
+                    nHomingStep := REF_OPT;
                 END_IF
-                    fbSetHomeAcc.bExecute := FALSE;
-                    nHomingStep := 10;
-            ELSE
-                nHomingStep := 10;
-            END_IF
 
-        10: // All done
-            bHomingParamsSet := TRUE;
-        -1: // Error state
-            bHomingParamsSet := FALSE;
-        ELSE
-            nHomingStep := 0;
+            REF_OPT:
+                IF stMCS2ChanParameter.nReferencingOpt <> nRecentReferencingOpt THEN
+                    fbReferencingOptWrite.bExecute := TRUE;
+                    IF ftReferencingOptSetDone.Q THEN
+                        fbReferencingOptWrite.bExecute := FALSE;
+                        IF fbReferencingOptWrite.bError THEN
+                            stMotionStage.bError   := fbReferencingOptWrite.bError;
+                            stMotionStage.nErrorId := fbReferencingOptWrite.nErrId;
+                            nHomingStep            := ERROR;
+                        ELSE
+                            nRecentReferencingOpt := stMCS2ChanParameter.nReferencingOpt;
+                            nHomingStep           := DONE;
+                        END_IF
+                    END_IF
+                ELSE
+                    nHomingStep := DONE;
+                END_IF
+
+            DONE:
+                bHomingParamsSet := TRUE;
+
+            ERROR:
+                bHomingParamsSet := FALSE;
+
+            ELSE
+                nHomingStep := IDLE;
         END_CASE
+
     ELSE
-        fbSetHomeVeloFast.bExecute := (stMCS2ChanParameter.nHomeVeloFast <> nRecentHomeVeloFast);
-        fbSetHomeVeloSlow.bExecute := (stMCS2ChanParameter.nHomeVeloSlow <> nRecentHomeVeloSlow);
-        fbSetHomeAcc.bExecute      := (stMCS2ChanParameter.nHomeAcc      <> nRecentHomeAcc);
-        fbSetHomeOffs.bExecute     := (stMCS2ChanParameter.nHomeOffset   <> nRecentHomeOffset);
-        fbReferencingOptWrite.bExecute := (stMCS2ChanParameter.nReferencingOpt <> nRecentReferencingOpt);
+        fbSetHomeVeloFast.bExecute     := stMCS2ChanParameter.nHomeVeloFast   <> nRecentHomeVeloFast;
+        fbSetHomeVeloSlow.bExecute     := stMCS2ChanParameter.nHomeVeloSlow   <> nRecentHomeVeloSlow;
+        fbSetHomeAcc.bExecute          := stMCS2ChanParameter.nHomeAcc        <> nRecentHomeAcc;
+        fbSetHomeOffs.bExecute         := stMCS2ChanParameter.nHomeOffset     <> nRecentHomeOffset;
+        fbReferencingOptWrite.bExecute := stMCS2ChanParameter.nReferencingOpt <> nRecentReferencingOpt;
 
         IF ftHomeVeloFastSetDone.Q OR ftHomeVeloSlowSetDone.Q OR ftHomeAccSetDone.Q
-           OR ftHomeOffsSetDone.Q OR ftReferencingOptSetDone.Q THEN
+            OR ftHomeOffsSetDone.Q OR ftReferencingOptSetDone.Q
+        THEN
             IF fbSetHomeVeloFast.bError THEN
-                stMotionStage.bError := fbSetHomeVeloFast.bError;
+                stMotionStage.bError   := fbSetHomeVeloFast.bError;
                 stMotionStage.nErrorId := fbSetHomeVeloFast.nErrId;
             ELSIF fbSetHomeVeloSlow.bError THEN
-                stMotionStage.bError := fbSetHomeVeloSlow.bError;
+                stMotionStage.bError   := fbSetHomeVeloSlow.bError;
                 stMotionStage.nErrorId := fbSetHomeVeloSlow.nErrId;
             ELSIF fbSetHomeAcc.bError THEN
-                stMotionStage.bError := fbSetHomeAcc.bError;
+                stMotionStage.bError   := fbSetHomeAcc.bError;
                 stMotionStage.nErrorId := fbSetHomeAcc.nErrId;
             ELSIF fbSetHomeOffs.bError THEN
-                stMotionStage.bError := fbSetHomeOffs.bError;
+                stMotionStage.bError   := fbSetHomeOffs.bError;
                 stMotionStage.nErrorId := fbSetHomeOffs.nErrId;
             ELSIF fbReferencingOptWrite.bError THEN
-                stMotionStage.bError := fbReferencingOptWrite.bError;
+                stMotionStage.bError   := fbReferencingOptWrite.bError;
                 stMotionStage.nErrorId := fbReferencingOptWrite.nErrId;
             ELSE
-                nRecentHomeVeloFast      := stMCS2ChanParameter.nHomeVeloFast;
-                nRecentHomeVeloSlow      := stMCS2ChanParameter.nHomeVeloSlow;
-                nRecentHomeAcc           := stMCS2ChanParameter.nHomeAcc;
-                nRecentHomeOffset        := stMCS2ChanParameter.nHomeOffset;
-                nRecentReferencingOpt    := stMCS2ChanParameter.nReferencingOpt;
-                bHomingParamsSet := TRUE;
+                nRecentHomeVeloFast   := stMCS2ChanParameter.nHomeVeloFast;
+                nRecentHomeVeloSlow   := stMCS2ChanParameter.nHomeVeloSlow;
+                nRecentHomeAcc        := stMCS2ChanParameter.nHomeAcc;
+                nRecentHomeOffset     := stMCS2ChanParameter.nHomeOffset;
+                nRecentReferencingOpt := stMCS2ChanParameter.nReferencingOpt;
+                bHomingParamsSet      := TRUE;
             END_IF
-            fbSetHomeVeloFast.bExecute      := FALSE;
-            fbSetHomeVeloSlow.bExecute      := FALSE;
-            fbSetHomeAcc.bExecute           := FALSE;
-            fbSetHomeOffs.bExecute          := FALSE;
-            fbReferencingOptWrite.bExecute  := FALSE;
+            fbSetHomeVeloFast.bExecute     := FALSE;
+            fbSetHomeVeloSlow.bExecute     := FALSE;
+            fbSetHomeAcc.bExecute          := FALSE;
+            fbSetHomeOffs.bExecute         := FALSE;
+            fbReferencingOptWrite.bExecute := FALSE;
         END_IF
     END_IF
 
@@ -277,10 +282,10 @@ IF bEnable THEN
     );
 
     bHomingParamsSet R= fbSetHomeVeloFast.bBusy
-        OR fbSetHomeVeloSlow.bBusy
-        OR fbSetHomeAcc.bBusy
-        OR fbSetHomeOffs.bBusy
-        OR fbReferencingOptWrite.bBusy;
+                     OR fbSetHomeVeloSlow.bBusy
+                     OR fbSetHomeAcc.bBusy
+                     OR fbSetHomeOffs.bBusy
+                     OR fbReferencingOptWrite.bBusy;
 END_IF]]></ST>
     </Implementation>
     <Method Name="ScaleHomingParams" Id="{2c5b56b0-7eaa-4a13-8084-de781b4be994}">

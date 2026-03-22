@@ -16,7 +16,7 @@ VAR_OUTPUT
    bStepModeParamsSet : BOOL;
 END_VAR
 VAR
-    // ====== Measurements & scaled values ======
+    //  Measurements & scaled values
     {attribute 'hide'}
     nScaledFErrWin          : DINT;
     {attribute 'hide'}
@@ -31,7 +31,7 @@ VAR
     fParameterValue         : LREAL;
     {attribute 'hide'}
     fMeasuredPos             : LREAL;
-    // ====== Internal numeric parameters ======
+    //  Internal numeric parameters
     {attribute 'hide'}
     nScalededStepAmp         : UINT;
     {attribute 'hide'}
@@ -56,7 +56,7 @@ VAR
     {attribute 'hide'}
     ftStepUpdateDone    : F_TRIG;
     tonStartUp : TON;
-    nJogParamStep : INT := 0; // 0=idle/start, 1=steps, 2=amp, 3=freq, 10=done, -1=error
+    nJogParamStep : (IDLE := 0, STEPS := 1, AMP := 2, FREQ := 3, DONE := 10, ERROR := -1) := IDLE;
     bForceSequentialSDOs : BOOL := FALSE;
     bErrorAcknowledge: BOOL;
 END_VAR
@@ -65,7 +65,7 @@ END_VAR
       <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
     OR NOT __ISVALIDREF(stMotionStage)
     OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
-   RETURN;
+    RETURN;
 END_IF
 
 IF bEnable THEN
@@ -73,114 +73,120 @@ IF bEnable THEN
         IN := bEnable AND NOT bStepModeParamsSet,
         PT := T#4S
     );
-    IF (NOT tonStartUp.Q) AND (nJogParamStep <> 0) AND (NOT bForceSequentialSDOs) THEN
-        nJogParamStep := 0;
+
+    // Reset sequence if startup timer hasn't fired and not forcing sequential SDOs
+    IF NOT tonStartUp.Q AND nJogParamStep <> IDLE AND NOT bForceSequentialSDOs THEN
+        nJogParamStep := IDLE;
     END_IF
 
-    IF (nJogParamStep = -1) AND bErrorAcknowledge THEN
-        nJogParamStep := 0;
-        stMotionStage.bError := FALSE;
+    // Acknowledge error and restart sequence
+    IF nJogParamStep = ERROR AND bErrorAcknowledge THEN
+        nJogParamStep          := IDLE;
+        stMotionStage.bError   := FALSE;
         stMotionStage.nErrorId := 0;
     END_IF
+
     ScaleStepModeParams();
 
-    ftStepUpdateDone   (CLK := fbSetSteps.bBusy);
-    ftStepAmpUpdateDone(CLK := fbSetStepAmp.bBusy);
+    ftStepUpdateDone    (CLK := fbSetSteps.bBusy);
+    ftStepAmpUpdateDone (CLK := fbSetStepAmp.bBusy);
     ftStepFreqUpdateDone(CLK := fbSetStepFreq.bBusy);
 
     IF tonStartUp.Q OR bForceSequentialSDOs THEN
         CASE nJogParamStep OF
-        0:
-            bStepModeParamsSet := FALSE;
-            fbSetSteps.bExecute     := FALSE;
-            fbSetStepAmp.bExecute   := FALSE;
-            fbSetStepFreq.bExecute  := FALSE;
-            nJogParamStep := 1;
+            IDLE:
+                bStepModeParamsSet      := FALSE;
+                fbSetSteps.bExecute     := FALSE;
+                fbSetStepAmp.bExecute   := FALSE;
+                fbSetStepFreq.bExecute  := FALSE;
+                nJogParamStep           := STEPS;
 
-        1: // Set Steps
-            IF (nScalededSteps <> nRecentSteps) THEN
-                fbSetSteps.bExecute := TRUE;
-                IF ftStepUpdateDone.Q THEN
-                    IF fbSetSteps.bError THEN
-                        stMotionStage.bError := fbSetSteps.bError;
-                        stMotionStage.nErrorId := fbSetSteps.nErrId;
-                        nJogParamStep := -1;
-                    ELSE
-                        nRecentSteps := nScalededSteps;
-                        fbSetSteps.bExecute := FALSE;
-                        nJogParamStep := 2;
+            STEPS:
+                IF nScalededSteps <> nRecentSteps THEN
+                    fbSetSteps.bExecute := TRUE;
+                    IF ftStepUpdateDone.Q THEN
+                        IF fbSetSteps.bError THEN
+                            stMotionStage.bError   := fbSetSteps.bError;
+                            stMotionStage.nErrorId := fbSetSteps.nErrId;
+                            nJogParamStep          := ERROR;
+                        ELSE
+                            nRecentSteps        := nScalededSteps;
+                            fbSetSteps.bExecute := FALSE;
+                            nJogParamStep       := AMP;
+                        END_IF
                     END_IF
+                ELSE
+                    nJogParamStep := AMP;
                 END_IF
-            ELSE
-                nJogParamStep := 2;
-            END_IF
 
-        2: // Set Step Amp
-            IF (nScalededStepAmp <> nRecentStepAmp) THEN
-                fbSetStepAmp.bExecute := TRUE;
-                IF ftStepAmpUpdateDone.Q THEN
-                    IF fbSetStepAmp.bError THEN
-                        stMotionStage.bError := fbSetStepAmp.bError;
-                        stMotionStage.nErrorId := fbSetStepAmp.nErrId;
-                        nJogParamStep := -1;
-                    ELSE
-                        nRecentStepAmp := nScalededStepAmp;
-                        fbSetStepAmp.bExecute := FALSE;
-                        nJogParamStep := 3;
+            AMP:
+                IF nScalededStepAmp <> nRecentStepAmp THEN
+                    fbSetStepAmp.bExecute := TRUE;
+                    IF ftStepAmpUpdateDone.Q THEN
+                        IF fbSetStepAmp.bError THEN
+                            stMotionStage.bError   := fbSetStepAmp.bError;
+                            stMotionStage.nErrorId := fbSetStepAmp.nErrId;
+                            nJogParamStep          := ERROR;
+                        ELSE
+                            nRecentStepAmp          := nScalededStepAmp;
+                            fbSetStepAmp.bExecute   := FALSE;
+                            nJogParamStep           := FREQ;
+                        END_IF
                     END_IF
+                ELSE
+                    nJogParamStep := FREQ;
                 END_IF
-            ELSE
-                nJogParamStep := 3;
-            END_IF
 
-        3: // Set Step Frequency
-            IF (nScaledStepFreq <> nRecentStepFreq) THEN
-                fbSetStepFreq.bExecute := TRUE;
-                IF ftStepFreqUpdateDone.Q THEN
-                    IF fbSetStepFreq.bError THEN
-                        stMotionStage.bError := fbSetStepFreq.bError;
-                        stMotionStage.nErrorId := fbSetStepFreq.nErrId;
-                        nJogParamStep := -1;
-                    ELSE
-                        nRecentStepFreq := nScaledStepFreq;
-                        fbSetStepFreq.bExecute := FALSE;
-                        nJogParamStep := 10;
+            FREQ:
+                IF nScaledStepFreq <> nRecentStepFreq THEN
+                    fbSetStepFreq.bExecute := TRUE;
+                    IF ftStepFreqUpdateDone.Q THEN
+                        IF fbSetStepFreq.bError THEN
+                            stMotionStage.bError   := fbSetStepFreq.bError;
+                            stMotionStage.nErrorId := fbSetStepFreq.nErrId;
+                            nJogParamStep          := ERROR;
+                        ELSE
+                            nRecentStepFreq         := nScaledStepFreq;
+                            fbSetStepFreq.bExecute  := FALSE;
+                            nJogParamStep           := DONE;
+                        END_IF
                     END_IF
+                ELSE
+                    nJogParamStep := DONE;
                 END_IF
-            ELSE
-                nJogParamStep := 10;
-            END_IF
 
-        10: // Done
-            bStepModeParamsSet := TRUE;
-        -1: // Error state
-            bStepModeParamsSet := FALSE;
-        ELSE
-            nJogParamStep := 0;
+            DONE:
+                bStepModeParamsSet := TRUE;
+
+            ERROR:
+                bStepModeParamsSet := FALSE;
+
+            ELSE
+                nJogParamStep := IDLE;
         END_CASE
 
     ELSE
-        fbSetSteps.bExecute    := (nScalededSteps   <> nRecentSteps);
-        fbSetStepAmp.bExecute  := (nScalededStepAmp <> nRecentStepAmp);
-        fbSetStepFreq.bExecute := (nScaledStepFreq  <> nRecentStepFreq);
+        // Parallel SDO mode — fire all three simultaneously
+        fbSetSteps.bExecute    := nScalededSteps   <> nRecentSteps;
+        fbSetStepAmp.bExecute  := nScalededStepAmp <> nRecentStepAmp;
+        fbSetStepFreq.bExecute := nScaledStepFreq  <> nRecentStepFreq;
 
         IF ftStepUpdateDone.Q OR ftStepAmpUpdateDone.Q OR ftStepFreqUpdateDone.Q THEN
             IF fbSetSteps.bError THEN
-                stMotionStage.bError := fbSetSteps.bError;
+                stMotionStage.bError   := fbSetSteps.bError;
                 stMotionStage.nErrorId := fbSetSteps.nErrId;
             ELSIF fbSetStepAmp.bError THEN
-                stMotionStage.bError := fbSetStepAmp.bError;
+                stMotionStage.bError   := fbSetStepAmp.bError;
                 stMotionStage.nErrorId := fbSetStepAmp.nErrId;
             ELSIF fbSetStepFreq.bError THEN
-                stMotionStage.bError := fbSetStepFreq.bError;
+                stMotionStage.bError   := fbSetStepFreq.bError;
                 stMotionStage.nErrorId := fbSetStepFreq.nErrId;
             ELSE
-                nRecentSteps    := nScalededSteps;
-                nRecentStepAmp  := nScalededStepAmp;
-                nRecentStepFreq := nScaledStepFreq;
+                nRecentSteps       := nScalededSteps;
+                nRecentStepAmp     := nScalededStepAmp;
+                nRecentStepFreq    := nScaledStepFreq;
                 bStepModeParamsSet := TRUE;
             END_IF
-
             fbSetSteps.bExecute    := FALSE;
             fbSetStepAmp.bExecute  := FALSE;
             fbSetStepFreq.bExecute := FALSE;
@@ -213,8 +219,8 @@ IF bEnable THEN
     );
 
     bStepModeParamsSet R= fbSetSteps.bBusy
-        OR fbSetStepAmp.bBusy
-        OR fbSetStepFreq.bBusy;
+                       OR fbSetStepAmp.bBusy
+                       OR fbSetStepFreq.bBusy;
 END_IF]]></ST>
     </Implementation>
     <Method Name="ScaleStepModeParams" Id="{78ce5a79-ef3b-44af-a794-7ac04154475b}">

@@ -119,39 +119,22 @@ IF bStartupActive AND bDS402Manual THEN
     END_CASE
 ELSE
     // regular operation/control logic (only when startup is finished and drive is operational)
+    bCSPModeEnabled := FALSE;
+    bHomeModeEnabled := FALSE;
+    bStepModeEnabled := FALSE;
+    bCalibrationModeEnabled := FALSE;
+
     IF bOperational THEN
         CASE stDS402Drive.nModeOfOperationDisplay OF
             E_DS402OpMode.CSP:
                 bCSPModeEnabled := TRUE;
-                bHomeModeEnabled := FALSE;
-                bStepModeEnabled := FALSE;
-                bCalibrationModeEnabled := FALSE;
             E_DS402OpMode.HOME:
-                bCSPModeEnabled := FALSE;
                 bHomeModeEnabled := TRUE;
-                bStepModeEnabled := FALSE;
-                bCalibrationModeEnabled := FALSE;
             E_DS402OpMode.MCS2_OL_STEP_MODE:
-                bCSPModeEnabled := FALSE;
-                bHomeModeEnabled := FALSE;
                 bStepModeEnabled := TRUE;
-                bCalibrationModeEnabled := FALSE;
             E_DS402OpMode.MCS2_CALIBRATION:
-                bCSPModeEnabled := FALSE;
-                bHomeModeEnabled := FALSE;
-                bStepModeEnabled := FALSE;
                 bCalibrationModeEnabled := TRUE;
-            ELSE
-                bCSPModeEnabled := FALSE;
-                bHomeModeEnabled := FALSE;
-                bStepModeEnabled := FALSE;
-                bCalibrationModeEnabled := FALSE;
         END_CASE
-    ELSE
-        bCSPModeEnabled := FALSE;
-        bHomeModeEnabled := FALSE;
-        bStepModeEnabled := FALSE;
-        bCalibrationModeEnabled := FALSE;
     END_IF
 
     // Mode switch/request evaluator
@@ -172,7 +155,7 @@ ELSE
             eRequestedManualMode := E_DS402OpMode.CSP;
         END_IF
 
-        // -- Check if we are already in the requested mode --
+        // Check if we are already in the requested mode
         IF stDS402Drive.nModeOfOperationDisplay = eRequestedManualMode THEN
             IF bOperational THEN
                 bPendingManualModeSwitch := FALSE;
@@ -196,7 +179,7 @@ ELSE
         END_IF
     END_IF
 
-    // === Pending manual mode switch ===
+    // Pending manual mode switch
     IF bPendingManualModeSwitch THEN
         IF stDS402Drive.nModeOfOperationDisplay = eRequestedManualMode THEN
             IF bOperational THEN

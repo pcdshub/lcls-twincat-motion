@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_WriteCalibrationParameters" Id="{6f8141b3-3a18-4ecd-8d0f-d7b01f6561a0}" SpecialFunc="None">
-    <Declaration><![CDATA[// ===== Calibration Param SDO Hybrid Logic (startup-sequential, then on-demand) =====
+    <Declaration><![CDATA[// Calibration Param SDO Hybrid Logic (startup-sequential, then on-demand)
 // Sequential trigger (bCalibParamStep statemachine) is used at startup or force, otherwise parallel/on-demand.
 
 FUNCTION_BLOCK FB_WriteCalibrationParameters
@@ -43,7 +43,7 @@ VAR
     {attribute 'hide'}
     nRecentChannelType          : UDINT;
     tonStartUp : TON;
-    nCalibParamStep : INT := 0; // 0: idle, 1~5: write steps, 10: done, -1: error
+    nCalibParamStep : (IDLE := 0, CALIBOPTS := 1, DONE := 10, ERROR := -1) := IDLE;
     bForceSequentialSDOs : BOOL := FALSE;
     bErrorAcknowledge: BOOL;
 END_VAR
@@ -53,7 +53,7 @@ END_VAR
       <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
     OR NOT __ISVALIDREF(stMotionStage)
     OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
-   RETURN;
+    RETURN;
 END_IF
 
 IF bEnable THEN
@@ -62,63 +62,67 @@ IF bEnable THEN
         PT := T#4S
     );
 
-    IF (NOT tonStartUp.Q) AND (nCalibParamStep <> 0) AND (NOT bForceSequentialSDOs) THEN
-        nCalibParamStep := 0;
+    // Reset sequence if startup timer hasn't fired and not forcing sequential SDOs
+    IF NOT tonStartUp.Q AND nCalibParamStep <> IDLE AND NOT bForceSequentialSDOs THEN
+        nCalibParamStep := IDLE;
     END_IF
 
-    IF (nCalibParamStep = -1) AND bErrorAcknowledge THEN
-        nCalibParamStep := 0;
-        stMotionStage.bError := FALSE;
+    // Acknowledge error and restart sequence
+    IF nCalibParamStep = ERROR AND bErrorAcknowledge THEN
+        nCalibParamStep        := IDLE;
+        stMotionStage.bError   := FALSE;
         stMotionStage.nErrorId := 0;
     END_IF
 
     ftCalibrationOptSetDone(CLK := fbCalibrationOptWrite.bBusy);
 
     IF tonStartUp.Q OR bForceSequentialSDOs THEN
-
         CASE nCalibParamStep OF
-        0:
-            bCalibrationsParamsSet := FALSE;
-            fbCalibrationOptWrite.bExecute := FALSE;
-            nCalibParamStep := 1;
+            IDLE:
+                bCalibrationsParamsSet         := FALSE;
+                fbCalibrationOptWrite.bExecute := FALSE;
+                nCalibParamStep                := CALIBOPTS;
 
-        1:
-            IF (stMCS2ChanParameter.nCalibrationOpt <> nRecentCalibrationOpt) THEN
-                fbCalibrationOptWrite.bExecute := TRUE;
-                IF ftCalibrationOptSetDone.Q THEN
-                    IF fbCalibrationOptWrite.bError THEN
-                        stMotionStage.bError := fbCalibrationOptWrite.bError;
-                        stMotionStage.nErrorId := fbCalibrationOptWrite.nErrId;
-                        nCalibParamStep := -1;
-                    ELSE
-                        nRecentCalibrationOpt := stMCS2ChanParameter.nCalibrationOpt;
+            CALIBOPTS: // Calibration Option
+                IF stMCS2ChanParameter.nCalibrationOpt <> nRecentCalibrationOpt THEN
+                    fbCalibrationOptWrite.bExecute := TRUE;
+                    IF ftCalibrationOptSetDone.Q THEN
                         fbCalibrationOptWrite.bExecute := FALSE;
-                        nCalibParamStep := 10;
+                        IF fbCalibrationOptWrite.bError THEN
+                            stMotionStage.bError   := fbCalibrationOptWrite.bError;
+                            stMotionStage.nErrorId := fbCalibrationOptWrite.nErrId;
+                            nCalibParamStep        := ERROR;
+                        ELSE
+                            nRecentCalibrationOpt := stMCS2ChanParameter.nCalibrationOpt;
+                            nCalibParamStep       := DONE;
+                        END_IF
                     END_IF
+                ELSE
+                    nCalibParamStep := DONE;
                 END_IF
+
+            DONE:
+                bCalibrationsParamsSet := TRUE;
+
+            ERROR:
+                bCalibrationsParamsSet := FALSE;
+
             ELSE
-                nCalibParamStep := 10;
-            END_IF
-
-        10:
-            bCalibrationsParamsSet := TRUE;
-        -1:
-            bCalibrationsParamsSet := FALSE;
-        ELSE
-            nCalibParamStep := 0;
+                nCalibParamStep := IDLE;
         END_CASE
-    ELSE
-        fbCalibrationOptWrite.bExecute := (stMCS2ChanParameter.nCalibrationOpt <> nRecentCalibrationOpt);
 
+    ELSE
+        // Parallel SDO mode — single write
+        fbCalibrationOptWrite.bExecute := stMCS2ChanParameter.nCalibrationOpt <> nRecentCalibrationOpt;
         IF ftCalibrationOptSetDone.Q THEN
+            fbCalibrationOptWrite.bExecute := FALSE;
             IF fbCalibrationOptWrite.bError THEN
-                stMotionStage.bError := fbCalibrationOptWrite.bError;
+                stMotionStage.bError   := fbCalibrationOptWrite.bError;
                 stMotionStage.nErrorId := fbCalibrationOptWrite.nErrId;
             ELSE
-                nRecentCalibrationOpt := stMCS2ChanParameter.nCalibrationOpt;
+                nRecentCalibrationOpt  := stMCS2ChanParameter.nCalibrationOpt;
                 bCalibrationsParamsSet := TRUE;
             END_IF
-            fbCalibrationOptWrite.bExecute := FALSE;
         END_IF
     END_IF
 

@@ -14,7 +14,7 @@ VAR_OUTPUT
     bHomeMoveBusy        : BOOL;
     bHomeMoveDone        : BOOL;
     bHomeMoveAborted     : BOOL;
-    bReferenced  : BOOL;
+    bHomed  : BOOL;
 END_VAR
 VAR
     eStepState           : E_MoveState := E_MoveState.IDLING;
@@ -52,10 +52,10 @@ CASE eStepState OF
         IF stMotionStage.bError THEN
             eStepState := E_MoveState.ERROR;
         ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN // Already referenced
-            bReferenced := TRUE;
+            bHomed := TRUE;
             eStepState := E_MoveState.DONE;
         ELSE
-            bReferenced := FALSE;
+            bHomed := FALSE;
             stDS402Drive.nDriveControl.4 := TRUE;
             tonSettlingTime.IN:=TRUE;
             eStepState := E_MoveState.STARTED;
@@ -90,7 +90,7 @@ CASE eStepState OF
         bHomeMoveBusy := FALSE;
         bHomeMoveDone := TRUE;
         stMotionStage.fPosition := 0.0;
-        IF NOT bReferenced THEN
+        IF NOT bHomed THEN
             fbSetPos(
                 Axis := stMotionStage.Axis,
                 Execute := TRUE,
