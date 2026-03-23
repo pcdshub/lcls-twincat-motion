@@ -51,7 +51,7 @@ CASE eStepState OF
     E_MoveState.INIT:
         IF stMotionStage.bError THEN
             eStepState := E_MoveState.ERROR;
-        ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN // Already referenced
+        ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN // Already homed
             bHomed := TRUE;
             eStepState := E_MoveState.DONE;
         ELSE
