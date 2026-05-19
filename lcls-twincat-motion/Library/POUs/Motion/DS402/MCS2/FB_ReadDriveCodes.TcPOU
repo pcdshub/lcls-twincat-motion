@@ -29,31 +29,31 @@ END_VAR
     RETURN;
 END_IF
 
-fbErrorRead(
-    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
-    nSlaveAddr := stDS402Drive.nSlaveAddr,
-    nIndex     := stMCS2ChanParameter.nChanErrorCodeIdx,
-    nSubIndex  := 0,
-    pDstBuf    := ADR(nPiezoErrorCode),
-    cbBufLen   := SIZEOF(nPiezoErrorCode),
-    bExecute   := stMotionStage.bError AND bEnable
-);
-
-ftErrorReadDone(CLK := fbErrorRead.bBusy);
-
-// override NC error ID if error is purely from drive
-IF ftErrorReadDone.Q AND NOT fbErrorRead.bError
-    AND nPiezoErrorCode <> 0
-    AND stMotionStage.nErrorId = 0
-THEN
-    stMotionStage.nErrorId := nPiezoErrorCode;
-END_IF
-
-// Cyclic decode and log only when error is active
-IF stMotionStage.bError THEN
-    stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
-    fbLogError(stMotionStage := stMotionStage, bEnable := TRUE);
-END_IF]]></ST>
+// fbErrorRead(
+//     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+//     nSlaveAddr := stDS402Drive.nSlaveAddr,
+//     nIndex     := stMCS2ChanParameter.nChanErrorCodeIdx,
+//     nSubIndex  := 0,
+//     pDstBuf    := ADR(nPiezoErrorCode),
+//     cbBufLen   := SIZEOF(nPiezoErrorCode),
+//     bExecute   := stMotionStage.bError AND bEnable
+// );
+//
+// ftErrorReadDone(CLK := fbErrorRead.bBusy);
+//
+// // override NC error ID if error is purely from drive
+// IF ftErrorReadDone.Q AND NOT fbErrorRead.bError
+//     AND nPiezoErrorCode <> 0
+//     AND stMotionStage.nErrorId = 0
+// THEN
+//     stMotionStage.nErrorId := nPiezoErrorCode;
+// END_IF
+//
+// // Cyclic decode and log only when error is active
+// IF stMotionStage.bError THEN
+//     stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+//     fbLogError(stMotionStage := stMotionStage, bEnable := TRUE);
+// END_IF]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

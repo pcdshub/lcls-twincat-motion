@@ -24,10 +24,7 @@ VAR
     fbMCS2StepMode 		: FB_MCS2StepMode;
     fbMCS2home 			: FB_MCS2Home;
     fbMCS2Calibrate		: FB_MCS2Calibrate;
-    fbStepModeParams 	: FB_WriteStepModeParameters;
-    fbChanParams 		: FB_WriteChanParameters;
-    fbHomingParams 		: FB_WriteHomeParameters;
-    fbCalibrationParams : FB_WriteCalibrationParameters;
+    fbWriteParameters : FB_WriteChanParameters;
     fbReadDriveCodes : FB_ReadDriveCodes;
 
     {attribute 'hide'}
@@ -116,8 +113,9 @@ VAR
     rtStepCmdShortcut		 : R_TRIG;
     {attribute 'hide'}
     rtCalibrateCmdShortcut: R_TRIG;
-
+    tSDOOpsTimer : TON;
     bParamsEnable: BOOL;
+    bDelayReadAtInit : BOOL;
     bBaseExec: BOOL;
 END_VAR
 
@@ -229,8 +227,10 @@ ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.nCmdData := stMotionStage.nHomingMode;
     IF stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0 THEN
         bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
-        bEnPosLag             := TRUE;   // trigger WriteParameterNC to disable pos lag during homing
-        fParameterValue       := 0;      // write 0 = disable position lag monitoring
+        // trigger WriteParameterNC to disable pos lag during homing
+        bEnPosLag             := TRUE;
+        // write 0 = disable position lag monitoring
+        fParameterValue       := 0;
     END_IF
 END_IF
 
@@ -274,7 +274,7 @@ IF rtUserExec.Q THEN
     END_IF
 END_IF
 
-(* Drive manager *)
+// Drive manager
 fbDriveManager(
     stMotionStage        := stMotionStage,
     stDS402Drive         := stDS402Drive,
@@ -282,7 +282,7 @@ fbDriveManager(
     bUserExec            := rtUserExec.Q
 );
 
-(* Enable mode handling *)
+// Enable mode handling
 rtEnableMode(CLK := (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION));
 
 CASE stMotionStage.nEnableMode OF
@@ -302,7 +302,7 @@ CASE stMotionStage.nEnableMode OF
         END_IF
 END_CASE
 
-(* Interlock: Reacts on internal limit conditions *)
+// Interlock: Reacts on internal limit conditions
 Interlock();
 
 bBaseExec := NOT stMotionStage.bError
@@ -361,7 +361,7 @@ CASE stMotionStage.Axis.Status.MotionState OF
         stMotionStage.bEnableDone := TRUE;
 END_CASE
 
-(* Reset handling *)
+// Reset handling
 IF stMotionStage.bReset THEN
     stMotionStage.bExecute          := FALSE;
     stMotionStage.bError            := FALSE;
@@ -377,7 +377,7 @@ IF stMotionStage.bReset THEN
     stMotionStage.bReset := FALSE;
 END_IF
 
-(* Stop/halt detection *)
+// Stop/halt detection
 ftExec(CLK := stMotionStage.bExecute);
 bHalt := ftExec.Q AND stMotionStage.bBusy;
 rtHaltEdge(CLK := bHalt);
@@ -387,42 +387,22 @@ IF rtHaltEdge.Q AND fbDriveManager.bDS402Manual THEN
     stDS402Drive.nDriveControl.8 := TRUE;
 END_IF
 
-
 WriteParameterNC(
     Execute         := bEnPosLag,
     ParameterNumber := MC_AxisParameter.AxisEnPositionLagMonitoring,
     ParameterValue  := fParameterValue
 );
 
-
 bParamsEnable := stMotionStage.bAxisParamsInit AND stMCS2ChanParameter.bEnableHardwareOps;
 
-fbChanParams(
+fbWriteParameters(
     bEnable             := bParamsEnable,
-    stMCS2ChanParameter := stMCS2ChanParameter,
+    bErrorAcknowledge   := stMotionStage.bReset,
     stDS402Drive        := stDS402Drive,
     stMotionStage       := stMotionStage,
-);
-fbHomingParams(
-    bEnable             := bParamsEnable,
-    stMCS2ChanParameter := stMCS2ChanParameter,
-    stDS402Drive        := stDS402Drive,
-    stMotionStage       := stMotionStage,
-);
-fbStepModeParams(
-    bEnable             := bParamsEnable,
-    stMCS2ChanParameter := stMCS2ChanParameter,
-    stDS402Drive        := stDS402Drive,
-    stMotionStage       := stMotionStage,
-);
-fbCalibrationParams(
-    bEnable             := bParamsEnable,
-    stMCS2ChanParameter := stMCS2ChanParameter,
-    stDS402Drive        := stDS402Drive,
-    stMotionStage       := stMotionStage,
+    stMCS2ChanParameter := stMCS2ChanParameter
 );
 
-(* Requested commands processing *)
 CASE nCommandLocal OF
     E_EpicsMotorCmd.MOVE_ABSOLUTE:
         Reset();
@@ -440,25 +420,21 @@ CASE nCommandLocal OF
     E_EpicsMotorCmd.HOME:
         (*DS402 Manual Homing*)
         fbMCS2home(
-            bEnable := bExecHome
-                    AND fbChanParams.bChanParamsSet
-                    AND fbHomingParams.bHomingParamsSet,
+            bEnable := bExecHome AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_EpicsMotorCmd.JOG:
         fbMCS2StepMode(
-            bEnable       := bExecMove AND fbStepModeParams.bStepModeParamsSet,
+            bEnable       := bExecMove AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_EpicsMotorCmd.CALIBRATE:
         fbMCS2Calibrate(
-            bEnable	 := bExecMove
-                     AND fbChanParams.bChanParamsSet
-                     AND fbCalibrationParams.bCalibrationsParamsSet,
+            bEnable	 := bExecMove AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
@@ -468,15 +444,15 @@ stMotionStage.bBusy := fbMcMoveAbsolute.Busy
                        OR stMCS2ChanParameter.stChannelState.bReferencing
                        OR fbMCS2StepMode.bStepMoveBusy
                        OR stMCS2ChanParameter.stChannelState.bCalibrating;
-(* Check done moving via user stop, limit hit, Target Position reached, or from homing.*)
+// Check done moving via user stop, limit hit, Target Position reached, or from homing.
 PostMoveChecks();
-(* update encoder value and calibrated position*)
+// update encoder value and calibrated position
 ScaleEncRawValue();
-(*Drive parameters*)
+// Drive parameters
 ExposedParameters(Enable := stMCS2ChanParameter.bStageReady, tRefreshDelay := T#2S);
-(*Read MCS2 Channel Parameters*)
+// Read MCS2 Channel Parameters
 fbReadChanParams(
-    bEnable             := stMCS2ChanParameter.bEnableHardwareOps,
+    bEnable             := bParamsEnable,
     stMotionStage       := stMotionStage,
     stMCS2ChanParameter := stMCS2ChanParameter,
     stDS402Drive        := stDS402Drive,
@@ -519,7 +495,7 @@ END_IF
 
 (*Double function, prioritize NC error otherwise read drive channel error code*)
 fbReadDriveCodes(
-    bEnable             := stMCS2ChanParameter.bEnableHardwareOps,
+    bEnable             := bParamsEnable,
     stMotionStage       := stMotionStage,
     stMCS2ChanParameter := stMCS2ChanParameter,
     stDS402Drive        := stDS402Drive,
