@@ -1,250 +1,594 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_ReadChanParameters" Id="{08ee74cb-7e7d-468d-8ff5-637be4dc44de}" SpecialFunc="None">
-    <Declaration><![CDATA[FUNCTION_BLOCK FB_ReadChanParameters
+    <Declaration><![CDATA[// Two-queue serialized SDO reader for MCS2 channel parameters.
+// Two independent state machines, both serializing onto the same slave but
+// gated against each other so only one SDO request is outstanding at a time.
+//
+//   FAST queue: ChannelState only. Polled continuously at nReadTime. This is
+//     the latency-sensitive path that interlocks depend on.
+//
+//   SLOW queue: the remaining 11 parameters (positioner type, calibration
+//     options, sensor power mode, referencing options, reference type, safe
+//     direction, motor load, channel type, max closed-loop frequency,
+//     logical scale offset, logical scale inversion). Polled once at boot,
+//     then every nSlowReadTime (default 10 s). One read at a time. A failed
+//     read logs / latches and the queue advances to the next entry.
+//
+// Both queues yield to each other: the fast queue will not start a new
+// ChannelState read while the slow queue has one in flight, and vice versa.
+// Because ChannelState reads are short (sub-100 ms) and the slow refresh
+// cadence is ~10 s, ChannelState almost always wins the bus.
+
+FUNCTION_BLOCK FB_ReadChanParameters
 VAR_INPUT
     bEnable : BOOL;
 END_VAR
 
 VAR_IN_OUT
-    stMotionStage : ST_MotionStage;
+    stMotionStage       : ST_MotionStage;
     stMCS2ChanParameter : ST_MCS2ChanParameter;
-    stDS402Drive  	: ST_DS402Drive;
+    stDS402Drive        : ST_DS402Drive;
 END_VAR
 
 VAR_OUTPUT
+    // TRUE once every entry in the slow queue has completed (succeeded or
+    // failed) at least once. Diagnostic only -- not used to gate anything.
     bAllReadsComplete : BOOL;
+    // Count of slow-queue entries that errored on their most recent attempt.
+    // Cleared at the start of each slow sweep. Diagnostic only.
+    nSlowReadFailures : UINT;
 END_VAR
 
 VAR
-    bChanReadTrigger : BOOL;
-    tonSDOReadTrigger          : TON ;
-    fbMaxCloseLoopFreqRead     : FB_EcCoESdoRead;
-    fbPositionerTypeRead       : FB_EcCoESdoRead;
-    fbCalibrationOptRead       : FB_EcCoESdoRead;
-    fbSensorPowerModeRead      : FB_EcCoESdoRead;
-    fbReferencingOptRead       : FB_EcCoESdoRead;
-    fbReferenceTypeRead        : FB_EcCoESdoRead;
-    fbSafeDirRead              : FB_EcCoESdoRead;
-    fbMotorLoadRead            : FB_EcCoESdoRead;
-    fbChannelTypeRead          : FB_EcCoESdoRead;
-    fbChannelStateRead         : FB_EcCoESdoRead;
-    fbLogicalScaleOffsetRead   : FB_EcCoESdoRead;
-    fbLogicalScaleInvRead      : FB_EcCoESdoRead;
-    ftMaxCloseLoopFreqRead      : F_TRIG;
-    ftPositionerTypeRead        : F_TRIG;
-    ftCalibrationOptRead        : F_TRIG;
-    ftSensorPowerModeRead       : F_TRIG;
-    ftReferencingOptRead        : F_TRIG;
-    ftSafeDirRead               : F_TRIG;
-    ftMotorLoadRead             : F_TRIG;
-    ftChannelTypeRead           : F_TRIG;
-    ftChannelStateRead          : F_TRIG;
-    ftReferenceTypeRead         : F_TRIG;
-    ftLogicalScaleOffsetRead    : F_TRIG;
-    ftLogicalScaleInvRead       : F_TRIG;
-    tonSDORateLimit             : TON;
-    rtExecParamsRead            : R_TRIG;
-    bInternalChanReadTrigger    : BOOL;        // Internal trigger
-    tSDOInterval                : TIME := T#2S;
-    eSDOReadStep : INT := 0; // 0: Idle, 1: Wait-read, 2: Wait-ft, -1: Error
-END_VAR]]></Declaration>
+
+    // SDO reader instances
+
+    // Fast queue
+    fbChannelStateRead       : FB_EcCoESdoRead;
+    // Slow queue
+    fbMaxCloseLoopFreqRead   : FB_EcCoESdoRead;
+    fbPositionerTypeRead     : FB_EcCoESdoRead;
+    fbCalibrationOptRead     : FB_EcCoESdoRead;
+    fbSensorPowerModeRead    : FB_EcCoESdoRead;
+    fbReferencingOptRead     : FB_EcCoESdoRead;
+    fbReferenceTypeRead      : FB_EcCoESdoRead;
+    fbSafeDirRead            : FB_EcCoESdoRead;
+    fbMotorLoadRead          : FB_EcCoESdoRead;
+    fbChannelTypeRead        : FB_EcCoESdoRead;
+    fbLogicalScaleOffsetRead : FB_EcCoESdoRead;
+    fbLogicalScaleInvRead    : FB_EcCoESdoRead;
+
+
+    // Completion edge detectors
+
+    ftChannelStateRead       : F_TRIG;
+    ftMaxCloseLoopFreqRead   : F_TRIG;
+    ftPositionerTypeRead     : F_TRIG;
+    ftCalibrationOptRead     : F_TRIG;
+    ftSensorPowerModeRead    : F_TRIG;
+    ftReferencingOptRead     : F_TRIG;
+    ftReferenceTypeRead      : F_TRIG;
+    ftSafeDirRead            : F_TRIG;
+    ftMotorLoadRead          : F_TRIG;
+    ftChannelTypeRead        : F_TRIG;
+    ftLogicalScaleOffsetRead : F_TRIG;
+    ftLogicalScaleInvRead    : F_TRIG;
+
+
+    // Per-reader execute lines (driven by queue FSMs)
+
+    bExecChannelState       : BOOL;
+    bExecMaxCloseLoopFreq   : BOOL;
+    bExecPositionerType     : BOOL;
+    bExecCalibrationOpt     : BOOL;
+    bExecSensorPowerMode    : BOOL;
+    bExecReferencingOpt     : BOOL;
+    bExecReferenceType      : BOOL;
+    bExecSafeDir            : BOOL;
+    bExecMotorLoad          : BOOL;
+    bExecChannelType        : BOOL;
+    bExecLogicalScaleOffset : BOOL;
+    bExecLogicalScaleInv    : BOOL;
+
+
+    // Fast queue (ChannelState)
+
+    eFast : (
+        FAST_IDLE          := 0,
+        FAST_WAIT_CADENCE  := 1,
+        FAST_READING       := 2
+    ) := FAST_WAIT_CADENCE;
+    tonFastCadence : TON;
+    // Per-read watchdog for ChannelState.
+    tonFastReadTimeout : TON;
+    tFastReadTimeout : TIME := T#2S;
+
+
+    // Slow queue (everything else)
+
+    eSlow : (
+        SLOW_IDLE       := 0,
+        SLOW_WAIT_CADENCE := 1,
+        SLOW_RUNNING    := 2
+    ) := SLOW_IDLE;
+    // Index into the slow-queue table. 1..NUM_SLOW; 0 = sweep complete.
+    nSlowIdx : INT;
+    // TRUE while a slow read is in flight (kick issued, edge not yet seen).
+    bSlowReadActive : BOOL;
+    tonSlowCadence : TON;
+    // Per-read watchdog: if a slow read doesn't complete in tSlowReadTimeout
+    // we count it as a failure, force-clear bExecute, and advance.
+    tonSlowReadTimeout : TON;
+    bFirstSlowSweepDone : BOOL;
+
+    // Configurable cadences / timeouts for the slow queue.
+    tSlowReadInterval : TIME := T#30S;
+    tSlowReadTimeout  : TIME := T#2S;
+END_VAR
+VAR CONSTANT
+    NUM_SLOW : INT := 11;
+END_VAR
+]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
     OR NOT __ISVALIDREF(stMotionStage)
     OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
-   RETURN;
+    RETURN;
 END_IF
 
-IF bEnable THEN
-    CASE eSDOReadStep OF
+IF NOT bEnable THEN
+    // Park everything off.
+    bExecChannelState       := FALSE;
+    bExecMaxCloseLoopFreq   := FALSE;
+    bExecPositionerType     := FALSE;
+    bExecCalibrationOpt     := FALSE;
+    bExecSensorPowerMode    := FALSE;
+    bExecReferencingOpt     := FALSE;
+    bExecReferenceType      := FALSE;
+    bExecSafeDir            := FALSE;
+    bExecMotorLoad          := FALSE;
+    bExecChannelType        := FALSE;
+    bExecLogicalScaleOffset := FALSE;
+    bExecLogicalScaleInv    := FALSE;
+    tonFastCadence(IN := FALSE);
+    tonSlowCadence(IN := FALSE);
+    CallAllSdoReaders();
+    RETURN;
+END_IF
 
-    0:
-        // Timer triggers if ALL reads are complete and (on init) axisParams are initialized
-        bChanReadTrigger := FALSE;
-        IF tonSDOReadTrigger.Q THEN
-            eSDOReadStep := 1;
+// Tick all the F_TRIGs from the previous cycle's bBusy snapshots.
+ftChannelStateRead       (CLK := fbChannelStateRead.bBusy);
+ftMaxCloseLoopFreqRead   (CLK := fbMaxCloseLoopFreqRead.bBusy);
+ftPositionerTypeRead     (CLK := fbPositionerTypeRead.bBusy);
+ftCalibrationOptRead     (CLK := fbCalibrationOptRead.bBusy);
+ftSensorPowerModeRead    (CLK := fbSensorPowerModeRead.bBusy);
+ftReferencingOptRead     (CLK := fbReferencingOptRead.bBusy);
+ftReferenceTypeRead      (CLK := fbReferenceTypeRead.bBusy);
+ftSafeDirRead            (CLK := fbSafeDirRead.bBusy);
+ftMotorLoadRead          (CLK := fbMotorLoadRead.bBusy);
+ftChannelTypeRead        (CLK := fbChannelTypeRead.bBusy);
+ftLogicalScaleOffsetRead (CLK := fbLogicalScaleOffsetRead.bBusy);
+ftLogicalScaleInvRead    (CLK := fbLogicalScaleInvRead.bBusy);
+
+// Run the two queues. Each yields to the other -- only one outstanding SDO
+// at a time across the whole FB.
+FastQueueStep();
+SlowQueueStep();
+
+// Cyclically call every reader. bExecute lines are owned by the queues.
+CallAllSdoReaders();
+]]></ST>
+    </Implementation>
+    <Method Name="CallAllSdoReaders" Id="{0a000001-0000-0000-0000-000000000009}">
+      <Declaration><![CDATA[// Cyclic call of every SDO reader. Each FB's bExecute is owned by its queue.
+METHOD PRIVATE CallAllSdoReaders
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[// Fast
+fbChannelStateRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanStateIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
+    bExecute   := bExecChannelState
+);
+
+// Slow
+fbMaxCloseLoopFreqRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanMaxCloseLoopFreqIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMaxCloseLoopFreq),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMaxCloseLoopFreq),
+    bExecute   := bExecMaxCloseLoopFreq
+);
+fbPositionerTypeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanPositionerTypeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nPositionerType),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nPositionerType),
+    bExecute   := bExecPositionerType
+);
+fbCalibrationOptRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanCalibrationOptIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nCalibrationOpt),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nCalibrationOpt),
+    bExecute   := bExecCalibrationOpt
+);
+fbSensorPowerModeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanSensorPowerModeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nSensorPowerMode),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nSensorPowerMode),
+    bExecute   := bExecSensorPowerMode
+);
+fbReferencingOptRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanReferencingOptIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nReferencingOpt),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nReferencingOpt),
+    bExecute   := bExecReferencingOpt
+);
+fbReferenceTypeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanReferenceTypeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nReferenceType),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nReferenceType),
+    bExecute   := bExecReferenceType
+);
+fbSafeDirRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanSafeDirIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nSafeDir),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nSafeDir),
+    bExecute   := bExecSafeDir
+);
+fbMotorLoadRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanMotorLoadIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMotorLoad),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMotorLoad),
+    bExecute   := bExecMotorLoad
+);
+fbChannelTypeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChannelTypeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nChannelType),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nChannelType),
+    bExecute   := bExecChannelType
+);
+fbLogicalScaleOffsetRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanLogicalScaleOfsIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nLogicalScaleOffset),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nLogicalScaleOffset),
+    bExecute   := bExecLogicalScaleOffset
+);
+fbLogicalScaleInvRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanLogicalScaleInvIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nLogicalScaleInv),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nLogicalScaleInv),
+    bExecute   := bExecLogicalScaleInv
+);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ClearAllSlowExecutes" Id="{0a000001-0000-0000-0000-000000000005}">
+      <Declaration><![CDATA[METHOD PRIVATE ClearAllSlowExecutes
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[bExecMaxCloseLoopFreq   := FALSE;
+bExecPositionerType     := FALSE;
+bExecCalibrationOpt     := FALSE;
+bExecSensorPowerMode    := FALSE;
+bExecReferencingOpt     := FALSE;
+bExecReferenceType      := FALSE;
+bExecSafeDir            := FALSE;
+bExecMotorLoad          := FALSE;
+bExecChannelType        := FALSE;
+bExecLogicalScaleOffset := FALSE;
+bExecLogicalScaleInv    := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ClearSlowExecute" Id="{0a000001-0000-0000-0000-000000000004}">
+      <Declaration><![CDATA[METHOD PRIVATE ClearSlowExecute
+VAR_INPUT
+    idx : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE idx OF
+    1:  bExecMaxCloseLoopFreq   := FALSE;
+    2:  bExecPositionerType     := FALSE;
+    3:  bExecCalibrationOpt     := FALSE;
+    4:  bExecSensorPowerMode    := FALSE;
+    5:  bExecReferencingOpt     := FALSE;
+    6:  bExecReferenceType      := FALSE;
+    7:  bExecSafeDir            := FALSE;
+    8:  bExecMotorLoad          := FALSE;
+    9:  bExecChannelType        := FALSE;
+    10: bExecLogicalScaleOffset := FALSE;
+    11: bExecLogicalScaleInv    := FALSE;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="DecodeChannelState" Id="{0a000001-0000-0000-0000-000000000008}">
+      <Declaration><![CDATA[// Unpack the 32-bit raw channel state word into individual flag fields.
+METHOD PRIVATE DecodeChannelState
+VAR
+    n : UDINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[n := stMCS2ChanParameter.stChannelState.nChannelStateRaw;
+stMCS2ChanParameter.stChannelState.bActivelyMoving        := (n AND 16#00000001) <> 0;
+stMCS2ChanParameter.stChannelState.bClosedLoopActive      := (n AND 16#00000002) <> 0;
+stMCS2ChanParameter.stChannelState.bCalibrating           := (n AND 16#00000004) <> 0;
+stMCS2ChanParameter.stChannelState.bReferencing           := (n AND 16#00000008) <> 0;
+stMCS2ChanParameter.stChannelState.bMoveDelayed           := (n AND 16#00000010) <> 0;
+stMCS2ChanParameter.stChannelState.bSensorPresent         := (n AND 16#00000020) <> 0;
+stMCS2ChanParameter.stChannelState.bIsCalibrated          := (n AND 16#00000040) <> 0;
+stMCS2ChanParameter.stChannelState.bIsReferenced          := (n AND 16#00000080) <> 0;
+stMCS2ChanParameter.stChannelState.bEndStopReached        := (n AND 16#00000100) <> 0;
+stMCS2ChanParameter.stChannelState.bRangeLimitReached     := (n AND 16#00000200) <> 0;
+stMCS2ChanParameter.stChannelState.bFollowingLimitReached := (n AND 16#00000400) <> 0;
+stMCS2ChanParameter.stChannelState.bMovementFailed        := (n AND 16#00000800) <> 0;
+stMCS2ChanParameter.stChannelState.bIsStreaming           := (n AND 16#00001000) <> 0;
+stMCS2ChanParameter.stChannelState.bPositionerOverload    := (n AND 16#00002000) <> 0;
+stMCS2ChanParameter.stChannelState.bOverTemperature       := (n AND 16#00004000) <> 0;
+stMCS2ChanParameter.stChannelState.bReferenceMark         := (n AND 16#00008000) <> 0;
+stMCS2ChanParameter.stChannelState.bIsPhased              := (n AND 16#00010000) <> 0;
+stMCS2ChanParameter.stChannelState.bPositionerFault       := (n AND 16#00020000) <> 0;
+stMCS2ChanParameter.stChannelState.bAmplifierEnabled      := (n AND 16#00040000) <> 0;
+stMCS2ChanParameter.stChannelState.bInPosition            := (n AND 16#00080000) <> 0;
+stMCS2ChanParameter.stChannelState.bBrakeEnabled          := (n AND 16#00100000) <> 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FastQueueStep" Id="{0a000001-0000-0000-0000-000000000001}">
+      <Declaration><![CDATA[// Fast queue: poll ChannelState at nReadTime cadence. Yields the bus to the
+// slow queue if a slow read is currently in flight, but does not back off
+// any further -- as soon as the slow read completes the fast read can fire.
+METHOD PRIVATE FastQueueStep
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eFast OF
+
+    FAST_IDLE:
+        bExecChannelState := FALSE;
+        eFast             := FAST_WAIT_CADENCE;
+
+    FAST_WAIT_CADENCE:
+        bExecChannelState := FALSE;
+        tonFastReadTimeout(IN := FALSE);
+        // Cadence timer runs while we're waiting for our next turn.
+        tonFastCadence(
+            IN := stMotionStage.bAxisParamsInit,
+            PT := stMCS2ChanParameter.nReadTime
+        );
+        // Only fire when the cadence has elapsed AND the slow queue isn't
+        // currently using the mailbox.
+        IF tonFastCadence.Q AND NOT bSlowReadActive THEN
+            tonFastCadence(IN := FALSE);
+            bExecChannelState := TRUE;
+            eFast             := FAST_READING;
         END_IF
 
-    1: // Start SDO read (one-shot)
-        bChanReadTrigger := TRUE;
-        eSDOReadStep := 2;
-
-    2: // Wait for critical SDO read to complete
-        ftChannelStateRead(CLK := fbChannelStateRead.bBusy);
-
+    FAST_READING:
+        // Hold execute TRUE through the read. F_TRIG on bBusy falling = done.
+        tonFastReadTimeout(IN := TRUE, PT := tFastReadTimeout);
         IF ftChannelStateRead.Q THEN
             IF NOT fbChannelStateRead.bError THEN
-                stMCS2ChanParameter.stChannelState.bActivelyMoving        := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000001) <> 0;
-                stMCS2ChanParameter.stChannelState.bClosedLoopActive      := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000002) <> 0;
-                stMCS2ChanParameter.stChannelState.bCalibrating           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000004) <> 0;
-                stMCS2ChanParameter.stChannelState.bReferencing           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000008) <> 0;
-                stMCS2ChanParameter.stChannelState.bMoveDelayed           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000010) <> 0;
-                stMCS2ChanParameter.stChannelState.bSensorPresent         := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000020) <> 0;
-                stMCS2ChanParameter.stChannelState.bIsCalibrated          := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000040) <> 0;
-                stMCS2ChanParameter.stChannelState.bIsReferenced          := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000080) <> 0;
-                stMCS2ChanParameter.stChannelState.bEndStopReached        := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000100) <> 0;
-                stMCS2ChanParameter.stChannelState.bRangeLimitReached     := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000200) <> 0;
-                stMCS2ChanParameter.stChannelState.bFollowingLimitReached := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000400) <> 0;
-                stMCS2ChanParameter.stChannelState.bMovementFailed        := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00000800) <> 0;
-                stMCS2ChanParameter.stChannelState.bIsStreaming           := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00001000) <> 0;
-                stMCS2ChanParameter.stChannelState.bPositionerOverload    := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00002000) <> 0;
-                stMCS2ChanParameter.stChannelState.bOverTemperature       := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00004000) <> 0;
-                stMCS2ChanParameter.stChannelState.bReferenceMark         := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00008000) <> 0;
-                stMCS2ChanParameter.stChannelState.bIsPhased              := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00010000) <> 0;
-                stMCS2ChanParameter.stChannelState.bPositionerFault       := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00020000) <> 0;
-                stMCS2ChanParameter.stChannelState.bAmplifierEnabled      := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00040000) <> 0;
-                stMCS2ChanParameter.stChannelState.bInPosition            := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00080000) <> 0;
-                stMCS2ChanParameter.stChannelState.bBrakeEnabled          := (stMCS2ChanParameter.stChannelState.nChannelStateRaw AND 16#00100000) <> 0;
+                DecodeChannelState();
             ELSE
+                // Don't stop polling on a single failure. Log once per
+                // failure if motion subsystem isn't already noisy.
                 IF NOT stMotionStage.bBusy THEN
                     stMotionStage.sErrorMessage := 'Failed to read ChannelState';
                 END_IF
             END_IF
-            // RE-trigger the timer (restarts after SDO read is finished and bits decoded)
-            bChanReadTrigger := FALSE;
-            tonSDOReadTrigger(IN := TRUE);
-            eSDOReadStep := 0;
+            bExecChannelState := FALSE;
+            tonFastReadTimeout(IN := FALSE);
+            eFast             := FAST_WAIT_CADENCE;
+        ELSIF tonFastReadTimeout.Q THEN
+            // Hung read -- give up and retry next cadence.
+            IF NOT stMotionStage.bBusy THEN
+                stMotionStage.sErrorMessage := 'ChannelState read timeout';
+            END_IF
+            bExecChannelState := FALSE;
+            tonFastReadTimeout(IN := FALSE);
+            eFast             := FAST_WAIT_CADENCE;
         END_IF
 
-    ELSE
-        eSDOReadStep := 0;
-    END_CASE
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SlowQueueStep" Id="{0a000001-0000-0000-0000-000000000002}">
+      <Declaration><![CDATA[// Slow queue: sweep through 11 entries once at boot, then refresh every
+// tSlowReadInterval. One entry at a time. A failed read latches a counter
+// and advances -- it does not stall the sweep or affect the fast queue.
+METHOD PRIVATE SlowQueueStep
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eSlow OF
 
-    IF eSDOReadStep = 0 THEN
-        tonSDOReadTrigger(
+    SLOW_IDLE:
+        ClearAllSlowExecutes();
+        bSlowReadActive := FALSE;
+        // Begin first sweep as soon as axis params are initialized.
+        IF stMotionStage.bAxisParamsInit THEN
+            nSlowIdx          := 1;
+            nSlowReadFailures := 0;
+            eSlow             := SLOW_RUNNING;
+        END_IF
+
+    SLOW_WAIT_CADENCE:
+        ClearAllSlowExecutes();
+        bSlowReadActive := FALSE;
+        tonSlowCadence(
             IN := stMotionStage.bAxisParamsInit,
-            PT := stMCS2ChanParameter.nReadTime
+            PT := tSlowReadInterval
         );
+        IF tonSlowCadence.Q THEN
+            tonSlowCadence(IN := FALSE);
+            nSlowIdx          := 1;
+            nSlowReadFailures := 0;
+            eSlow             := SLOW_RUNNING;
+        END_IF
+
+    SLOW_RUNNING:
+        // Yield: never start a new slow read while the fast queue is
+        // mid-read. Existing in-flight slow reads continue.
+        IF NOT bSlowReadActive AND (eFast = FAST_READING) THEN
+            // Just hold; don't kick the next read yet.
+            RETURN;
+        END_IF
+
+        IF NOT bSlowReadActive THEN
+            // Start the read at the current index.
+            StartSlowRead(nSlowIdx);
+            bSlowReadActive := TRUE;
+            tonSlowReadTimeout(IN := FALSE);   // reset
+        ELSE
+            // Arm watchdog while we wait.
+            tonSlowReadTimeout(IN := TRUE, PT := tSlowReadTimeout);
+            IF SlowReadEdge(nSlowIdx) THEN
+                // Normal completion path.
+                IF SlowReadError(nSlowIdx) THEN
+                    nSlowReadFailures := nSlowReadFailures + 1;
+                END_IF
+                ClearSlowExecute(nSlowIdx);
+                bSlowReadActive := FALSE;
+                tonSlowReadTimeout(IN := FALSE);
+                nSlowIdx := nSlowIdx + 1;
+            ELSIF tonSlowReadTimeout.Q THEN
+                // Hung read -- force-clear and advance. The reader FB will
+                // see bExecute drop; whether it ever asserts an edge later
+                // is its problem, not ours.
+                nSlowReadFailures := nSlowReadFailures + 1;
+                ClearSlowExecute(nSlowIdx);
+                bSlowReadActive := FALSE;
+                tonSlowReadTimeout(IN := FALSE);
+                nSlowIdx := nSlowIdx + 1;
+            END_IF
+
+            IF nSlowIdx > NUM_SLOW THEN
+                // Sweep done.
+                bFirstSlowSweepDone := TRUE;
+                bAllReadsComplete   := TRUE;
+                nSlowIdx            := 0;
+                eSlow               := SLOW_WAIT_CADENCE;
+            END_IF
+        END_IF
+
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SlowReadEdge" Id="{0a000001-0000-0000-0000-000000000006}">
+      <Declaration><![CDATA[// Return TRUE on the cycle the read at <idx> completes (busy->idle).
+METHOD PRIVATE SlowReadEdge : BOOL
+VAR_INPUT
+    idx : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE idx OF
+    1:  SlowReadEdge := ftMaxCloseLoopFreqRead.Q;
+    2:  SlowReadEdge := ftPositionerTypeRead.Q;
+    3:  SlowReadEdge := ftCalibrationOptRead.Q;
+    4:  SlowReadEdge := ftSensorPowerModeRead.Q;
+    5:  SlowReadEdge := ftReferencingOptRead.Q;
+    6:  SlowReadEdge := ftReferenceTypeRead.Q;
+    7:  SlowReadEdge := ftSafeDirRead.Q;
+    8:  SlowReadEdge := ftMotorLoadRead.Q;
+    9:  SlowReadEdge := ftChannelTypeRead.Q;
+    10: SlowReadEdge := ftLogicalScaleOffsetRead.Q;
+    11: SlowReadEdge := ftLogicalScaleInvRead.Q;
     ELSE
-        tonSDOReadTrigger(
-            IN := FALSE,
-            PT := stMCS2ChanParameter.nReadTime
-        );
-    END_IF
-
-
-    fbMaxCloseLoopFreqRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanMaxCloseLoopFreqIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nMaxCloseLoopFreq),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nMaxCloseLoopFreq),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbPositionerTypeRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanPositionerTypeIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nPositionerType),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nPositionerType),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbCalibrationOptRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanCalibrationOptIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nCalibrationOpt),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nCalibrationOpt),
-        bExecute    := bChanReadTrigger
-    );
-    //
-    fbSensorPowerModeRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanSensorPowerModeIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nSensorPowerMode),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nSensorPowerMode),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbReferencingOptRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanReferencingOptIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nReferencingOpt),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nReferencingOpt),
-        bExecute    := bChanReadTrigger
-    );
-    //
-    fbReferenceTypeRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanReferenceTypeIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nReferenceType),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nReferenceType),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbSafeDirRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanSafeDirIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nSafeDir),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nSafeDir),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbMotorLoadRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanMotorLoadIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nMotorLoad),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nMotorLoad),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbChannelTypeRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChannelTypeIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nChannelType),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nChannelType),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbChannelStateRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanStateIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbLogicalScaleOffsetRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanLogicalScaleOfsIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nLogicalScaleOffset),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nLogicalScaleOffset),
-        bExecute    := bChanReadTrigger
-    );
-
-    fbLogicalScaleInvRead(
-        sNetId      := stMotionStage.stAxisParameters.sAmsNetId,
-        nSlaveAddr  := stDS402Drive.nSlaveAddr,
-        nIndex      := stMCS2ChanParameter.nChanLogicalScaleInvIdx,
-        nSubIndex   := 0,
-        pDstBuf     := ADR(stMCS2ChanParameter.nLogicalScaleInv),
-        cbBufLen    := SIZEOF(stMCS2ChanParameter.nLogicalScaleInv),
-        bExecute    := bChanReadTrigger
-    );
-
-END_IF]]></ST>
-    </Implementation>
+        SlowReadEdge := FALSE;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SlowReadError" Id="{0a000001-0000-0000-0000-000000000007}">
+      <Declaration><![CDATA[// Return the .bError flag for the read at <idx> after completion.
+METHOD PRIVATE SlowReadError : BOOL
+VAR_INPUT
+    idx : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE idx OF
+    1:  SlowReadError := fbMaxCloseLoopFreqRead.bError;
+    2:  SlowReadError := fbPositionerTypeRead.bError;
+    3:  SlowReadError := fbCalibrationOptRead.bError;
+    4:  SlowReadError := fbSensorPowerModeRead.bError;
+    5:  SlowReadError := fbReferencingOptRead.bError;
+    6:  SlowReadError := fbReferenceTypeRead.bError;
+    7:  SlowReadError := fbSafeDirRead.bError;
+    8:  SlowReadError := fbMotorLoadRead.bError;
+    9:  SlowReadError := fbChannelTypeRead.bError;
+    10: SlowReadError := fbLogicalScaleOffsetRead.bError;
+    11: SlowReadError := fbLogicalScaleInvRead.bError;
+    ELSE
+        SlowReadError := FALSE;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StartSlowRead" Id="{0a000001-0000-0000-0000-000000000003}">
+      <Declaration><![CDATA[// Issue bExecute=TRUE for the slow-queue entry at the given index.
+METHOD PRIVATE StartSlowRead
+VAR_INPUT
+    idx : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE idx OF
+    1:  bExecMaxCloseLoopFreq   := TRUE;
+    2:  bExecPositionerType     := TRUE;
+    3:  bExecCalibrationOpt     := TRUE;
+    4:  bExecSensorPowerMode    := TRUE;
+    5:  bExecReferencingOpt     := TRUE;
+    6:  bExecReferenceType      := TRUE;
+    7:  bExecSafeDir            := TRUE;
+    8:  bExecMotorLoad          := TRUE;
+    9:  bExecChannelType        := TRUE;
+    10: bExecLogicalScaleOffset := TRUE;
+    11: bExecLogicalScaleInv    := TRUE;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
   </POU>
 </TcPlcObject>
