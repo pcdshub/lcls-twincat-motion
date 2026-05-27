@@ -3,7 +3,7 @@
   <POU Name="FB_MCS2Calibrate" Id="{4b86a6e1-43f7-489f-9e64-44b7835fe9ac}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2Calibrate
 VAR_INPUT
-    bEnable : BOOL;
+    bExecute : BOOL;
 END_VAR
 VAR_IN_OUT
     stDS402Drive         : ST_DS402Drive;
@@ -33,7 +33,7 @@ END_VAR
    RETURN;
 END_IF
 
-rtCalibrateMove(CLK := bEnable);
+rtCalibrateMove(CLK := bExecute);
 
 CASE eStepState OF
 

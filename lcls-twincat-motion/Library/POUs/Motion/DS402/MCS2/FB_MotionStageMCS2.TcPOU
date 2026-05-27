@@ -13,24 +13,24 @@ FUNCTION_BLOCK FB_MotionStageMCS2
 
 VAR
     {attribute 'no_copy'}
-    stMotionStage             : REFERENCE TO ST_MotionStage;
+    stMotionStage		: REFERENCE TO ST_MotionStage;
     {attribute 'no_copy'}
-    stMCS2ChanParameter       : REFERENCE TO ST_MCS2ChanParameter;
+    stChanParams       : REFERENCE TO ST_MCS2ChanParameter;
     // Hardware I/O
-    stDS402Drive             : ST_DS402Drive;
+    stDS402Drive		: ST_DS402Drive;
 
     fbDriveManager		: FB_MCS2DriveManager;
     fbReadChanParams	: FB_ReadChanParameters;
-    fbMCS2StepMode 		: FB_MCS2StepMode;
-    fbMCS2home 			: FB_MCS2Home;
-    fbMCS2Calibrate		: FB_MCS2Calibrate;
-    fbWriteParameters : FB_WriteChanParameters;
-    fbReadDriveCodes : FB_ReadDriveCodes;
+    fbStepMode 			: FB_MCS2StepMode;
+    fbhome 				: FB_MCS2Home;
+    fbCalibrate			: FB_MCS2Calibrate;
+    fbWriteParameters 	: FB_WriteChanParameters;
+    fbReadDriveCodes 	: FB_ReadDriveCodes;
 
     {attribute 'hide'}
     eModule                 : E_Module;
     {attribute 'hide'}
-    eHomeMode               : E_EpicsHomeCmd := E_EpicsHomeCmd.AUTOZERO;
+    //eHomeMode               : E_EpicsHomeCmd := E_EpicsHomeCmd.AUTOZERO;
     {attribute 'hide'}
     eDoneCause              : E_MoveDoneCause := E_MoveDoneCause.Unknown;
     {attribute 'hide'}
@@ -125,6 +125,8 @@ VAR CONSTANT
     {attribute 'hide'}
     nChanHomeOffsetBase      : WORD := 16#607C;
     {attribute 'hide'}
+    nChanHomeMethodBase      : WORD := 16#6098;
+    {attribute 'hide'}
     nChanHomingSpeedBase     : WORD := 16#6099;
     {attribute 'hide'}
     nChanhomingAccBase       : WORD := 16#609A;
@@ -171,13 +173,13 @@ VAR CONSTANT
 END_VAR
 
 VAR PERSISTENT
-    nCommandLocal            : INT;
+    nCommandLocal            : INT := E_EpicsMotorCmd.MOVE_ABSOLUTE;
     bSaved                   : BOOL;
     fSavedPosition           : LREAL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT __ISVALIDREF(stMotionStage)
-OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
+OR NOT __ISVALIDREF(stChanParams) THEN
     RETURN;
 END_IF
 
@@ -185,9 +187,9 @@ END_IF
 IF bSystemInit THEN
     IF stMotionStage.Axis.NcToPlc.AxisId <> 0 THEN
         bExecParamRead                   := TRUE;
-        stMCS2ChanParameter.bStageReady  := TRUE;
+        stChanParams.bStageReady  := TRUE;
         bSystemInit                      := FALSE;
-        stMCS2ChanParameter.fPosition    := stMotionStage.Axis.NcToPlc.ActPos;
+        stChanParams.fPosition    := stMotionStage.Axis.NcToPlc.ActPos;
     END_IF
 END_IF
 
@@ -197,8 +199,8 @@ END_IF
 *)
 rtMoveCmdShortcut    (CLK := stMotionStage.bMoveCmd);
 rtHomeCmdShortcut    (CLK := stMotionStage.bHomeCmd);
-rtStepCmdShortcut    (CLK := stMCS2ChanParameter.bStepMoveCmd);
-rtCalibrateCmdShortcut(CLK := stMCS2ChanParameter.bCalibrationCmd);
+rtStepCmdShortcut    (CLK := stChanParams.bStepMoveCmd);
+rtCalibrateCmdShortcut(CLK := stChanParams.bCalibrationCmd);
 
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
@@ -209,22 +211,21 @@ IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
 ELSIF rtStepCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
-    nCommandLocal          := E_EpicsMotorCmd.JOG;
     bEnPosLag              := bRecentEnPosLagStatus;
     fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
 
 ELSIF rtCalibrateCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.CALIBRATE;
-    nCommandLocal          := E_EpicsMotorCmd.CALIBRATE;
     bEnPosLag              := bRecentEnPosLagStatus;
     fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
 
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
-    stMotionStage.bExecute := (stMotionStage.nCmdData <> E_EpicsHomeCmd.ABSOLUTE_SET)
-                              AND (stMotionStage.nCmdData <> E_EpicsHomeCmd.NONE);
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
-    stMotionStage.nCmdData := stMotionStage.nHomingMode;
+    stMotionStage.nCmdData := stChanParams.eHomeMode;
+    stMotionStage.bExecute := (stChanParams.eHomeMode = E_MCS2HomeMethod.AutoMethod)
+                              OR (stChanParams.eHomeMode = E_MCS2HomeMethod.CurrentPositionMethod);
+
     IF stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0 THEN
         bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
         // trigger WriteParameterNC to disable pos lag during homing
@@ -243,8 +244,7 @@ bNewMoveReq R= NOT stMotionStage.bExecute OR stMotionStage.bError;
 bPrepareDisable R= bNewMoveReq;
 
 IF rtUserExec.Q THEN
-    nCommandLocal := E_EpicsMotorCmd.MOVE_ABSOLUTE;
-
+    nCommandLocal := stMotionStage.nCommand;
     // Cover direct bExecute path, shortcut path already set bEnPosLag/fParameterValue
     IF NOT rtMoveCmdShortcut.Q
         AND NOT rtStepCmdShortcut.Q
@@ -254,20 +254,9 @@ IF rtUserExec.Q THEN
         fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
     END_IF
 
-    IF stMotionStage.bHomeCmd THEN
-        nCommandLocal := stMotionStage.nCommand;
-        nCmdDataLocal := stMotionStage.nCmdData;
-    ELSIF stMCS2ChanParameter.bStepMoveCmd THEN
-        stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
-        nCommandLocal          := E_EpicsMotorCmd.JOG;
-    ELSIF stMCS2ChanParameter.bCalibrationCmd THEN
-        stMotionStage.nCommand := E_EpicsMotorCmd.CALIBRATE;
-        nCommandLocal          := E_EpicsMotorCmd.CALIBRATE;
-    END_IF
-
     IF NOT stMotionStage.bHomeCmd
-        AND NOT stMCS2ChanParameter.stChannelState.bIsReferenced THEN
-        IF stMotionStage.nHomingMode <> E_EpicsHomeCmd.NONE
+        AND NOT stChanParams.stChannelState.bIsReferenced THEN
+        IF stChanParams.eHomeMode <> E_EpicsHomeCmd.NONE
             AND NOT stMotionStage.bHomed THEN
             stMotionStage.sErrorMessage := 'Axis homing mode set, but homing routine pending';
         END_IF
@@ -278,7 +267,7 @@ END_IF
 fbDriveManager(
     stMotionStage        := stMotionStage,
     stDS402Drive         := stDS402Drive,
-    stMCS2ChanParameter  := stMCS2ChanParameter,
+    stMCS2ChanParameter  := stChanParams,
     bUserExec            := rtUserExec.Q
 );
 
@@ -368,8 +357,8 @@ IF stMotionStage.bReset THEN
     stMotionStage.nErrorId          := 0;
     stMotionStage.sErrorMessage     := '';
     stMotionStage.sCustomErrorMessage := '';
-    fbMCS2StepMode.Reset();
-    fbMCS2home.Reset();
+    fbStepMode.Reset();
+    fbhome.Reset();
     bReset := TRUE;
     IF fbDriveManager.bDS402Manual THEN
         stDS402Drive.nDriveControl.7 := TRUE;
@@ -382,8 +371,8 @@ ftExec(CLK := stMotionStage.bExecute);
 bHalt := ftExec.Q AND stMotionStage.bBusy;
 rtHaltEdge(CLK := bHalt);
 IF rtHaltEdge.Q AND fbDriveManager.bDS402Manual THEN
-    fbMCS2StepMode.Halt();
-    fbMCS2home.Halt();
+    fbStepMode.Halt();
+    fbhome.Halt();
     stDS402Drive.nDriveControl.8 := TRUE;
 END_IF
 
@@ -393,14 +382,14 @@ WriteParameterNC(
     ParameterValue  := fParameterValue
 );
 
-bParamsEnable := stMotionStage.bAxisParamsInit AND stMCS2ChanParameter.bEnableHardwareOps;
+bParamsEnable := stMotionStage.bAxisParamsInit AND stChanParams.bEnableHardwareOps;
 
 fbWriteParameters(
     bEnable             := bParamsEnable,
     bErrorAcknowledge   := stMotionStage.bReset,
     stDS402Drive        := stDS402Drive,
     stMotionStage       := stMotionStage,
-    stMCS2ChanParameter := stMCS2ChanParameter
+    stChanParams := stChanParams
 );
 
 CASE nCommandLocal OF
@@ -419,48 +408,48 @@ CASE nCommandLocal OF
 
     E_EpicsMotorCmd.HOME:
         (*DS402 Manual Homing*)
-        fbMCS2home(
-            bEnable := bExecHome AND fbWriteParameters.bParamsSet,
+        fbhome(
+            bExecute := bExecHome AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_EpicsMotorCmd.JOG:
-        fbMCS2StepMode(
-            bEnable       := bExecMove AND fbWriteParameters.bParamsSet,
+        fbStepMode(
+            bExecute       := bExecMove AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_EpicsMotorCmd.CALIBRATE:
-        fbMCS2Calibrate(
-            bEnable	 := bExecMove AND fbWriteParameters.bParamsSet,
+        fbCalibrate(
+            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 END_CASE
 
 stMotionStage.bBusy := fbMcMoveAbsolute.Busy
-                       OR stMCS2ChanParameter.stChannelState.bReferencing
-                       OR fbMCS2StepMode.bStepMoveBusy
-                       OR stMCS2ChanParameter.stChannelState.bCalibrating;
+                       OR stChanParams.stChannelState.bReferencing
+                       OR fbStepMode.bStepMoveBusy
+                       OR stChanParams.stChannelState.bCalibrating;
 // Check done moving via user stop, limit hit, Target Position reached, or from homing.
 PostMoveChecks();
 // update encoder value and calibrated position
 ScaleEncRawValue();
 // Drive parameters
-ExposedParameters(Enable := stMCS2ChanParameter.bStageReady, tRefreshDelay := T#2S);
+ExposedParameters(Enable := stChanParams.bStageReady, tRefreshDelay := T#2S);
 // Read MCS2 Channel Parameters
 fbReadChanParams(
     bEnable             := bParamsEnable,
     stMotionStage       := stMotionStage,
-    stMCS2ChanParameter := stMCS2ChanParameter,
+    stMCS2ChanParameter := stChanParams,
     stDS402Drive        := stDS402Drive,
 );
 (* Save and restore as long as not an absolute encoder*)
-PersistParameters(Enable := stMCS2ChanParameter.bStageReady);
+PersistParameters(Enable := stChanParams.bStageReady);
 (*Restore encoder value at initialization*)
-RestoreMotionParams(Enable := stMCS2ChanParameter.bStageReady);
+RestoreMotionParams(Enable := stChanParams.bStageReady);
 (*EPICS Motor record Update*)
 UpdateEpicsStatus();
 
@@ -497,7 +486,7 @@ END_IF
 fbReadDriveCodes(
     bEnable             := bParamsEnable,
     stMotionStage       := stMotionStage,
-    stMCS2ChanParameter := stMCS2ChanParameter,
+    stMCS2ChanParameter := stChanParams,
     stDS402Drive        := stDS402Drive,
 );
 
@@ -517,8 +506,8 @@ END_IF
 (* We've got the rising edge clear these flags.*)
 stMotionStage.bMoveCmd             := FALSE;
 stMotionStage.bHomeCmd             := FALSE;
-stMCS2ChanParameter.bStepMoveCmd   := FALSE;
-stMCS2ChanParameter.bCalibrationCmd := FALSE;
+stChanParams.bStepMoveCmd   := FALSE;
+stChanParams.bCalibrationCmd := FALSE;
 ]]></ST>
     </Implementation>
     <Method Name="ExposedParameters" Id="{bfdcb735-2f35-43ca-9b4a-eca418143c19}">
@@ -577,7 +566,7 @@ VAR_INPUT
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[THIS^.stMotionStage REF= stMotionStage;
-THIS^.stMCS2ChanParameter REF= stMCS2ChanParameter;
+THIS^.stChanParams REF= stMCS2ChanParameter;
 THIS^.eModule := eModule;
 
 ]]></ST>
@@ -628,7 +617,7 @@ bNegativeDirection:= stMotionStage.bBusy AND  stMotionStage.fPosDiff < 0;
 ftForwardEnabled(CLK:= stMotionStage.bLimitForwardEnable);
 ftBackwardEnabled(CLK:= stMotionStage.bLimitBackwardEnable);
 
-IF  NOT fbMCS2home.bHomeMoveBusy AND ftForwardEnabled.Q THEN
+IF  NOT fbhome.bHomeMoveBusy AND ftForwardEnabled.Q THEN
     // Not an error, just a warning
      stMotionStage.sCustomErrorMessage:='Cannot move past positive limit.';
     IF NOT fbDriveManager.bStepModeEnabled THEN
@@ -637,7 +626,7 @@ IF  NOT fbMCS2home.bHomeMoveBusy AND ftForwardEnabled.Q THEN
     END_IF
 END_IF
 
-IF NOT fbMCS2home.bHomeMoveBusy AND ftBackwardEnabled.Q THEN
+IF NOT fbhome.bHomeMoveBusy AND ftBackwardEnabled.Q THEN
     // Not an error, just a warning
      stMotionStage.sCustomErrorMessage:='Cannot move past Negative limit.';
     IF NOT fbDriveManager.bStepModeEnabled THEN
@@ -716,27 +705,28 @@ METHOD PostInit
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[(* SDO update of Drive and open Loop parameter Indexes based on module number *)
-stMCS2ChanParameter.nChanErrorCodeIdx        	:= nChanErrorCodeBase         	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanFErrWinIdx          	:= nChanFErrWinBase           	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanSoftLimitIdx        	:= nChanSoftLimitBase     		+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanHomeOffsIdx         	:= nChanHomeOffsetBase        	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanHomeVeloIdx         	:= nChanHomingSpeedBase       	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanhomeAccIdx          	:= nChanhomingAccBase         	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanStepIdx             	:= nChanOlStepBase            	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanStepFreqIdx         	:= nChanOlStepFreqBase        	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanStepAmpIdx          	:= nChanOlStepAmpBase         	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanMaxCloseLoopFreqIdx    := nChanMaxCloseLoopFreqBase  	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanPositionerTypeIdx      := nChanPositionerTypeBase    	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanCalibrationOptIdx      := nCHanCalibrationOptBase    	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanSensorPowerModeIdx     := nChanSensorPowerModeBase   	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanReferencingOptIdx      := nChanReferencingOptBase    	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanReferenceTypeIdx       := nChanReferenceTypeBase     	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanSafeDirIdx             := nChanSafeDirBase           	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanMotorLoadIdx           := nChanMotorLoadBase         	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChannelTypeIdx          	:= nChannelTypeBase       		+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanStateIdx         		:= nChannelStateBase      		+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanLogicalScaleOfsIdx   	:= nChanLogicalScaleOffsetBase	+ ((eModule-1) * nChanOfsBase);
-stMCS2ChanParameter.nChanLogicalScaleInvIdx     := nChanLogicalScaleInvBase   	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanErrorCodeIdx        	:= nChanErrorCodeBase         	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanFErrWinIdx          	:= nChanFErrWinBase           	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanSoftLimitIdx        	:= nChanSoftLimitBase     		+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanHomeOffsIdx         	:= nChanHomeOffsetBase        	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanHomeMethodIdx         := nChanHomeMethodBase       	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanHomeVeloIdx         	:= nChanHomingSpeedBase       	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanhomeAccIdx          	:= nChanhomingAccBase         	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanStepIdx             	:= nChanOlStepBase            	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanStepFreqIdx         	:= nChanOlStepFreqBase        	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanStepAmpIdx          	:= nChanOlStepAmpBase         	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanMaxCloseLoopFreqIdx   := nChanMaxCloseLoopFreqBase  	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanPositionerTypeIdx     := nChanPositionerTypeBase    	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanCalibrationOptIdx     := nCHanCalibrationOptBase    	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanSensorPowerModeIdx    := nChanSensorPowerModeBase   	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanReferencingOptIdx     := nChanReferencingOptBase    	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanReferenceTypeIdx      := nChanReferenceTypeBase     	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanSafeDirIdx            := nChanSafeDirBase           	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanMotorLoadIdx          := nChanMotorLoadBase         	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChannelTypeIdx          	:= nChannelTypeBase       		+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanStateIdx         		:= nChannelStateBase      		+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanLogicalScaleOfsIdx   	:= nChanLogicalScaleOffsetBase	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanLogicalScaleInvIdx    := nChanLogicalScaleInvBase   	+ ((eModule-1) * nChanOfsBase);
 bSystemInit := TRUE;
 ]]></ST>
       </Implementation>
@@ -757,17 +747,17 @@ VAR_INST
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[rtAbortedHome(CLK := fbMCS2home.bHomeMoveAborted);
-rtAbortedStepMove(CLK := fbMCS2StepMode.bStepMoveAborted);
-rtAbortedCalibration(CLK := fbMCS2Calibrate.bCalibrateMoveAborted);
+        <ST><![CDATA[rtAbortedHome(CLK := fbhome.bHomeMoveAborted);
+rtAbortedStepMove(CLK := fbStepMode.bStepMoveAborted);
+rtAbortedCalibration(CLK := fbCalibrate.bCalibrateMoveAborted);
 
 rtResetDone(CLK := fbMcReset.Done);
 rtHaltDone(CLK := fbMcHalt.Done);
 
 rtMoveDone(CLK := fbMcMoveAbsolute.Done);
-rtHomeDone(CLK := fbMCS2home.bHomeMoveDone);
-rtStepMoveDone(CLK := fbMCS2StepMode.bStepMoveDone);
-rtCalibrationDone(CLK := fbMCS2Calibrate.bCalibrateMoveDone);
+rtHomeDone(CLK := fbhome.bHomeMoveDone);
+rtStepMoveDone(CLK := fbStepMode.bStepMoveDone);
+rtCalibrationDone(CLK := fbCalibrate.bCalibrateMoveDone);
 
 IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
    OR rtResetDone.Q OR rtHaltDone.Q
@@ -775,7 +765,7 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
 
     IF NOT stMotionStage.bDone THEN
         stMotionStage.bExecute := FALSE;;
-        stMotionStage.bHomed := fbMCS2home.bHomeMoveDone;
+        stMotionStage.bHomed := fbhome.bHomeMoveDone;
         IF rtMoveDone.Q THEN
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.MoveDone;
@@ -813,11 +803,11 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
             tonHoldTime.IN := TRUE;
         END_IF
         // get stable current position storage
-        stMCS2ChanParameter.fPosition := stMotionStage.fPosition;
+        stChanParams.fPosition := stMotionStage.fPosition;
     END_IF
 END_IF
 
-tonHoldTime(PT := UDINT_TO_TIME(stMCS2ChanParameter.nHoldTime));
+tonHoldTime(PT := UDINT_TO_TIME(stChanParams.nHoldTime));
 IF tonHoldTime.Q THEN
     bPositionHold := FALSE;
     tonHoldTime.IN := FALSE;
@@ -863,8 +853,8 @@ END_IF]]></ST>
         <ST><![CDATA[fbMcPower(
     Axis :=  stMotionStage.Axis,
     Enable :=  stMotionStage.bAllEnable,
-    Enable_Positive :=  stMotionStage.bAllForwardEnable AND stMCS2ChanParameter.bOverrideDirEnable,
-    Enable_Negative :=  stMotionStage.bAllBackwardEnable AND stMCS2ChanParameter.bOverrideDirEnable,
+    Enable_Positive :=  stMotionStage.bAllForwardEnable AND stChanParams.bOverrideDirEnable,
+    Enable_Negative :=  stMotionStage.bAllBackwardEnable AND stChanParams.bOverrideDirEnable,
     Override := 100.0,
     BufferMode := MC_BufferMode.MC_Aborting
 );]]></ST>
@@ -965,7 +955,7 @@ IF NOT fbDriveManager.bStepModeEnabled THEN
     fMeasuredAcc :=  stMotionStage.Axis.NcToPlc.ActAcc;
     stMotionStage.fPosDiff:= stMotionStage.Axis.NcToPlc.PosDiff;
 ELSE
-    fMeasuredPos:=DINT_TO_REAL( stMotionStage.nRawEncoderDINT) * MAX( stMotionStage.stAxisParameters.fEncScaleFactorInternal, stMCS2ChanParameter.fScalingFactor);
+    fMeasuredPos:=DINT_TO_REAL( stMotionStage.nRawEncoderDINT) * MAX( stMotionStage.stAxisParameters.fEncScaleFactorInternal, stChanParams.fScalingFactor);
     stMotionStage.fPosDiff:= stMotionStage.fPosition - fMeasuredPos;
     // NB: Not actual in open loop
     fMeasuredVelo := stMotionStage.fVelocity;
@@ -984,11 +974,11 @@ END_VAR
         <ST><![CDATA[ stMotionStage.bAllForwardEnable:= stMotionStage.bLimitForwardEnable
                                     AND ( stMotionStage.bGantryForwardEnable OR NOT  stMotionStage.bGantryAxis)
                                     AND  stMotionStage.stEPSForwardEnable.bEPS_OK
-                                    AND  stMCS2ChanParameter.bOverrideDirEnable;
+                                    AND  stChanParams.bOverrideDirEnable;
  stMotionStage.bAllBackwardEnable:= stMotionStage.bLimitBackwardEnable
                                     AND ( stMotionStage.bGantryBackwardEnable OR NOT  stMotionStage.bGantryAxis)
                                     AND  stMotionStage.stEPSBackwardEnable.bEPS_OK
-                                    AND  stMCS2ChanParameter.bOverrideDirEnable;
+                                    AND  stChanParams.bOverrideDirEnable;
 
  stMotionStage.bAllEnable:= stMotionStage.bEnable
                             AND  stMotionStage.bHardwareEnable

@@ -129,15 +129,28 @@ STRUCT
         io: io
         field: DESC Logical Scale Offset
     '}
-    bCalibrationCmd : BOOL;   // External request to switch to calibration mode
+    bCalibrationCmd : BOOL;
+
+    {attribute 'pytmc' := '
+        pv: eOpModeReq
+        io: io
+        field: DESC DS402 operation mode request (default closed loop)
+    '}
+    // Desired drive operating mode (source of truth). Default is closed-loop (CSP) absolute motion.
+    eOpModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
 
     {attribute 'pytmc' := '
         pv: chanState
         io: i
         field: DESC Channel configuration parameters.
     '}
-    stChannelState         : ST_ChannelState;
-
+    stChannelState        : ST_ChannelState;
+    {attribute 'pytmc' := '
+        pv: eHomeMode
+        io: i
+        field: DESC Vendor Homing Modes.
+    '}
+    eHomeMode			  : E_MCS2HomeMethod := E_MCS2HomeMethod.AutoMethod;
     {attribute 'hide'}
     nHomeVeloFast         : UDINT;
     {attribute 'hide'}
@@ -152,6 +165,8 @@ STRUCT
     nScaledFErrWin        : DINT;
     {attribute 'hide'}
     nHomeOffset           : DINT;
+    {attribute 'hide'}
+    nHomeMethod           : SINT;
     {attribute 'hide'}
     fScalingFactor		  : LREAL := 0.000001;
     {attribute 'hide'}
@@ -174,6 +189,8 @@ STRUCT
     nChanSoftLimitIdx        : WORD;
     {attribute 'hide'}
     nChanHomeOffsIdx         : WORD;
+    {attribute 'hide'}
+    nChanHomeMethodIdx       : WORD;
     {attribute 'hide'}
     nChanHomeVeloIdx         : WORD;
     {attribute 'hide'}

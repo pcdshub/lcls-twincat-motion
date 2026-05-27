@@ -3,7 +3,7 @@
   <POU Name="FB_MCS2StepMode" Id="{a0cda8fc-6342-4ae1-b3b5-7e5da20f78df}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2StepMode
 VAR_INPUT
-    bEnable : BOOL;
+    bExecute : BOOL;
 END_VAR
 VAR_IN_OUT
     stDS402Drive         : ST_DS402Drive;
@@ -30,7 +30,7 @@ END_VAR
    RETURN;
 END_IF
 
-rtStepMove(CLK := bEnable);
+rtStepMove(CLK := bExecute);
 
 CASE eStepState OF
     E_MoveState.IDLING:

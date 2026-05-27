@@ -3,7 +3,7 @@
   <POU Name="FB_MCS2Home" Id="{ce23061a-c26c-43ea-9803-dbb2bfd48aba}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2Home
 VAR_INPUT
-    bEnable : BOOL;
+    bExecute : BOOL;
 END_VAR
 VAR_IN_OUT
     stDS402Drive         : ST_DS402Drive;
@@ -35,7 +35,7 @@ END_VAR
    RETURN;
 END_IF
 
-rtHomeMove(CLK := bEnable);
+rtHomeMove(CLK := bExecute);
 
 CASE eStepState OF
     E_MoveState.IDLING:

@@ -3,14 +3,16 @@
   <POU Name="FB_MCS2DriveManager" Id="{5c10b351-7387-4496-a10a-4c0c0cc328ab}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2DriveManager
 VAR_INPUT
-    bUserExec : BOOL; // Rising trigger for manual/user request
+    // Rising trigger for manual/user request
+    bUserExec : BOOL;
     bStartupActive : BOOL;
 END_VAR
 
 VAR_IN_OUT
-    stMotionStage : ST_MotionStage; // Replace type with your actual axis structure
-    stMCS2ChanParameter       : ST_MCS2ChanParameter;
-    stDS402Drive  	: ST_DS402Drive;
+    // Replace type with your actual axis structure
+    stMotionStage : ST_MotionStage;
+    stMCS2ChanParameter	: ST_MCS2ChanParameter;
+    stDS402Drive	: ST_DS402Drive;
 END_VAR
 VAR_OUTPUT
     bOperational : BOOL;
@@ -31,6 +33,10 @@ VAR
     ftFaultClear : F_TRIG;
     eRequestedManualMode : E_DS402OpMode := E_DS402OpMode.CSP;
     bPendingManualModeSwitch : BOOL := FALSE;
+    // Previous PV value, used to detect a mode-request change
+    eLastModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
+    // TRUE for the one cycle the eOpModeReq PV changes value
+    bModeReqChanged : BOOL := FALSE;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
@@ -137,24 +143,43 @@ ELSE
         END_CASE
     END_IF
 
-    // Mode switch/request evaluator
-    IF bUserExec AND (
-           stMCS2ChanParameter.bStepMoveCmd
-        OR stMotionStage.bHomeCmd
-        OR stMCS2ChanParameter.bCalibrationCmd
-        OR stMotionStage.bMoveCmd ) THEN
-
-        // Which mode is requested?
+    // The eOpModeReq PV is the single source of truth for the operating mode.
+    // A motion request writes the mode that action needs into the PV; this keeps
+    // the readback consistent with the active mode and lets one switch path handle
+    // both user-driven (on-demand) and motion-driven mode changes. Written only on
+    // the request edge (bUserExec) so it acts as a single-cycle write.
+    IF bUserExec THEN
         IF stMCS2ChanParameter.bStepMoveCmd THEN
-            eRequestedManualMode := E_DS402OpMode.MCS2_OL_STEP_MODE;
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.STEP;
         ELSIF stMotionStage.bHomeCmd THEN
-            eRequestedManualMode := E_DS402OpMode.HOME;
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.HOME;
         ELSIF stMCS2ChanParameter.bCalibrationCmd THEN
-            eRequestedManualMode := E_DS402OpMode.MCS2_CALIBRATION;
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.CALIBRATION;
         ELSIF stMotionStage.bMoveCmd THEN
-            eRequestedManualMode := E_DS402OpMode.CSP;
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
         END_IF
+    END_IF
 
+    // Map the requested mode (PV) onto the DS402 operation mode
+    CASE stMCS2ChanParameter.eOpModeReq OF
+        E_MCS2OpModeReq.STEP:
+            eRequestedManualMode := E_DS402OpMode.MCS2_OL_STEP_MODE;
+        E_MCS2OpModeReq.HOME:
+            eRequestedManualMode := E_DS402OpMode.HOME;
+        E_MCS2OpModeReq.CALIBRATION:
+            eRequestedManualMode := E_DS402OpMode.MCS2_CALIBRATION;
+        ELSE
+            // CLOSED_LOOP (default) and any unexpected value map to CSP closed-loop motion
+            eRequestedManualMode := E_DS402OpMode.CSP;
+    END_CASE
+
+    // Detect a change in the requested mode (PV write, from the user or a motion request)
+    bModeReqChanged := (stMCS2ChanParameter.eOpModeReq <> eLastModeReq);
+    eLastModeReq := stMCS2ChanParameter.eOpModeReq;
+
+    // Switch immediately on a mode-request change, or re-evaluate on any motion request
+    // (covers the "already in mode but not operational" re-boot case).
+    IF bModeReqChanged OR bUserExec THEN
         // Check if we are already in the requested mode
         IF stDS402Drive.nModeOfOperationDisplay = eRequestedManualMode THEN
             IF bOperational THEN
