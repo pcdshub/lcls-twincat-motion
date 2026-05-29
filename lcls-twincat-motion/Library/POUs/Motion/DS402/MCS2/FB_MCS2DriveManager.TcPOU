@@ -1,0 +1,228 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MCS2DriveManager" Id="{5c10b351-7387-4496-a10a-4c0c0cc328ab}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2DriveManager
+VAR_INPUT
+    // Rising trigger for manual/user request
+    bUserExec : BOOL;
+    bStartupActive : BOOL;
+END_VAR
+
+VAR_IN_OUT
+    // Replace type with your actual axis structure
+    stMotionStage : ST_MotionStage;
+    stMCS2ChanParameter	: ST_MCS2ChanParameter;
+    stDS402Drive	: ST_DS402Drive;
+END_VAR
+VAR_OUTPUT
+    bOperational : BOOL;
+    bFault : BOOL;
+    bManualTransition : BOOL;
+    bDS402Manual : BOOL;
+    bCSPModeEnabled : BOOL;
+    bHomeModeEnabled : BOOL;
+    bStepModeEnabled : BOOL;
+    bCalibrationModeEnabled : BOOL;
+END_VAR
+
+VAR
+
+    eStartupState : INT := 0;
+    tonStartupStep : TON;
+    bFaultLast : BOOL := FALSE;
+    ftFaultClear : F_TRIG;
+    eRequestedManualMode : E_DS402OpMode := E_DS402OpMode.CSP;
+    bPendingManualModeSwitch : BOOL := FALSE;
+    // Previous PV value, used to detect a mode-request change
+    eLastModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
+    // TRUE for the one cycle the eOpModeReq PV changes value
+    bModeReqChanged : BOOL := FALSE;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage)
+    OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
+   RETURN;
+END_IF
+// no hardware ( this just sim mode);
+IF NOT stMCS2ChanParameter.bEnableHardwareOps THEN
+    bCSPModeEnabled := TRUE;
+    RETURN;
+END_IF
+
+bOperational := FALSE;
+bFault := FALSE;
+
+IF     stDS402Drive.stDriveStatus.ReadyToSwitchOn
+   AND stDS402Drive.stDriveStatus.SwitchedOn
+   AND stDS402Drive.stDriveStatus.OperationEnabled
+   AND NOT stDS402Drive.stDriveStatus.Fault
+   AND stDS402Drive.stDriveStatus.VoltageEnabled
+   AND stDS402Drive.stDriveStatus.QuickStopActive
+   AND NOT stDS402Drive.stDriveStatus.SwitchOnDisabled
+THEN
+    bOperational := TRUE;
+ELSIF stDS402Drive.stDriveStatus.Fault THEN
+    bFault := TRUE;
+    bStartupActive := FALSE;
+END_IF
+
+ftFaultClear(CLK := NOT bFaultLast AND bFault);
+IF NOT bFault AND bFaultLast THEN
+    bStartupActive := TRUE;
+    eStartupState := 0;
+END_IF
+bFaultLast := bFault;
+
+// Status flag for manual operation mode (not CSP)
+bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_DS402OpMode.CSP);
+
+// DS402 startup sequence at boot or after fault (until operational)
+IF bStartupActive AND bDS402Manual THEN
+    CASE eStartupState OF
+        0: // CLEAR CONTROL WORD
+            stDS402Drive.nDriveControl := 0;
+            tonStartupStep(IN := TRUE);
+            IF tonStartupStep.Q THEN
+                tonStartupStep(IN := FALSE);
+                eStartupState := 1;
+            END_IF
+        1: // RESET FAULT
+            stDS402Drive.nDriveControl := 16#80;
+            tonStartupStep(IN := TRUE);
+            IF tonStartupStep.Q THEN
+                tonStartupStep(IN := FALSE);
+                eStartupState := 2;
+            END_IF
+        2: // SHUTDOWN
+            stDS402Drive.nDriveControl := 6;
+            tonStartupStep(IN := TRUE);
+            IF tonStartupStep.Q THEN
+                tonStartupStep(IN := FALSE);
+                eStartupState := 3;
+            END_IF
+        3: // SWITCH ON
+            stDS402Drive.nDriveControl := 7;
+            tonStartupStep(IN := TRUE);
+            IF tonStartupStep.Q THEN
+                tonStartupStep(IN := FALSE);
+                eStartupState := 4;
+            END_IF
+        4: // ENABLE OPERATION
+            stDS402Drive.nDriveControl := 15;
+            tonStartupStep(IN := TRUE);
+            IF tonStartupStep.Q THEN
+                tonStartupStep(IN := FALSE);
+                eStartupState := 5;
+            END_IF
+        5: // WAIT FOR OPERATIONAL
+            IF bOperational THEN
+                eStartupState := 0;
+                bStartupActive := FALSE;
+            END_IF
+        ELSE
+            eStartupState := 0;
+    END_CASE
+ELSE
+    // regular operation/control logic (only when startup is finished and drive is operational)
+    bCSPModeEnabled := FALSE;
+    bHomeModeEnabled := FALSE;
+    bStepModeEnabled := FALSE;
+    bCalibrationModeEnabled := FALSE;
+
+    IF bOperational THEN
+        CASE stDS402Drive.nModeOfOperationDisplay OF
+            E_DS402OpMode.CSP:
+                bCSPModeEnabled := TRUE;
+            E_DS402OpMode.HOME:
+                bHomeModeEnabled := TRUE;
+            E_DS402OpMode.MCS2_OL_STEP_MODE:
+                bStepModeEnabled := TRUE;
+            E_DS402OpMode.MCS2_CALIBRATION:
+                bCalibrationModeEnabled := TRUE;
+        END_CASE
+    END_IF
+
+    // The eOpModeReq PV is the single source of truth for the operating mode.
+    // A motion request writes the mode that action needs into the PV; this keeps
+    // the readback consistent with the active mode and lets one switch path handle
+    // both user-driven (on-demand) and motion-driven mode changes. Written only on
+    // the request edge (bUserExec) so it acts as a single-cycle write.
+    IF bUserExec THEN
+        IF stMCS2ChanParameter.bStepMoveCmd THEN
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.STEP;
+        ELSIF stMotionStage.bHomeCmd THEN
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.HOME;
+        ELSIF stMCS2ChanParameter.bCalibrationCmd THEN
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.CALIBRATION;
+        ELSIF stMotionStage.bMoveCmd THEN
+            stMCS2ChanParameter.eOpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
+        END_IF
+    END_IF
+
+    // Map the requested mode (PV) onto the DS402 operation mode
+    CASE stMCS2ChanParameter.eOpModeReq OF
+        E_MCS2OpModeReq.STEP:
+            eRequestedManualMode := E_DS402OpMode.MCS2_OL_STEP_MODE;
+        E_MCS2OpModeReq.HOME:
+            eRequestedManualMode := E_DS402OpMode.HOME;
+        E_MCS2OpModeReq.CALIBRATION:
+            eRequestedManualMode := E_DS402OpMode.MCS2_CALIBRATION;
+        ELSE
+            // CLOSED_LOOP (default) and any unexpected value map to CSP closed-loop motion
+            eRequestedManualMode := E_DS402OpMode.CSP;
+    END_CASE
+
+    // Detect a change in the requested mode (PV write, from the user or a motion request)
+    bModeReqChanged := (stMCS2ChanParameter.eOpModeReq <> eLastModeReq);
+    eLastModeReq := stMCS2ChanParameter.eOpModeReq;
+
+    // Switch immediately on a mode-request change, or re-evaluate on any motion request
+    // (covers the "already in mode but not operational" re-boot case).
+    IF bModeReqChanged OR bUserExec THEN
+        // Check if we are already in the requested mode
+        IF stDS402Drive.nModeOfOperationDisplay = eRequestedManualMode THEN
+            IF bOperational THEN
+                bPendingManualModeSwitch := FALSE;
+                bManualTransition := FALSE;
+            ELSE
+                // Already in requested mode but NOT operational: (re-)trigger DS402 startup sequence!
+                bStartupActive := TRUE;
+                eStartupState := 0; // Start DS402 boot up
+                bPendingManualModeSwitch := FALSE;
+                bManualTransition := FALSE;
+            END_IF
+        ELSE
+            IF eRequestedManualMode = E_DS402OpMode.CSP THEN
+                stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
+                bPendingManualModeSwitch := FALSE;
+            ELSE
+                stDS402Drive.nDriveControl.4 := FALSE;
+                stDS402Drive.nModeOfOperation := eRequestedManualMode;
+                bPendingManualModeSwitch := TRUE;
+            END_IF
+        END_IF
+    END_IF
+
+    // Pending manual mode switch
+    IF bPendingManualModeSwitch THEN
+        IF stDS402Drive.nModeOfOperationDisplay = eRequestedManualMode THEN
+            IF bOperational THEN
+                // correct mode AND operational; just set the manual transition flag
+                bManualTransition := TRUE;
+                bPendingManualModeSwitch := FALSE;
+            ELSE
+                // correct mode, BUT NOT operational: initiate DS402 startup boot sequence
+                bStartupActive := TRUE;
+                eStartupState := 0;
+                bPendingManualModeSwitch := FALSE;
+            END_IF
+        END_IF
+    END_IF
+
+END_IF
+
+tonStartupStep( PT := T#80MS);]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

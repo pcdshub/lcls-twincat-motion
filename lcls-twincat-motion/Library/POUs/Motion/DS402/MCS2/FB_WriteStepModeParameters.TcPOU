@@ -1,0 +1,242 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_WriteStepModeParameters" Id="{309453e5-6198-4e60-a7a5-fef2f5a9da17}" SpecialFunc="None">
+    <Declaration><![CDATA[// Sequential SDOs at startup or when forced; parallel writes otherwise (mirrors Homing Params block).
+FUNCTION_BLOCK FB_WriteStepModeParameters
+VAR_INPUT
+    bEnable : BOOL;
+END_VAR
+VAR_IN_OUT
+    stDS402Drive         : ST_DS402Drive;
+    stMotionStage        : ST_MotionStage;
+    stMCS2ChanParameter	: ST_MCS2ChanParameter;
+END_VAR
+
+VAR_OUTPUT
+   bStepModeParamsSet : BOOL;
+END_VAR
+VAR
+    //  Measurements & scaled values
+    {attribute 'hide'}
+    nScaledFErrWin          : DINT;
+    {attribute 'hide'}
+    nScalededSteps          : DINT;
+    {attribute 'hide'}
+    fScalededSteps          : LREAL;
+    {attribute 'hide'}
+    fMeasuredVelo           : LREAL;
+    {attribute 'hide'}
+    fMeasuredAcc            : LREAL;
+    {attribute 'hide'}
+    fParameterValue         : LREAL;
+    {attribute 'hide'}
+    fMeasuredPos             : LREAL;
+    //  Internal numeric parameters
+    {attribute 'hide'}
+    nScalededStepAmp         : UINT;
+    {attribute 'hide'}
+    nScaledStepFreq          : UINT;
+    // Open Loop Operations
+    {attribute 'hide'}
+    fbSetSteps          : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetStepFreq       : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    fbSetStepAmp        : FB_EcCoESdoWrite;
+    {attribute 'hide'}
+    nRecentSteps        : DINT;
+    {attribute 'hide'}
+    nRecentStepAmp      : UINT;
+    {attribute 'hide'}
+    nRecentStepFreq     : UINT;
+    {attribute 'hide'}
+    ftStepAmpUpdateDone : F_TRIG;
+    {attribute 'hide'}
+    ftStepFreqUpdateDone    : F_TRIG;
+    {attribute 'hide'}
+    ftStepUpdateDone    : F_TRIG;
+    tonStartUp : TON;
+    nJogParamStep : (IDLE := 0, STEPS := 1, AMP := 2, FREQ := 3, DONE := 10, ERROR := -1) := IDLE;
+    bForceSequentialSDOs : BOOL := FALSE;
+    bErrorAcknowledge: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage)
+    OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
+    RETURN;
+END_IF
+
+IF bEnable THEN
+    tonStartUp(
+        IN := bEnable AND NOT bStepModeParamsSet,
+        PT := T#5S
+    );
+
+    // Reset sequence if startup timer hasn't fired and not forcing sequential SDOs
+    IF NOT tonStartUp.Q AND nJogParamStep <> IDLE AND NOT bForceSequentialSDOs THEN
+        nJogParamStep := IDLE;
+    END_IF
+
+    // Acknowledge error and restart sequence
+    IF nJogParamStep = ERROR AND bErrorAcknowledge THEN
+        nJogParamStep          := IDLE;
+        stMotionStage.bError   := FALSE;
+        stMotionStage.nErrorId := 0;
+    END_IF
+
+    ScaleStepModeParams();
+
+    ftStepUpdateDone    (CLK := fbSetSteps.bBusy);
+    ftStepAmpUpdateDone (CLK := fbSetStepAmp.bBusy);
+    ftStepFreqUpdateDone(CLK := fbSetStepFreq.bBusy);
+
+    IF tonStartUp.Q OR bForceSequentialSDOs THEN
+        CASE nJogParamStep OF
+            IDLE:
+                bStepModeParamsSet      := FALSE;
+                fbSetSteps.bExecute     := FALSE;
+                fbSetStepAmp.bExecute   := FALSE;
+                fbSetStepFreq.bExecute  := FALSE;
+                nJogParamStep           := STEPS;
+
+            STEPS:
+                IF nScalededSteps <> nRecentSteps THEN
+                    fbSetSteps.bExecute := TRUE;
+                    IF ftStepUpdateDone.Q THEN
+                        IF fbSetSteps.bError THEN
+                            stMotionStage.bError   := fbSetSteps.bError;
+                            stMotionStage.nErrorId := fbSetSteps.nErrId;
+                            nJogParamStep          := ERROR;
+                        ELSE
+                            nRecentSteps        := nScalededSteps;
+                            fbSetSteps.bExecute := FALSE;
+                            nJogParamStep       := AMP;
+                        END_IF
+                    END_IF
+                ELSE
+                    nJogParamStep := AMP;
+                END_IF
+
+            AMP:
+                IF nScalededStepAmp <> nRecentStepAmp THEN
+                    fbSetStepAmp.bExecute := TRUE;
+                    IF ftStepAmpUpdateDone.Q THEN
+                        IF fbSetStepAmp.bError THEN
+                            stMotionStage.bError   := fbSetStepAmp.bError;
+                            stMotionStage.nErrorId := fbSetStepAmp.nErrId;
+                            nJogParamStep          := ERROR;
+                        ELSE
+                            nRecentStepAmp          := nScalededStepAmp;
+                            fbSetStepAmp.bExecute   := FALSE;
+                            nJogParamStep           := FREQ;
+                        END_IF
+                    END_IF
+                ELSE
+                    nJogParamStep := FREQ;
+                END_IF
+
+            FREQ:
+                IF nScaledStepFreq <> nRecentStepFreq THEN
+                    fbSetStepFreq.bExecute := TRUE;
+                    IF ftStepFreqUpdateDone.Q THEN
+                        IF fbSetStepFreq.bError THEN
+                            stMotionStage.bError   := fbSetStepFreq.bError;
+                            stMotionStage.nErrorId := fbSetStepFreq.nErrId;
+                            nJogParamStep          := ERROR;
+                        ELSE
+                            nRecentStepFreq         := nScaledStepFreq;
+                            fbSetStepFreq.bExecute  := FALSE;
+                            nJogParamStep           := DONE;
+                        END_IF
+                    END_IF
+                ELSE
+                    nJogParamStep := DONE;
+                END_IF
+
+            DONE:
+                bStepModeParamsSet := TRUE;
+
+            ERROR:
+                bStepModeParamsSet := FALSE;
+
+            ELSE
+                nJogParamStep := IDLE;
+        END_CASE
+
+    ELSE
+        // Parallel SDO mode — fire all three simultaneously
+        fbSetSteps.bExecute    := nScalededSteps   <> nRecentSteps;
+        fbSetStepAmp.bExecute  := nScalededStepAmp <> nRecentStepAmp;
+        fbSetStepFreq.bExecute := nScaledStepFreq  <> nRecentStepFreq;
+
+        IF ftStepUpdateDone.Q OR ftStepAmpUpdateDone.Q OR ftStepFreqUpdateDone.Q THEN
+            IF fbSetSteps.bError THEN
+                stMotionStage.bError   := fbSetSteps.bError;
+                stMotionStage.nErrorId := fbSetSteps.nErrId;
+            ELSIF fbSetStepAmp.bError THEN
+                stMotionStage.bError   := fbSetStepAmp.bError;
+                stMotionStage.nErrorId := fbSetStepAmp.nErrId;
+            ELSIF fbSetStepFreq.bError THEN
+                stMotionStage.bError   := fbSetStepFreq.bError;
+                stMotionStage.nErrorId := fbSetStepFreq.nErrId;
+            ELSE
+                nRecentSteps       := nScalededSteps;
+                nRecentStepAmp     := nScalededStepAmp;
+                nRecentStepFreq    := nScaledStepFreq;
+                bStepModeParamsSet := TRUE;
+            END_IF
+            fbSetSteps.bExecute    := FALSE;
+            fbSetStepAmp.bExecute  := FALSE;
+            fbSetStepFreq.bExecute := FALSE;
+        END_IF
+    END_IF
+
+    fbSetSteps(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanStepIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(nScalededSteps),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nChanStep)
+    );
+    fbSetStepAmp(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanStepAmpIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(nScalededStepAmp),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nChanStepAmp)
+    );
+    fbSetStepFreq(
+        sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+        nSlaveAddr := stDS402Drive.nSlaveAddr,
+        nIndex     := stMCS2ChanParameter.nChanStepFreqIdx,
+        nSubIndex  := 0,
+        pSrcBuf    := ADR(nScaledStepFreq),
+        cbBufLen   := SIZEOF(stMCS2ChanParameter.nChanStepFreq)
+    );
+
+    bStepModeParamsSet R= fbSetSteps.bBusy
+                       OR fbSetStepAmp.bBusy
+                       OR fbSetStepFreq.bBusy;
+END_IF]]></ST>
+    </Implementation>
+    <Method Name="ScaleStepModeParams" Id="{78ce5a79-ef3b-44af-a794-7ac04154475b}">
+      <Declaration><![CDATA[(*Scaled Open Loop Step mode motion parameters*)
+METHOD ScaleStepModeParams
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//827.31x-837.63
+nScalededSteps:=LIMIT(-1000, stMCS2ChanParameter.nChanStep, 1000);
+nScalededStepAmp:=REAL_TO_UINT(LIMIT(50, stMCS2ChanParameter.nChanStepAmp, 100) * 655.35);
+nScaledStepFreq:=REAL_TO_UINT(LIMIT(500, stMCS2ChanParameter.nChanStepFreq, 1000.0));
+
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

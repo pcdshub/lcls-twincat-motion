@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_ReadDriveCodes" Id="{44ddb32d-aaa2-4fc7-a16a-bf90774280d7}" SpecialFunc="None">
+    <Declaration><![CDATA[(* Read Drive error codes after a motion or fault condition occured *)
+FUNCTION_BLOCK FB_ReadDriveCodes
+VAR_IN_OUT
+    stDS402Drive         : ST_DS402Drive;
+    stMotionStage        : ST_MotionStage;
+    stMCS2ChanParameter	: ST_MCS2ChanParameter;
+END_VAR
+VAR_INPUT
+    bEnable : BOOL;
+END_VAR
+VAR
+    {attribute 'hide'}
+    fbErrorRead         : FB_EcCoESdoRead;
+    {attribute 'hide'}
+    nPiezoErrorCode     : UDINT;
+    {attribute 'hide'}
+    fbLogError          : FB_LogMotionError;
+    {attribute 'hide'}
+    ftErrorReadDone     : F_TRIG;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage)
+    OR NOT __ISVALIDREF(stMCS2ChanParameter) THEN
+    RETURN;
+END_IF
+
+// fbErrorRead(
+//     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+//     nSlaveAddr := stDS402Drive.nSlaveAddr,
+//     nIndex     := stMCS2ChanParameter.nChanErrorCodeIdx,
+//     nSubIndex  := 0,
+//     pDstBuf    := ADR(nPiezoErrorCode),
+//     cbBufLen   := SIZEOF(nPiezoErrorCode),
+//     bExecute   := stMotionStage.bError AND bEnable
+// );
+//
+// ftErrorReadDone(CLK := fbErrorRead.bBusy);
+//
+// // override NC error ID if error is purely from drive
+// IF ftErrorReadDone.Q AND NOT fbErrorRead.bError
+//     AND nPiezoErrorCode <> 0
+//     AND stMotionStage.nErrorId = 0
+// THEN
+//     stMotionStage.nErrorId := nPiezoErrorCode;
+// END_IF
+//
+// // Cyclic decode and log only when error is active
+// IF stMotionStage.bError THEN
+//     stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+//     fbLogError(stMotionStage := stMotionStage, bEnable := TRUE);
+// END_IF]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

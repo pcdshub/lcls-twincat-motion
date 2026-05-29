@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MCS2ReadParams" Id="{26b1eb2f-7113-4b0e-bfa2-acd56d914490}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2ReadParams
+VAR_IN_OUT
+    stMCS2Chan1Stage : ST_MotionStage;
+    stMCS2Chan2Stage : ST_MotionStage;
+    stMCS2Chan3Stage : ST_MotionStage;
+END_VAR
+VAR
+    fbReadChan1Params : FB_ReadChanParameters;
+    fbReadChan2Params : FB_ReadChanParameters;
+    fbReadChan3Params : FB_ReadChanParameters;
+    rtExecParamsRead: R_TRIG;
+    tonSDOReadTrigger: TON;
+    bChanReadTrigger: BOOL;
+    nReadTime : TIME  := T#2S;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[rtExecParamsRead(CLK := (stMCS2Chan1Stage.bAxisParamsInit
+                            AND stMCS2Chan2Stage.bAxisParamsInit
+                            AND stMCS2Chan3Stage.bAxisParamsInit
+                ));
+
+IF rtExecParamsRead.Q THEN
+    tonSDOReadTrigger(IN := TRUE);
+END_IF
+
+IF bChanReadTrigger THEN
+    bChanReadTrigger := FALSE;
+    tonSDOReadTrigger(IN := TRUE);
+END_IF
+
+IF tonSDOReadTrigger.Q THEN
+    tonSDOReadTrigger(IN := FALSE);
+    bChanReadTrigger := TRUE;
+END_IF
+
+tonSDOReadTrigger(PT := nReadTime);
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

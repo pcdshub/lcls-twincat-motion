@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_MCS2Home" Id="{ce23061a-c26c-43ea-9803-dbb2bfd48aba}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_MCS2Home
+VAR_INPUT
+    bExecute : BOOL;
+END_VAR
+VAR_IN_OUT
+    stDS402Drive         : ST_DS402Drive;
+    stMotionStage        : ST_MotionStage;
+END_VAR
+
+VAR_OUTPUT
+    bHomeMoveBusy        : BOOL;
+    bHomeMoveDone        : BOOL;
+    bHomeMoveAborted     : BOOL;
+    bHomed  : BOOL;
+END_VAR
+VAR
+    eStepState           : E_MoveState := E_MoveState.IDLING;
+    {attribute 'hide'}
+    bReset :  BOOL;
+    {attribute 'hide'}
+    bHalt : BOOL;
+    {attribute 'hide'}
+    tonSettlingTime     : TON;
+    {attribute 'hide'}
+    rtHomeMove               : R_TRIG;
+    fbSetPos: MC_SetPosition;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
+    OR NOT __ISVALIDREF(stMotionStage) THEN
+   RETURN;
+END_IF
+
+rtHomeMove(CLK := bExecute);
+
+CASE eStepState OF
+    E_MoveState.IDLING:
+        IF rtHomeMove.Q THEN
+            bHomeMoveBusy := TRUE;
+            stMotionStage.bDone := FALSE;
+            fbSetPos.Options.ClearPositionLag := TRUE;
+            tonSettlingTime.IN:=FALSE;
+            stDS402Drive.nDriveControl.3 := TRUE;
+            eStepState := E_MoveState.INIT;
+        END_IF
+
+    E_MoveState.INIT:
+        IF stMotionStage.bError THEN
+            eStepState := E_MoveState.ERROR;
+        ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN // Already homed
+            bHomed := TRUE;
+            eStepState := E_MoveState.DONE;
+        ELSE
+            bHomed := FALSE;
+            stDS402Drive.nDriveControl.4 := TRUE;
+            tonSettlingTime.IN:=TRUE;
+            eStepState := E_MoveState.STARTED;
+        END_IF
+
+    E_MoveState.STARTED:
+        IF NOT stDS402Drive.stDriveStatus.TargetReached
+           AND NOT stDS402Drive.stDriveStatus.Bit13_OpModeSpecific THEN
+            eStepState := E_MoveState.IN_PROGRESS;
+        END_IF
+
+    E_MoveState.IN_PROGRESS:
+        IF bHalt THEN
+            bHomeMoveAborted := TRUE;
+            eStepState := E_MoveState.INTERRUPTED;
+        ELSIF stDS402Drive.stDriveStatus.Bit13_OpModeSpecific
+           OR stDS402Drive.stDriveStatus.WarningCondition THEN
+            stMotionStage.bError := TRUE;
+            eStepState := E_MoveState.ERROR;
+        ELSIF tonSettlingTime.Q AND stDS402Drive.stDriveStatus.TargetReached
+           AND stDS402Drive.stDriveStatus.Bit12_OpModeSpecific
+           AND NOT stDS402Drive.stDriveStatus.Bit13_OpModeSpecific THEN
+            eStepState := E_MoveState.DONE;
+        END_IF
+
+    E_MoveState.INTERRUPTED:
+        stDS402Drive.nDriveControl.4 := FALSE;
+        bHomeMoveBusy := FALSE;
+        eStepState := E_MoveState.IDLING;
+
+    E_MoveState.DONE:
+        bHomeMoveBusy := FALSE;
+        bHomeMoveDone := TRUE;
+        stMotionStage.fPosition := 0.0;
+        IF NOT bHomed THEN
+            fbSetPos(
+                Axis := stMotionStage.Axis,
+                Execute := TRUE,
+                Position := stMotionStage.fHomePosition
+            );
+        END_IF
+        stDS402Drive.nDriveControl.4 := FALSE;
+        eStepState := E_MoveState.IDLING;
+
+    E_MoveState.ERROR:
+        bHomeMoveDone := FALSE;
+        bHomeMoveBusy := FALSE;
+        IF NOT stMotionStage.bError THEN
+            eStepState := E_MoveState.IDLING;
+        END_IF
+
+END_CASE
+
+tonSettlingTime(PT:=T#80MS);
+bHalt := FALSE;
+bReset := FALSE;]]></ST>
+    </Implementation>
+    <Method Name="Halt" Id="{78d12c46-c454-4a04-8c5c-259167f6d305}">
+      <Declaration><![CDATA[METHOD Halt : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bHalt := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Reset" Id="{5d9bcf8a-a2d5-48c3-b1e1-6c473a08984e}">
+      <Declaration><![CDATA[METHOD Reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.bReset := TRUE;]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
