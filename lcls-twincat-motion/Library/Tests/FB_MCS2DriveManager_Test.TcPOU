@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MCS2DriveManager_Test" Id="{c2f1a8d4-6e3b-4a90-9f12-7b5c0d4e2a31}" SpecialFunc="None">
     <Declaration><![CDATA[(*
@@ -40,7 +40,7 @@ stDrive.stDriveStatus.VoltageEnabled := TRUE;
 stDrive.stDriveStatus.QuickStopActive := TRUE;
 stDrive.stDriveStatus.Fault := FALSE;
 stDrive.stDriveStatus.SwitchOnDisabled := FALSE;
-stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
 
 fbSut(
     bUserExec := FALSE,
@@ -74,7 +74,7 @@ END_VAR
 
 // Drive currently in step mode; the PV says STEP.
 stChan.eOpModeReq := E_MCS2OpModeReq.STEP;
-stDrive.nModeOfOperationDisplay := E_DS402OpMode.MCS2_OL_STEP_MODE;
+stDrive.nModeOfOperationDisplay := E_MCS2OpMode.STEP;
 
 // A closed-loop move request arrives.
 stMotionStage.bMoveCmd := TRUE;
@@ -89,7 +89,7 @@ fbSut(
 
 // The move request overwrites the PV with CLOSED_LOOP and switches the drive to CSP.
 AssertTrue(stChan.eOpModeReq = E_MCS2OpModeReq.CLOSED_LOOP, 'Move request should select CLOSED_LOOP in the PV');
-AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.CSP, 'Drive should be switched to CSP for a closed-loop move');
+AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.CSP, 'Drive should be switched to CSP for a closed-loop move');
 
 TEST_FINISHED();
 ]]></ST>
@@ -108,7 +108,7 @@ END_VAR
         <ST><![CDATA[TEST(__POUNAME());
 
 // Drive displaying CSP; user sets the mode PV to CALIBRATION (no motion request).
-stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
 stChan.eOpModeReq := E_MCS2OpModeReq.CALIBRATION;
 
 fbSut(
@@ -120,7 +120,7 @@ fbSut(
 );
 
 // The PV change alone must drive the DS402 mode to calibration.
-AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.MCS2_CALIBRATION, 'PV CALIBRATION should switch drive to MCS2_CALIBRATION');
+AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.CALIBRATE, 'PV CALIBRATION should switch drive to MCS2_CALIBRATION');
 
 TEST_FINISHED();
 ]]></ST>
@@ -139,7 +139,7 @@ END_VAR
         <ST><![CDATA[TEST(__POUNAME());
 
 // Drive displaying CSP; user sets the mode PV to STEP (no motion request).
-stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
 stChan.eOpModeReq := E_MCS2OpModeReq.STEP;
 
 fbSut(
@@ -151,7 +151,7 @@ fbSut(
 );
 
 // The PV change alone must drive the DS402 mode to open-loop step mode.
-AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.MCS2_OL_STEP_MODE, 'PV STEP should switch drive to MCS2_OL_STEP_MODE');
+AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.CALIBRATE, 'PV STEP should switch drive to MCS2_OL_STEP_MODE');
 
 TEST_FINISHED();
 ]]></ST>
@@ -170,7 +170,7 @@ END_VAR
         <ST><![CDATA[TEST(__POUNAME());
 
 // Drive displaying CSP, PV at its default closed-loop value.
-stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
 
 // A step move request arrives.
 stChan.bStepMoveCmd := TRUE;
@@ -185,7 +185,7 @@ fbSut(
 
 // The step request writes STEP into the PV and switches the drive into step mode.
 AssertTrue(stChan.eOpModeReq = E_MCS2OpModeReq.STEP, 'Step request should select STEP in the PV');
-AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.MCS2_OL_STEP_MODE, 'Step request should switch drive to MCS2_OL_STEP_MODE');
+AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.STEP, 'Step request should switch drive to MCS2_OL_STEP_MODE');
 
 TEST_FINISHED();
 ]]></ST>

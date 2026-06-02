@@ -23,6 +23,7 @@ VAR_OUTPUT
     bHomeModeEnabled : BOOL;
     bStepModeEnabled : BOOL;
     bCalibrationModeEnabled : BOOL;
+    eRequestedManualMode : E_MCS2OpMode := E_MCS2OpMode.CSP;
 END_VAR
 
 VAR
@@ -31,7 +32,6 @@ VAR
     tonStartupStep : TON;
     bFaultLast : BOOL := FALSE;
     ftFaultClear : F_TRIG;
-    eRequestedManualMode : E_DS402OpMode := E_DS402OpMode.CSP;
     bPendingManualModeSwitch : BOOL := FALSE;
     // Previous PV value, used to detect a mode-request change
     eLastModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
@@ -75,7 +75,7 @@ END_IF
 bFaultLast := bFault;
 
 // Status flag for manual operation mode (not CSP)
-bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_DS402OpMode.CSP);
+bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_MCS2OpMode.CSP);
 
 // DS402 startup sequence at boot or after fault (until operational)
 IF bStartupActive AND bDS402Manual THEN
@@ -132,13 +132,13 @@ ELSE
 
     IF bOperational THEN
         CASE stDS402Drive.nModeOfOperationDisplay OF
-            E_DS402OpMode.CSP:
+            E_MCS2OpMode.CSP:
                 bCSPModeEnabled := TRUE;
-            E_DS402OpMode.HOME:
+            E_MCS2OpMode.HOME:
                 bHomeModeEnabled := TRUE;
-            E_DS402OpMode.MCS2_OL_STEP_MODE:
+            E_MCS2OpMode.STEP:
                 bStepModeEnabled := TRUE;
-            E_DS402OpMode.MCS2_CALIBRATION:
+            E_MCS2OpMode.CALIBRATE:
                 bCalibrationModeEnabled := TRUE;
         END_CASE
     END_IF
@@ -163,14 +163,14 @@ ELSE
     // Map the requested mode (PV) onto the DS402 operation mode
     CASE stMCS2ChanParameter.eOpModeReq OF
         E_MCS2OpModeReq.STEP:
-            eRequestedManualMode := E_DS402OpMode.MCS2_OL_STEP_MODE;
+            eRequestedManualMode := E_MCS2OpMode.STEP;
         E_MCS2OpModeReq.HOME:
-            eRequestedManualMode := E_DS402OpMode.HOME;
+            eRequestedManualMode := E_MCS2OpMode.HOME;
         E_MCS2OpModeReq.CALIBRATION:
-            eRequestedManualMode := E_DS402OpMode.MCS2_CALIBRATION;
+            eRequestedManualMode := E_MCS2OpMode.CALIBRATE;
         ELSE
             // CLOSED_LOOP (default) and any unexpected value map to CSP closed-loop motion
-            eRequestedManualMode := E_DS402OpMode.CSP;
+            eRequestedManualMode := E_MCS2OpMode.CSP;
     END_CASE
 
     // Detect a change in the requested mode (PV write, from the user or a motion request)
@@ -193,8 +193,8 @@ ELSE
                 bManualTransition := FALSE;
             END_IF
         ELSE
-            IF eRequestedManualMode = E_DS402OpMode.CSP THEN
-                stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
+            IF eRequestedManualMode = E_MCS2OpMode.CSP THEN
+                stDS402Drive.nModeOfOperation := E_MCS2OpMode.CSP;
                 bPendingManualModeSwitch := FALSE;
             ELSE
                 stDS402Drive.nDriveControl.4 := FALSE;

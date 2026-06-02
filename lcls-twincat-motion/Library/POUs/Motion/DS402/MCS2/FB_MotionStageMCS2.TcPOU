@@ -110,11 +110,15 @@ VAR
     {attribute 'hide'}
     rtStepCmdShortcut		 : R_TRIG;
     {attribute 'hide'}
-    rtCalibrateCmdShortcut: R_TRIG;
-    tSDOOpsTimer : TON;
-    bParamsEnable: BOOL;
-    bDelayReadAtInit : BOOL;
+    rtCalibrateCmdShortcut	 : R_TRIG;
+    {attribute 'hide'}
+    tSDOOpsTimer 			 : TON;
+    {attribute 'hide'}
+    bParamsEnable			 : BOOL;
+    {attribute 'hide'}
+    bDelayReadAtInit 		 : BOOL;
     bBaseExec: BOOL;
+    nCommandLocal  			 : E_MCS2OpMode := E_MCS2OpMode.CSP;
 END_VAR
 
 VAR CONSTANT
@@ -171,7 +175,6 @@ VAR CONSTANT
 END_VAR
 
 VAR PERSISTENT
-    nCommandLocal            : INT := E_EpicsMotorCmd.MOVE_ABSOLUTE;
     bSaved                   : BOOL;
     fSavedPosition           : LREAL;
 END_VAR]]></Declaration>
@@ -242,7 +245,7 @@ bNewMoveReq R= NOT stMotionStage.bExecute OR stMotionStage.bError;
 bPrepareDisable R= bNewMoveReq;
 
 IF rtUserExec.Q THEN
-    nCommandLocal := stMotionStage.nCommand;
+    //nCommandLocal := stMotionStage.nCommand;
     // Cover direct bExecute path, shortcut path already set bEnPosLag/fParameterValue
     IF NOT rtMoveCmdShortcut.Q
         AND NOT rtStepCmdShortcut.Q
@@ -266,7 +269,8 @@ fbDriveManager(
     stMotionStage        := stMotionStage,
     stDS402Drive         := stDS402Drive,
     stMCS2ChanParameter  := stChanParams,
-    bUserExec            := rtUserExec.Q
+    bUserExec            := rtUserExec.Q,
+    eRequestedManualMode => nCommandLocal
 );
 
 // Enable mode handling
@@ -301,32 +305,32 @@ IF fbDriveManager.bCSPModeEnabled THEN
     // Close loop: gate on NC standstill state (bEnableDone)
     bLocalExec := bBaseExec
                   AND stMotionStage.bEnableDone
-                  AND nCommandLocal = E_EpicsMotorCmd.MOVE_ABSOLUTE;
+                  AND stMotionStage.nCommand = E_EpicsMotorCmd.MOVE_ABSOLUTE;
 
 ELSIF fbDriveManager.bHomeModeEnabled THEN
     // Open loop homing: gate on DS402 operational state
     bLocalExec := bBaseExec
                   AND fbDriveManager.bOperational
-                  AND nCommandLocal = E_EpicsMotorCmd.HOME;
+                  AND stMotionStage.nCommand = E_EpicsMotorCmd.HOME;
 
 ELSIF fbDriveManager.bStepModeEnabled THEN
     // Open loop step: gate on DS402 operational state
     bLocalExec := bBaseExec
                   AND fbDriveManager.bOperational
-                  AND nCommandLocal = E_EpicsMotorCmd.JOG;
+                  AND stMotionStage.nCommand = E_EpicsMotorCmd.JOG;
 
 ELSIF fbDriveManager.bCalibrationModeEnabled THEN
     // Open loop calibration: gate on DS402 operational state
     bLocalExec := bBaseExec
                   AND fbDriveManager.bOperational
-                  AND nCommandLocal = E_EpicsMotorCmd.CALIBRATE;
+                  AND stMotionStage.nCommand = E_EpicsMotorCmd.CALIBRATE;
 ELSE
     bLocalExec := FALSE;
 END_IF
 
-bExecMove := bLocalExec AND ((nCommandLocal = E_EpicsMotorCmd.MOVE_ABSOLUTE)
-                          OR  (nCommandLocal = E_EpicsMotorCmd.JOG)
-                          OR  (nCommandLocal = E_EpicsMotorCmd.CALIBRATE));
+bExecMove := bLocalExec AND ((stMotionStage.nCommand = E_EpicsMotorCmd.MOVE_ABSOLUTE)
+                          OR  (stMotionStage.nCommand = E_EpicsMotorCmd.JOG)
+                          OR  (stMotionStage.nCommand = E_EpicsMotorCmd.CALIBRATE));
 bExecHome := bLocalExec AND NOT bExecMove;
 
 rtExec(CLK := bLocalExec);
@@ -391,7 +395,7 @@ fbWriteParameters(
 );
 
 CASE nCommandLocal OF
-    E_EpicsMotorCmd.MOVE_ABSOLUTE:
+    E_MCS2OpMode.CSP:
         Reset();
         Power();
         Halt();
@@ -401,13 +405,11 @@ CASE nCommandLocal OF
           IN CSP mode the drive control word is update via the NC
           Manual step mode and Homing will override this
         *)
-        IF stChanParams.eOpModeReq = E_MCS2OpModeReq.CLOSED_LOOP THEN
-            stDS402Drive.nModeOfOperation := stDS402Drive.nModeOfOperationNC;
-            stDS402Drive.nDriveControl    := stDS402Drive.nDriveControlNC;
-        END_IF
 
+        stDS402Drive.nModeOfOperation := stDS402Drive.nModeOfOperationNC;
+        stDS402Drive.nDriveControl    := stDS402Drive.nDriveControlNC;
 
-    E_EpicsMotorCmd.HOME:
+    E_MCS2OpMode.HOME:
         (*DS402 Manual Homing*)
         fbhome(
             bExecute := bExecHome AND fbWriteParameters.bParamsSet,
@@ -415,14 +417,14 @@ CASE nCommandLocal OF
             stMotionStage := stMotionStage
         );
 
-    E_EpicsMotorCmd.JOG:
+    E_MCS2OpMode.STEP:
         fbStepMode(
             bExecute       := bExecMove AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
-    E_EpicsMotorCmd.CALIBRATE:
+    E_MCS2OpMode.CALIBRATE:
         fbCalibrate(
             bExecute	 := bExecMove AND fbWriteParameters.bParamsSet,
             stDS402Drive  := stDS402Drive,
