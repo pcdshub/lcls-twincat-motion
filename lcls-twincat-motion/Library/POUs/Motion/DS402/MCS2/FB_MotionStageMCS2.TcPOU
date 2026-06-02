@@ -30,8 +30,6 @@ VAR
     {attribute 'hide'}
     eModule                 : E_Module;
     {attribute 'hide'}
-    //eHomeMode               : E_EpicsHomeCmd := E_EpicsHomeCmd.AUTOZERO;
-    {attribute 'hide'}
     eDoneCause              : E_MoveDoneCause := E_MoveDoneCause.Unknown;
     {attribute 'hide'}
     fbMcPower               : MC_Power;
@@ -403,8 +401,11 @@ CASE nCommandLocal OF
           IN CSP mode the drive control word is update via the NC
           Manual step mode and Homing will override this
         *)
-        stDS402Drive.nModeOfOperation := stDS402Drive.nModeOfOperationNC;
-        stDS402Drive.nDriveControl    := stDS402Drive.nDriveControlNC;
+        IF stChanParams.eOpModeReq = E_MCS2OpModeReq.CLOSED_LOOP THEN
+            stDS402Drive.nModeOfOperation := stDS402Drive.nModeOfOperationNC;
+            stDS402Drive.nDriveControl    := stDS402Drive.nDriveControlNC;
+        END_IF
+
 
     E_EpicsMotorCmd.HOME:
         (*DS402 Manual Homing*)
