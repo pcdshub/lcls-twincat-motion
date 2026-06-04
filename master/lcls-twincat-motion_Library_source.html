@@ -71,13 +71,13 @@
 <li class="toctree-l2"><a class="reference internal" href="#dutel2521-status">dutEL2521_Status</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-ds402drivestate">E_DS402DriveState</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-ds402egu">E_DS402EGU</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#e-ds402opmode">E_DS402OpMode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-epicshomecmd">E_EpicsHomeCmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-epicsinout">E_EpicsInOut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-epicsmotorcmd">E_EpicsMotorCmd</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-homestates">E_HomeStates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-lclsmotionerror">E_LCLSMotionError</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-mcs2homemethod">E_MCS2HomeMethod</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#e-mcs2opmode">E_MCS2OpMode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-mcs2opmodereq">E_MCS2OpModeReq</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-module">E_Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#e-motionfftype">E_MotionFFType</a></li>
@@ -516,31 +516,6 @@
 </pre></div>
 </div>
 </section>
-<section id="e-ds402opmode">
-<h2>E_DS402OpMode<a class="headerlink" href="#e-ds402opmode" title="Link to this heading"></a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;qualified_only&#39;</span><span class="p">}</span>
-<span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;strict&#39;</span><span class="p">}</span>
-<span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;to_string&#39;</span><span class="p">}</span>
-<span class="n">TYPE</span> <span class="n">E_DS402OpMode</span> <span class="p">:</span>
-<span class="p">(</span>
-    <span class="n">NONE</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="o">//</span> <span class="n">P</span><span class="o">-</span><span class="n">T</span><span class="o">-</span><span class="n">P</span> <span class="n">target</span> <span class="n">profil</span>
-    <span class="n">PROFILE_POSITION</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">PROFIL_VELOCITY</span> <span class="o">:=</span><span class="mi">3</span><span class="p">,</span>
-    <span class="n">HOME</span><span class="o">:=</span><span class="mi">6</span><span class="p">,</span>
-    <span class="o">//</span> <span class="n">Cyclic</span> <span class="n">synchronous</span> <span class="n">modes</span>
-    <span class="n">CSP</span> <span class="o">:=</span><span class="mi">8</span><span class="p">,</span>
-    <span class="n">CSV</span> <span class="o">:=</span><span class="mi">9</span><span class="p">,</span>
-    <span class="n">CST</span> <span class="o">:=</span> <span class="mi">10</span><span class="p">,</span>
-    <span class="n">CSTCA</span> <span class="o">:=</span> <span class="mi">11</span><span class="p">,</span>
-    <span class="o">//</span> <span class="n">smartAct</span> <span class="n">MCS2</span> <span class="nb">open</span> <span class="n">loop</span>
-    <span class="n">MCS2_CALIBRATION</span><span class="o">:=-</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">MCS2_OL_STEP_MODE</span><span class="o">:=-</span><span class="mi">4</span>
-<span class="p">)</span> <span class="n">SINT</span><span class="p">;</span>
-<span class="n">END_TYPE</span>
-</pre></div>
-</div>
-</section>
 <section id="e-epicshomecmd">
 <h2>E_EpicsHomeCmd<a class="headerlink" href="#e-epicshomecmd" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;qualified_only&#39;</span><span class="p">}</span>
@@ -652,6 +627,31 @@
 </pre></div>
 </div>
 </section>
+<section id="e-mcs2opmode">
+<h2>E_MCS2OpMode<a class="headerlink" href="#e-mcs2opmode" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;qualified_only&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;strict&#39;</span><span class="p">}</span>
+<span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;to_string&#39;</span><span class="p">}</span>
+<span class="n">TYPE</span> <span class="n">E_MCS2OpMode</span> <span class="p">:</span>
+<span class="p">(</span>
+    <span class="n">NONE</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="o">//</span> <span class="n">P</span><span class="o">-</span><span class="n">T</span><span class="o">-</span><span class="n">P</span> <span class="n">target</span> <span class="n">profil</span>
+    <span class="n">PROFILE_POSITION</span><span class="o">:=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">PROFIL_VELOCITY</span> <span class="o">:=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">HOME</span><span class="o">:=</span><span class="mi">6</span><span class="p">,</span>
+    <span class="o">//</span> <span class="n">Cyclic</span> <span class="n">synchronous</span> <span class="n">modes</span>
+    <span class="n">CSP</span> <span class="o">:=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">CSV</span> <span class="o">:=</span><span class="mi">9</span><span class="p">,</span>
+    <span class="n">CST</span> <span class="o">:=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">CSTCA</span> <span class="o">:=</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="o">//</span> <span class="n">smartAct</span> <span class="n">MCS2</span> <span class="nb">open</span> <span class="n">loop</span>
+    <span class="n">CALIBRATE</span> <span class="o">:=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">STEP</span> <span class="o">:=-</span><span class="mi">4</span>
+<span class="p">)</span> <span class="n">SINT</span><span class="p">;</span>
+<span class="n">END_TYPE</span>
+</pre></div>
+</div>
+</section>
 <section id="e-mcs2opmodereq">
 <h2>E_MCS2OpModeReq<a class="headerlink" href="#e-mcs2opmodereq" title="Link to this heading"></a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="o">*</span>
@@ -676,7 +676,6 @@
 </div>
 <dl class="simple">
 <dt>Related:</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="#e-ds402opmode">E_DS402OpMode</a></p></li>
 <li><p><a class="reference internal" href="#fb-mcs2drivemanager">FB_MCS2DriveManager</a></p></li>
 </ul>
 </dd>
@@ -1305,6 +1304,11 @@
 <span class="n">STRUCT</span>
     <span class="p">(</span><span class="o">*</span> <span class="n">Global</span> <span class="n">variables</span> <span class="k">for</span> <span class="n">the</span> <span class="n">TPDO</span> <span class="n">data</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">drive</span><span class="o">.</span> <span class="n">Each</span> <span class="n">one</span> <span class="ow">is</span> <span class="n">linked</span> <span class="n">to</span> <span class="n">the</span> <span class="n">respective</span> <span class="n">TPDO</span> <span class="n">channel</span><span class="o">.</span> <span class="o">*</span><span class="p">)</span>
     <span class="n">stDriveStatus</span>                   <span class="n">AT</span> <span class="o">%</span><span class="n">I</span><span class="o">*</span>  <span class="p">:</span>       <span class="n">ST_DS402DriveStatus</span><span class="p">;</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
+        <span class="n">pv</span><span class="p">:</span> <span class="n">eOpModeDisplay</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
+        <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">MCS2</span> <span class="n">current</span> <span class="n">operating</span> <span class="n">mode</span>
+    <span class="s1">&#39;}</span>
     <span class="n">nModeOfOperationDisplay</span> <span class="n">AT</span> <span class="o">%</span><span class="n">I</span><span class="o">*</span>  <span class="p">:</span>       <span class="n">SINT</span><span class="p">;</span>
     <span class="o">//</span><span class="n">nActualPosition</span>               <span class="n">AT</span> <span class="o">%</span><span class="n">I</span><span class="o">*</span>  <span class="p">:</span>       <span class="n">DINT</span><span class="p">;</span>
     <span class="p">(</span><span class="o">*</span><span class="n">CSP</span> <span class="n">drive</span> <span class="n">mode</span><span class="o">*</span><span class="p">)</span>
@@ -1525,12 +1529,12 @@
     <span class="s1">&#39;}</span>
     <span class="n">bCalibrationCmd</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
 
+    <span class="o">//</span> <span class="n">Desired</span> <span class="n">drive</span> <span class="n">operating</span> <span class="n">mode</span> <span class="p">(</span><span class="n">source</span> <span class="n">of</span> <span class="n">truth</span><span class="p">)</span><span class="o">.</span> <span class="n">Default</span> <span class="ow">is</span> <span class="n">closed</span><span class="o">-</span><span class="n">loop</span> <span class="p">(</span><span class="n">CSP</span><span class="p">)</span> <span class="n">absolute</span> <span class="n">motion</span><span class="o">.</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">eOpModeReq</span>
-        <span class="n">io</span><span class="p">:</span> <span class="n">io</span>
+        <span class="n">io</span><span class="p">:</span> <span class="n">o</span>
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">DS402</span> <span class="n">operation</span> <span class="n">mode</span> <span class="n">request</span> <span class="p">(</span><span class="n">default</span> <span class="n">closed</span> <span class="n">loop</span><span class="p">)</span>
     <span class="s1">&#39;}</span>
-    <span class="o">//</span> <span class="n">Desired</span> <span class="n">drive</span> <span class="n">operating</span> <span class="n">mode</span> <span class="p">(</span><span class="n">source</span> <span class="n">of</span> <span class="n">truth</span><span class="p">)</span><span class="o">.</span> <span class="n">Default</span> <span class="ow">is</span> <span class="n">closed</span><span class="o">-</span><span class="n">loop</span> <span class="p">(</span><span class="n">CSP</span><span class="p">)</span> <span class="n">absolute</span> <span class="n">motion</span><span class="o">.</span>
     <span class="n">eOpModeReq</span> <span class="p">:</span> <span class="n">E_MCS2OpModeReq</span> <span class="o">:=</span> <span class="n">E_MCS2OpModeReq</span><span class="o">.</span><span class="n">CLOSED_LOOP</span><span class="p">;</span>
 
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
@@ -1539,6 +1543,7 @@
         <span class="n">field</span><span class="p">:</span> <span class="n">DESC</span> <span class="n">Channel</span> <span class="n">configuration</span> <span class="n">parameters</span><span class="o">.</span>
     <span class="s1">&#39;}</span>
     <span class="n">stChannelState</span>        <span class="p">:</span> <span class="n">ST_ChannelState</span><span class="p">;</span>
+
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;</span>
         <span class="n">pv</span><span class="p">:</span> <span class="n">eHomeMode</span>
         <span class="n">io</span><span class="p">:</span> <span class="n">i</span>
@@ -7189,6 +7194,7 @@ VAR_OUTPUT
     bHomeModeEnabled : BOOL;
     bStepModeEnabled : BOOL;
     bCalibrationModeEnabled : BOOL;
+    eRequestedManualMode : E_MCS2OpMode := E_MCS2OpMode.CSP;
 END_VAR
 
 VAR
@@ -7197,7 +7203,6 @@ VAR
     tonStartupStep : TON;
     bFaultLast : BOOL := FALSE;
     ftFaultClear : F_TRIG;
-    eRequestedManualMode : E_DS402OpMode := E_DS402OpMode.CSP;
     bPendingManualModeSwitch : BOOL := FALSE;
     // Previous PV value, used to detect a mode-request change
     eLastModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
@@ -7240,7 +7245,7 @@ END_IF
 bFaultLast := bFault;
 
 // Status flag for manual operation mode (not CSP)
-bDS402Manual := (stDS402Drive.nModeOfOperationDisplay &lt;&gt; E_DS402OpMode.CSP);
+bDS402Manual := (stDS402Drive.nModeOfOperationDisplay &lt;&gt; E_MCS2OpMode.CSP);
 
 // DS402 startup sequence at boot or after fault (until operational)
 IF bStartupActive AND bDS402Manual THEN
@@ -7297,13 +7302,13 @@ ELSE
 
     IF bOperational THEN
         CASE stDS402Drive.nModeOfOperationDisplay OF
-            E_DS402OpMode.CSP:
+            E_MCS2OpMode.CSP:
                 bCSPModeEnabled := TRUE;
-            E_DS402OpMode.HOME:
+            E_MCS2OpMode.HOME:
                 bHomeModeEnabled := TRUE;
-            E_DS402OpMode.MCS2_OL_STEP_MODE:
+            E_MCS2OpMode.STEP:
                 bStepModeEnabled := TRUE;
-            E_DS402OpMode.MCS2_CALIBRATION:
+            E_MCS2OpMode.CALIBRATE:
                 bCalibrationModeEnabled := TRUE;
         END_CASE
     END_IF
@@ -7328,14 +7333,14 @@ ELSE
     // Map the requested mode (PV) onto the DS402 operation mode
     CASE stMCS2ChanParameter.eOpModeReq OF
         E_MCS2OpModeReq.STEP:
-            eRequestedManualMode := E_DS402OpMode.MCS2_OL_STEP_MODE;
+            eRequestedManualMode := E_MCS2OpMode.STEP;
         E_MCS2OpModeReq.HOME:
-            eRequestedManualMode := E_DS402OpMode.HOME;
+            eRequestedManualMode := E_MCS2OpMode.HOME;
         E_MCS2OpModeReq.CALIBRATION:
-            eRequestedManualMode := E_DS402OpMode.MCS2_CALIBRATION;
+            eRequestedManualMode := E_MCS2OpMode.CALIBRATE;
         ELSE
             // CLOSED_LOOP (default) and any unexpected value map to CSP closed-loop motion
-            eRequestedManualMode := E_DS402OpMode.CSP;
+            eRequestedManualMode := E_MCS2OpMode.CSP;
     END_CASE
 
     // Detect a change in the requested mode (PV write, from the user or a motion request)
@@ -7358,8 +7363,8 @@ ELSE
                 bManualTransition := FALSE;
             END_IF
         ELSE
-            IF eRequestedManualMode = E_DS402OpMode.CSP THEN
-                stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
+            IF eRequestedManualMode = E_MCS2OpMode.CSP THEN
+                stDS402Drive.nModeOfOperation := E_MCS2OpMode.CSP;
                 bPendingManualModeSwitch := FALSE;
             ELSE
                 stDS402Drive.nDriveControl.4 := FALSE;
@@ -7394,7 +7399,7 @@ END_FUNCTION_BLOCK
 </div>
 <dl class="simple">
 <dt>Related:</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="#e-ds402opmode">E_DS402OpMode</a></p></li>
+<li><p><a class="reference internal" href="#e-mcs2opmode">E_MCS2OpMode</a></p></li>
 <li><p><a class="reference internal" href="#e-mcs2opmodereq">E_MCS2OpModeReq</a></p></li>
 <li><p><a class="reference internal" href="#st-ds402drive">ST_DS402Drive</a></p></li>
 <li><p><a class="reference internal" href="#st-mcs2chanparameter">ST_MCS2ChanParameter</a></p></li>
@@ -7440,7 +7445,7 @@ END_FUNCTION_BLOCK
 <span class="n">stDrive</span><span class="o">.</span><span class="n">stDriveStatus</span><span class="o">.</span><span class="n">QuickStopActive</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
 <span class="n">stDrive</span><span class="o">.</span><span class="n">stDriveStatus</span><span class="o">.</span><span class="n">Fault</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">stDrive</span><span class="o">.</span><span class="n">stDriveStatus</span><span class="o">.</span><span class="n">SwitchOnDisabled</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
-<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
+<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
 
 <span class="n">fbSut</span><span class="p">(</span>
     <span class="n">bUserExec</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">,</span>
@@ -7470,7 +7475,7 @@ END_FUNCTION_BLOCK
 
 <span class="o">//</span> <span class="n">Drive</span> <span class="n">currently</span> <span class="ow">in</span> <span class="n">step</span> <span class="n">mode</span><span class="p">;</span> <span class="n">the</span> <span class="n">PV</span> <span class="n">says</span> <span class="n">STEP</span><span class="o">.</span>
 <span class="n">stChan</span><span class="o">.</span><span class="n">eOpModeReq</span> <span class="o">:=</span> <span class="n">E_MCS2OpModeReq</span><span class="o">.</span><span class="n">STEP</span><span class="p">;</span>
-<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">MCS2_OL_STEP_MODE</span><span class="p">;</span>
+<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">STEP</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">A</span> <span class="n">closed</span><span class="o">-</span><span class="n">loop</span> <span class="n">move</span> <span class="n">request</span> <span class="n">arrives</span><span class="o">.</span>
 <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
@@ -7485,7 +7490,7 @@ END_FUNCTION_BLOCK
 
 <span class="o">//</span> <span class="n">The</span> <span class="n">move</span> <span class="n">request</span> <span class="n">overwrites</span> <span class="n">the</span> <span class="n">PV</span> <span class="k">with</span> <span class="n">CLOSED_LOOP</span> <span class="ow">and</span> <span class="n">switches</span> <span class="n">the</span> <span class="n">drive</span> <span class="n">to</span> <span class="n">CSP</span><span class="o">.</span>
 <span class="n">AssertTrue</span><span class="p">(</span><span class="n">stChan</span><span class="o">.</span><span class="n">eOpModeReq</span> <span class="o">=</span> <span class="n">E_MCS2OpModeReq</span><span class="o">.</span><span class="n">CLOSED_LOOP</span><span class="p">,</span> <span class="s1">&#39;Move request should select CLOSED_LOOP in the PV&#39;</span><span class="p">);</span>
-<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">,</span> <span class="s1">&#39;Drive should be switched to CSP for a closed-loop move&#39;</span><span class="p">);</span>
+<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">,</span> <span class="s1">&#39;Drive should be switched to CSP for a closed-loop move&#39;</span><span class="p">);</span>
 
 <span class="n">TEST_FINISHED</span><span class="p">();</span>
 <span class="n">END_METHOD</span>
@@ -7500,7 +7505,7 @@ END_FUNCTION_BLOCK
 <span class="n">TEST</span><span class="p">(</span><span class="n">__POUNAME</span><span class="p">());</span>
 
 <span class="o">//</span> <span class="n">Drive</span> <span class="n">displaying</span> <span class="n">CSP</span><span class="p">;</span> <span class="n">user</span> <span class="n">sets</span> <span class="n">the</span> <span class="n">mode</span> <span class="n">PV</span> <span class="n">to</span> <span class="n">CALIBRATION</span> <span class="p">(</span><span class="n">no</span> <span class="n">motion</span> <span class="n">request</span><span class="p">)</span><span class="o">.</span>
-<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
+<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
 <span class="n">stChan</span><span class="o">.</span><span class="n">eOpModeReq</span> <span class="o">:=</span> <span class="n">E_MCS2OpModeReq</span><span class="o">.</span><span class="n">CALIBRATION</span><span class="p">;</span>
 
 <span class="n">fbSut</span><span class="p">(</span>
@@ -7512,7 +7517,7 @@ END_FUNCTION_BLOCK
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">The</span> <span class="n">PV</span> <span class="n">change</span> <span class="n">alone</span> <span class="n">must</span> <span class="n">drive</span> <span class="n">the</span> <span class="n">DS402</span> <span class="n">mode</span> <span class="n">to</span> <span class="n">calibration</span><span class="o">.</span>
-<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">MCS2_CALIBRATION</span><span class="p">,</span> <span class="s1">&#39;PV CALIBRATION should switch drive to MCS2_CALIBRATION&#39;</span><span class="p">);</span>
+<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">,</span> <span class="s1">&#39;PV CALIBRATION should switch drive to MCS2_CALIBRATION&#39;</span><span class="p">);</span>
 
 <span class="n">TEST_FINISHED</span><span class="p">();</span>
 <span class="n">END_METHOD</span>
@@ -7527,7 +7532,7 @@ END_FUNCTION_BLOCK
 <span class="n">TEST</span><span class="p">(</span><span class="n">__POUNAME</span><span class="p">());</span>
 
 <span class="o">//</span> <span class="n">Drive</span> <span class="n">displaying</span> <span class="n">CSP</span><span class="p">;</span> <span class="n">user</span> <span class="n">sets</span> <span class="n">the</span> <span class="n">mode</span> <span class="n">PV</span> <span class="n">to</span> <span class="n">STEP</span> <span class="p">(</span><span class="n">no</span> <span class="n">motion</span> <span class="n">request</span><span class="p">)</span><span class="o">.</span>
-<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
+<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
 <span class="n">stChan</span><span class="o">.</span><span class="n">eOpModeReq</span> <span class="o">:=</span> <span class="n">E_MCS2OpModeReq</span><span class="o">.</span><span class="n">STEP</span><span class="p">;</span>
 
 <span class="n">fbSut</span><span class="p">(</span>
@@ -7539,7 +7544,7 @@ END_FUNCTION_BLOCK
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">The</span> <span class="n">PV</span> <span class="n">change</span> <span class="n">alone</span> <span class="n">must</span> <span class="n">drive</span> <span class="n">the</span> <span class="n">DS402</span> <span class="n">mode</span> <span class="n">to</span> <span class="nb">open</span><span class="o">-</span><span class="n">loop</span> <span class="n">step</span> <span class="n">mode</span><span class="o">.</span>
-<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">MCS2_OL_STEP_MODE</span><span class="p">,</span> <span class="s1">&#39;PV STEP should switch drive to MCS2_OL_STEP_MODE&#39;</span><span class="p">);</span>
+<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">,</span> <span class="s1">&#39;PV STEP should switch drive to MCS2_OL_STEP_MODE&#39;</span><span class="p">);</span>
 
 <span class="n">TEST_FINISHED</span><span class="p">();</span>
 <span class="n">END_METHOD</span>
@@ -7554,7 +7559,7 @@ END_FUNCTION_BLOCK
 <span class="n">TEST</span><span class="p">(</span><span class="n">__POUNAME</span><span class="p">());</span>
 
 <span class="o">//</span> <span class="n">Drive</span> <span class="n">displaying</span> <span class="n">CSP</span><span class="p">,</span> <span class="n">PV</span> <span class="n">at</span> <span class="n">its</span> <span class="n">default</span> <span class="n">closed</span><span class="o">-</span><span class="n">loop</span> <span class="n">value</span><span class="o">.</span>
-<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
+<span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperationDisplay</span> <span class="o">:=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
 
 <span class="o">//</span> <span class="n">A</span> <span class="n">step</span> <span class="n">move</span> <span class="n">request</span> <span class="n">arrives</span><span class="o">.</span>
 <span class="n">stChan</span><span class="o">.</span><span class="n">bStepMoveCmd</span> <span class="o">:=</span> <span class="n">TRUE</span><span class="p">;</span>
@@ -7569,7 +7574,7 @@ END_FUNCTION_BLOCK
 
 <span class="o">//</span> <span class="n">The</span> <span class="n">step</span> <span class="n">request</span> <span class="n">writes</span> <span class="n">STEP</span> <span class="n">into</span> <span class="n">the</span> <span class="n">PV</span> <span class="ow">and</span> <span class="n">switches</span> <span class="n">the</span> <span class="n">drive</span> <span class="n">into</span> <span class="n">step</span> <span class="n">mode</span><span class="o">.</span>
 <span class="n">AssertTrue</span><span class="p">(</span><span class="n">stChan</span><span class="o">.</span><span class="n">eOpModeReq</span> <span class="o">=</span> <span class="n">E_MCS2OpModeReq</span><span class="o">.</span><span class="n">STEP</span><span class="p">,</span> <span class="s1">&#39;Step request should select STEP in the PV&#39;</span><span class="p">);</span>
-<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_DS402OpMode</span><span class="o">.</span><span class="n">MCS2_OL_STEP_MODE</span><span class="p">,</span> <span class="s1">&#39;Step request should switch drive to MCS2_OL_STEP_MODE&#39;</span><span class="p">);</span>
+<span class="n">AssertTrue</span><span class="p">(</span><span class="n">stDrive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">STEP</span><span class="p">,</span> <span class="s1">&#39;Step request should switch drive to MCS2_OL_STEP_MODE&#39;</span><span class="p">);</span>
 
 <span class="n">TEST_FINISHED</span><span class="p">();</span>
 <span class="n">END_METHOD</span>
@@ -7577,7 +7582,7 @@ END_FUNCTION_BLOCK
 </div>
 <dl class="simple">
 <dt>Related:</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="#e-ds402opmode">E_DS402OpMode</a></p></li>
+<li><p><a class="reference internal" href="#e-mcs2opmode">E_MCS2OpMode</a></p></li>
 <li><p><a class="reference internal" href="#e-mcs2opmodereq">E_MCS2OpModeReq</a></p></li>
 <li><p><a class="reference internal" href="#fb-mcs2drivemanager">FB_MCS2DriveManager</a></p></li>
 <li><p><a class="reference internal" href="#st-ds402drive">ST_DS402Drive</a></p></li>
@@ -12161,7 +12166,6 @@ END_METHOD
 </div>
 <dl class="simple">
 <dt>Related:</dt><dd><ul class="simple">
-<li><p><a class="reference internal" href="#e-ds402opmode">E_DS402OpMode</a></p></li>
 <li><p><a class="reference internal" href="#e-epicshomecmd">E_EpicsHomeCmd</a></p></li>
 <li><p><a class="reference internal" href="#e-epicsmotorcmd">E_EpicsMotorCmd</a></p></li>
 <li><p><a class="reference internal" href="#e-module">E_Module</a></p></li>
@@ -12193,6 +12197,7 @@ END_METHOD
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;no_copy&#39;</span><span class="p">}</span>
     <span class="n">stChanParams</span>       <span class="p">:</span> <span class="n">REFERENCE</span> <span class="n">TO</span> <span class="n">ST_MCS2ChanParameter</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Hardware</span> <span class="n">I</span><span class="o">/</span><span class="n">O</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;pytmc&#39;</span> <span class="o">:=</span> <span class="s1">&#39;pv:&#39;</span><span class="p">}</span>
     <span class="n">stDS402Drive</span>            <span class="p">:</span> <span class="n">ST_DS402Drive</span><span class="p">;</span>
 
     <span class="n">fbDriveManager</span>          <span class="p">:</span> <span class="n">FB_MCS2DriveManager</span><span class="p">;</span>
@@ -12205,8 +12210,6 @@ END_METHOD
 
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
     <span class="n">eModule</span>                 <span class="p">:</span> <span class="n">E_Module</span><span class="p">;</span>
-    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
-    <span class="o">//</span><span class="n">eHomeMode</span>               <span class="p">:</span> <span class="n">E_EpicsHomeCmd</span> <span class="o">:=</span> <span class="n">E_EpicsHomeCmd</span><span class="o">.</span><span class="n">AUTOZERO</span><span class="p">;</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
     <span class="n">eDoneCause</span>              <span class="p">:</span> <span class="n">E_MoveDoneCause</span> <span class="o">:=</span> <span class="n">E_MoveDoneCause</span><span class="o">.</span><span class="n">Unknown</span><span class="p">;</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
@@ -12288,11 +12291,15 @@ END_METHOD
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
     <span class="n">rtStepCmdShortcut</span>                <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
     <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
-    <span class="n">rtCalibrateCmdShortcut</span><span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
-    <span class="n">tSDOOpsTimer</span> <span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
-    <span class="n">bParamsEnable</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
-    <span class="n">bDelayReadAtInit</span> <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">rtCalibrateCmdShortcut</span>   <span class="p">:</span> <span class="n">R_TRIG</span><span class="p">;</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
+    <span class="n">tSDOOpsTimer</span>                     <span class="p">:</span> <span class="n">TON</span><span class="p">;</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
+    <span class="n">bParamsEnable</span>                    <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="p">{</span><span class="n">attribute</span> <span class="s1">&#39;hide&#39;</span><span class="p">}</span>
+    <span class="n">bDelayReadAtInit</span>                 <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">bBaseExec</span><span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
+    <span class="n">nCommandLocal</span>                    <span class="p">:</span> <span class="n">E_MCS2OpMode</span> <span class="o">:=</span> <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">;</span>
 <span class="n">END_VAR</span>
 
 <span class="n">VAR</span> <span class="n">CONSTANT</span>
@@ -12349,7 +12356,6 @@ END_METHOD
 <span class="n">END_VAR</span>
 
 <span class="n">VAR</span> <span class="n">PERSISTENT</span>
-    <span class="n">nCommandLocal</span>            <span class="p">:</span> <span class="n">INT</span> <span class="o">:=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">;</span>
     <span class="n">bSaved</span>                   <span class="p">:</span> <span class="n">BOOL</span><span class="p">;</span>
     <span class="n">fSavedPosition</span>           <span class="p">:</span> <span class="n">LREAL</span><span class="p">;</span>
 <span class="n">END_VAR</span>
@@ -12419,7 +12425,7 @@ END_METHOD
 <span class="n">bPrepareDisable</span> <span class="n">R</span><span class="o">=</span> <span class="n">bNewMoveReq</span><span class="p">;</span>
 
 <span class="n">IF</span> <span class="n">rtUserExec</span><span class="o">.</span><span class="n">Q</span> <span class="n">THEN</span>
-    <span class="n">nCommandLocal</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span><span class="p">;</span>
+    <span class="o">//</span><span class="n">nCommandLocal</span> <span class="o">:=</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span><span class="p">;</span>
     <span class="o">//</span> <span class="n">Cover</span> <span class="n">direct</span> <span class="n">bExecute</span> <span class="n">path</span><span class="p">,</span> <span class="n">shortcut</span> <span class="n">path</span> <span class="n">already</span> <span class="nb">set</span> <span class="n">bEnPosLag</span><span class="o">/</span><span class="n">fParameterValue</span>
     <span class="n">IF</span> <span class="n">NOT</span> <span class="n">rtMoveCmdShortcut</span><span class="o">.</span><span class="n">Q</span>
         <span class="n">AND</span> <span class="n">NOT</span> <span class="n">rtStepCmdShortcut</span><span class="o">.</span><span class="n">Q</span>
@@ -12443,7 +12449,8 @@ END_METHOD
     <span class="n">stMotionStage</span>        <span class="o">:=</span> <span class="n">stMotionStage</span><span class="p">,</span>
     <span class="n">stDS402Drive</span>         <span class="o">:=</span> <span class="n">stDS402Drive</span><span class="p">,</span>
     <span class="n">stMCS2ChanParameter</span>  <span class="o">:=</span> <span class="n">stChanParams</span><span class="p">,</span>
-    <span class="n">bUserExec</span>            <span class="o">:=</span> <span class="n">rtUserExec</span><span class="o">.</span><span class="n">Q</span>
+    <span class="n">bUserExec</span>            <span class="o">:=</span> <span class="n">rtUserExec</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+    <span class="n">eRequestedManualMode</span> <span class="o">=&gt;</span> <span class="n">nCommandLocal</span>
 <span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Enable</span> <span class="n">mode</span> <span class="n">handling</span>
@@ -12478,32 +12485,32 @@ END_METHOD
     <span class="o">//</span> <span class="n">Close</span> <span class="n">loop</span><span class="p">:</span> <span class="n">gate</span> <span class="n">on</span> <span class="n">NC</span> <span class="n">standstill</span> <span class="n">state</span> <span class="p">(</span><span class="n">bEnableDone</span><span class="p">)</span>
     <span class="n">bLocalExec</span> <span class="o">:=</span> <span class="n">bBaseExec</span>
                   <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">bEnableDone</span>
-                  <span class="n">AND</span> <span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">;</span>
+                  <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">;</span>
 
 <span class="n">ELSIF</span> <span class="n">fbDriveManager</span><span class="o">.</span><span class="n">bHomeModeEnabled</span> <span class="n">THEN</span>
     <span class="o">//</span> <span class="n">Open</span> <span class="n">loop</span> <span class="n">homing</span><span class="p">:</span> <span class="n">gate</span> <span class="n">on</span> <span class="n">DS402</span> <span class="n">operational</span> <span class="n">state</span>
     <span class="n">bLocalExec</span> <span class="o">:=</span> <span class="n">bBaseExec</span>
                   <span class="n">AND</span> <span class="n">fbDriveManager</span><span class="o">.</span><span class="n">bOperational</span>
-                  <span class="n">AND</span> <span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span><span class="p">;</span>
+                  <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span><span class="p">;</span>
 
 <span class="n">ELSIF</span> <span class="n">fbDriveManager</span><span class="o">.</span><span class="n">bStepModeEnabled</span> <span class="n">THEN</span>
     <span class="o">//</span> <span class="n">Open</span> <span class="n">loop</span> <span class="n">step</span><span class="p">:</span> <span class="n">gate</span> <span class="n">on</span> <span class="n">DS402</span> <span class="n">operational</span> <span class="n">state</span>
     <span class="n">bLocalExec</span> <span class="o">:=</span> <span class="n">bBaseExec</span>
                   <span class="n">AND</span> <span class="n">fbDriveManager</span><span class="o">.</span><span class="n">bOperational</span>
-                  <span class="n">AND</span> <span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">JOG</span><span class="p">;</span>
+                  <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">JOG</span><span class="p">;</span>
 
 <span class="n">ELSIF</span> <span class="n">fbDriveManager</span><span class="o">.</span><span class="n">bCalibrationModeEnabled</span> <span class="n">THEN</span>
     <span class="o">//</span> <span class="n">Open</span> <span class="n">loop</span> <span class="n">calibration</span><span class="p">:</span> <span class="n">gate</span> <span class="n">on</span> <span class="n">DS402</span> <span class="n">operational</span> <span class="n">state</span>
     <span class="n">bLocalExec</span> <span class="o">:=</span> <span class="n">bBaseExec</span>
                   <span class="n">AND</span> <span class="n">fbDriveManager</span><span class="o">.</span><span class="n">bOperational</span>
-                  <span class="n">AND</span> <span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">;</span>
+                  <span class="n">AND</span> <span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">;</span>
 <span class="n">ELSE</span>
     <span class="n">bLocalExec</span> <span class="o">:=</span> <span class="n">FALSE</span><span class="p">;</span>
 <span class="n">END_IF</span>
 
-<span class="n">bExecMove</span> <span class="o">:=</span> <span class="n">bLocalExec</span> <span class="n">AND</span> <span class="p">((</span><span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">)</span>
-                          <span class="n">OR</span>  <span class="p">(</span><span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">JOG</span><span class="p">)</span>
-                          <span class="n">OR</span>  <span class="p">(</span><span class="n">nCommandLocal</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">));</span>
+<span class="n">bExecMove</span> <span class="o">:=</span> <span class="n">bLocalExec</span> <span class="n">AND</span> <span class="p">((</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">)</span>
+                          <span class="n">OR</span>  <span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">JOG</span><span class="p">)</span>
+                          <span class="n">OR</span>  <span class="p">(</span><span class="n">stMotionStage</span><span class="o">.</span><span class="n">nCommand</span> <span class="o">=</span> <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">));</span>
 <span class="n">bExecHome</span> <span class="o">:=</span> <span class="n">bLocalExec</span> <span class="n">AND</span> <span class="n">NOT</span> <span class="n">bExecMove</span><span class="p">;</span>
 
 <span class="n">rtExec</span><span class="p">(</span><span class="n">CLK</span> <span class="o">:=</span> <span class="n">bLocalExec</span><span class="p">);</span>
@@ -12568,7 +12575,7 @@ END_METHOD
 <span class="p">);</span>
 
 <span class="n">CASE</span> <span class="n">nCommandLocal</span> <span class="n">OF</span>
-    <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">MOVE_ABSOLUTE</span><span class="p">:</span>
+    <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CSP</span><span class="p">:</span>
         <span class="n">Reset</span><span class="p">();</span>
         <span class="n">Power</span><span class="p">();</span>
         <span class="n">Halt</span><span class="p">();</span>
@@ -12578,10 +12585,11 @@ END_METHOD
           <span class="n">IN</span> <span class="n">CSP</span> <span class="n">mode</span> <span class="n">the</span> <span class="n">drive</span> <span class="n">control</span> <span class="n">word</span> <span class="ow">is</span> <span class="n">update</span> <span class="n">via</span> <span class="n">the</span> <span class="n">NC</span>
           <span class="n">Manual</span> <span class="n">step</span> <span class="n">mode</span> <span class="ow">and</span> <span class="n">Homing</span> <span class="n">will</span> <span class="n">override</span> <span class="n">this</span>
         <span class="o">*</span><span class="p">)</span>
+
         <span class="n">stDS402Drive</span><span class="o">.</span><span class="n">nModeOfOperation</span> <span class="o">:=</span> <span class="n">stDS402Drive</span><span class="o">.</span><span class="n">nModeOfOperationNC</span><span class="p">;</span>
         <span class="n">stDS402Drive</span><span class="o">.</span><span class="n">nDriveControl</span>    <span class="o">:=</span> <span class="n">stDS402Drive</span><span class="o">.</span><span class="n">nDriveControlNC</span><span class="p">;</span>
 
-    <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">HOME</span><span class="p">:</span>
+    <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">HOME</span><span class="p">:</span>
         <span class="p">(</span><span class="o">*</span><span class="n">DS402</span> <span class="n">Manual</span> <span class="n">Homing</span><span class="o">*</span><span class="p">)</span>
         <span class="n">fbhome</span><span class="p">(</span>
             <span class="n">bExecute</span> <span class="o">:=</span> <span class="n">bExecHome</span> <span class="n">AND</span> <span class="n">fbWriteParameters</span><span class="o">.</span><span class="n">bParamsSet</span><span class="p">,</span>
@@ -12589,14 +12597,14 @@ END_METHOD
             <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStage</span>
         <span class="p">);</span>
 
-    <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">JOG</span><span class="p">:</span>
+    <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">STEP</span><span class="p">:</span>
         <span class="n">fbStepMode</span><span class="p">(</span>
             <span class="n">bExecute</span>       <span class="o">:=</span> <span class="n">bExecMove</span> <span class="n">AND</span> <span class="n">fbWriteParameters</span><span class="o">.</span><span class="n">bParamsSet</span><span class="p">,</span>
             <span class="n">stDS402Drive</span>  <span class="o">:=</span> <span class="n">stDS402Drive</span><span class="p">,</span>
             <span class="n">stMotionStage</span> <span class="o">:=</span> <span class="n">stMotionStage</span>
         <span class="p">);</span>
 
-    <span class="n">E_EpicsMotorCmd</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">:</span>
+    <span class="n">E_MCS2OpMode</span><span class="o">.</span><span class="n">CALIBRATE</span><span class="p">:</span>
         <span class="n">fbCalibrate</span><span class="p">(</span>
             <span class="n">bExecute</span>         <span class="o">:=</span> <span class="n">bExecMove</span> <span class="n">AND</span> <span class="n">fbWriteParameters</span><span class="o">.</span><span class="n">bParamsSet</span><span class="p">,</span>
             <span class="n">stDS402Drive</span>  <span class="o">:=</span> <span class="n">stDS402Drive</span><span class="p">,</span>
@@ -13168,6 +13176,7 @@ END_METHOD
 <li><p><a class="reference internal" href="#e-epicshomecmd">E_EpicsHomeCmd</a></p></li>
 <li><p><a class="reference internal" href="#e-epicsmotorcmd">E_EpicsMotorCmd</a></p></li>
 <li><p><a class="reference internal" href="#e-mcs2homemethod">E_MCS2HomeMethod</a></p></li>
+<li><p><a class="reference internal" href="#e-mcs2opmode">E_MCS2OpMode</a></p></li>
 <li><p><a class="reference internal" href="#e-module">E_Module</a></p></li>
 <li><p><a class="reference internal" href="#e-movedonecause">E_MoveDoneCause</a></p></li>
 <li><p><a class="reference internal" href="#e-stageenablemode">E_StageEnableMode</a></p></li>
@@ -25837,26 +25846,28 @@ END_FUNCTION_BLOCK
 
 <span class="n">CallAllSdoWriters</span><span class="p">();</span>
 
-<span class="o">//</span> <span class="n">Boot</span> <span class="n">sweep</span> <span class="n">handles</span> <span class="n">bParamsSet</span> <span class="n">directly</span><span class="p">;</span> <span class="ow">in</span> <span class="n">parallel</span> <span class="n">mode</span> <span class="n">we</span> <span class="n">hold</span> <span class="n">it</span> <span class="n">TRUE</span>
-<span class="o">//</span> <span class="n">unless</span> <span class="n">some</span> <span class="n">writer</span> <span class="ow">is</span> <span class="n">currently</span> <span class="n">busy</span><span class="o">.</span>
+<span class="o">//</span> <span class="n">After</span> <span class="n">the</span> <span class="n">boot</span> <span class="n">sweep</span><span class="p">,</span> <span class="n">bParamsSet</span> <span class="n">reflects</span> <span class="n">writer</span> <span class="n">activity</span> <span class="ow">in</span> <span class="n">real</span> <span class="n">time</span><span class="p">:</span>
+<span class="o">//</span> <span class="n">TRUE</span> <span class="n">when</span> <span class="n">no</span> <span class="n">parameter</span> <span class="n">writer</span> <span class="ow">is</span> <span class="n">busy</span><span class="p">,</span> <span class="n">FALSE</span> <span class="k">while</span> <span class="nb">any</span> <span class="ow">is</span> <span class="n">busy</span><span class="o">.</span> <span class="n">The</span>
 <span class="n">IF</span> <span class="n">bBootSweepDone</span> <span class="n">THEN</span>
-    <span class="n">bParamsSet</span> <span class="n">R</span><span class="o">=</span> <span class="n">fbSetFErrorWin</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetSoftLimMin</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetSoftLimMax</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbMaxCloseLoopFreqWrite</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSensorPowerModeWrite</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbLogicalScaleOffsetWrite</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbLogicalScaleInvWrite</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbCalibrationOptWrite</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetHomeVeloFast</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetHomeVeloSlow</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetHomeAcc</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetHomeOffs</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetHomeMethod</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbReferencingOptWrite</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetSteps</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetStepAmp</span><span class="o">.</span><span class="n">bBusy</span>
-              <span class="n">OR</span> <span class="n">fbSetStepFreq</span><span class="o">.</span><span class="n">bBusy</span><span class="p">;</span>
+    <span class="n">bParamsSet</span> <span class="o">:=</span> <span class="n">NOT</span> <span class="p">(</span>
+        <span class="n">fbSetFErrorWin</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetSoftLimMin</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetSoftLimMax</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbMaxCloseLoopFreqWrite</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSensorPowerModeWrite</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbLogicalScaleOffsetWrite</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbLogicalScaleInvWrite</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbCalibrationOptWrite</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetHomeVeloFast</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetHomeVeloSlow</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetHomeAcc</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetHomeOffs</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetHomeMethod</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbReferencingOptWrite</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetSteps</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetStepAmp</span><span class="o">.</span><span class="n">bBusy</span>
+        <span class="n">OR</span> <span class="n">fbSetStepFreq</span><span class="o">.</span><span class="n">bBusy</span>
+    <span class="p">);</span>
 <span class="n">END_IF</span>
 
 <span class="n">END_FUNCTION_BLOCK</span>
