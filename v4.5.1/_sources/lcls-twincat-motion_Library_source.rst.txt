@@ -230,35 +230,6 @@ E_DS402EGU
 
 
 
-E_DS402OpMode
-^^^^^^^^^^^^^
-
-::
-
-    {attribute 'qualified_only'}
-    {attribute 'strict'}
-    {attribute 'to_string'}
-    TYPE E_DS402OpMode :
-    (
-        NONE := 0,
-        // P-T-P target profil
-        PROFILE_POSITION:=1,
-        PROFIL_VELOCITY :=3,
-        HOME:=6,
-        // Cyclic synchronous modes
-        CSP :=8,
-        CSV :=9,
-        CST := 10,
-        CSTCA := 11,
-        // smartAct MCS2 open loop
-        MCS2_CALIBRATION:=-1,
-        MCS2_OL_STEP_MODE:=-4
-    ) SINT;
-    END_TYPE
-
-
-
-
 E_EpicsHomeCmd
 ^^^^^^^^^^^^^^
 
@@ -390,6 +361,35 @@ E_MCS2HomeMethod
 
 
 
+E_MCS2OpMode
+^^^^^^^^^^^^
+
+::
+
+    {attribute 'qualified_only'}
+    {attribute 'strict'}
+    {attribute 'to_string'}
+    TYPE E_MCS2OpMode :
+    (
+        NONE := 0,
+        // P-T-P target profil
+        PROFILE_POSITION:=1,
+        PROFIL_VELOCITY :=3,
+        HOME:=6,
+        // Cyclic synchronous modes
+        CSP :=8,
+        CSV :=9,
+        CST := 10,
+        CSTCA := 11,
+        // smartAct MCS2 open loop
+        CALIBRATE :=-1,
+        STEP :=-4
+    ) SINT;
+    END_TYPE
+
+
+
+
 E_MCS2OpModeReq
 ^^^^^^^^^^^^^^^
 
@@ -416,7 +416,6 @@ E_MCS2OpModeReq
 
 
 Related:
-    * `E_DS402OpMode`_
     * `FB_MCS2DriveManager`_
 
 
@@ -1090,6 +1089,11 @@ ST_DS402Drive
     STRUCT
         (* Global variables for the TPDO data from the drive. Each one is linked to the respective TPDO channel. *)
         stDriveStatus 			AT %I*	: 	ST_DS402DriveStatus;
+        {attribute 'pytmc' := '
+            pv: eOpModeDisplay
+            io: i
+            field: DESC MCS2 current operating mode
+        '}
         nModeOfOperationDisplay AT %I*	: 	SINT;
         //nActualPosition 		AT %I*	: 	DINT;
         (*CSP drive mode*)
@@ -1318,12 +1322,12 @@ ST_MCS2ChanParameter
         '}
         bCalibrationCmd : BOOL;
 
+        // Desired drive operating mode (source of truth). Default is closed-loop (CSP) absolute motion.
         {attribute 'pytmc' := '
             pv: eOpModeReq
-            io: io
+            io: o
             field: DESC DS402 operation mode request (default closed loop)
         '}
-        // Desired drive operating mode (source of truth). Default is closed-loop (CSP) absolute motion.
         eOpModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
 
         {attribute 'pytmc' := '
@@ -1332,6 +1336,7 @@ ST_MCS2ChanParameter
             field: DESC Channel configuration parameters.
         '}
         stChannelState        : ST_ChannelState;
+
         {attribute 'pytmc' := '
             pv: eHomeMode
             io: i
@@ -7069,6 +7074,7 @@ FB_MCS2DriveManager
         bHomeModeEnabled : BOOL;
         bStepModeEnabled : BOOL;
         bCalibrationModeEnabled : BOOL;
+        eRequestedManualMode : E_MCS2OpMode := E_MCS2OpMode.CSP;
     END_VAR
 
     VAR
@@ -7077,7 +7083,6 @@ FB_MCS2DriveManager
         tonStartupStep : TON;
         bFaultLast : BOOL := FALSE;
         ftFaultClear : F_TRIG;
-        eRequestedManualMode : E_DS402OpMode := E_DS402OpMode.CSP;
         bPendingManualModeSwitch : BOOL := FALSE;
         // Previous PV value, used to detect a mode-request change
         eLastModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
@@ -7120,7 +7125,7 @@ FB_MCS2DriveManager
     bFaultLast := bFault;
 
     // Status flag for manual operation mode (not CSP)
-    bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_DS402OpMode.CSP);
+    bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_MCS2OpMode.CSP);
 
     // DS402 startup sequence at boot or after fault (until operational)
     IF bStartupActive AND bDS402Manual THEN
@@ -7177,13 +7182,13 @@ FB_MCS2DriveManager
 
         IF bOperational THEN
             CASE stDS402Drive.nModeOfOperationDisplay OF
-                E_DS402OpMode.CSP:
+                E_MCS2OpMode.CSP:
                     bCSPModeEnabled := TRUE;
-                E_DS402OpMode.HOME:
+                E_MCS2OpMode.HOME:
                     bHomeModeEnabled := TRUE;
-                E_DS402OpMode.MCS2_OL_STEP_MODE:
+                E_MCS2OpMode.STEP:
                     bStepModeEnabled := TRUE;
-                E_DS402OpMode.MCS2_CALIBRATION:
+                E_MCS2OpMode.CALIBRATE:
                     bCalibrationModeEnabled := TRUE;
             END_CASE
         END_IF
@@ -7208,14 +7213,14 @@ FB_MCS2DriveManager
         // Map the requested mode (PV) onto the DS402 operation mode
         CASE stMCS2ChanParameter.eOpModeReq OF
             E_MCS2OpModeReq.STEP:
-                eRequestedManualMode := E_DS402OpMode.MCS2_OL_STEP_MODE;
+                eRequestedManualMode := E_MCS2OpMode.STEP;
             E_MCS2OpModeReq.HOME:
-                eRequestedManualMode := E_DS402OpMode.HOME;
+                eRequestedManualMode := E_MCS2OpMode.HOME;
             E_MCS2OpModeReq.CALIBRATION:
-                eRequestedManualMode := E_DS402OpMode.MCS2_CALIBRATION;
+                eRequestedManualMode := E_MCS2OpMode.CALIBRATE;
             ELSE
                 // CLOSED_LOOP (default) and any unexpected value map to CSP closed-loop motion
-                eRequestedManualMode := E_DS402OpMode.CSP;
+                eRequestedManualMode := E_MCS2OpMode.CSP;
         END_CASE
 
         // Detect a change in the requested mode (PV write, from the user or a motion request)
@@ -7238,8 +7243,8 @@ FB_MCS2DriveManager
                     bManualTransition := FALSE;
                 END_IF
             ELSE
-                IF eRequestedManualMode = E_DS402OpMode.CSP THEN
-                    stDS402Drive.nModeOfOperation := E_DS402OpMode.CSP;
+                IF eRequestedManualMode = E_MCS2OpMode.CSP THEN
+                    stDS402Drive.nModeOfOperation := E_MCS2OpMode.CSP;
                     bPendingManualModeSwitch := FALSE;
                 ELSE
                     stDS402Drive.nDriveControl.4 := FALSE;
@@ -7273,7 +7278,7 @@ FB_MCS2DriveManager
 
 
 Related:
-    * `E_DS402OpMode`_
+    * `E_MCS2OpMode`_
     * `E_MCS2OpModeReq`_
     * `ST_DS402Drive`_
     * `ST_MCS2ChanParameter`_
@@ -7320,7 +7325,7 @@ FB_MCS2DriveManager_Test
     stDrive.stDriveStatus.QuickStopActive := TRUE;
     stDrive.stDriveStatus.Fault := FALSE;
     stDrive.stDriveStatus.SwitchOnDisabled := FALSE;
-    stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+    stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
 
     fbSut(
         bUserExec := FALSE,
@@ -7350,7 +7355,7 @@ FB_MCS2DriveManager_Test
 
     // Drive currently in step mode; the PV says STEP.
     stChan.eOpModeReq := E_MCS2OpModeReq.STEP;
-    stDrive.nModeOfOperationDisplay := E_DS402OpMode.MCS2_OL_STEP_MODE;
+    stDrive.nModeOfOperationDisplay := E_MCS2OpMode.STEP;
 
     // A closed-loop move request arrives.
     stMotionStage.bMoveCmd := TRUE;
@@ -7365,7 +7370,7 @@ FB_MCS2DriveManager_Test
 
     // The move request overwrites the PV with CLOSED_LOOP and switches the drive to CSP.
     AssertTrue(stChan.eOpModeReq = E_MCS2OpModeReq.CLOSED_LOOP, 'Move request should select CLOSED_LOOP in the PV');
-    AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.CSP, 'Drive should be switched to CSP for a closed-loop move');
+    AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.CSP, 'Drive should be switched to CSP for a closed-loop move');
 
     TEST_FINISHED();
     END_METHOD
@@ -7380,7 +7385,7 @@ FB_MCS2DriveManager_Test
     TEST(__POUNAME());
 
     // Drive displaying CSP; user sets the mode PV to CALIBRATION (no motion request).
-    stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+    stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
     stChan.eOpModeReq := E_MCS2OpModeReq.CALIBRATION;
 
     fbSut(
@@ -7392,7 +7397,7 @@ FB_MCS2DriveManager_Test
     );
 
     // The PV change alone must drive the DS402 mode to calibration.
-    AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.MCS2_CALIBRATION, 'PV CALIBRATION should switch drive to MCS2_CALIBRATION');
+    AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.CALIBRATE, 'PV CALIBRATION should switch drive to MCS2_CALIBRATION');
 
     TEST_FINISHED();
     END_METHOD
@@ -7407,7 +7412,7 @@ FB_MCS2DriveManager_Test
     TEST(__POUNAME());
 
     // Drive displaying CSP; user sets the mode PV to STEP (no motion request).
-    stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+    stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
     stChan.eOpModeReq := E_MCS2OpModeReq.STEP;
 
     fbSut(
@@ -7419,7 +7424,7 @@ FB_MCS2DriveManager_Test
     );
 
     // The PV change alone must drive the DS402 mode to open-loop step mode.
-    AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.MCS2_OL_STEP_MODE, 'PV STEP should switch drive to MCS2_OL_STEP_MODE');
+    AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.CALIBRATE, 'PV STEP should switch drive to MCS2_OL_STEP_MODE');
 
     TEST_FINISHED();
     END_METHOD
@@ -7434,7 +7439,7 @@ FB_MCS2DriveManager_Test
     TEST(__POUNAME());
 
     // Drive displaying CSP, PV at its default closed-loop value.
-    stDrive.nModeOfOperationDisplay := E_DS402OpMode.CSP;
+    stDrive.nModeOfOperationDisplay := E_MCS2OpMode.CSP;
 
     // A step move request arrives.
     stChan.bStepMoveCmd := TRUE;
@@ -7449,14 +7454,14 @@ FB_MCS2DriveManager_Test
 
     // The step request writes STEP into the PV and switches the drive into step mode.
     AssertTrue(stChan.eOpModeReq = E_MCS2OpModeReq.STEP, 'Step request should select STEP in the PV');
-    AssertTrue(stDrive.nModeOfOperation = E_DS402OpMode.MCS2_OL_STEP_MODE, 'Step request should switch drive to MCS2_OL_STEP_MODE');
+    AssertTrue(stDrive.nModeOfOperation = E_MCS2OpMode.STEP, 'Step request should switch drive to MCS2_OL_STEP_MODE');
 
     TEST_FINISHED();
     END_METHOD
 
 
 Related:
-    * `E_DS402OpMode`_
+    * `E_MCS2OpMode`_
     * `E_MCS2OpModeReq`_
     * `FB_MCS2DriveManager`_
     * `ST_DS402Drive`_
@@ -12048,7 +12053,6 @@ FB_MotionStageE727
 
 
 Related:
-    * `E_DS402OpMode`_
     * `E_EpicsHomeCmd`_
     * `E_EpicsMotorCmd`_
     * `E_Module`_
@@ -12081,6 +12085,7 @@ FB_MotionStageMCS2
         {attribute 'no_copy'}
         stChanParams       : REFERENCE TO ST_MCS2ChanParameter;
         // Hardware I/O
+        {attribute 'pytmc' := 'pv:'}
         stDS402Drive		: ST_DS402Drive;
 
         fbDriveManager		: FB_MCS2DriveManager;
@@ -12093,8 +12098,6 @@ FB_MotionStageMCS2
 
         {attribute 'hide'}
         eModule                 : E_Module;
-        {attribute 'hide'}
-        //eHomeMode               : E_EpicsHomeCmd := E_EpicsHomeCmd.AUTOZERO;
         {attribute 'hide'}
         eDoneCause              : E_MoveDoneCause := E_MoveDoneCause.Unknown;
         {attribute 'hide'}
@@ -12176,11 +12179,15 @@ FB_MotionStageMCS2
         {attribute 'hide'}
         rtStepCmdShortcut		 : R_TRIG;
         {attribute 'hide'}
-        rtCalibrateCmdShortcut: R_TRIG;
-        tSDOOpsTimer : TON;
-        bParamsEnable: BOOL;
-        bDelayReadAtInit : BOOL;
+        rtCalibrateCmdShortcut	 : R_TRIG;
+        {attribute 'hide'}
+        tSDOOpsTimer 			 : TON;
+        {attribute 'hide'}
+        bParamsEnable			 : BOOL;
+        {attribute 'hide'}
+        bDelayReadAtInit 		 : BOOL;
         bBaseExec: BOOL;
+        nCommandLocal  			 : E_MCS2OpMode := E_MCS2OpMode.CSP;
     END_VAR
 
     VAR CONSTANT
@@ -12237,7 +12244,6 @@ FB_MotionStageMCS2
     END_VAR
 
     VAR PERSISTENT
-        nCommandLocal            : INT := E_EpicsMotorCmd.MOVE_ABSOLUTE;
         bSaved                   : BOOL;
         fSavedPosition           : LREAL;
     END_VAR
@@ -12307,7 +12313,7 @@ FB_MotionStageMCS2
     bPrepareDisable R= bNewMoveReq;
 
     IF rtUserExec.Q THEN
-        nCommandLocal := stMotionStage.nCommand;
+        //nCommandLocal := stMotionStage.nCommand;
         // Cover direct bExecute path, shortcut path already set bEnPosLag/fParameterValue
         IF NOT rtMoveCmdShortcut.Q
             AND NOT rtStepCmdShortcut.Q
@@ -12331,7 +12337,8 @@ FB_MotionStageMCS2
         stMotionStage        := stMotionStage,
         stDS402Drive         := stDS402Drive,
         stMCS2ChanParameter  := stChanParams,
-        bUserExec            := rtUserExec.Q
+        bUserExec            := rtUserExec.Q,
+        eRequestedManualMode => nCommandLocal
     );
 
     // Enable mode handling
@@ -12366,32 +12373,32 @@ FB_MotionStageMCS2
         // Close loop: gate on NC standstill state (bEnableDone)
         bLocalExec := bBaseExec
                       AND stMotionStage.bEnableDone
-                      AND nCommandLocal = E_EpicsMotorCmd.MOVE_ABSOLUTE;
+                      AND stMotionStage.nCommand = E_EpicsMotorCmd.MOVE_ABSOLUTE;
 
     ELSIF fbDriveManager.bHomeModeEnabled THEN
         // Open loop homing: gate on DS402 operational state
         bLocalExec := bBaseExec
                       AND fbDriveManager.bOperational
-                      AND nCommandLocal = E_EpicsMotorCmd.HOME;
+                      AND stMotionStage.nCommand = E_EpicsMotorCmd.HOME;
 
     ELSIF fbDriveManager.bStepModeEnabled THEN
         // Open loop step: gate on DS402 operational state
         bLocalExec := bBaseExec
                       AND fbDriveManager.bOperational
-                      AND nCommandLocal = E_EpicsMotorCmd.JOG;
+                      AND stMotionStage.nCommand = E_EpicsMotorCmd.JOG;
 
     ELSIF fbDriveManager.bCalibrationModeEnabled THEN
         // Open loop calibration: gate on DS402 operational state
         bLocalExec := bBaseExec
                       AND fbDriveManager.bOperational
-                      AND nCommandLocal = E_EpicsMotorCmd.CALIBRATE;
+                      AND stMotionStage.nCommand = E_EpicsMotorCmd.CALIBRATE;
     ELSE
         bLocalExec := FALSE;
     END_IF
 
-    bExecMove := bLocalExec AND ((nCommandLocal = E_EpicsMotorCmd.MOVE_ABSOLUTE)
-                              OR  (nCommandLocal = E_EpicsMotorCmd.JOG)
-                              OR  (nCommandLocal = E_EpicsMotorCmd.CALIBRATE));
+    bExecMove := bLocalExec AND ((stMotionStage.nCommand = E_EpicsMotorCmd.MOVE_ABSOLUTE)
+                              OR  (stMotionStage.nCommand = E_EpicsMotorCmd.JOG)
+                              OR  (stMotionStage.nCommand = E_EpicsMotorCmd.CALIBRATE));
     bExecHome := bLocalExec AND NOT bExecMove;
 
     rtExec(CLK := bLocalExec);
@@ -12456,7 +12463,7 @@ FB_MotionStageMCS2
     );
 
     CASE nCommandLocal OF
-        E_EpicsMotorCmd.MOVE_ABSOLUTE:
+        E_MCS2OpMode.CSP:
             Reset();
             Power();
             Halt();
@@ -12466,10 +12473,11 @@ FB_MotionStageMCS2
               IN CSP mode the drive control word is update via the NC
               Manual step mode and Homing will override this
             *)
+
             stDS402Drive.nModeOfOperation := stDS402Drive.nModeOfOperationNC;
             stDS402Drive.nDriveControl    := stDS402Drive.nDriveControlNC;
 
-        E_EpicsMotorCmd.HOME:
+        E_MCS2OpMode.HOME:
             (*DS402 Manual Homing*)
             fbhome(
                 bExecute := bExecHome AND fbWriteParameters.bParamsSet,
@@ -12477,14 +12485,14 @@ FB_MotionStageMCS2
                 stMotionStage := stMotionStage
             );
 
-        E_EpicsMotorCmd.JOG:
+        E_MCS2OpMode.STEP:
             fbStepMode(
                 bExecute       := bExecMove AND fbWriteParameters.bParamsSet,
                 stDS402Drive  := stDS402Drive,
                 stMotionStage := stMotionStage
             );
 
-        E_EpicsMotorCmd.CALIBRATE:
+        E_MCS2OpMode.CALIBRATE:
             fbCalibrate(
                 bExecute	 := bExecMove AND fbWriteParameters.bParamsSet,
                 stDS402Drive  := stDS402Drive,
@@ -13055,6 +13063,7 @@ Related:
     * `E_EpicsHomeCmd`_
     * `E_EpicsMotorCmd`_
     * `E_MCS2HomeMethod`_
+    * `E_MCS2OpMode`_
     * `E_Module`_
     * `E_MoveDoneCause`_
     * `E_StageEnableMode`_
@@ -25745,26 +25754,28 @@ FB_WriteChanParameters
 
     CallAllSdoWriters();
 
-    // Boot sweep handles bParamsSet directly; in parallel mode we hold it TRUE
-    // unless some writer is currently busy.
+    // After the boot sweep, bParamsSet reflects writer activity in real time:
+    // TRUE when no parameter writer is busy, FALSE while any is busy. The
     IF bBootSweepDone THEN
-        bParamsSet R= fbSetFErrorWin.bBusy
-                  OR fbSetSoftLimMin.bBusy
-                  OR fbSetSoftLimMax.bBusy
-                  OR fbMaxCloseLoopFreqWrite.bBusy
-                  OR fbSensorPowerModeWrite.bBusy
-                  OR fbLogicalScaleOffsetWrite.bBusy
-                  OR fbLogicalScaleInvWrite.bBusy
-                  OR fbCalibrationOptWrite.bBusy
-                  OR fbSetHomeVeloFast.bBusy
-                  OR fbSetHomeVeloSlow.bBusy
-                  OR fbSetHomeAcc.bBusy
-                  OR fbSetHomeOffs.bBusy
-                  OR fbSetHomeMethod.bBusy
-                  OR fbReferencingOptWrite.bBusy
-                  OR fbSetSteps.bBusy
-                  OR fbSetStepAmp.bBusy
-                  OR fbSetStepFreq.bBusy;
+        bParamsSet := NOT (
+            fbSetFErrorWin.bBusy
+            OR fbSetSoftLimMin.bBusy
+            OR fbSetSoftLimMax.bBusy
+            OR fbMaxCloseLoopFreqWrite.bBusy
+            OR fbSensorPowerModeWrite.bBusy
+            OR fbLogicalScaleOffsetWrite.bBusy
+            OR fbLogicalScaleInvWrite.bBusy
+            OR fbCalibrationOptWrite.bBusy
+            OR fbSetHomeVeloFast.bBusy
+            OR fbSetHomeVeloSlow.bBusy
+            OR fbSetHomeAcc.bBusy
+            OR fbSetHomeOffs.bBusy
+            OR fbSetHomeMethod.bBusy
+            OR fbReferencingOptWrite.bBusy
+            OR fbSetSteps.bBusy
+            OR fbSetStepAmp.bBusy
+            OR fbSetStepFreq.bBusy
+        );
     END_IF
 
     END_FUNCTION_BLOCK
