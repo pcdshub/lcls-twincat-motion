@@ -247,26 +247,28 @@ END_IF
 
 CallAllSdoWriters();
 
-// Boot sweep handles bParamsSet directly; in parallel mode we hold it TRUE
-// unless some writer is currently busy.
+// After the boot sweep, bParamsSet reflects writer activity in real time:
+// TRUE when no parameter writer is busy, FALSE while any is busy. The
 IF bBootSweepDone THEN
-    bParamsSet R= fbSetFErrorWin.bBusy
-              OR fbSetSoftLimMin.bBusy
-              OR fbSetSoftLimMax.bBusy
-              OR fbMaxCloseLoopFreqWrite.bBusy
-              OR fbSensorPowerModeWrite.bBusy
-              OR fbLogicalScaleOffsetWrite.bBusy
-              OR fbLogicalScaleInvWrite.bBusy
-              OR fbCalibrationOptWrite.bBusy
-              OR fbSetHomeVeloFast.bBusy
-              OR fbSetHomeVeloSlow.bBusy
-              OR fbSetHomeAcc.bBusy
-              OR fbSetHomeOffs.bBusy
-              OR fbSetHomeMethod.bBusy
-              OR fbReferencingOptWrite.bBusy
-              OR fbSetSteps.bBusy
-              OR fbSetStepAmp.bBusy
-              OR fbSetStepFreq.bBusy;
+    bParamsSet := NOT (
+        fbSetFErrorWin.bBusy
+        OR fbSetSoftLimMin.bBusy
+        OR fbSetSoftLimMax.bBusy
+        OR fbMaxCloseLoopFreqWrite.bBusy
+        OR fbSensorPowerModeWrite.bBusy
+        OR fbLogicalScaleOffsetWrite.bBusy
+        OR fbLogicalScaleInvWrite.bBusy
+        OR fbCalibrationOptWrite.bBusy
+        OR fbSetHomeVeloFast.bBusy
+        OR fbSetHomeVeloSlow.bBusy
+        OR fbSetHomeAcc.bBusy
+        OR fbSetHomeOffs.bBusy
+        OR fbSetHomeMethod.bBusy
+        OR fbReferencingOptWrite.bBusy
+        OR fbSetSteps.bBusy
+        OR fbSetStepAmp.bBusy
+        OR fbSetStepFreq.bBusy
+    );
 END_IF
 ]]></ST>
     </Implementation>
