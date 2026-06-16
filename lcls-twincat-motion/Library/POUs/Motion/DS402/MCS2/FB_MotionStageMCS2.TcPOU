@@ -188,9 +188,9 @@ END_IF
 // When the PLC autoboots, I/O is not yet valid after 'call_after_init'
 IF bSystemInit THEN
     IF stMotionStage.Axis.NcToPlc.AxisId <> 0 THEN
-        bExecParamRead                   := TRUE;
+        bExecParamRead	:= TRUE;
         stChanParams.bStageReady  := TRUE;
-        bSystemInit                      := FALSE;
+        bSystemInit	:= FALSE;
         stChanParams.fPosition    := stMotionStage.Axis.NcToPlc.ActPos;
     END_IF
 END_IF

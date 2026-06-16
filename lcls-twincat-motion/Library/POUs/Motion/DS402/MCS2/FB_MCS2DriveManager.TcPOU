@@ -37,6 +37,10 @@ VAR
     eLastModeReq : E_MCS2OpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
     // TRUE for the one cycle the eOpModeReq PV changes value
     bModeReqChanged : BOOL := FALSE;
+    // One-shot latch for the boot-time DS402 fault auto-clear. VAR (not
+    // PERSISTENT) so the auto-reset re-arms on the next PLC start;
+    // genuine runtime faults still require an explicit operator reset.
+    bBootResetDone : BOOL := FALSE;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT __ISVALIDREF(stDS402Drive)
@@ -76,6 +80,19 @@ bFaultLast := bFault;
 
 // Status flag for manual operation mode (not CSP)
 bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_MCS2OpMode.CSP);
+
+// Fires once per power-on when the NC-wired axis sits in CSP with a latched
+// boot fault; removes the long-standing "every cold boot needs a manual
+// reset" pain. Latch never re-arms within a session: a runtime fault must
+// still be cleared explicitly by the operator.
+IF NOT bBootResetDone
+   AND stMotionStage.nMotionAxisID <> 0
+   AND stDS402Drive.nModeOfOperationDisplay = E_MCS2OpMode.CSP
+   AND stDS402Drive.stDriveStatus.Fault
+THEN
+    stMotionStage.bReset := TRUE;
+    bBootResetDone := TRUE;
+END_IF
 
 // DS402 startup sequence at boot or after fault (until operational)
 IF bStartupActive AND bDS402Manual THEN
