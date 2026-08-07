@@ -43,6 +43,7 @@ VAR
     fbPositionerCtrlOptWrite  : FB_EcCoESdoWrite;
     fbActuatorModeWrite       : FB_EcCoESdoWrite;
     fbMotorLoadProtWrite      : FB_EcCoESdoWrite;
+    fbSafeDirWrite            : FB_EcCoESdoWrite;
     // Calibration parameters
     fbCalibrationOptWrite     : FB_EcCoESdoWrite;
     // Home parameters
@@ -80,6 +81,8 @@ VAR
     nRecentActuatorMode         : UDINT;
     {attribute 'hide'}
     nRecentMotorLoadProt        : USINT;
+    {attribute 'hide'}
+    nRecentSafeDir              : BOOL;
 
     // Calibration
     {attribute 'hide'}
@@ -127,6 +130,8 @@ VAR
     ftActuatorModeSetDone       : F_TRIG;
     {attribute 'hide'}
     ftMotorLoadProtSetDone      : F_TRIG;
+    {attribute 'hide'}
+    ftSafeDirSetDone            : F_TRIG;
     {attribute 'hide'}
     ftCalibrationOptSetDone     : F_TRIG;
     {attribute 'hide'}
@@ -189,6 +194,7 @@ VAR
         POS_CTRL_OPT    := 19,
         ACT_MODE        := 20,
         MOTOR_LOAD_PROT := 21,
+        SAFE_DIR        := 22,
         DONE     := 100,
         ERR      := -1
     ) := IDLE;
@@ -251,6 +257,7 @@ ftDistCodeInvSetDone       (CLK := fbDistCodeInvWrite.bBusy);
 ftPositionerCtrlOptSetDone (CLK := fbPositionerCtrlOptWrite.bBusy);
 ftActuatorModeSetDone      (CLK := fbActuatorModeWrite.bBusy);
 ftMotorLoadProtSetDone     (CLK := fbMotorLoadProtWrite.bBusy);
+ftSafeDirSetDone           (CLK := fbSafeDirWrite.bBusy);
 ftCalibrationOptSetDone    (CLK := fbCalibrationOptWrite.bBusy);
 ftHomeVeloFastSetDone      (CLK := fbSetHomeVeloFast.bBusy);
 ftHomeVeloSlowSetDone      (CLK := fbSetHomeVeloSlow.bBusy);
@@ -301,6 +308,7 @@ IF bBootSweepDone THEN
         OR fbPositionerCtrlOptWrite.bBusy
         OR fbActuatorModeWrite.bBusy
         OR fbMotorLoadProtWrite.bBusy
+        OR fbSafeDirWrite.bBusy
     );
 END_IF
 ]]></ST>
@@ -337,6 +345,7 @@ METHOD PRIVATE BootSweepStep
         fbPositionerCtrlOptWrite.bExecute  := FALSE;
         fbActuatorModeWrite.bExecute       := FALSE;
         fbMotorLoadProtWrite.bExecute      := FALSE;
+        fbSafeDirWrite.bExecute            := FALSE;
         eBootStep := FERR;
 
     // Channel params
@@ -713,7 +722,25 @@ METHOD PRIVATE BootSweepStep
                     eBootStep              := ERR;
                 ELSE
                     nRecentMotorLoadProt := stChanParams.nMotorLoadProt;
-                    eBootStep            := DONE;
+                    eBootStep            := SAFE_DIR;
+                END_IF
+            END_IF
+        ELSE
+            eBootStep := SAFE_DIR;
+        END_IF
+
+    SAFE_DIR:
+        IF stChanParams.nSafeDir <> nRecentSafeDir THEN
+            fbSafeDirWrite.bExecute := TRUE;
+            IF ftSafeDirSetDone.Q THEN
+                fbSafeDirWrite.bExecute := FALSE;
+                IF fbSafeDirWrite.bError THEN
+                    stMotionStage.bError   := fbSafeDirWrite.bError;
+                    stMotionStage.nErrorId := fbSafeDirWrite.nErrId;
+                    eBootStep              := ERR;
+                ELSE
+                    nRecentSafeDir := stChanParams.nSafeDir;
+                    eBootStep      := DONE;
                 END_IF
             END_IF
         ELSE
@@ -917,6 +944,14 @@ fbMotorLoadProtWrite(
     pSrcBuf    := ADR(stChanParams.nMotorLoadProt),
     cbBufLen   := SIZEOF(stChanParams.nMotorLoadProt)
 );
+fbSafeDirWrite(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stChanParams.nChanSafeDirIdx,
+    nSubIndex  := 0,
+    pSrcBuf    := ADR(stChanParams.nSafeDir),
+    cbBufLen   := SIZEOF(stChanParams.nSafeDir)
+);
 ]]></ST>
       </Implementation>
     </Method>
@@ -948,6 +983,7 @@ fbDistCodeInvWrite.bExecute        := FALSE;
 fbPositionerCtrlOptWrite.bExecute  := FALSE;
 fbActuatorModeWrite.bExecute       := FALSE;
 fbMotorLoadProtWrite.bExecute      := FALSE;
+fbSafeDirWrite.bExecute            := FALSE;
 ]]></ST>
       </Implementation>
     </Method>
@@ -983,6 +1019,7 @@ fbDistCodeInvWrite.bExecute        := stChanParams.nDistCodeInv        <> nRecen
 fbPositionerCtrlOptWrite.bExecute  := stChanParams.nPositionerCtrlOpt  <> nRecentPositionerCtrlOpt;
 fbActuatorModeWrite.bExecute       := stChanParams.nActuatorMode       <> nRecentActuatorMode;
 fbMotorLoadProtWrite.bExecute      := stChanParams.nMotorLoadProt      <> nRecentMotorLoadProt;
+fbSafeDirWrite.bExecute            := stChanParams.nSafeDir            <> nRecentSafeDir;
 
 // On any completion edge, latch the new cached value and clear errors.
 IF ftFErrWinSetDone.Q THEN
@@ -1164,6 +1201,15 @@ IF ftMotorLoadProtSetDone.Q THEN
         nRecentMotorLoadProt := stChanParams.nMotorLoadProt;
     END_IF
     fbMotorLoadProtWrite.bExecute := FALSE;
+END_IF
+IF ftSafeDirSetDone.Q THEN
+    IF fbSafeDirWrite.bError THEN
+        stMotionStage.bError   := fbSafeDirWrite.bError;
+        stMotionStage.nErrorId := fbSafeDirWrite.nErrId;
+    ELSE
+        nRecentSafeDir := stChanParams.nSafeDir;
+    END_IF
+    fbSafeDirWrite.bExecute := FALSE;
 END_IF
 ]]></ST>
       </Implementation>

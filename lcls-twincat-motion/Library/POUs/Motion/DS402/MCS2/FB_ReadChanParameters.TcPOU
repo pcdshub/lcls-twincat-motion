@@ -8,13 +8,14 @@
 //   FAST queue: ChannelState only. Polled continuously at nReadTime. This is
 //     the latency-sensitive path that interlocks depend on.
 //
-//   SLOW queue: the remaining 19 parameters (positioner type, calibration
+//   SLOW queue: the remaining 21 parameters (positioner type, calibration
 //     options, sensor power mode, referencing options, reference type, safe
 //     direction, motor load, channel type, max closed-loop frequency,
 //     logical scale offset, logical scale inversion, channel temperature,
 //     movement type, base unit, base resolution, distance code inverted,
 //     positioner control options, actuator mode, motor load protection
-//     threshold). Polled once at boot,
+//     threshold, diagnostic closed-loop frequency max and avg). Polled once
+//     at boot,
 //     then every nSlowReadTime (default 10 s). One read at a time. A failed
 //     read logs / latches and the queue advances to the next entry.
 //
@@ -69,6 +70,10 @@ VAR
     fbPositionerCtrlOptRead  : FB_EcCoESdoRead;
     fbActuatorModeRead       : FB_EcCoESdoRead;
     fbMotorLoadProtRead      : FB_EcCoESdoRead;
+    // Diag closed-loop frequency is a subindexed object (0x202A:1 = max,
+    // 0x202A:2 = avg); one reader per subindex.
+    fbDiagClfMaxRead         : FB_EcCoESdoRead;
+    fbDiagClfAvgRead         : FB_EcCoESdoRead;
 
 
     // Completion edge detectors
@@ -93,6 +98,8 @@ VAR
     ftPositionerCtrlOptRead  : F_TRIG;
     ftActuatorModeRead       : F_TRIG;
     ftMotorLoadProtRead      : F_TRIG;
+    ftDiagClfMaxRead         : F_TRIG;
+    ftDiagClfAvgRead         : F_TRIG;
 
 
     // Per-reader execute lines (driven by queue FSMs)
@@ -117,6 +124,8 @@ VAR
     bExecPositionerCtrlOpt  : BOOL;
     bExecActuatorMode       : BOOL;
     bExecMotorLoadProt      : BOOL;
+    bExecDiagClfMax         : BOOL;
+    bExecDiagClfAvg         : BOOL;
 
 
     // Fast queue (ChannelState)
@@ -154,7 +163,7 @@ VAR
     tSlowReadTimeout  : TIME := T#2S;
 END_VAR
 VAR CONSTANT
-    NUM_SLOW : INT := 19;
+    NUM_SLOW : INT := 21;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -186,6 +195,8 @@ IF NOT bEnable THEN
     bExecPositionerCtrlOpt  := FALSE;
     bExecActuatorMode       := FALSE;
     bExecMotorLoadProt      := FALSE;
+    bExecDiagClfMax         := FALSE;
+    bExecDiagClfAvg         := FALSE;
     tonFastCadence(IN := FALSE);
     tonSlowCadence(IN := FALSE);
     CallAllSdoReaders();
@@ -213,6 +224,8 @@ ftDistCodeInvRead        (CLK := fbDistCodeInvRead.bBusy);
 ftPositionerCtrlOptRead  (CLK := fbPositionerCtrlOptRead.bBusy);
 ftActuatorModeRead       (CLK := fbActuatorModeRead.bBusy);
 ftMotorLoadProtRead      (CLK := fbMotorLoadProtRead.bBusy);
+ftDiagClfMaxRead         (CLK := fbDiagClfMaxRead.bBusy);
+ftDiagClfAvgRead         (CLK := fbDiagClfAvgRead.bBusy);
 
 // Run the two queues. Each yields to the other -- only one outstanding SDO
 // at a time across the whole FB.
@@ -411,6 +424,24 @@ fbMotorLoadProtRead(
     cbBufLen   := SIZEOF(stMCS2ChanParameter.nMotorLoadProt),
     bExecute   := bExecMotorLoadProt
 );
+fbDiagClfMaxRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanDiagClfIdx,
+    nSubIndex  := 1,
+    pDstBuf    := ADR(stMCS2ChanParameter.nDiagClfMax),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nDiagClfMax),
+    bExecute   := bExecDiagClfMax
+);
+fbDiagClfAvgRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanDiagClfIdx,
+    nSubIndex  := 2,
+    pDstBuf    := ADR(stMCS2ChanParameter.nDiagClfAvg),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nDiagClfAvg),
+    bExecute   := bExecDiagClfAvg
+);
 ]]></ST>
       </Implementation>
     </Method>
@@ -437,6 +468,8 @@ bExecDistCodeInv        := FALSE;
 bExecPositionerCtrlOpt  := FALSE;
 bExecActuatorMode       := FALSE;
 bExecMotorLoadProt      := FALSE;
+bExecDiagClfMax         := FALSE;
+bExecDiagClfAvg         := FALSE;
 ]]></ST>
       </Implementation>
     </Method>
@@ -467,6 +500,8 @@ END_VAR
     17: bExecPositionerCtrlOpt  := FALSE;
     18: bExecActuatorMode       := FALSE;
     19: bExecMotorLoadProt      := FALSE;
+    20: bExecDiagClfMax         := FALSE;
+    21: bExecDiagClfAvg         := FALSE;
 END_CASE
 ]]></ST>
       </Implementation>
@@ -564,7 +599,7 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="SlowQueueStep" Id="{0a000001-0000-0000-0000-000000000002}">
-      <Declaration><![CDATA[// Slow queue: sweep through 19 entries once at boot, then refresh every
+      <Declaration><![CDATA[// Slow queue: sweep through 21 entries once at boot, then refresh every
 // tSlowReadInterval. One entry at a time. A failed read latches a counter
 // and advances -- it does not stall the sweep or affect the fast queue.
 METHOD PRIVATE SlowQueueStep
@@ -673,6 +708,8 @@ END_VAR
     17: SlowReadEdge := ftPositionerCtrlOptRead.Q;
     18: SlowReadEdge := ftActuatorModeRead.Q;
     19: SlowReadEdge := ftMotorLoadProtRead.Q;
+    20: SlowReadEdge := ftDiagClfMaxRead.Q;
+    21: SlowReadEdge := ftDiagClfAvgRead.Q;
     ELSE
         SlowReadEdge := FALSE;
 END_CASE
@@ -707,6 +744,8 @@ END_VAR
     17: SlowReadError := fbPositionerCtrlOptRead.bError;
     18: SlowReadError := fbActuatorModeRead.bError;
     19: SlowReadError := fbMotorLoadProtRead.bError;
+    20: SlowReadError := fbDiagClfMaxRead.bError;
+    21: SlowReadError := fbDiagClfAvgRead.bError;
     ELSE
         SlowReadError := FALSE;
 END_CASE
@@ -741,6 +780,8 @@ END_VAR
     17: bExecPositionerCtrlOpt  := TRUE;
     18: bExecActuatorMode       := TRUE;
     19: bExecMotorLoadProt      := TRUE;
+    20: bExecDiagClfMax         := TRUE;
+    21: bExecDiagClfAvg         := TRUE;
 END_CASE
 ]]></ST>
       </Implementation>
