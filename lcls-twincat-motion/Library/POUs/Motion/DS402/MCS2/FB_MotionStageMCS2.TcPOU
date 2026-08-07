@@ -111,6 +111,10 @@ VAR
     {attribute 'hide'}
     rtStepCmdShortcut		 : R_TRIG;
     {attribute 'hide'}
+    rtStepFwdCmdShortcut	 : R_TRIG;
+    {attribute 'hide'}
+    rtStepRevCmdShortcut	 : R_TRIG;
+    {attribute 'hide'}
     rtCalibrateCmdShortcut	 : R_TRIG;
     {attribute 'hide'}
     tSDOOpsTimer 			 : TON;
@@ -173,6 +177,22 @@ VAR CONSTANT
     nChanLogicalScaleOffsetBase  : WORD := 16#2008;
     {attribute 'hide'}
     nChanLogicalScaleInvBase     : WORD := 16#2009;
+    {attribute 'hide'}
+    nChanChannelTempBase         : WORD := 16#2026;
+    {attribute 'hide'}
+    nChanMovementTypeBase        : WORD := 16#2003;
+    {attribute 'hide'}
+    nChanBaseUnitBase            : WORD := 16#2005;
+    {attribute 'hide'}
+    nChanBaseResolutionBase      : WORD := 16#2006;
+    {attribute 'hide'}
+    nChanDistCodeInvBase         : WORD := 16#2029;
+    {attribute 'hide'}
+    nChanPositionerCtrlOptBase   : WORD := 16#2027;
+    {attribute 'hide'}
+    nChanActuatorModeBase        : WORD := 16#2028;
+    {attribute 'hide'}
+    nChanMotorLoadProtBase       : WORD := 16#202B;
 END_VAR
 
 VAR PERSISTENT
@@ -202,6 +222,8 @@ END_IF
 rtMoveCmdShortcut    (CLK := stMotionStage.bMoveCmd);
 rtHomeCmdShortcut    (CLK := stMotionStage.bHomeCmd);
 rtStepCmdShortcut    (CLK := stChanParams.bStepMoveCmd);
+rtStepFwdCmdShortcut (CLK := stChanParams.bStepForwardCmd);
+rtStepRevCmdShortcut (CLK := stChanParams.bStepReverseCmd);
 rtCalibrateCmdShortcut(CLK := stChanParams.bCalibrationCmd);
 
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
@@ -211,6 +233,22 @@ IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
 
 ELSIF rtStepCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
+    bEnPosLag              := bRecentEnPosLagStatus;
+    fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+
+ELSIF rtStepFwdCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    // Forward jog: drive the step count positive, then step
+    stChanParams.nChanStep := ABS(stChanParams.nChanStep);
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
+    bEnPosLag              := bRecentEnPosLagStatus;
+    fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+
+ELSIF rtStepRevCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    // Reverse jog: drive the step count negative, then step
+    stChanParams.nChanStep := -ABS(stChanParams.nChanStep);
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
     bEnPosLag              := bRecentEnPosLagStatus;
@@ -511,6 +549,8 @@ END_IF
 stMotionStage.bMoveCmd             := FALSE;
 stMotionStage.bHomeCmd             := FALSE;
 stChanParams.bStepMoveCmd   := FALSE;
+stChanParams.bStepForwardCmd := FALSE;
+stChanParams.bStepReverseCmd := FALSE;
 stChanParams.bCalibrationCmd := FALSE;
 ]]></ST>
     </Implementation>
@@ -731,6 +771,14 @@ stChanParams.nChannelTypeIdx          	:= nChannelTypeBase       		+ ((eModule-1
 stChanParams.nChanStateIdx         		:= nChannelStateBase      		+ ((eModule-1) * nChanOfsBase);
 stChanParams.nChanLogicalScaleOfsIdx   	:= nChanLogicalScaleOffsetBase	+ ((eModule-1) * nChanOfsBase);
 stChanParams.nChanLogicalScaleInvIdx    := nChanLogicalScaleInvBase   	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanChannelTempIdx        := nChanChannelTempBase       	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanMovementTypeIdx       := nChanMovementTypeBase      	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanBaseUnitIdx           := nChanBaseUnitBase          	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanBaseResolutionIdx     := nChanBaseResolutionBase    	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanDistCodeInvIdx        := nChanDistCodeInvBase       	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanPositionerCtrlOptIdx  := nChanPositionerCtrlOptBase 	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanActuatorModeIdx       := nChanActuatorModeBase      	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanMotorLoadProtIdx      := nChanMotorLoadProtBase     	+ ((eModule-1) * nChanOfsBase);
 bSystemInit := TRUE;
 ]]></ST>
       </Implementation>
