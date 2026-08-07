@@ -8,10 +8,13 @@
 //   FAST queue: ChannelState only. Polled continuously at nReadTime. This is
 //     the latency-sensitive path that interlocks depend on.
 //
-//   SLOW queue: the remaining 11 parameters (positioner type, calibration
+//   SLOW queue: the remaining 19 parameters (positioner type, calibration
 //     options, sensor power mode, referencing options, reference type, safe
 //     direction, motor load, channel type, max closed-loop frequency,
-//     logical scale offset, logical scale inversion). Polled once at boot,
+//     logical scale offset, logical scale inversion, channel temperature,
+//     movement type, base unit, base resolution, distance code inverted,
+//     positioner control options, actuator mode, motor load protection
+//     threshold). Polled once at boot,
 //     then every nSlowReadTime (default 10 s). One read at a time. A failed
 //     read logs / latches and the queue advances to the next entry.
 //
@@ -58,6 +61,14 @@ VAR
     fbChannelTypeRead        : FB_EcCoESdoRead;
     fbLogicalScaleOffsetRead : FB_EcCoESdoRead;
     fbLogicalScaleInvRead    : FB_EcCoESdoRead;
+    fbChannelTempRead        : FB_EcCoESdoRead;
+    fbMovementTypeRead       : FB_EcCoESdoRead;
+    fbBaseUnitRead           : FB_EcCoESdoRead;
+    fbBaseResolutionRead     : FB_EcCoESdoRead;
+    fbDistCodeInvRead        : FB_EcCoESdoRead;
+    fbPositionerCtrlOptRead  : FB_EcCoESdoRead;
+    fbActuatorModeRead       : FB_EcCoESdoRead;
+    fbMotorLoadProtRead      : FB_EcCoESdoRead;
 
 
     // Completion edge detectors
@@ -74,6 +85,14 @@ VAR
     ftChannelTypeRead        : F_TRIG;
     ftLogicalScaleOffsetRead : F_TRIG;
     ftLogicalScaleInvRead    : F_TRIG;
+    ftChannelTempRead        : F_TRIG;
+    ftMovementTypeRead       : F_TRIG;
+    ftBaseUnitRead           : F_TRIG;
+    ftBaseResolutionRead     : F_TRIG;
+    ftDistCodeInvRead        : F_TRIG;
+    ftPositionerCtrlOptRead  : F_TRIG;
+    ftActuatorModeRead       : F_TRIG;
+    ftMotorLoadProtRead      : F_TRIG;
 
 
     // Per-reader execute lines (driven by queue FSMs)
@@ -90,6 +109,14 @@ VAR
     bExecChannelType        : BOOL;
     bExecLogicalScaleOffset : BOOL;
     bExecLogicalScaleInv    : BOOL;
+    bExecChannelTemp        : BOOL;
+    bExecMovementType       : BOOL;
+    bExecBaseUnit           : BOOL;
+    bExecBaseResolution     : BOOL;
+    bExecDistCodeInv        : BOOL;
+    bExecPositionerCtrlOpt  : BOOL;
+    bExecActuatorMode       : BOOL;
+    bExecMotorLoadProt      : BOOL;
 
 
     // Fast queue (ChannelState)
@@ -127,7 +154,7 @@ VAR
     tSlowReadTimeout  : TIME := T#2S;
 END_VAR
 VAR CONSTANT
-    NUM_SLOW : INT := 11;
+    NUM_SLOW : INT := 19;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -151,6 +178,14 @@ IF NOT bEnable THEN
     bExecChannelType        := FALSE;
     bExecLogicalScaleOffset := FALSE;
     bExecLogicalScaleInv    := FALSE;
+    bExecChannelTemp        := FALSE;
+    bExecMovementType       := FALSE;
+    bExecBaseUnit           := FALSE;
+    bExecBaseResolution     := FALSE;
+    bExecDistCodeInv        := FALSE;
+    bExecPositionerCtrlOpt  := FALSE;
+    bExecActuatorMode       := FALSE;
+    bExecMotorLoadProt      := FALSE;
     tonFastCadence(IN := FALSE);
     tonSlowCadence(IN := FALSE);
     CallAllSdoReaders();
@@ -170,6 +205,14 @@ ftMotorLoadRead          (CLK := fbMotorLoadRead.bBusy);
 ftChannelTypeRead        (CLK := fbChannelTypeRead.bBusy);
 ftLogicalScaleOffsetRead (CLK := fbLogicalScaleOffsetRead.bBusy);
 ftLogicalScaleInvRead    (CLK := fbLogicalScaleInvRead.bBusy);
+ftChannelTempRead        (CLK := fbChannelTempRead.bBusy);
+ftMovementTypeRead       (CLK := fbMovementTypeRead.bBusy);
+ftBaseUnitRead           (CLK := fbBaseUnitRead.bBusy);
+ftBaseResolutionRead     (CLK := fbBaseResolutionRead.bBusy);
+ftDistCodeInvRead        (CLK := fbDistCodeInvRead.bBusy);
+ftPositionerCtrlOptRead  (CLK := fbPositionerCtrlOptRead.bBusy);
+ftActuatorModeRead       (CLK := fbActuatorModeRead.bBusy);
+ftMotorLoadProtRead      (CLK := fbMotorLoadProtRead.bBusy);
 
 // Run the two queues. Each yields to the other -- only one outstanding SDO
 // at a time across the whole FB.
@@ -296,6 +339,78 @@ fbLogicalScaleInvRead(
     cbBufLen   := SIZEOF(stMCS2ChanParameter.nLogicalScaleInv),
     bExecute   := bExecLogicalScaleInv
 );
+fbChannelTempRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanChannelTempIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nChannelTemp),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nChannelTemp),
+    bExecute   := bExecChannelTemp
+);
+fbMovementTypeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanMovementTypeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMovementType),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMovementType),
+    bExecute   := bExecMovementType
+);
+fbBaseUnitRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanBaseUnitIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nBaseUnit),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nBaseUnit),
+    bExecute   := bExecBaseUnit
+);
+fbBaseResolutionRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanBaseResolutionIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nBaseResolution),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nBaseResolution),
+    bExecute   := bExecBaseResolution
+);
+fbDistCodeInvRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanDistCodeInvIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nDistCodeInv),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nDistCodeInv),
+    bExecute   := bExecDistCodeInv
+);
+fbPositionerCtrlOptRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanPositionerCtrlOptIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nPositionerCtrlOpt),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nPositionerCtrlOpt),
+    bExecute   := bExecPositionerCtrlOpt
+);
+fbActuatorModeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanActuatorModeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nActuatorMode),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nActuatorMode),
+    bExecute   := bExecActuatorMode
+);
+fbMotorLoadProtRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanMotorLoadProtIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMotorLoadProt),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMotorLoadProt),
+    bExecute   := bExecMotorLoadProt
+);
 ]]></ST>
       </Implementation>
     </Method>
@@ -314,6 +429,14 @@ bExecMotorLoad          := FALSE;
 bExecChannelType        := FALSE;
 bExecLogicalScaleOffset := FALSE;
 bExecLogicalScaleInv    := FALSE;
+bExecChannelTemp        := FALSE;
+bExecMovementType       := FALSE;
+bExecBaseUnit           := FALSE;
+bExecBaseResolution     := FALSE;
+bExecDistCodeInv        := FALSE;
+bExecPositionerCtrlOpt  := FALSE;
+bExecActuatorMode       := FALSE;
+bExecMotorLoadProt      := FALSE;
 ]]></ST>
       </Implementation>
     </Method>
@@ -336,6 +459,14 @@ END_VAR
     9:  bExecChannelType        := FALSE;
     10: bExecLogicalScaleOffset := FALSE;
     11: bExecLogicalScaleInv    := FALSE;
+    12: bExecChannelTemp        := FALSE;
+    13: bExecMovementType       := FALSE;
+    14: bExecBaseUnit           := FALSE;
+    15: bExecBaseResolution     := FALSE;
+    16: bExecDistCodeInv        := FALSE;
+    17: bExecPositionerCtrlOpt  := FALSE;
+    18: bExecActuatorMode       := FALSE;
+    19: bExecMotorLoadProt      := FALSE;
 END_CASE
 ]]></ST>
       </Implementation>
@@ -433,7 +564,7 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="SlowQueueStep" Id="{0a000001-0000-0000-0000-000000000002}">
-      <Declaration><![CDATA[// Slow queue: sweep through 11 entries once at boot, then refresh every
+      <Declaration><![CDATA[// Slow queue: sweep through 19 entries once at boot, then refresh every
 // tSlowReadInterval. One entry at a time. A failed read latches a counter
 // and advances -- it does not stall the sweep or affect the fast queue.
 METHOD PRIVATE SlowQueueStep
@@ -534,6 +665,14 @@ END_VAR
     9:  SlowReadEdge := ftChannelTypeRead.Q;
     10: SlowReadEdge := ftLogicalScaleOffsetRead.Q;
     11: SlowReadEdge := ftLogicalScaleInvRead.Q;
+    12: SlowReadEdge := ftChannelTempRead.Q;
+    13: SlowReadEdge := ftMovementTypeRead.Q;
+    14: SlowReadEdge := ftBaseUnitRead.Q;
+    15: SlowReadEdge := ftBaseResolutionRead.Q;
+    16: SlowReadEdge := ftDistCodeInvRead.Q;
+    17: SlowReadEdge := ftPositionerCtrlOptRead.Q;
+    18: SlowReadEdge := ftActuatorModeRead.Q;
+    19: SlowReadEdge := ftMotorLoadProtRead.Q;
     ELSE
         SlowReadEdge := FALSE;
 END_CASE
@@ -560,6 +699,14 @@ END_VAR
     9:  SlowReadError := fbChannelTypeRead.bError;
     10: SlowReadError := fbLogicalScaleOffsetRead.bError;
     11: SlowReadError := fbLogicalScaleInvRead.bError;
+    12: SlowReadError := fbChannelTempRead.bError;
+    13: SlowReadError := fbMovementTypeRead.bError;
+    14: SlowReadError := fbBaseUnitRead.bError;
+    15: SlowReadError := fbBaseResolutionRead.bError;
+    16: SlowReadError := fbDistCodeInvRead.bError;
+    17: SlowReadError := fbPositionerCtrlOptRead.bError;
+    18: SlowReadError := fbActuatorModeRead.bError;
+    19: SlowReadError := fbMotorLoadProtRead.bError;
     ELSE
         SlowReadError := FALSE;
 END_CASE
@@ -586,6 +733,14 @@ END_VAR
     9:  bExecChannelType        := TRUE;
     10: bExecLogicalScaleOffset := TRUE;
     11: bExecLogicalScaleInv    := TRUE;
+    12: bExecChannelTemp        := TRUE;
+    13: bExecMovementType       := TRUE;
+    14: bExecBaseUnit           := TRUE;
+    15: bExecBaseResolution     := TRUE;
+    16: bExecDistCodeInv        := TRUE;
+    17: bExecPositionerCtrlOpt  := TRUE;
+    18: bExecActuatorMode       := TRUE;
+    19: bExecMotorLoadProt      := TRUE;
 END_CASE
 ]]></ST>
       </Implementation>
