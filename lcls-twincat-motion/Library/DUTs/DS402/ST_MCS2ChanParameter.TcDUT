@@ -106,7 +106,9 @@ STRUCT
     {attribute 'pytmc' := '
         pv: SAFE_DIR
         io: io
-        field: DESC Safe Direction
+        field: ZNAM FORWARD
+        field: ONAM BACKWARD
+        field: DESC Safe direction for end-stop homing/calibration
     '}
     nSafeDir	: BOOL;
 
@@ -222,6 +224,20 @@ STRUCT
         field: DESC Motor Load Protection Threshold
     '}
     nMotorLoadProt        : USINT;
+
+    {attribute 'pytmc' := '
+        pv: DIAG_CLF_MAX
+        io: i
+        field: DESC Diagnostic Closed Loop Frequency (max)
+    '}
+    nDiagClfMax           : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: DIAG_CLF_AVG
+        io: i
+        field: DESC Diagnostic Closed Loop Frequency (avg)
+    '}
+    nDiagClfAvg           : UDINT;
     {attribute 'hide'}
     nHomeVeloFast         : UDINT;
     {attribute 'hide'}
@@ -304,6 +320,8 @@ STRUCT
     nChanActuatorModeIdx     : WORD;
     {attribute 'hide'}
     nChanMotorLoadProtIdx    : WORD;
+    {attribute 'hide'}
+    nChanDiagClfIdx          : WORD;
     fPosition : LREAL;
     bStageReady : BOOL;
     // Temporary workaround: Avoid declaring mc_power externally from FB_MotionStage
