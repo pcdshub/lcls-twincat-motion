@@ -38,7 +38,8 @@ VAR
     fbMaxCloseLoopFreqWrite   : FB_EcCoESdoWrite;
     fbSensorPowerModeWrite    : FB_EcCoESdoWrite;
     fbLogicalScaleOffsetWrite : FB_EcCoESdoWrite;
-    fbLogicalScaleInvWrite    : FB_EcCoESdoWrite;
+    // Logical Scale Inversion (0x2009) is PreOp-only (ESI Access WriteRestrictions="PreOP");
+    // it must be set via the CoE startup list, never written at runtime. Do not add a writer.
     fbDistCodeInvWrite        : FB_EcCoESdoWrite;
     fbPositionerCtrlOptWrite  : FB_EcCoESdoWrite;
     fbActuatorModeWrite       : FB_EcCoESdoWrite;
@@ -70,8 +71,6 @@ VAR
     nRecentSensorPowerMode      : UDINT;
     {attribute 'hide'}
     nRecentLogicalScaleOffset   : LINT;
-    {attribute 'hide'}
-    nRecentLogicalScaleInv      : BOOL;
     {attribute 'hide'}
     nRecentDistCodeInv          : BOOL;
     {attribute 'hide'}
@@ -117,8 +116,6 @@ VAR
     ftSensorPowerModeSetDone    : F_TRIG;
     {attribute 'hide'}
     ftLogicalScaleOffsetSetDone : F_TRIG;
-    {attribute 'hide'}
-    ftLogicalScaleInvSetDone    : F_TRIG;
     {attribute 'hide'}
     ftDistCodeInvSetDone        : F_TRIG;
     {attribute 'hide'}
@@ -170,7 +167,6 @@ VAR
         CLOSEFREQ:= 4,
         SENSORPWR:= 5,
         SCALEOFS := 6,
-        SCALEINV := 7,
         // Calibration
         CALIBOPT := 8,
         // Home
@@ -246,7 +242,6 @@ ftSoftLimMaxSetDone        (CLK := fbSetSoftLimMax.bBusy);
 ftMaxCloseLoopFreqSetDone  (CLK := fbMaxCloseLoopFreqWrite.bBusy);
 ftSensorPowerModeSetDone   (CLK := fbSensorPowerModeWrite.bBusy);
 ftLogicalScaleOffsetSetDone(CLK := fbLogicalScaleOffsetWrite.bBusy);
-ftLogicalScaleInvSetDone   (CLK := fbLogicalScaleInvWrite.bBusy);
 ftDistCodeInvSetDone       (CLK := fbDistCodeInvWrite.bBusy);
 ftPositionerCtrlOptSetDone (CLK := fbPositionerCtrlOptWrite.bBusy);
 ftActuatorModeSetDone      (CLK := fbActuatorModeWrite.bBusy);
@@ -286,7 +281,6 @@ IF bBootSweepDone THEN
         OR fbMaxCloseLoopFreqWrite.bBusy
         OR fbSensorPowerModeWrite.bBusy
         OR fbLogicalScaleOffsetWrite.bBusy
-        OR fbLogicalScaleInvWrite.bBusy
         OR fbCalibrationOptWrite.bBusy
         OR fbSetHomeVeloFast.bBusy
         OR fbSetHomeVeloSlow.bBusy
@@ -322,7 +316,6 @@ METHOD PRIVATE BootSweepStep
         fbMaxCloseLoopFreqWrite.bExecute   := FALSE;
         fbSensorPowerModeWrite.bExecute    := FALSE;
         fbLogicalScaleOffsetWrite.bExecute := FALSE;
-        fbLogicalScaleInvWrite.bExecute    := FALSE;
         fbCalibrationOptWrite.bExecute     := FALSE;
         fbSetHomeVeloFast.bExecute         := FALSE;
         fbSetHomeVeloSlow.bExecute         := FALSE;
@@ -441,25 +434,7 @@ METHOD PRIVATE BootSweepStep
                     eBootStep              := ERR;
                 ELSE
                     nRecentLogicalScaleOffset := stChanParams.nLogicalScaleOffset;
-                    eBootStep                 := SCALEINV;
-                END_IF
-            END_IF
-        ELSE
-            eBootStep := SCALEINV;
-        END_IF
-
-    SCALEINV:
-        IF stChanParams.nLogicalScaleInv <> nRecentLogicalScaleInv THEN
-            fbLogicalScaleInvWrite.bExecute := TRUE;
-            IF ftLogicalScaleInvSetDone.Q THEN
-                fbLogicalScaleInvWrite.bExecute := FALSE;
-                IF fbLogicalScaleInvWrite.bError THEN
-                    stMotionStage.bError   := fbLogicalScaleInvWrite.bError;
-                    stMotionStage.nErrorId := fbLogicalScaleInvWrite.nErrId;
-                    eBootStep              := ERR;
-                ELSE
-                    nRecentLogicalScaleInv := stChanParams.nLogicalScaleInv;
-                    eBootStep              := CALIBOPT;
+                    eBootStep                 := CALIBOPT;
                 END_IF
             END_IF
         ELSE
@@ -789,14 +764,6 @@ fbLogicalScaleOffsetWrite(
     pSrcBuf    := ADR(stChanParams.nLogicalScaleOffset),
     cbBufLen   := SIZEOF(stChanParams.nLogicalScaleOffset)
 );
-fbLogicalScaleInvWrite(
-    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
-    nSlaveAddr := stDS402Drive.nSlaveAddr,
-    nIndex     := stChanParams.nChanLogicalScaleInvIdx,
-    nSubIndex  := 0,
-    pSrcBuf    := ADR(stChanParams.nLogicalScaleInv),
-    cbBufLen   := SIZEOF(stChanParams.nLogicalScaleInv)
-);
 
 // Calibration
 fbCalibrationOptWrite(
@@ -933,7 +900,6 @@ fbSetSoftLimMax.bExecute           := FALSE;
 fbMaxCloseLoopFreqWrite.bExecute   := FALSE;
 fbSensorPowerModeWrite.bExecute    := FALSE;
 fbLogicalScaleOffsetWrite.bExecute := FALSE;
-fbLogicalScaleInvWrite.bExecute    := FALSE;
 fbCalibrationOptWrite.bExecute     := FALSE;
 fbSetHomeVeloFast.bExecute         := FALSE;
 fbSetHomeVeloSlow.bExecute         := FALSE;
@@ -968,7 +934,6 @@ fbSetSoftLimMax.bExecute           := stChanParams.nSoftLimMax         <> nRecen
 fbMaxCloseLoopFreqWrite.bExecute   := stChanParams.nMaxCloseLoopFreq   <> nRecentMaxCloseLoopFreq;
 fbSensorPowerModeWrite.bExecute    := stChanParams.nSensorPowerMode    <> nRecentSensorPowerMode;
 fbLogicalScaleOffsetWrite.bExecute := stChanParams.nLogicalScaleOffset <> nRecentLogicalScaleOffset;
-fbLogicalScaleInvWrite.bExecute    := stChanParams.nLogicalScaleInv    <> nRecentLogicalScaleInv;
 fbCalibrationOptWrite.bExecute     := stChanParams.nCalibrationOpt     <> nRecentCalibrationOpt;
 fbSetHomeVeloFast.bExecute         := stChanParams.nHomeVeloFast       <> nRecentHomeVeloFast;
 fbSetHomeVeloSlow.bExecute         := stChanParams.nHomeVeloSlow       <> nRecentHomeVeloSlow;
@@ -1038,15 +1003,6 @@ IF ftLogicalScaleOffsetSetDone.Q THEN
         nRecentLogicalScaleOffset := stChanParams.nLogicalScaleOffset;
     END_IF
     fbLogicalScaleOffsetWrite.bExecute := FALSE;
-END_IF
-IF ftLogicalScaleInvSetDone.Q THEN
-    IF fbLogicalScaleInvWrite.bError THEN
-        stMotionStage.bError   := fbLogicalScaleInvWrite.bError;
-        stMotionStage.nErrorId := fbLogicalScaleInvWrite.nErrId;
-    ELSE
-        nRecentLogicalScaleInv := stChanParams.nLogicalScaleInv;
-    END_IF
-    fbLogicalScaleInvWrite.bExecute := FALSE;
 END_IF
 IF ftCalibrationOptSetDone.Q THEN
     IF fbCalibrationOptWrite.bError THEN
