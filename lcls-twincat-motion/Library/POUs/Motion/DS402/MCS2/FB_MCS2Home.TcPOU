@@ -51,10 +51,12 @@ CASE eStepState OF
     E_MoveState.INIT:
         IF stMotionStage.bError THEN
             eStepState := E_MoveState.ERROR;
-        ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN // Already homed
-            bHomed := TRUE;
-            eStepState := E_MoveState.DONE;
         ELSE
+            // Always run the full homing sequence, even when the drive already
+            // reports Homing Attained (Bit12). These stick-slip stages use an
+            // incremental encoder, so re-referencing to the end stop is the only
+            // way to clear an undetected lost-count / slip drift. Required for
+            // slit blade re-homing without a power cycle.
             bHomed := FALSE;
             stDS402Drive.nDriveControl.4 := TRUE;
             tonSettlingTime.IN:=TRUE;
