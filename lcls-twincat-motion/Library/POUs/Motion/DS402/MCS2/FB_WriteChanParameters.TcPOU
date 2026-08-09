@@ -38,8 +38,7 @@ VAR
     fbMaxCloseLoopFreqWrite   : FB_EcCoESdoWrite;
     fbSensorPowerModeWrite    : FB_EcCoESdoWrite;
     fbLogicalScaleOffsetWrite : FB_EcCoESdoWrite;
-    // Logical Scale Inversion (0x2009) is PreOp-only (ESI Access WriteRestrictions="PreOP");
-    // it must be set via the CoE startup list, never written at runtime. Do not add a writer.
+    fbLogicalScaleInvWrite    : FB_EcCoESdoWrite;
     fbDistCodeInvWrite        : FB_EcCoESdoWrite;
     fbPositionerCtrlOptWrite  : FB_EcCoESdoWrite;
     fbActuatorModeWrite       : FB_EcCoESdoWrite;
@@ -71,6 +70,8 @@ VAR
     nRecentSensorPowerMode      : UDINT;
     {attribute 'hide'}
     nRecentLogicalScaleOffset   : LINT;
+    {attribute 'hide'}
+    nRecentLogicalScaleInv      : BOOL;
     {attribute 'hide'}
     nRecentDistCodeInv          : BOOL;
     {attribute 'hide'}
@@ -117,6 +118,8 @@ VAR
     {attribute 'hide'}
     ftLogicalScaleOffsetSetDone : F_TRIG;
     {attribute 'hide'}
+    ftLogicalScaleInvSetDone    : F_TRIG;
+    {attribute 'hide'}
     ftDistCodeInvSetDone        : F_TRIG;
     {attribute 'hide'}
     ftPositionerCtrlOptSetDone  : F_TRIG;
@@ -158,6 +161,9 @@ VAR
     bSweepArmed     : BOOL;
     bSweepActive    : BOOL;
     bBootSweepDone  : BOOL;
+    // TRUE while the linked EtherCAT slave is in PreOp ESM state.
+    {attribute 'hide'}
+    bInPreOp        : BOOL;
     eBootStep : (
         IDLE     := 0,
         // Channel
@@ -167,6 +173,7 @@ VAR
         CLOSEFREQ:= 4,
         SENSORPWR:= 5,
         SCALEOFS := 6,
+        SCALEINV := 7,
         // Calibration
         CALIBOPT := 8,
         // Home
@@ -200,6 +207,11 @@ END_IF
 IF NOT bEnable THEN
     RETURN;
 END_IF
+
+// Logical Scale Inversion (0x2009) is writable only in PreOp ESM state.
+// Gate its write on the linked slave state so an OP-state write cannot raise a
+// runtime SDO error. The low nibble of InfoData.State is the ESM state (2=PreOp).
+bInPreOp := (stDS402Drive.nEcatState AND 16#000F) = 2;
 
 // Initial boot delay: only used to arm the first sweep.
 tonInitialDelay(
@@ -242,6 +254,7 @@ ftSoftLimMaxSetDone        (CLK := fbSetSoftLimMax.bBusy);
 ftMaxCloseLoopFreqSetDone  (CLK := fbMaxCloseLoopFreqWrite.bBusy);
 ftSensorPowerModeSetDone   (CLK := fbSensorPowerModeWrite.bBusy);
 ftLogicalScaleOffsetSetDone(CLK := fbLogicalScaleOffsetWrite.bBusy);
+ftLogicalScaleInvSetDone   (CLK := fbLogicalScaleInvWrite.bBusy);
 ftDistCodeInvSetDone       (CLK := fbDistCodeInvWrite.bBusy);
 ftPositionerCtrlOptSetDone (CLK := fbPositionerCtrlOptWrite.bBusy);
 ftActuatorModeSetDone      (CLK := fbActuatorModeWrite.bBusy);
@@ -281,6 +294,7 @@ IF bBootSweepDone THEN
         OR fbMaxCloseLoopFreqWrite.bBusy
         OR fbSensorPowerModeWrite.bBusy
         OR fbLogicalScaleOffsetWrite.bBusy
+        OR fbLogicalScaleInvWrite.bBusy
         OR fbCalibrationOptWrite.bBusy
         OR fbSetHomeVeloFast.bBusy
         OR fbSetHomeVeloSlow.bBusy
@@ -316,6 +330,7 @@ METHOD PRIVATE BootSweepStep
         fbMaxCloseLoopFreqWrite.bExecute   := FALSE;
         fbSensorPowerModeWrite.bExecute    := FALSE;
         fbLogicalScaleOffsetWrite.bExecute := FALSE;
+        fbLogicalScaleInvWrite.bExecute    := FALSE;
         fbCalibrationOptWrite.bExecute     := FALSE;
         fbSetHomeVeloFast.bExecute         := FALSE;
         fbSetHomeVeloSlow.bExecute         := FALSE;
@@ -434,7 +449,28 @@ METHOD PRIVATE BootSweepStep
                     eBootStep              := ERR;
                 ELSE
                     nRecentLogicalScaleOffset := stChanParams.nLogicalScaleOffset;
-                    eBootStep                 := CALIBOPT;
+                    eBootStep                 := SCALEINV;
+                END_IF
+            END_IF
+        ELSE
+            eBootStep := SCALEINV;
+        END_IF
+
+    SCALEINV:
+        // 0x2009 is PreOp-only. Skip during the boot sweep (the slave is in OP
+        // by then) and only write when the slave is deliberately in PreOp;
+        // ParallelOnDemand applies it whenever the setpoint diverges in PreOp.
+        IF bInPreOp AND stChanParams.nLogicalScaleInv <> nRecentLogicalScaleInv THEN
+            fbLogicalScaleInvWrite.bExecute := TRUE;
+            IF ftLogicalScaleInvSetDone.Q THEN
+                fbLogicalScaleInvWrite.bExecute := FALSE;
+                IF fbLogicalScaleInvWrite.bError THEN
+                    stMotionStage.bError   := fbLogicalScaleInvWrite.bError;
+                    stMotionStage.nErrorId := fbLogicalScaleInvWrite.nErrId;
+                    eBootStep              := ERR;
+                ELSE
+                    nRecentLogicalScaleInv := stChanParams.nLogicalScaleInv;
+                    eBootStep              := CALIBOPT;
                 END_IF
             END_IF
         ELSE
@@ -764,6 +800,14 @@ fbLogicalScaleOffsetWrite(
     pSrcBuf    := ADR(stChanParams.nLogicalScaleOffset),
     cbBufLen   := SIZEOF(stChanParams.nLogicalScaleOffset)
 );
+fbLogicalScaleInvWrite(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stChanParams.nChanLogicalScaleInvIdx,
+    nSubIndex  := 0,
+    pSrcBuf    := ADR(stChanParams.nLogicalScaleInv),
+    cbBufLen   := SIZEOF(stChanParams.nLogicalScaleInv)
+);
 
 // Calibration
 fbCalibrationOptWrite(
@@ -900,6 +944,7 @@ fbSetSoftLimMax.bExecute           := FALSE;
 fbMaxCloseLoopFreqWrite.bExecute   := FALSE;
 fbSensorPowerModeWrite.bExecute    := FALSE;
 fbLogicalScaleOffsetWrite.bExecute := FALSE;
+fbLogicalScaleInvWrite.bExecute    := FALSE;
 fbCalibrationOptWrite.bExecute     := FALSE;
 fbSetHomeVeloFast.bExecute         := FALSE;
 fbSetHomeVeloSlow.bExecute         := FALSE;
@@ -934,6 +979,7 @@ fbSetSoftLimMax.bExecute           := stChanParams.nSoftLimMax         <> nRecen
 fbMaxCloseLoopFreqWrite.bExecute   := stChanParams.nMaxCloseLoopFreq   <> nRecentMaxCloseLoopFreq;
 fbSensorPowerModeWrite.bExecute    := stChanParams.nSensorPowerMode    <> nRecentSensorPowerMode;
 fbLogicalScaleOffsetWrite.bExecute := stChanParams.nLogicalScaleOffset <> nRecentLogicalScaleOffset;
+fbLogicalScaleInvWrite.bExecute    := bInPreOp AND (stChanParams.nLogicalScaleInv <> nRecentLogicalScaleInv);
 fbCalibrationOptWrite.bExecute     := stChanParams.nCalibrationOpt     <> nRecentCalibrationOpt;
 fbSetHomeVeloFast.bExecute         := stChanParams.nHomeVeloFast       <> nRecentHomeVeloFast;
 fbSetHomeVeloSlow.bExecute         := stChanParams.nHomeVeloSlow       <> nRecentHomeVeloSlow;
@@ -1003,6 +1049,15 @@ IF ftLogicalScaleOffsetSetDone.Q THEN
         nRecentLogicalScaleOffset := stChanParams.nLogicalScaleOffset;
     END_IF
     fbLogicalScaleOffsetWrite.bExecute := FALSE;
+END_IF
+IF ftLogicalScaleInvSetDone.Q THEN
+    IF fbLogicalScaleInvWrite.bError THEN
+        stMotionStage.bError   := fbLogicalScaleInvWrite.bError;
+        stMotionStage.nErrorId := fbLogicalScaleInvWrite.nErrId;
+    ELSE
+        nRecentLogicalScaleInv := stChanParams.nLogicalScaleInv;
+    END_IF
+    fbLogicalScaleInvWrite.bExecute := FALSE;
 END_IF
 IF ftCalibrationOptSetDone.Q THEN
     IF fbCalibrationOptWrite.bError THEN
