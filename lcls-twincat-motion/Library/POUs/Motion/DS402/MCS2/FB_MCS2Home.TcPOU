@@ -41,6 +41,8 @@ CASE eStepState OF
     E_MoveState.IDLING:
         IF rtHomeMove.Q THEN
             bHomeMoveBusy := TRUE;
+            bHomeMoveDone := FALSE;
+            bHomeMoveAborted := FALSE;
             stMotionStage.bDone := FALSE;
             fbSetPos.Options.ClearPositionLag := TRUE;
             tonSettlingTime.IN:=FALSE;
