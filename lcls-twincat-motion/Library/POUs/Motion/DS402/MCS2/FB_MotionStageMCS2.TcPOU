@@ -830,6 +830,9 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
         ELSIF rtHomeDone.Q THEN
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.HomeDone;
+            // Homing runs in DS402 manual HOME mode. Request closed-loop so the
+            // drive manager switches the drive back to CSP now that homing is done.
+            stChanParams.eOpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
         ELSIF rtCalibrationDone.Q THEN
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.CalibrationDone;
