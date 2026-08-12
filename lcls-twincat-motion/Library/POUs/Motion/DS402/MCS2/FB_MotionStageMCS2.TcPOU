@@ -200,6 +200,8 @@ END_VAR
 VAR PERSISTENT
     bSaved                   : BOOL;
     fSavedPosition           : LREAL;
+    bLastPositiveDirection   : BOOL;
+    bLastNegativeDirection   : BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT __ISVALIDREF(stMotionStage)
@@ -667,22 +669,42 @@ ELSE
     bNegativeDirection := stMotionStage.bBusy AND stMotionStage.fPosDiff < 0;
 END_IF
 
+// Preserve the last commanded direction across the stop and PLC restart. The
+// drive exposes one aggregate limit bit, so this retained context identifies
+// which direction should remain blocked during recovery.
+IF NOT stDS402Drive.stDriveStatus.InternalLimitActive
+    OR (NOT bHitForwardLimit AND NOT bHitBackwardLimit) THEN
+    IF bPositiveDirection THEN
+        bLastPositiveDirection := TRUE;
+        bLastNegativeDirection := FALSE;
+    ELSIF bNegativeDirection THEN
+        bLastPositiveDirection := FALSE;
+        bLastNegativeDirection := TRUE;
+    END_IF
+END_IF
+
 // Latch which physical limit was hit; clear once the drive is no longer reporting a limit.
 // A single InternalLimitActive bit covers both directions, so direction at the time of
 // the hit is used to determine which enable to hold off.
-bHitForwardLimit  S= bPositiveDirection AND stDS402Drive.stDriveStatus.InternalLimitActive;
-bHitBackwardLimit S= bNegativeDirection AND stDS402Drive.stDriveStatus.InternalLimitActive;
+bHitForwardLimit  S= stDS402Drive.stDriveStatus.InternalLimitActive
+                   AND (bPositiveDirection OR bLastPositiveDirection);
+bHitBackwardLimit S= stDS402Drive.stDriveStatus.InternalLimitActive
+                    AND (bNegativeDirection OR bLastNegativeDirection);
 bHitForwardLimit  R= NOT stDS402Drive.stDriveStatus.InternalLimitActive;
 bHitBackwardLimit R= NOT stDS402Drive.stDriveStatus.InternalLimitActive;
 
-stMotionStage.bLimitForwardEnable  := NOT bHitForwardLimit;
-stMotionStage.bLimitBackwardEnable := NOT bHitBackwardLimit;
+// An active limit with no known direction disables both directions. Once the
+// hit direction is known, only that direction is disabled for reverse recovery.
+stMotionStage.bLimitForwardEnable := NOT stDS402Drive.stDriveStatus.InternalLimitActive
+                                     OR (bHitBackwardLimit AND NOT bHitForwardLimit);
+stMotionStage.bLimitBackwardEnable := NOT stDS402Drive.stDriveStatus.InternalLimitActive
+                                      OR (bHitForwardLimit AND NOT bHitBackwardLimit);
 
 // use falling trigger to avoid spamming sErrorMessage
 ftForwardEnabled(CLK := stMotionStage.bLimitForwardEnable);
 ftBackwardEnabled(CLK := stMotionStage.bLimitBackwardEnable);
 
-IF NOT fbhome.bHomeMoveBusy AND ftForwardEnabled.Q THEN
+IF bHitForwardLimit AND NOT fbhome.bHomeMoveBusy AND ftForwardEnabled.Q THEN
     // Not an error, just a warning
     stMotionStage.sCustomErrorMessage := 'Cannot move past positive limit.';
     IF NOT fbDriveManager.bStepModeEnabled THEN
@@ -690,7 +712,7 @@ IF NOT fbhome.bHomeMoveBusy AND ftForwardEnabled.Q THEN
     END_IF
 END_IF
 
-IF NOT fbhome.bHomeMoveBusy AND ftBackwardEnabled.Q THEN
+IF bHitBackwardLimit AND NOT fbhome.bHomeMoveBusy AND ftBackwardEnabled.Q THEN
     // Not an error, just a warning
     stMotionStage.sCustomErrorMessage := 'Cannot move past Negative limit.';
     IF NOT fbDriveManager.bStepModeEnabled THEN
