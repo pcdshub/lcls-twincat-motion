@@ -52,6 +52,8 @@ VAR
     fbChannelStateRead       : FB_EcCoESdoRead;
     // Slow queue
     fbMaxCloseLoopFreqRead   : FB_EcCoESdoRead;
+    fbSoftLimMinRead         : FB_EcCoESdoRead;
+    fbSoftLimMaxRead         : FB_EcCoESdoRead;
     fbPositionerTypeRead     : FB_EcCoESdoRead;
     fbCalibrationOptRead     : FB_EcCoESdoRead;
     fbSensorPowerModeRead    : FB_EcCoESdoRead;
@@ -80,6 +82,8 @@ VAR
 
     ftChannelStateRead       : F_TRIG;
     ftMaxCloseLoopFreqRead   : F_TRIG;
+    ftSoftLimMinRead         : F_TRIG;
+    ftSoftLimMaxRead         : F_TRIG;
     ftPositionerTypeRead     : F_TRIG;
     ftCalibrationOptRead     : F_TRIG;
     ftSensorPowerModeRead    : F_TRIG;
@@ -106,6 +110,8 @@ VAR
 
     bExecChannelState       : BOOL;
     bExecMaxCloseLoopFreq   : BOOL;
+    bExecSoftLimMin         : BOOL;
+    bExecSoftLimMax         : BOOL;
     bExecPositionerType     : BOOL;
     bExecCalibrationOpt     : BOOL;
     bExecSensorPowerMode    : BOOL;
@@ -163,7 +169,7 @@ VAR
     tSlowReadTimeout  : TIME := T#2S;
 END_VAR
 VAR CONSTANT
-    NUM_SLOW : INT := 21;
+    NUM_SLOW : INT := 23;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -206,6 +212,8 @@ END_IF
 // Tick all the F_TRIGs from the previous cycle's bBusy snapshots.
 ftChannelStateRead       (CLK := fbChannelStateRead.bBusy);
 ftMaxCloseLoopFreqRead   (CLK := fbMaxCloseLoopFreqRead.bBusy);
+    ftSoftLimMinRead         (CLK := fbSoftLimMinRead.bBusy);
+    ftSoftLimMaxRead         (CLK := fbSoftLimMaxRead.bBusy);
 ftPositionerTypeRead     (CLK := fbPositionerTypeRead.bBusy);
 ftCalibrationOptRead     (CLK := fbCalibrationOptRead.bBusy);
 ftSensorPowerModeRead    (CLK := fbSensorPowerModeRead.bBusy);
@@ -261,6 +269,24 @@ fbMaxCloseLoopFreqRead(
     pDstBuf    := ADR(stMCS2ChanParameter.nMaxCloseLoopFreq),
     cbBufLen   := SIZEOF(stMCS2ChanParameter.nMaxCloseLoopFreq),
     bExecute   := bExecMaxCloseLoopFreq
+);
+fbSoftLimMinRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanSoftLimitIdx,
+    nSubIndex  := 1,
+    pDstBuf    := ADR(stMCS2ChanParameter.nSoftLimMin),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nSoftLimMin),
+    bExecute   := bExecSoftLimMin
+);
+fbSoftLimMaxRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanSoftLimitIdx,
+    nSubIndex  := 2,
+    pDstBuf    := ADR(stMCS2ChanParameter.nSoftLimMax),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nSoftLimMax),
+    bExecute   := bExecSoftLimMax
 );
 fbPositionerTypeRead(
     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
@@ -470,6 +496,8 @@ bExecActuatorMode       := FALSE;
 bExecMotorLoadProt      := FALSE;
 bExecDiagClfMax         := FALSE;
 bExecDiagClfAvg         := FALSE;
+bExecSoftLimMin         := FALSE;
+bExecSoftLimMax         := FALSE;
 ]]></ST>
       </Implementation>
     </Method>
@@ -502,6 +530,8 @@ END_VAR
     19: bExecMotorLoadProt      := FALSE;
     20: bExecDiagClfMax         := FALSE;
     21: bExecDiagClfAvg         := FALSE;
+    22: bExecSoftLimMin         := FALSE;
+    23: bExecSoftLimMax         := FALSE;
 END_CASE
 ]]></ST>
       </Implementation>
@@ -710,6 +740,8 @@ END_VAR
     19: SlowReadEdge := ftMotorLoadProtRead.Q;
     20: SlowReadEdge := ftDiagClfMaxRead.Q;
     21: SlowReadEdge := ftDiagClfAvgRead.Q;
+    22: SlowReadEdge := ftSoftLimMinRead.Q;
+    23: SlowReadEdge := ftSoftLimMaxRead.Q;
     ELSE
         SlowReadEdge := FALSE;
 END_CASE
@@ -746,6 +778,8 @@ END_VAR
     19: SlowReadError := fbMotorLoadProtRead.bError;
     20: SlowReadError := fbDiagClfMaxRead.bError;
     21: SlowReadError := fbDiagClfAvgRead.bError;
+    22: SlowReadError := fbSoftLimMinRead.bError;
+    23: SlowReadError := fbSoftLimMaxRead.bError;
     ELSE
         SlowReadError := FALSE;
 END_CASE
@@ -782,6 +816,8 @@ END_VAR
     19: bExecMotorLoadProt      := TRUE;
     20: bExecDiagClfMax         := TRUE;
     21: bExecDiagClfAvg         := TRUE;
+    22: bExecSoftLimMin         := TRUE;
+    23: bExecSoftLimMax         := TRUE;
 END_CASE
 ]]></ST>
       </Implementation>
