@@ -29,6 +29,15 @@ END_VAR
     RETURN;
 END_IF
 
+// Translate the active error ID into a human-readable message.
+// sCustomErrorMessage (set by Interlock on limit hits) is copied to sErrorMessage
+// by the caller; this lookup runs only when that path leaves sErrorMessage empty.
+IF stMotionStage.bError AND stMotionStage.sErrorMessage = '' THEN
+    stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+END_IF
+
+// TODO: read the MCS2 drive error code via SDO and use it to override nErrorId
+// when the NC reports no error of its own (nErrorId = 0).
 // fbErrorRead(
 //     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
 //     nSlaveAddr := stDS402Drive.nSlaveAddr,
@@ -38,21 +47,11 @@ END_IF
 //     cbBufLen   := SIZEOF(nPiezoErrorCode),
 //     bExecute   := stMotionStage.bError AND bEnable
 // );
-//
 // ftErrorReadDone(CLK := fbErrorRead.bBusy);
-//
-// // override NC error ID if error is purely from drive
-// IF ftErrorReadDone.Q AND NOT fbErrorRead.bError
-//     AND nPiezoErrorCode <> 0
-//     AND stMotionStage.nErrorId = 0
-// THEN
+// IF ftErrorReadDone.Q AND NOT fbErrorRead.bError AND nPiezoErrorCode <> 0
+//     AND stMotionStage.nErrorId = 0 THEN
 //     stMotionStage.nErrorId := nPiezoErrorCode;
-// END_IF
-//
-// // Cyclic decode and log only when error is active
-// IF stMotionStage.bError THEN
 //     stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
-//     fbLogError(stMotionStage := stMotionStage, bEnable := TRUE);
 // END_IF]]></ST>
     </Implementation>
   </POU>
