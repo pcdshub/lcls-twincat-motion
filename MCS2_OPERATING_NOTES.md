@@ -4,9 +4,13 @@
 
 MCS2 piezo stages do not provide separate positive and negative limit-switch inputs. The PLC therefore uses the aggregate `stDS402Drive.stDriveStatus.InternalLimitActive` status to detect a physical endstop or configured soft limit.
 
+Configure both MCS2 software range limits before operating the stage. The `0x200E:1` minimum and `0x200E:2` maximum must be set, and the maximum must be greater than the minimum. These limits are required for reliable startup recovery when no persisted move direction is available.
+
 Because this status does not identify the direction, `FB_MotionStageMCS2` retains the last commanded direction in persistent variables. When a limit is active, the direction associated with that last move is disabled and the opposite direction remains enabled for recovery. The retained direction is not overwritten while the limit remains active during a recovery move.
 
 If the PLC starts with `InternalLimitActive` already set and no valid direction has ever been recorded, the library disables both directions. This is deliberate: the aggregate status alone cannot safely distinguish which direction is blocked. The operator must resolve the condition using an approved manual recovery procedure or provide direction information before re-enabling motion.
+
+After the initial MCS2 channel-parameter read completes, the library can use the configured `0x200E:1` minimum and `0x200E:2` maximum software range limits to infer the blocked side. It compares the actual position with both limits, disables the direction associated with the nearer limit, and leaves the opposing direction available for recovery. This inference is available only when the range is configured with `max > min`; otherwise both directions remain disabled when no direction history exists.
 
 The retained direction can be stale if the stage was moved while the PLC was off. Treat the automatic recovery direction as a safety aid, not as a substitute for checking the stage and the drive state.
 

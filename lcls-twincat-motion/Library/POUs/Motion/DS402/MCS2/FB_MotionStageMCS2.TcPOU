@@ -655,6 +655,8 @@ VAR_INST
     bHitForwardLimit    : BOOL;
     {attribute 'hide'}
     bHitBackwardLimit   : BOOL;
+    {attribute 'hide'}
+    fCurrentPosition    : LREAL;
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[// Positive or Negative direction.
@@ -667,6 +669,27 @@ IF fbDriveManager.bStepModeEnabled THEN
 ELSE
     bPositiveDirection := stMotionStage.bBusy AND stMotionStage.fPosDiff > 0;
     bNegativeDirection := stMotionStage.bBusy AND stMotionStage.fPosDiff < 0;
+END_IF
+
+// If the drive starts limited and no direction history is available, infer the
+// blocked side from the nearest configured software range limit. The aggregate
+// InternalLimitActive bit does not identify the side by itself.
+fCurrentPosition := DINT_TO_LREAL(stMotionStage.nRawEncoderDINT)
+                    * MAX(stMotionStage.stAxisParameters.fEncScaleFactorInternal,
+                          stChanParams.fScalingFactor);
+IF stDS402Drive.stDriveStatus.InternalLimitActive THEN
+    IF NOT bLastPositiveDirection AND NOT bLastNegativeDirection THEN
+        IF fbReadChanParams.bAllReadsComplete THEN
+            IF stChanParams.nSoftLimMax > stChanParams.nSoftLimMin THEN
+                IF ABS(fCurrentPosition - stChanParams.nSoftLimMin)
+                   < ABS(stChanParams.nSoftLimMax - fCurrentPosition) THEN
+                    bLastNegativeDirection := TRUE;
+                ELSE
+                    bLastPositiveDirection := TRUE;
+                END_IF
+            END_IF
+        END_IF
+    END_IF
 END_IF
 
 // Preserve the last commanded direction across the stop and PLC restart. The
