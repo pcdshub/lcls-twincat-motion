@@ -195,6 +195,11 @@ VAR CONSTANT
     nChanMotorLoadProtBase       : WORD := 16#202B;
     {attribute 'hide'}
     nChanDiagClfBase             : WORD := 16#202A;
+    // Held as constants so the retract check below cannot drift from the text posted.
+    {attribute 'hide'}
+    sMsgPosLimit                 : STRING := 'Cannot move past positive limit.';
+    {attribute 'hide'}
+    sMsgNegLimit                 : STRING := 'Cannot move past Negative limit.';
 END_VAR
 
 VAR PERSISTENT
@@ -411,7 +416,8 @@ IF stMotionStage.bReset THEN
     stMotionStage.bReset := FALSE;
 END_IF
 
-// Stop/halt detection
+// Stop/halt detection. bHalt is the user-stop channel only: execute dropped
+// mid-move. Limit reaction is handled by the direction enables, not from here.
 ftExec(CLK := stMotionStage.bExecute);
 bHalt := ftExec.Q AND stMotionStage.bBusy;
 rtHaltEdge(CLK := bHalt);
@@ -727,20 +733,22 @@ stMotionStage.bLimitBackwardEnable := NOT stDS402Drive.stDriveStatus.InternalLim
 ftForwardEnabled(CLK := stMotionStage.bLimitForwardEnable);
 ftBackwardEnabled(CLK := stMotionStage.bLimitBackwardEnable);
 
-IF bHitForwardLimit AND NOT fbhome.bHomeMoveBusy AND ftForwardEnabled.Q THEN
-    // Not an error, just a warning
-    stMotionStage.sCustomErrorMessage := 'Cannot move past positive limit.';
-    IF NOT fbDriveManager.bStepModeEnabled THEN
-        bHalt := TRUE;
+// A limit hit is the lowest priority message. Never post one over a latched fault,
+// and retract our own once the drive releases the limit so a stale warning cannot
+// later be promoted into sErrorMessage. The drive stops the positioner itself and
+// SetEnables drops the offending direction, so no halt is requested here.
+IF NOT stMotionStage.bError AND NOT fbhome.bHomeMoveBusy THEN
+    IF bHitForwardLimit AND ftForwardEnabled.Q THEN
+        stMotionStage.sCustomErrorMessage := sMsgPosLimit;
+    ELSIF bHitBackwardLimit AND ftBackwardEnabled.Q THEN
+        stMotionStage.sCustomErrorMessage := sMsgNegLimit;
     END_IF
 END_IF
 
-IF bHitBackwardLimit AND NOT fbhome.bHomeMoveBusy AND ftBackwardEnabled.Q THEN
-    // Not an error, just a warning
-    stMotionStage.sCustomErrorMessage := 'Cannot move past Negative limit.';
-    IF NOT fbDriveManager.bStepModeEnabled THEN
-        bHalt := TRUE;
-    END_IF
+IF NOT bHitForwardLimit AND NOT bHitBackwardLimit
+   AND (stMotionStage.sCustomErrorMessage = sMsgPosLimit
+        OR stMotionStage.sCustomErrorMessage = sMsgNegLimit) THEN
+    stMotionStage.sCustomErrorMessage := '';
 END_IF
 
 IF NOT  stMotionStage.bError AND  stMotionStage.bExecute AND NOT  stMotionStage.bUserEnable THEN
