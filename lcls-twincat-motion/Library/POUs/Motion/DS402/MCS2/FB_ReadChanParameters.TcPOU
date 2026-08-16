@@ -50,6 +50,8 @@ VAR
 
     // Fast queue
     fbChannelStateRead       : FB_EcCoESdoRead;
+    // Event queue
+    fbDriveErrCodeRead       : FB_EcCoESdoRead;
     // Slow queue
     fbMaxCloseLoopFreqRead   : FB_EcCoESdoRead;
     fbSoftLimMinRead         : FB_EcCoESdoRead;
@@ -81,6 +83,7 @@ VAR
     // Completion edge detectors
 
     ftChannelStateRead       : F_TRIG;
+    ftDriveErrCodeRead       : F_TRIG;
     ftMaxCloseLoopFreqRead   : F_TRIG;
     ftSoftLimMinRead         : F_TRIG;
     ftSoftLimMaxRead         : F_TRIG;
@@ -109,6 +112,7 @@ VAR
     // Per-reader execute lines (driven by queue FSMs)
 
     bExecChannelState       : BOOL;
+    bExecDriveErrCode       : BOOL;
     bExecMaxCloseLoopFreq   : BOOL;
     bExecSoftLimMin         : BOOL;
     bExecSoftLimMax         : BOOL;
@@ -142,9 +146,27 @@ VAR
         FAST_READING       := 2
     ) := FAST_WAIT_CADENCE;
     tonFastCadence : TON;
+    // Set on a fault or limit event: the drive error code reports the failed move,
+    // not its cause, so the channel state bits must not be up to nReadTime stale.
+    bFastReadNow : BOOL;
     // Per-read watchdog for ChannelState.
     tonFastReadTimeout : TON;
     tFastReadTimeout : TIME := T#2S;
+
+
+    // Event queue (drive error code)
+
+    // 0x603F holds the last channel error and is refreshed by the drive when the
+    // Internal Limit flag is set, so it explains limit stops the NC cannot.
+    eEvt : (
+        EVT_IDLE    := 0,
+        EVT_READING := 1
+    ) := EVT_IDLE;
+    rtErrEvent : R_TRIG;
+    bEvtReadPending : BOOL;
+    bEvtReadActive : BOOL;
+    tonEvtReadTimeout : TON;
+    tEvtReadTimeout : TIME := T#2S;
 
 
     // Slow queue (everything else)
@@ -203,6 +225,12 @@ IF NOT bEnable THEN
     bExecMotorLoadProt      := FALSE;
     bExecDiagClfMax         := FALSE;
     bExecDiagClfAvg         := FALSE;
+    bExecDriveErrCode       := FALSE;
+    bEvtReadPending         := FALSE;
+    bEvtReadActive          := FALSE;
+    bFastReadNow            := FALSE;
+    eEvt                    := EVT_IDLE;
+    tonEvtReadTimeout(IN := FALSE);
     tonFastCadence(IN := FALSE);
     tonSlowCadence(IN := FALSE);
     CallAllSdoReaders();
@@ -211,6 +239,7 @@ END_IF
 
 // Tick all the F_TRIGs from the previous cycle's bBusy snapshots.
 ftChannelStateRead       (CLK := fbChannelStateRead.bBusy);
+ftDriveErrCodeRead       (CLK := fbDriveErrCodeRead.bBusy);
 ftMaxCloseLoopFreqRead   (CLK := fbMaxCloseLoopFreqRead.bBusy);
     ftSoftLimMinRead         (CLK := fbSoftLimMinRead.bBusy);
     ftSoftLimMaxRead         (CLK := fbSoftLimMaxRead.bBusy);
@@ -237,6 +266,13 @@ ftDiagClfAvgRead         (CLK := fbDiagClfAvgRead.bBusy);
 
 // Run the two queues. Each yields to the other -- only one outstanding SDO
 // at a time across the whole FB.
+rtErrEvent(CLK := stMotionStage.bError OR stDS402Drive.stDriveStatus.InternalLimitActive);
+IF rtErrEvent.Q THEN
+    bEvtReadPending := TRUE;
+    bFastReadNow    := TRUE;
+END_IF
+
+EventQueueStep();
 FastQueueStep();
 SlowQueueStep();
 
@@ -258,6 +294,17 @@ fbChannelStateRead(
     pDstBuf    := ADR(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
     cbBufLen   := SIZEOF(stMCS2ChanParameter.stChannelState.nChannelStateRaw),
     bExecute   := bExecChannelState
+);
+
+// Event
+fbDriveErrCodeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanErrorCodeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMCS2ErrorCode),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMCS2ErrorCode),
+    bExecute   := bExecDriveErrCode
 );
 
 // Slow
@@ -569,10 +616,55 @@ stMCS2ChanParameter.stChannelState.bBrakeEnabled          := (n AND 16#00100000)
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="EventQueueStep" Id="{0a000001-0000-0000-0000-00000000000a}">
+      <Declaration><![CDATA[// Event queue: one-shot read of the drive error code (0x603F) after a fault or
+// internal-limit event. Highest priority, but still mutually exclusive with the
+// fast and slow queues so only one SDO is outstanding on the mailbox.
+METHOD PRIVATE EventQueueStep
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eEvt OF
+
+    EVT_IDLE:
+        bExecDriveErrCode := FALSE;
+        bEvtReadActive    := FALSE;
+        tonEvtReadTimeout(IN := FALSE);
+        IF bEvtReadPending
+           AND NOT bSlowReadActive
+           AND (eFast <> FAST_READING) THEN
+            bEvtReadPending   := FALSE;
+            bExecDriveErrCode := TRUE;
+            bEvtReadActive    := TRUE;
+            eEvt              := EVT_READING;
+        END_IF
+
+    EVT_READING:
+        tonEvtReadTimeout(IN := TRUE, PT := tEvtReadTimeout);
+        IF ftDriveErrCodeRead.Q THEN
+            // A failed read must not leave a stale code looking current.
+            IF fbDriveErrCodeRead.bError THEN
+                stMCS2ChanParameter.nMCS2ErrorCode := 0;
+            END_IF
+            bExecDriveErrCode := FALSE;
+            bEvtReadActive    := FALSE;
+            tonEvtReadTimeout(IN := FALSE);
+            eEvt              := EVT_IDLE;
+        ELSIF tonEvtReadTimeout.Q THEN
+            stMCS2ChanParameter.nMCS2ErrorCode := 0;
+            bExecDriveErrCode := FALSE;
+            bEvtReadActive    := FALSE;
+            tonEvtReadTimeout(IN := FALSE);
+            eEvt              := EVT_IDLE;
+        END_IF
+
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="FastQueueStep" Id="{0a000001-0000-0000-0000-000000000001}">
       <Declaration><![CDATA[// Fast queue: poll ChannelState at nReadTime cadence. Yields the bus to the
-// slow queue if a slow read is currently in flight, but does not back off
-// any further -- as soon as the slow read completes the fast read can fire.
+// slow and event queues if one of those reads is currently in flight, but does
+// not back off any further -- as soon as that read completes the fast read can fire.
 METHOD PRIVATE FastQueueStep
 ]]></Declaration>
       <Implementation>
@@ -592,8 +684,9 @@ METHOD PRIVATE FastQueueStep
         );
         // Only fire when the cadence has elapsed AND the slow queue isn't
         // currently using the mailbox.
-        IF tonFastCadence.Q AND NOT bSlowReadActive THEN
+        IF (tonFastCadence.Q OR bFastReadNow) AND NOT bSlowReadActive AND NOT bEvtReadActive THEN
             tonFastCadence(IN := FALSE);
+            bFastReadNow      := FALSE;
             bExecChannelState := TRUE;
             eFast             := FAST_READING;
         END_IF
@@ -664,7 +757,7 @@ METHOD PRIVATE SlowQueueStep
     SLOW_RUNNING:
         // Yield: never start a new slow read while the fast queue is
         // mid-read. Existing in-flight slow reads continue.
-        IF NOT bSlowReadActive AND (eFast = FAST_READING) THEN
+        IF NOT bSlowReadActive AND ((eFast = FAST_READING) OR bEvtReadActive) THEN
             // Just hold; don't kick the next read yet.
             RETURN;
         END_IF
