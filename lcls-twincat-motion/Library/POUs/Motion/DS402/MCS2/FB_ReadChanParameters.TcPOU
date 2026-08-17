@@ -613,6 +613,19 @@ stMCS2ChanParameter.stChannelState.bPositionerFault       := (n AND 16#00020000)
 stMCS2ChanParameter.stChannelState.bAmplifierEnabled      := (n AND 16#00040000) <> 0;
 stMCS2ChanParameter.stChannelState.bInPosition            := (n AND 16#00080000) <> 0;
 stMCS2ChanParameter.stChannelState.bBrakeEnabled          := (n AND 16#00100000) <> 0;
+
+// Preserve a useful MCS2 diagnostic even if the asynchronous 0x603F read is
+// delayed or unavailable. The SDO result, when available, replaces this
+// inferred summary with the drive's exact code.
+IF stMCS2ChanParameter.stChannelState.bRangeLimitReached THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#8500;
+ELSIF stMCS2ChanParameter.stChannelState.bEndStopReached THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#7121;
+ELSIF stMCS2ChanParameter.stChannelState.bFollowingLimitReached THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#8611;
+ELSIF stMCS2ChanParameter.stChannelState.bMovementFailed THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#8600;
+END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -641,16 +654,14 @@ METHOD PRIVATE EventQueueStep
     EVT_READING:
         tonEvtReadTimeout(IN := TRUE, PT := tEvtReadTimeout);
         IF ftDriveErrCodeRead.Q THEN
-            // A failed read must not leave a stale code looking current.
-            IF fbDriveErrCodeRead.bError THEN
-                stMCS2ChanParameter.nMCS2ErrorCode := 0;
-            END_IF
+            // Keep an inferred or previously read code if this mailbox read
+            // fails. ChannelState provides a useful cause-level fallback.
             bExecDriveErrCode := FALSE;
             bEvtReadActive    := FALSE;
             tonEvtReadTimeout(IN := FALSE);
             eEvt              := EVT_IDLE;
         ELSIF tonEvtReadTimeout.Q THEN
-            stMCS2ChanParameter.nMCS2ErrorCode := 0;
+            // Keep the inferred or previously read code for diagnostics.
             bExecDriveErrCode := FALSE;
             bEvtReadActive    := FALSE;
             tonEvtReadTimeout(IN := FALSE);
