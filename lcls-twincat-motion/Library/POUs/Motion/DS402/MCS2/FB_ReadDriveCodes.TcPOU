@@ -49,9 +49,8 @@ IF stMotionStage.bError THEN
                 CONCAT(stMotionStage.sErrorMessage, ' (MCS2: '),
                 CONCAT(stMCS2ChanParameter.sMCS2ErrorMessage, ')'));
         END_IF
-    ELSIF stMotionStage.nErrorId = 0
-        AND stMCS2ChanParameter.sMCS2ErrorMessage <> '' THEN
-        stMotionStage.sErrorMessage := stMCS2ChanParameter.sMCS2ErrorMessage;
+    ELSIF stMotionStage.nErrorId = 0 THEN
+        stMotionStage.sErrorMessage := 'Contact PCDS to add new message';
     END_IF
 END_IF
     </Implementation>
