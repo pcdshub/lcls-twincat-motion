@@ -52,6 +52,7 @@ END_VAR
     16#FF07: msg := 'Invalid sensor mode';
     16#FF08: msg := 'Invalid actuator mode';
     16#FF09: msg := 'Invalid control options';
+    16#FF21: msg := 'Internal communication';
 
     ELSE
         // Table A.1 is not exhaustive, so fall back to the DS402 error class in
@@ -75,7 +76,9 @@ END_VAR
             16#87:                      msg := 'Sync controller error';
             16#90:                      msg := 'External error';
             16#F0:                      msg := 'Additional functions error';
-            16#FF:                      msg := 'Device specific error';
+                 16#FF:                      msg := CONCAT('Device specific error (0x',
+                            CONCAT(WORD_TO_HEXSTR(in := nErrorId, iPrecision := 4, bLoCase := 0),
+                              ')'));
             ELSE
                 msg := 'Unknown MCS2 error code';
         END_CASE
