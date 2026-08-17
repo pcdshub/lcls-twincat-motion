@@ -275,13 +275,11 @@ ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := (stChanParams.eHomeMode = E_MCS2HomeMethod.AutoMethod)
                               OR (stChanParams.eHomeMode = E_MCS2HomeMethod.CurrentPositionMethod);
 
-    IF stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0 THEN
-        bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
-        // trigger WriteParameterNC to disable pos lag during homing
-        bEnPosLag             := TRUE;
-        // write 0 = disable position lag monitoring
-        fParameterValue       := 0;
-    END_IF
+    bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
+    // Trigger WriteParameterNC to disable position lag during homing.
+    bEnPosLag             := bRecentEnPosLagStatus;
+    // Write 0 = disable position lag monitoring.
+    fParameterValue       := 0;
 END_IF
 
 // Main execute edge: covers both shortcut and direct bExecute paths
@@ -298,9 +296,16 @@ IF rtUserExec.Q THEN
     IF NOT rtMoveCmdShortcut.Q
         AND NOT rtStepCmdShortcut.Q
         AND NOT rtCalibrateCmdShortcut.Q
+        AND NOT rtHomeCmdShortcut.Q
     THEN
-        bEnPosLag       := bRecentEnPosLagStatus;
-        fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+        IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
+            bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
+            bEnPosLag             := bRecentEnPosLagStatus;
+            fParameterValue       := 0;
+        ELSE
+            bEnPosLag       := bRecentEnPosLagStatus;
+            fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+        END_IF
     END_IF
 
     IF NOT stMotionStage.bHomeCmd
@@ -925,7 +930,12 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.AbortedCalibration;
         END_IF
-        IF fbDriveManager.bDS402Manual THEN
+        IF rtHomeDone.Q OR rtAbortedHome.Q THEN
+            bEnPosLag       := bRecentEnPosLagStatus;
+            fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+        END_IF
+        IF fbDriveManager.bDS402Manual
+           AND NOT (rtHomeDone.Q OR rtAbortedHome.Q) THEN
             bEnPosLag := FALSE;
         END_IF
         IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION) THEN
