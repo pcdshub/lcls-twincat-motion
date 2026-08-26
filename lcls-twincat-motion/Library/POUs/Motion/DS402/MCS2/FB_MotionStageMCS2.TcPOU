@@ -266,8 +266,11 @@ ELSIF rtStepRevCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
 ELSIF rtCalibrateCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.CALIBRATE;
-    bEnPosLag              := bRecentEnPosLagStatus;
-    fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+    bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
+    // Trigger WriteParameterNC to disable position lag during calibration.
+    bEnPosLag             := bRecentEnPosLagStatus;
+    // Write 0 = disable position lag monitoring.
+    fParameterValue       := 0;
 
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
@@ -298,7 +301,8 @@ IF rtUserExec.Q THEN
         AND NOT rtCalibrateCmdShortcut.Q
         AND NOT rtHomeCmdShortcut.Q
     THEN
-        IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME THEN
+        IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME
+            OR stMotionStage.nCommand = E_EpicsMotorCmd.CALIBRATE THEN
             bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
             bEnPosLag             := bRecentEnPosLagStatus;
             fParameterValue       := 0;
@@ -932,12 +936,12 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.AbortedCalibration;
         END_IF
-        IF rtHomeDone.Q OR rtAbortedHome.Q THEN
+        IF rtHomeDone.Q OR rtAbortedHome.Q OR rtCalibrationDone.Q OR rtAbortedCalibration.Q THEN
             bEnPosLag       := bRecentEnPosLagStatus;
             fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
         END_IF
         IF fbDriveManager.bDS402Manual
-           AND NOT (rtHomeDone.Q OR rtAbortedHome.Q) THEN
+           AND NOT (rtHomeDone.Q OR rtAbortedHome.Q OR rtCalibrationDone.Q OR rtAbortedCalibration.Q) THEN
             bEnPosLag := FALSE;
         END_IF
         IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION) THEN
