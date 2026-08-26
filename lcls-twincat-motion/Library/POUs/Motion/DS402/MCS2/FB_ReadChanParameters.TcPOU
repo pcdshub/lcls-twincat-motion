@@ -42,6 +42,10 @@ VAR_OUTPUT
     // Count of slow-queue entries that errored on their most recent attempt.
     // Cleared at the start of each slow sweep. Diagnostic only.
     nSlowReadFailures : UINT;
+    // Count of fast-queue (ChannelState) reads that errored or timed out.
+    // Diagnostic only -- not surfaced as a user-facing error, since polling
+    // retries every cadence and a lone miss is not a fault.
+    nFastReadFailures : UINT;
 END_VAR
 
 VAR
@@ -709,20 +713,16 @@ METHOD PRIVATE FastQueueStep
             IF NOT fbChannelStateRead.bError THEN
                 DecodeChannelState();
             ELSE
-                // Don't stop polling on a single failure. Log once per
-                // failure if motion subsystem isn't already noisy.
-                IF NOT stMotionStage.bBusy THEN
-                    stMotionStage.sErrorMessage := 'Failed to read ChannelState';
-                END_IF
+                // Don't stop polling on a single failure, and don't surface
+                // it as a user-facing error -- it retries every cadence.
+                nFastReadFailures := nFastReadFailures + 1;
             END_IF
             bExecChannelState := FALSE;
             tonFastReadTimeout(IN := FALSE);
             eFast             := FAST_WAIT_CADENCE;
         ELSIF tonFastReadTimeout.Q THEN
             // Hung read -- give up and retry next cadence.
-            IF NOT stMotionStage.bBusy THEN
-                stMotionStage.sErrorMessage := 'ChannelState read timeout';
-            END_IF
+            nFastReadFailures := nFastReadFailures + 1;
             bExecChannelState := FALSE;
             tonFastReadTimeout(IN := FALSE);
             eFast             := FAST_WAIT_CADENCE;
