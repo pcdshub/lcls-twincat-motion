@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <POU Name="FB_ReadDriveCodes" Id="{44ddb32d-aaa2-4fc7-a16a-bf90774280d7}" SpecialFunc="None">
+  <POU Name="FB_ReadDriveCodes" Id="{6ab55793-c2c3-4780-bb36-92684655a3d8}" SpecialFunc="None">
     <Declaration><![CDATA[(* Read Drive error codes after a motion or fault condition occured *)
 FUNCTION_BLOCK FB_ReadDriveCodes
 VAR_IN_OUT
@@ -28,7 +28,7 @@ END_IF
 // nErrorId: the two number spaces overlap (MCS2 0x4200 sits inside the NC 0x4xxx
 // family, and MCS2 manufacturer codes 0xFFxx overlap E_LCLSMotionError.TEST).
 stMCS2ChanParameter.sMCS2ErrorMessage :=
-    F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);]]></ST>
+    F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);
 
 // sErrorMessage is the only message channel exposed to the IOC. Include both
 // decoded layers when available; the numeric values remain separate in PLC:nErrorId
@@ -52,7 +52,7 @@ IF stMotionStage.bError THEN
     ELSIF stMotionStage.nErrorId = 0 THEN
         stMotionStage.sErrorMessage := 'Contact PCDS to add new message';
     END_IF
-END_IF
+END_IF]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>
