@@ -282,6 +282,9 @@ SlowQueueStep();
 
 // Cyclically call every reader. bExecute lines are owned by the queues.
 CallAllSdoReaders();
+
+// Mirror the raw option words into individual read-back flags.
+DecodeOptions();
 ]]></ST>
     </Implementation>
     <Method Name="CallAllSdoReaders" Id="{0a000001-0000-0000-0000-000000000009}">
@@ -353,8 +356,8 @@ fbCalibrationOptRead(
     nSlaveAddr := stDS402Drive.nSlaveAddr,
     nIndex     := stMCS2ChanParameter.nChanCalibrationOptIdx,
     nSubIndex  := 0,
-    pDstBuf    := ADR(stMCS2ChanParameter.nCalibrationOpt),
-    cbBufLen   := SIZEOF(stMCS2ChanParameter.nCalibrationOpt),
+    pDstBuf    := ADR(stMCS2ChanParameter.nCalibrationOptRb),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nCalibrationOptRb),
     bExecute   := bExecCalibrationOpt
 );
 fbSensorPowerModeRead(
@@ -371,8 +374,8 @@ fbReferencingOptRead(
     nSlaveAddr := stDS402Drive.nSlaveAddr,
     nIndex     := stMCS2ChanParameter.nChanReferencingOptIdx,
     nSubIndex  := 0,
-    pDstBuf    := ADR(stMCS2ChanParameter.nReferencingOpt),
-    cbBufLen   := SIZEOF(stMCS2ChanParameter.nReferencingOpt),
+    pDstBuf    := ADR(stMCS2ChanParameter.nReferencingOptRb),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nReferencingOptRb),
     bExecute   := bExecReferencingOpt
 );
 fbReferenceTypeRead(
@@ -630,6 +633,33 @@ ELSIF stMCS2ChanParameter.stChannelState.bFollowingLimitReached THEN
 ELSIF stMCS2ChanParameter.stChannelState.bMovementFailed THEN
     stMCS2ChanParameter.nMCS2ErrorCode := 16#8600;
 END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="DecodeOptions" Id="{7f3a1c02-9b4e-4d21-8a6c-1e2f3a4b5c6d}">
+      <Declaration><![CDATA[// Decode the raw Referencing Options (0x200B) and Calibration Options (0x2004)
+// words into individual read-back flags for operator verification. Read-only:
+// the raw REF_OPT/CAL_OPT PVs remain the command path.
+METHOD PRIVATE DecodeOptions
+VAR
+    n : DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[n := stMCS2ChanParameter.nReferencingOptRb;
+stMCS2ChanParameter.bRefStartDirBackward   := (n AND 16#00000001) <> 0;
+stMCS2ChanParameter.bRefReverseDir         := (n AND 16#00000002) <> 0;
+stMCS2ChanParameter.bRefAutoZero           := (n AND 16#00000004) <> 0;
+stMCS2ChanParameter.bRefAbortOnEndStop     := (n AND 16#00000008) <> 0;
+stMCS2ChanParameter.bRefContinueOnRefFound := (n AND 16#00000010) <> 0;
+stMCS2ChanParameter.bRefStopOnRefFound     := (n AND 16#00000020) <> 0;
+stMCS2ChanParameter.bRefInvalidate         := (n AND 16#01000000) <> 0;
+
+n := stMCS2ChanParameter.nCalibrationOptRb;
+stMCS2ChanParameter.bCalDirBackward        := (n AND 16#00000001) <> 0;
+stMCS2ChanParameter.bCalDetectDistCodeInv  := (n AND 16#00000002) <> 0;
+stMCS2ChanParameter.bCalAdvSensorCorr      := (n AND 16#00000004) <> 0;
+stMCS2ChanParameter.bCalLimitedTravelRange := (n AND 16#00000100) <> 0;
 ]]></ST>
       </Implementation>
     </Method>

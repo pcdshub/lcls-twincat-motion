@@ -75,10 +75,11 @@ STRUCT
     '}
     nPositionerType	: UDINT;
 
+    // Composed from the CAL_OPT:REQ_* command bits; pushed to 0x2004 by the writer.
     {attribute 'pytmc' := '
         pv: CAL_OPT
-        io: io
-        field: DESC Calibration Options
+        io: i
+        field: DESC Calibration Options (composed command)
     '}
     nCalibrationOpt       : DWORD;
 
@@ -89,10 +90,11 @@ STRUCT
     '}
     nSensorPowerMode      : UDINT;
 
+    // Composed from the REF_OPT:REQ_* command bits; pushed to 0x200B by the writer.
     {attribute 'pytmc' := '
         pv: REF_OPT
-        io: io
-        field: DESC Referencing Options
+        io: i
+        field: DESC Referencing Options (composed command)
     '}
     nReferencingOpt       	   : DWORD;
 
@@ -252,6 +254,165 @@ STRUCT
         field: DESC Decoded MCS2 drive error
     '}
     sMCS2ErrorMessage     : STRING;
+
+    // Read-back decode of the drive's actual Referencing Options (REF_OPT_RB,
+    // 0x200B). Mirrors what the drive reports; command via REF_OPT:REQ_* bits.
+    {attribute 'pytmc' := '
+        pv: REF_OPT:START_DIR_BACK
+        io: i
+        field: DESC Ref start direction backward (bit0)
+    '}
+    bRefStartDirBackward  : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REVERSE_DIR
+        io: i
+        field: DESC Ref reverse dir after 1st mark, multi-mark (bit1)
+    '}
+    bRefReverseDir        : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:AUTO_ZERO
+        io: i
+        field: DESC Ref auto-zero on reference found (bit2)
+    '}
+    bRefAutoZero          : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:ABORT_ENDSTOP
+        io: i
+        field: DESC Ref abort on end stop (bit3)
+    '}
+    bRefAbortOnEndStop    : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:CONT_ON_REF
+        io: i
+        field: DESC Ref continue on reference found (bit4)
+    '}
+    bRefContinueOnRefFound: BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:STOP_ON_REF
+        io: i
+        field: DESC Ref stop on reference found (bit5)
+    '}
+    bRefStopOnRefFound    : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:INVALIDATE
+        io: i
+        field: DESC Ref invalidate is-referenced flag (bit24)
+    '}
+    bRefInvalidate        : BOOL;
+
+    // Read-back decode of the drive's actual Calibration Options (CAL_OPT_RB,
+    // 0x2004). Mirrors what the drive reports; command via CAL_OPT:REQ_* bits.
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:DIR_BACK
+        io: i
+        field: DESC Calib move direction backward (bit0)
+    '}
+    bCalDirBackward       : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:DETECT_DCI
+        io: i
+        field: DESC Calib detect distance code inversion (bit1)
+    '}
+    bCalDetectDistCodeInv : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:ADV_SENSOR
+        io: i
+        field: DESC Calib advanced sensor correction (bit2)
+    '}
+    bCalAdvSensorCorr     : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:LIM_TRAVEL
+        io: i
+        field: DESC Calib limited travel range, >1 endstop (bit8)
+    '}
+    bCalLimitedTravelRange: BOOL;
+
+    // Actual option words read back from the drive (0x200B / 0x2004).
+    {attribute 'pytmc' := '
+        pv: REF_OPT_RB
+        io: i
+        field: DESC Referencing Options read-back (actual)
+    '}
+    nReferencingOptRb     : DWORD;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT_RB
+        io: i
+        field: DESC Calibration Options read-back (actual)
+    '}
+    nCalibrationOptRb     : DWORD;
+
+    // Per-bit command flags for Referencing Options (0x200B). The writer composes
+    // nReferencingOpt from these; volatile on the drive, re-applied each boot.
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_START_DIR_BACK
+        io: o
+        field: DESC Cmd ref start direction backward (bit0)
+    '}
+    bReqRefStartDirBackward  : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_REVERSE_DIR
+        io: o
+        field: DESC Cmd ref reverse dir after 1st mark, multi-mark (bit1)
+    '}
+    bReqRefReverseDir        : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_AUTO_ZERO
+        io: o
+        field: DESC Cmd ref auto-zero on reference found (bit2)
+    '}
+    bReqRefAutoZero          : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_ABORT_ENDSTOP
+        io: o
+        field: DESC Cmd ref abort on end stop (bit3)
+    '}
+    bReqRefAbortOnEndStop    : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_CONT_ON_REF
+        io: o
+        field: DESC Cmd ref continue on reference found (bit4)
+    '}
+    bReqRefContinueOnRefFound: BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_STOP_ON_REF
+        io: o
+        field: DESC Cmd ref stop on reference found (bit5)
+    '}
+    bReqRefStopOnRefFound    : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REQ_INVALIDATE
+        io: o
+        field: DESC Cmd ref invalidate is-referenced flag (bit24)
+    '}
+    bReqRefInvalidate        : BOOL;
+
+    // Per-bit command flags for Calibration Options (0x2004). The writer composes
+    // nCalibrationOpt from these; volatile on the drive, re-applied each boot.
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:REQ_DIR_BACK
+        io: o
+        field: DESC Cmd calib move direction backward (bit0)
+    '}
+    bReqCalDirBackward       : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:REQ_DETECT_DCI
+        io: o
+        field: DESC Cmd calib detect distance code inversion (bit1)
+    '}
+    bReqCalDetectDistCodeInv : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:REQ_ADV_SENSOR
+        io: o
+        field: DESC Cmd calib advanced sensor correction (bit2)
+    '}
+    bReqCalAdvSensorCorr     : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:REQ_LIM_TRAVEL
+        io: o
+        field: DESC Cmd calib limited travel range, >1 endstop (bit8)
+    '}
+    bReqCalLimitedTravelRange: BOOL;
+
     {attribute 'hide'}
     nHomeVeloFast         : UDINT;
     {attribute 'hide'}
