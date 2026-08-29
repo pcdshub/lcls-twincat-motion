@@ -21,6 +21,8 @@ VAR_INPUT
     nActiveMotorCount: UINT;
     // Identifying name to use in group fast faults
     sDeviceName: STRING;
+    // Set me true to prevent any ffos from faulting
+    bMaintenanceMode : BOOL;
 END_VAR
 VAR_OUTPUT
     // Set to TRUE if the arrays don't have the same bounds. In this FB, that's an automatic fault.
@@ -54,7 +56,7 @@ bMotorCountError S= nActiveMotorCount > MotionConstants.MAX_STATE_MOTORS;
       <Implementation>
         <ST><![CDATA[
 ffProgrammerError(
-    i_xOK:=NOT bMotorCountError,
+    i_xOK:=NOT bMotorCountError OR THIS^.bMaintenanceMode,
     i_xAutoReset:=TRUE,
     i_DevName:=sDeviceName,
     i_Desc:='Programmer error picking motor count',
@@ -77,5 +79,21 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Action>
+    <LineIds Name="FB_PerMotorFFOND">
+      <LineId Id="3" Count="5" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_PerMotorFFOND.CheckCount">
+      <LineId Id="2" Count="3" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_PerMotorFFOND.HandleFFO">
+      <LineId Id="2" Count="8" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_PerMotorFFOND.HandleLoops">
+      <LineId Id="2" Count="7" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>

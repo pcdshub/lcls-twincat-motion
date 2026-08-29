@@ -96,7 +96,7 @@ bTransitionAuthorized := bInternalAuth OR (bArbiterTimeout AND bMoveOnArbiterTim
 
 // Trip the beam for BPTM timeouts if we want to move
 // Only reset at safe beam OR at no bptm errors (some other FF should catch additional issues)
-ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout AND bEnable);
+ffBPTMTimeoutAndMove.i_xOK := NOT (bArbiterTimeout AND bMoveOnArbiterTimeout) OR (NOT THIS^.bEnable);
 ffBPTMTimeoutAndMove.i_xReset S= bResetBPTMTimeout OR (bptm.bDone AND NOT bptm.bError);
 ffBPTMTimeoutAndMove.i_xReset R= NOT ffBPTMTimeoutAndMove.i_xOK;
 ffBPTMTimeoutAndMove.i_xReset := ffBPTMTimeoutAndMove.i_xReset OR NOT bEnable;
@@ -127,7 +127,7 @@ bptm(
 );
 
 // Trip the beam for BPTM Errors
-ffBPTMError.i_xOK := NOT bptm.bError;
+ffBPTMError.i_xOK := (NOT bptm.bError) OR NOT THIS^.bEnable;
 ffBPTMError.i_xReset S= bptm.bDone AND ffBPTMError.i_xOK;
 ffBPTMError.i_xReset R= NOT ffBPTMError.i_xOK;
 ffBPTMError(
@@ -157,5 +157,25 @@ nPrevID := stGoalParams.nRequestAssertionID;
 ]]></ST>
       </Implementation>
     </Action>
+    <LineIds Name="FB_MotionBPTM">
+      <LineId Id="3" Count="8" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionBPTM.CheckCount">
+      <LineId Id="2" Count="3" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionBPTM.HandleTimeout">
+      <LineId Id="2" Count="20" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionBPTM.RunBPTM">
+      <LineId Id="2" Count="24" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_MotionBPTM.SetDoneMoving">
+      <LineId Id="2" Count="12" />
+      <LineId Id="1" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>

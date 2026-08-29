@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.18">
+<TcPlcObject Version="1.1.0.1">
   <POU Name="FB_MiscStatesErrorFFO" Id="{89bc15f3-9d13-41da-a444-416428941e28}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MiscStatesErrorFFO
 (*
@@ -28,6 +28,8 @@ VAR_INPUT
     bKnownState: BOOL;
     // Lookup ID of the transition beam
     nTransitionID: DWORD;
+    // Set me true to prevent any ffos from occuring
+    bMaintenanceMode : BOOL;
 END_VAR
 VAR_OUTPUT
 END_VAR
@@ -60,7 +62,7 @@ END_VAR
     <Implementation>
       <ST><![CDATA[
 ffBeamParamsOk(
-    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stCurrentBeamReq),
+    i_xOK:=F_SafeBPCompare(PMPS_GVL.stCurrentBeamParameters, stCurrentBeamReq) OR bMaintenanceMode,
     i_xAutoReset:=TRUE,
     i_DevName:=sDeviceName,
     i_Desc:='Beam parameter mismatch',
@@ -77,6 +79,8 @@ ELSE
     ffZeroRate.i_xOK := stCurrentBeamReq.nRate > 0 AND stCurrentBeamReq.nBCRange > 0;
 END_CASE
 
+ffZeroRate.i_xOK := ffZeroRate.i_xOK OR bMaintenanceMode;
+
 ffZeroRate(
     i_xAutoReset := TRUE,
     i_DevName := sDeviceName,
@@ -86,7 +90,7 @@ ffZeroRate(
 );
 
 ffUnknown(
-    i_xOK := bknownState OR fbArbiter.CheckRequestInPool(nReqID:=nTransitionID),
+    i_xOK := bknownState OR fbArbiter.CheckRequestInPool(nReqID:=nTransitionID) OR bMaintenanceMode,
     i_xAutoReset := TRUE,
     i_DevName := sDeviceName,
     i_Desc := 'Unknown position between moves',
@@ -111,7 +115,7 @@ END_IF
 // This is required for non-autoresetting FBs to come up in a beam permitted state
 ffDebounce.i_xReset := bFirstCycle OR nTripCount=0;
 ffDebounce(
-    i_xOK := nTripCount < 5,
+    i_xOK := nTripCount < 5 OR bMaintenanceMode,
     i_DevName := sDeviceName,
     i_Desc := 'Tripped beam parameter mismatch off/on too many times, hold off',
     i_TypeCode := E_MotionFFType.TOO_MANY_TRIPS,
@@ -119,5 +123,12 @@ ffDebounce(
 );
 bFirstCycle := FALSE;]]></ST>
     </Implementation>
+    <LineIds Name="FB_MiscStatesErrorFFO">
+      <LineId Id="3" Count="17" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="21" Count="40" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
   </POU>
 </TcPlcObject>
