@@ -1242,20 +1242,20 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[n := 0;
-IF stChanParams.bReqRefStartDirBackward   THEN n := n OR 16#00000001; END_IF
-IF stChanParams.bReqRefReverseDir         THEN n := n OR 16#00000002; END_IF
-IF stChanParams.bReqRefAutoZero           THEN n := n OR 16#00000004; END_IF
-IF stChanParams.bReqRefAbortOnEndStop     THEN n := n OR 16#00000008; END_IF
-IF stChanParams.bReqRefContinueOnRefFound THEN n := n OR 16#00000010; END_IF
-IF stChanParams.bReqRefStopOnRefFound     THEN n := n OR 16#00000020; END_IF
-IF stChanParams.bReqRefInvalidate         THEN n := n OR 16#01000000; END_IF
+IF stChanParams.bRefStartDirBackward   THEN n := n OR 16#00000001; END_IF
+IF stChanParams.bRefReverseDir         THEN n := n OR 16#00000002; END_IF
+IF stChanParams.bRefAutoZero           THEN n := n OR 16#00000004; END_IF
+IF stChanParams.bRefAbortOnEndStop     THEN n := n OR 16#00000008; END_IF
+IF stChanParams.bRefContinueOnRefFound THEN n := n OR 16#00000010; END_IF
+IF stChanParams.bRefStopOnRefFound     THEN n := n OR 16#00000020; END_IF
+IF stChanParams.bRefInvalidate         THEN n := n OR 16#01000000; END_IF
 stChanParams.nReferencingOpt := n;
 
 n := 0;
-IF stChanParams.bReqCalDirBackward        THEN n := n OR 16#00000001; END_IF
-IF stChanParams.bReqCalDetectDistCodeInv  THEN n := n OR 16#00000002; END_IF
-IF stChanParams.bReqCalAdvSensorCorr      THEN n := n OR 16#00000004; END_IF
-IF stChanParams.bReqCalLimitedTravelRange THEN n := n OR 16#00000100; END_IF
+IF stChanParams.bCalDirBackward        THEN n := n OR 16#00000001; END_IF
+IF stChanParams.bCalDetectDistCodeInv  THEN n := n OR 16#00000002; END_IF
+IF stChanParams.bCalAdvSensorCorr      THEN n := n OR 16#00000004; END_IF
+IF stChanParams.bCalLimitedTravelRange THEN n := n OR 16#00000100; END_IF
 stChanParams.nCalibrationOpt := n;
 ]]></ST>
       </Implementation>
