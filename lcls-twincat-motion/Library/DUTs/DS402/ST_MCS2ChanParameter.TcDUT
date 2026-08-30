@@ -75,8 +75,13 @@ STRUCT
     '}
     nPositionerType	: UDINT;
 
-    // Composed from the CAL_OPT:* command bits; pushed to 0x2004 by the writer.
-    {attribute 'hide'}
+    // Writable command pushed to 0x2004; the reader reads the drive value back
+    // into it, so io:io serves both command and read-back on one symbol.
+    {attribute 'pytmc' := '
+        pv: CAL_OPT
+        io: io
+        field: DESC Calibration Options
+    '}
     nCalibrationOpt       : DWORD;
 
     {attribute 'pytmc' := '
@@ -86,8 +91,13 @@ STRUCT
     '}
     nSensorPowerMode      : UDINT;
 
-    // Composed from the REF_OPT:* command bits; pushed to 0x200B by the writer.
-    {attribute 'hide'}
+    // Writable command pushed to 0x200B; the reader reads the drive value back
+    // into it, so io:io serves both command and read-back on one symbol.
+    {attribute 'pytmc' := '
+        pv: REF_OPT
+        io: io
+        field: DESC Referencing Options
+    '}
     nReferencingOpt       	   : DWORD;
 
     {attribute 'pytmc' := '
@@ -247,93 +257,77 @@ STRUCT
     '}
     sMCS2ErrorMessage     : STRING;
 
-    // Per-bit command flags for Referencing Options (0x200B). io:io gives each
-    // bit a setpoint and its own readback; the writer composes the pushed word
-    // from them. Volatile on the drive, re-applied each boot.
+    // Read-only decode of the drive's actual Referencing Options (REF_OPT,
+    // 0x200B) into individual flags for verification. Command via REF_OPT.
     {attribute 'pytmc' := '
         pv: REF_OPT:START_DIR_BACK
-        io: io
+        io: i
         field: DESC Ref start direction backward (bit0)
     '}
     bRefStartDirBackward  : BOOL;
     {attribute 'pytmc' := '
         pv: REF_OPT:REVERSE_DIR
-        io: io
+        io: i
         field: DESC Ref reverse dir after 1st mark, multi-mark (bit1)
     '}
     bRefReverseDir        : BOOL;
     {attribute 'pytmc' := '
         pv: REF_OPT:AUTO_ZERO
-        io: io
+        io: i
         field: DESC Ref auto-zero on reference found (bit2)
     '}
     bRefAutoZero          : BOOL;
     {attribute 'pytmc' := '
         pv: REF_OPT:ABORT_ENDSTOP
-        io: io
+        io: i
         field: DESC Ref abort on end stop (bit3)
     '}
     bRefAbortOnEndStop    : BOOL;
     {attribute 'pytmc' := '
         pv: REF_OPT:CONT_ON_REF
-        io: io
+        io: i
         field: DESC Ref continue on reference found (bit4)
     '}
     bRefContinueOnRefFound: BOOL;
     {attribute 'pytmc' := '
         pv: REF_OPT:STOP_ON_REF
-        io: io
+        io: i
         field: DESC Ref stop on reference found (bit5)
     '}
     bRefStopOnRefFound    : BOOL;
     {attribute 'pytmc' := '
         pv: REF_OPT:INVALIDATE
-        io: io
+        io: i
         field: DESC Ref invalidate is-referenced flag (bit24)
     '}
     bRefInvalidate        : BOOL;
 
-    // Per-bit command flags for Calibration Options (0x2004). io:io gives each
-    // bit a setpoint and its own readback; the writer composes the pushed word
-    // from them. Volatile on the drive, re-applied each boot.
+    // Read-only decode of the drive's actual Calibration Options (CAL_OPT,
+    // 0x2004) into individual flags for verification. Command via CAL_OPT.
     {attribute 'pytmc' := '
         pv: CAL_OPT:DIR_BACK
-        io: io
+        io: i
         field: DESC Calib move direction backward (bit0)
     '}
     bCalDirBackward       : BOOL;
     {attribute 'pytmc' := '
         pv: CAL_OPT:DETECT_DCI
-        io: io
+        io: i
         field: DESC Calib detect distance code inversion (bit1)
     '}
     bCalDetectDistCodeInv : BOOL;
     {attribute 'pytmc' := '
         pv: CAL_OPT:ADV_SENSOR
-        io: io
+        io: i
         field: DESC Calib advanced sensor correction (bit2)
     '}
     bCalAdvSensorCorr     : BOOL;
     {attribute 'pytmc' := '
         pv: CAL_OPT:LIM_TRAVEL
-        io: io
+        io: i
         field: DESC Calib limited travel range, >1 endstop (bit8)
     '}
     bCalLimitedTravelRange: BOOL;
-
-    // Actual option words read back from the drive (0x200B / 0x2004).
-    {attribute 'pytmc' := '
-        pv: REF_OPT
-        io: i
-        field: DESC Referencing Options read-back (actual)
-    '}
-    nReferencingOptRb     : DWORD;
-    {attribute 'pytmc' := '
-        pv: CAL_OPT
-        io: i
-        field: DESC Calibration Options read-back (actual)
-    '}
-    nCalibrationOptRb     : DWORD;
 
     {attribute 'hide'}
     nHomeVeloFast         : UDINT;
