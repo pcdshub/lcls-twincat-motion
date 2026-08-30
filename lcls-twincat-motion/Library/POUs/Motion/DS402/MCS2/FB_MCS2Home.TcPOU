@@ -14,7 +14,6 @@ VAR_OUTPUT
     bHomeMoveBusy        : BOOL;
     bHomeMoveDone        : BOOL;
     bHomeMoveAborted     : BOOL;
-    bHomed  : BOOL;
 END_VAR
 VAR
     eStepState           : E_MoveState := E_MoveState.IDLING;
@@ -59,7 +58,6 @@ CASE eStepState OF
             // incremental encoder, so re-referencing to the end stop is the only
             // way to clear an undetected lost-count / slip drift. Required for
             // slit blade re-homing without a power cycle.
-            bHomed := FALSE;
             stDS402Drive.nDriveControl.4 := TRUE;
             tonSettlingTime.IN:=TRUE;
             eStepState := E_MoveState.STARTED;
@@ -93,14 +91,16 @@ CASE eStepState OF
     E_MoveState.DONE:
         bHomeMoveBusy := FALSE;
         bHomeMoveDone := TRUE;
-        stMotionStage.fPosition := 0.0;
-        IF NOT bHomed THEN
-            fbSetPos(
-                Axis := stMotionStage.Axis,
-                Execute := TRUE,
-                Position := stMotionStage.fHomePosition
-            );
-        END_IF
+        // Sync the NC to the drive's referenced position (raw count * scale +
+        // offset). Works for every reference type: endstop refs give ~0, coded
+        // and absolute give the true position. User bias lives in fEncOffset.
+        fbSetPos(
+            Axis := stMotionStage.Axis,
+            Execute := TRUE,
+            Position := stMotionStage.nEncoderCount
+                        * stMotionStage.stAxisParameters.fEncScaleFactorInternal
+                        + stMotionStage.stAxisParameters.fEncOffset
+        );
         stDS402Drive.nDriveControl.4 := FALSE;
         eStepState := E_MoveState.IDLING;
 
