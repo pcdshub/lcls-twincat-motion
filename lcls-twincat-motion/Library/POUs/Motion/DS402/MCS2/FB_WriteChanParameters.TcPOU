@@ -254,9 +254,6 @@ ScaleDriveParams();
 ScaleHomingParams();
 ScaleStepModeParams();
 
-// Compose the option words from the per-bit command flags.
-EncodeOptions();
-
 // Drive falling-edge detectors (one shared block for both modes).
 ftFErrWinSetDone           (CLK := fbSetFErrorWin.bBusy);
 ftSoftLimMinSetDone        (CLK := fbSetSoftLimMin.bBusy);
@@ -1229,34 +1226,6 @@ IF ftMotorLoadProtSetDone.Q THEN
     END_IF
     fbMotorLoadProtWrite.bExecute := FALSE;
 END_IF
-]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="EncodeOptions" Id="{a1111111-0000-0000-0000-0000000000e0}">
-      <Declaration><![CDATA[// Compose the Referencing (0x200B) and Calibration (0x2004) option words from
-// the per-bit command flags. These words are the writer's push source.
-METHOD PRIVATE EncodeOptions
-VAR
-    n : DWORD;
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[n := 0;
-IF stChanParams.bRefStartDirBackward   THEN n := n OR 16#00000001; END_IF
-IF stChanParams.bRefReverseDir         THEN n := n OR 16#00000002; END_IF
-IF stChanParams.bRefAutoZero           THEN n := n OR 16#00000004; END_IF
-IF stChanParams.bRefAbortOnEndStop     THEN n := n OR 16#00000008; END_IF
-IF stChanParams.bRefContinueOnRefFound THEN n := n OR 16#00000010; END_IF
-IF stChanParams.bRefStopOnRefFound     THEN n := n OR 16#00000020; END_IF
-IF stChanParams.bRefInvalidate         THEN n := n OR 16#01000000; END_IF
-stChanParams.nReferencingOpt := n;
-
-n := 0;
-IF stChanParams.bCalDirBackward        THEN n := n OR 16#00000001; END_IF
-IF stChanParams.bCalDetectDistCodeInv  THEN n := n OR 16#00000002; END_IF
-IF stChanParams.bCalAdvSensorCorr      THEN n := n OR 16#00000004; END_IF
-IF stChanParams.bCalLimitedTravelRange THEN n := n OR 16#00000100; END_IF
-stChanParams.nCalibrationOpt := n;
 ]]></ST>
       </Implementation>
     </Method>
