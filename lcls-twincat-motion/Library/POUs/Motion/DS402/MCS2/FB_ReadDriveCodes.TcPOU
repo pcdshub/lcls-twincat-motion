@@ -16,6 +16,7 @@ VAR
     fbLogError          : FB_LogMotionError;
     sMsg                : STRING;
     sMCS2Code           : STRING;
+    bMCS2Fault          : BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -33,6 +34,25 @@ END_IF
 // only the raw code is surfaced to the operator via sErrorMessage below.
 stMCS2ChanParameter.sMCS2ErrorMessage :=
     F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);
+
+// Promote a genuine MCS2 fault the NC never latched (a drive-side stop that does
+// not disturb the NC position loop). Suppressed during the drive's own home and
+// calibrate routines, which run their own failure handling. Level latch: reset
+// clears bError, and if the condition still stands it re-latches next scan.
+bMCS2Fault :=
+    bEnable
+    AND NOT stMCS2ChanParameter.stChannelState.bReferencing
+    AND NOT stMCS2ChanParameter.stChannelState.bCalibrating
+    AND (stMCS2ChanParameter.stChannelState.bMovementFailed
+         OR stMCS2ChanParameter.stChannelState.bFollowingLimitReached
+         OR stMCS2ChanParameter.stChannelState.bPositionerOverload
+         OR stMCS2ChanParameter.stChannelState.bOverTemperature
+         OR stMCS2ChanParameter.stChannelState.bPositionerFault);
+
+IF bMCS2Fault AND NOT stMotionStage.bError THEN
+    stMotionStage.bError   S= TRUE;
+    stMotionStage.nErrorId := E_LCLSMotionError.MCS2_FAULT;
+END_IF
 
 // sErrorMessage is the only message channel exposed to the IOC. Rebuild it from
 // scratch each cycle so the MCS2 layer -- an SDO read that lands several cycles
