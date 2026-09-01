@@ -76,6 +76,7 @@ CASE eStepState OF
         ELSIF stDS402Drive.stDriveStatus.Bit13_OpModeSpecific
            OR stDS402Drive.stDriveStatus.WarningCondition THEN
             stMotionStage.bError := TRUE;
+            stMotionStage.sCustomErrorMessage := 'Homing failed';
             eStepState := E_MoveState.ERROR;
         ELSIF tonSettlingTime.Q AND stDS402Drive.stDriveStatus.TargetReached
            AND stDS402Drive.stDriveStatus.Bit12_OpModeSpecific
