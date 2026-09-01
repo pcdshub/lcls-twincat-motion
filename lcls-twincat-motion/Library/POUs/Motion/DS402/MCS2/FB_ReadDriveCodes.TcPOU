@@ -14,6 +14,8 @@ END_VAR
 VAR
     {attribute 'hide'}
     fbLogError          : FB_LogMotionError;
+    sMsg                : STRING;
+    sMCS2Code           : STRING;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -27,30 +29,44 @@ END_IF
 // internal-limit event. It is decoded by its own table and never merged into
 // nErrorId: the two number spaces overlap (MCS2 0x4200 sits inside the NC 0x4xxx
 // family, and MCS2 manufacturer codes 0xFFxx overlap E_LCLSMotionError.TEST).
+// The decoded string and raw code stay on MCS2_ERR_MSG / MCS2_ERR for PLC debug;
+// only the raw code is surfaced to the operator via sErrorMessage below.
 stMCS2ChanParameter.sMCS2ErrorMessage :=
     F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);
 
-// sErrorMessage is the only message channel exposed to the IOC. Include both
-// decoded layers when available; the numeric values remain separate in PLC:nErrorId
-// and MCS2_ERR so overlapping code spaces cannot be confused.
+// sErrorMessage is the only message channel exposed to the IOC. Rebuild it from
+// scratch each cycle so the MCS2 layer -- an SDO read that lands several cycles
+// after bError latches -- merges in exactly once it is available, without ever
+// duplicating. The numeric values stay separate in PLC:nErrorId and MCS2_ERR so
+// the overlapping code spaces cannot be confused.
 IF stMotionStage.bError THEN
+    sMsg := '';
+
+    // NC / limit layer: whatever the NC side could see.
     IF stDS402Drive.stDriveStatus.InternalLimitActive
         AND stMotionStage.sCustomErrorMessage <> '' THEN
-        stMotionStage.sErrorMessage := stMotionStage.sCustomErrorMessage;
-        IF stMCS2ChanParameter.sMCS2ErrorMessage <> '' THEN
-            stMotionStage.sErrorMessage := CONCAT(
-                CONCAT(stMotionStage.sErrorMessage, ' (MCS2: '),
-                CONCAT(stMCS2ChanParameter.sMCS2ErrorMessage, ')'));
-        END_IF
+        sMsg := stMotionStage.sCustomErrorMessage;
     ELSIF stMotionStage.nErrorId >= 16#4000 THEN
-        stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
-        IF stMCS2ChanParameter.sMCS2ErrorMessage <> '' THEN
-            stMotionStage.sErrorMessage := CONCAT(
-                CONCAT(stMotionStage.sErrorMessage, ' (MCS2: '),
-                CONCAT(stMCS2ChanParameter.sMCS2ErrorMessage, ')'));
+        sMsg := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+    ELSIF stMotionStage.sCustomErrorMessage <> '' THEN
+        sMsg := stMotionStage.sCustomErrorMessage;
+    ELSIF stMotionStage.nErrorId = 0 AND stMCS2ChanParameter.nMCS2ErrorCode = 0 THEN
+        sMsg := 'Contact PCDS to add new message';
+    END_IF
+
+    // MCS2 layer: append the raw drive code (hex) whenever one exists.
+    IF stMCS2ChanParameter.nMCS2ErrorCode <> 0 THEN
+        sMCS2Code := CONCAT('MCS2: 0x',
+            WORD_TO_HEXSTR(in := stMCS2ChanParameter.nMCS2ErrorCode, iPrecision := 4, bLoCase := 0));
+        IF sMsg <> '' THEN
+            sMsg := CONCAT(CONCAT(sMsg, ' ('), CONCAT(sMCS2Code, ')'));
+        ELSE
+            sMsg := sMCS2Code;
         END_IF
-    ELSIF stMotionStage.nErrorId = 0 THEN
-        stMotionStage.sErrorMessage := 'Contact PCDS to add new message';
+    END_IF
+
+    IF sMsg <> '' THEN
+        stMotionStage.sErrorMessage := sMsg;
     END_IF
 END_IF]]></ST>
     </Implementation>
