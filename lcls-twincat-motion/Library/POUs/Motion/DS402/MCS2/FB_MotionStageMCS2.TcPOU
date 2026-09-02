@@ -82,6 +82,13 @@ VAR
     bRecentEnPosLagStatus    : BOOL;
 
     {attribute 'hide'}
+    bLagClearPending         : BOOL;
+    {attribute 'hide'}
+    tonLagClearTimeout       : TON;
+    {attribute 'hide'}
+    rtMcWriteDone            : R_TRIG;
+
+    {attribute 'hide'}
     bReset                   : BOOL;
     bFault : BOOL := FALSE;
     {attribute 'hide'}
@@ -271,6 +278,7 @@ ELSIF rtCalibrateCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     bEnPosLag             := bRecentEnPosLagStatus;
     // Write 0 = disable position lag monitoring.
     fParameterValue       := 0;
+    bLagClearPending      := bRecentEnPosLagStatus;
 
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
@@ -283,6 +291,7 @@ ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     bEnPosLag             := bRecentEnPosLagStatus;
     // Write 0 = disable position lag monitoring.
     fParameterValue       := 0;
+    bLagClearPending      := bRecentEnPosLagStatus;
 END_IF
 
 // Main execute edge: covers both shortcut and direct bExecute paths
@@ -306,6 +315,7 @@ IF rtUserExec.Q THEN
             bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
             bEnPosLag             := bRecentEnPosLagStatus;
             fParameterValue       := 0;
+            bLagClearPending      := bRecentEnPosLagStatus;
         ELSE
             bEnPosLag       := bRecentEnPosLagStatus;
             fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
@@ -421,6 +431,7 @@ IF stMotionStage.bReset THEN
     fbStepMode.Reset();
     fbhome.Reset();
     bReset := TRUE;
+    bLagClearPending := FALSE;
     IF fbDriveManager.bDS402Manual THEN
         stDS402Drive.nDriveControl.7 := TRUE;
     END_IF
@@ -443,6 +454,16 @@ WriteParameterNC(
     ParameterNumber := MC_AxisParameter.AxisEnPositionLagMonitoring,
     ParameterValue  := fParameterValue
 );
+
+// Hold the open-loop home/calibrate move until the NC position-lag disable actually
+// lands, so the drive's referencing move cannot trip a following error on residual lag
+// monitoring. Timeout caps the wait so a missing write cannot hang the routine.
+rtMcWriteDone(CLK := fbMcWriteParameter.Done);
+tonLagClearTimeout(IN := bLagClearPending, PT := T#500MS);
+IF bLagClearPending
+   AND ((fParameterValue = 0 AND rtMcWriteDone.Q) OR tonLagClearTimeout.Q) THEN
+    bLagClearPending := FALSE;
+END_IF
 
 bParamsEnable := stMotionStage.bAxisParamsInit AND stChanParams.bEnableHardwareOps;
 
@@ -472,7 +493,7 @@ CASE nCommandLocal OF
     E_MCS2OpMode.HOME:
         (*DS402 Manual Homing*)
         fbhome(
-            bExecute := bExecHome AND fbWriteParameters.bParamsSet,
+            bExecute := bExecHome AND fbWriteParameters.bParamsSet AND NOT bLagClearPending,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
@@ -486,7 +507,7 @@ CASE nCommandLocal OF
 
     E_MCS2OpMode.CALIBRATE:
         fbCalibrate(
-            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet,
+            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet AND NOT bLagClearPending,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
