@@ -17,6 +17,7 @@ VAR
     sMsg                : STRING;
     sMCS2Code           : STRING;
     bMCS2Fault          : BOOL;
+    rtMCS2Fault         : R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -37,8 +38,10 @@ stMCS2ChanParameter.sMCS2ErrorMessage :=
 
 // Promote a genuine MCS2 fault the NC never latched (a drive-side stop that does
 // not disturb the NC position loop). Suppressed during the drive's own home and
-// calibrate routines, which run their own failure handling. Level latch: reset
-// clears bError, and if the condition still stands it re-latches next scan.
+// calibrate routines, which run their own failure handling. Edge-triggered so it
+// reports once: a reset clears bError, and a still-asserted condition (e.g. a
+// Movement-Failed bit that only clears on the next successful move) does not
+// re-latch and block the reset. A fresh fault re-fires on the next rising edge.
 bMCS2Fault :=
     bEnable
     AND NOT stMCS2ChanParameter.stChannelState.bReferencing
@@ -49,7 +52,8 @@ bMCS2Fault :=
          OR stMCS2ChanParameter.stChannelState.bOverTemperature
          OR stMCS2ChanParameter.stChannelState.bPositionerFault);
 
-IF bMCS2Fault AND NOT stMotionStage.bError THEN
+rtMCS2Fault(CLK := bMCS2Fault);
+IF rtMCS2Fault.Q AND NOT stMotionStage.bError THEN
     stMotionStage.bError   S= TRUE;
     stMotionStage.nErrorId := E_LCLSMotionError.MCS2_FAULT;
 END_IF
