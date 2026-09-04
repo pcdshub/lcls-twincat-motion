@@ -76,7 +76,6 @@ CASE eStepState OF
         ELSIF stDS402Drive.stDriveStatus.Bit13_OpModeSpecific
            OR stDS402Drive.stDriveStatus.WarningCondition THEN
             stMotionStage.bError := TRUE;
-            stMotionStage.sCustomErrorMessage := 'Homing failed';
             eStepState := E_MoveState.ERROR;
         ELSIF tonSettlingTime.Q AND stDS402Drive.stDriveStatus.TargetReached
            AND stDS402Drive.stDriveStatus.Bit12_OpModeSpecific
@@ -90,11 +89,12 @@ CASE eStepState OF
         eStepState := E_MoveState.IDLING;
 
     E_MoveState.DONE:
-        bHomeMoveBusy := FALSE;
-        bHomeMoveDone := TRUE;
-        // Sync the NC to the drive's referenced position (raw count * scale +
-        // offset). Works for every reference type: endstop refs give ~0, coded
-        // and absolute give the true position. User bias lives in fEncOffset.
+        // Clear the homing Run bit and sync the NC to the drive readback (raw
+        // count * scale + offset). Wait for MC_SetPosition to finish so the lag
+        // built up during the drive-side move is cleared before homing reports
+        // done. The caller re-enables position-lag monitoring and returns to CSP
+        // on that done edge, so reporting early trips a following error.
+        stDS402Drive.nDriveControl.4 := FALSE;
         fbSetPos(
             Axis := stMotionStage.Axis,
             Execute := TRUE,
@@ -102,8 +102,17 @@ CASE eStepState OF
                         * stMotionStage.stAxisParameters.fEncScaleFactorInternal
                         + stMotionStage.stAxisParameters.fEncOffset
         );
-        stDS402Drive.nDriveControl.4 := FALSE;
-        eStepState := E_MoveState.IDLING;
+        IF fbSetPos.Done THEN
+            fbSetPos(Axis := stMotionStage.Axis, Execute := FALSE);
+            bHomeMoveBusy := FALSE;
+            bHomeMoveDone := TRUE;
+            eStepState := E_MoveState.IDLING;
+        ELSIF fbSetPos.Error THEN
+            fbSetPos(Axis := stMotionStage.Axis, Execute := FALSE);
+            bHomeMoveBusy := FALSE;
+            stMotionStage.bError := TRUE;
+            eStepState := E_MoveState.ERROR;
+        END_IF
 
     E_MoveState.ERROR:
         bHomeMoveDone := FALSE;
