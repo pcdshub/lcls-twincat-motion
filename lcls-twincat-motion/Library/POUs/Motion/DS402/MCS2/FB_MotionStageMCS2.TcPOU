@@ -492,31 +492,35 @@ CASE nCommandLocal OF
 
     E_MCS2OpMode.HOME:
         (*DS402 Manual Homing*)
+        // Gate on the drive manager confirming HOME mode is active and operational.
         fbhome(
-            bExecute := bExecHome AND fbWriteParameters.bParamsSet AND NOT bLagClearPending,
+            bExecute := bExecHome AND fbWriteParameters.bParamsSet AND NOT bLagClearPending
+                        AND fbDriveManager.bHomeModeEnabled,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_MCS2OpMode.STEP:
         fbStepMode(
-            bExecute       := bExecMove AND fbWriteParameters.bParamsSet,
+            bExecute       := bExecMove AND fbWriteParameters.bParamsSet
+                              AND fbDriveManager.bStepModeEnabled,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_MCS2OpMode.CALIBRATE:
         fbCalibrate(
-            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet AND NOT bLagClearPending,
+            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet AND NOT bLagClearPending
+                          AND fbDriveManager.bCalibrationModeEnabled,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 END_CASE
 
 stMotionStage.bBusy := fbMcMoveAbsolute.Busy
-                       OR stChanParams.stChannelState.bReferencing
+                       OR fbhome.bHomeMoveBusy
                        OR fbStepMode.bStepMoveBusy
-                       OR stChanParams.stChannelState.bCalibrating;
+                       OR fbCalibrate.bCalibrateMoveBusy;
 // Check done moving via user stop, limit hit, Target Position reached, or from homing.
 PostMoveChecks();
 // update encoder value and calibrated position
@@ -1007,7 +1011,10 @@ END_IF
 
 ftEnableFallEdge(CLK := stMotionStage.bEnable);
 IF ftEnableFallEdge.Q THEN
-    IF fbDriveManager.bDS402Manual THEN
+    // Only power off in manual if we're staying in manual. During a switch back
+    // to CSP, let the NC ramp the control word down so it isn't disabled under it.
+    IF fbDriveManager.bDS402Manual
+       AND stChanParams.eOpModeReq <> E_MCS2OpModeReq.CLOSED_LOOP THEN
         stDS402Drive.nDriveControl := 6; // Manual mode power off
     END_IF
 END_IF]]></ST>
