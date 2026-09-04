@@ -37,15 +37,15 @@ stMCS2ChanParameter.sMCS2ErrorMessage :=
     F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);
 
 // Promote a genuine MCS2 fault the NC never latched (a drive-side stop that does
-// not disturb the NC position loop). Suppressed during the drive's own home and
-// calibrate routines, which run their own failure handling. Edge-triggered so it
+// not disturb the NC position loop). Gated on CSP via the directly-linked mode
+// display, so the manual home/step/calibrate routines (which run their own
+// failure handling) never trip it. Edge-triggered so it
 // reports once: a reset clears bError, and a still-asserted condition (e.g. a
 // Movement-Failed bit that only clears on the next successful move) does not
 // re-latch and block the reset. A fresh fault re-fires on the next rising edge.
 bMCS2Fault :=
     bEnable
-    AND NOT stMCS2ChanParameter.stChannelState.bReferencing
-    AND NOT stMCS2ChanParameter.stChannelState.bCalibrating
+    AND (stDS402Drive.nModeOfOperationDisplay = E_MCS2OpMode.CSP)
     AND (stMCS2ChanParameter.stChannelState.bMovementFailed
          OR stMCS2ChanParameter.stChannelState.bFollowingLimitReached
          OR stMCS2ChanParameter.stChannelState.bPositionerOverload
