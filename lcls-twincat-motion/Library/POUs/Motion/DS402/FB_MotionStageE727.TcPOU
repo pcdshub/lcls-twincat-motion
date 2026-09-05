@@ -16,7 +16,7 @@ VAR
     {attribute 'hide'}
     eModule 			: E_Module;
     {attribute 'hide'}
-    eHomeMode			: E_EpicsHomeCmd :=E_EpicsHomeCmd.AUTOZERO;
+    eHomeMode			: E_EpicsHomeCmd :=E_EpicsHomeCmd.AutoMethod;
     {attribute 'hide'}
     eBufferMode 		: MC_BufferMode := MC_BufferMode.MC_Aborting;
     {attribute 'hide'}
@@ -523,7 +523,7 @@ VAR_INST
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[CASE eHomeMode OF
-    E_EpicsHomeCmd.AUTOZERO:
+    E_EpicsHomeCmd.AutoMethod:
         bMove S=  bExecHome;
     E_EpicsHomeCmd.NONE:
         bMove := FALSE;

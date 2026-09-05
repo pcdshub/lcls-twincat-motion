@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <POU Name="FB_ReadDriveCodes" Id="{44ddb32d-aaa2-4fc7-a16a-bf90774280d7}" SpecialFunc="None">
+  <POU Name="FB_ReadDriveCodes" Id="{6ab55793-c2c3-4780-bb36-92684655a3d8}" SpecialFunc="None">
     <Declaration><![CDATA[(* Read Drive error codes after a motion or fault condition occured *)
 FUNCTION_BLOCK FB_ReadDriveCodes
 VAR_IN_OUT
@@ -13,13 +13,11 @@ VAR_INPUT
 END_VAR
 VAR
     {attribute 'hide'}
-    fbErrorRead         : FB_EcCoESdoRead;
-    {attribute 'hide'}
-    nPiezoErrorCode     : UDINT;
-    {attribute 'hide'}
     fbLogError          : FB_LogMotionError;
-    {attribute 'hide'}
-    ftErrorReadDone     : F_TRIG;
+    sMsg                : STRING;
+    sMCS2Code           : STRING;
+    bMCS2Fault          : BOOL;
+    rtMCS2Fault         : R_TRIG;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -29,31 +27,72 @@ END_VAR
     RETURN;
 END_IF
 
-// fbErrorRead(
-//     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
-//     nSlaveAddr := stDS402Drive.nSlaveAddr,
-//     nIndex     := stMCS2ChanParameter.nChanErrorCodeIdx,
-//     nSubIndex  := 0,
-//     pDstBuf    := ADR(nPiezoErrorCode),
-//     cbBufLen   := SIZEOF(nPiezoErrorCode),
-//     bExecute   := stMotionStage.bError AND bEnable
-// );
-//
-// ftErrorReadDone(CLK := fbErrorRead.bBusy);
-//
-// // override NC error ID if error is purely from drive
-// IF ftErrorReadDone.Q AND NOT fbErrorRead.bError
-//     AND nPiezoErrorCode <> 0
-//     AND stMotionStage.nErrorId = 0
-// THEN
-//     stMotionStage.nErrorId := nPiezoErrorCode;
-// END_IF
-//
-// // Cyclic decode and log only when error is active
-// IF stMotionStage.bError THEN
-//     stMotionStage.sErrorMessage := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
-//     fbLogError(stMotionStage := stMotionStage, bEnable := TRUE);
-// END_IF]]></ST>
+// The drive-side code (0x603F) is read by FB_ReadChanParameters on a fault or
+// internal-limit event. It is decoded by its own table and never merged into
+// nErrorId: the two number spaces overlap (MCS2 0x4200 sits inside the NC 0x4xxx
+// family, and MCS2 manufacturer codes 0xFFxx overlap E_LCLSMotionError.TEST).
+// The decoded string and raw code stay on MCS2_ERR_MSG / MCS2_ERR for PLC debug;
+// only the raw code is surfaced to the operator via sErrorMessage below.
+stMCS2ChanParameter.sMCS2ErrorMessage :=
+    F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);
+
+// Promote a genuine MCS2 fault the NC never latched (a drive-side stop that does
+// not disturb the NC position loop). Gated on CSP via the directly-linked mode
+// display, so the manual home/step/calibrate routines (which run their own
+// failure handling) never trip it. Edge-triggered so it
+// reports once: a reset clears bError, and a still-asserted condition (e.g. a
+// Movement-Failed bit that only clears on the next successful move) does not
+// re-latch and block the reset. A fresh fault re-fires on the next rising edge.
+bMCS2Fault :=
+    bEnable
+    AND (stDS402Drive.nModeOfOperationDisplay = E_MCS2OpMode.CSP)
+    AND (stMCS2ChanParameter.stChannelState.bMovementFailed
+         OR stMCS2ChanParameter.stChannelState.bFollowingLimitReached
+         OR stMCS2ChanParameter.stChannelState.bPositionerOverload
+         OR stMCS2ChanParameter.stChannelState.bOverTemperature
+         OR stMCS2ChanParameter.stChannelState.bPositionerFault);
+
+rtMCS2Fault(CLK := bMCS2Fault);
+IF rtMCS2Fault.Q AND NOT stMotionStage.bError THEN
+    stMotionStage.bError   S= TRUE;
+    stMotionStage.nErrorId := E_LCLSMotionError.MCS2_FAULT;
+END_IF
+
+// sErrorMessage is the only message channel exposed to the IOC. Rebuild it from
+// scratch each cycle so the MCS2 layer -- an SDO read that lands several cycles
+// after bError latches -- merges in exactly once it is available, without ever
+// duplicating. The numeric values stay separate in PLC:nErrorId and MCS2_ERR so
+// the overlapping code spaces cannot be confused.
+IF stMotionStage.bError THEN
+    sMsg := '';
+
+    // NC / limit layer: whatever the NC side could see.
+    IF stDS402Drive.stDriveStatus.InternalLimitActive
+        AND stMotionStage.sCustomErrorMessage <> '' THEN
+        sMsg := stMotionStage.sCustomErrorMessage;
+    ELSIF stMotionStage.nErrorId >= 16#4000 THEN
+        sMsg := F_MotionErrorCodeLookup(nErrorId := stMotionStage.nErrorId);
+    ELSIF stMotionStage.sCustomErrorMessage <> '' THEN
+        sMsg := stMotionStage.sCustomErrorMessage;
+    ELSIF stMotionStage.nErrorId = 0 AND stMCS2ChanParameter.nMCS2ErrorCode = 0 THEN
+        sMsg := 'Contact PCDS to add new message';
+    END_IF
+
+    // MCS2 layer: append the raw drive code (hex) whenever one exists.
+    IF stMCS2ChanParameter.nMCS2ErrorCode <> 0 THEN
+        sMCS2Code := CONCAT('MCS2: 0x',
+            WORD_TO_HEXSTR(in := stMCS2ChanParameter.nMCS2ErrorCode, iPrecision := 4, bLoCase := 0));
+        IF sMsg <> '' THEN
+            sMsg := CONCAT(CONCAT(sMsg, ' ('), CONCAT(sMCS2Code, ')'));
+        ELSE
+            sMsg := sMCS2Code;
+        END_IF
+    END_IF
+
+    IF sMsg <> '' THEN
+        stMotionStage.sErrorMessage := sMsg;
+    END_IF
+END_IF]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

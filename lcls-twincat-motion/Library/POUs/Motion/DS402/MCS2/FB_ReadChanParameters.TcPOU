@@ -8,10 +8,14 @@
 //   FAST queue: ChannelState only. Polled continuously at nReadTime. This is
 //     the latency-sensitive path that interlocks depend on.
 //
-//   SLOW queue: the remaining 11 parameters (positioner type, calibration
+//   SLOW queue: the remaining 21 parameters (positioner type, calibration
 //     options, sensor power mode, referencing options, reference type, safe
 //     direction, motor load, channel type, max closed-loop frequency,
-//     logical scale offset, logical scale inversion). Polled once at boot,
+//     logical scale offset, logical scale inversion, channel temperature,
+//     movement type, base unit, base resolution, distance code inverted,
+//     positioner control options, actuator mode, motor load protection
+//     threshold, diagnostic closed-loop frequency max and avg). Polled once
+//     at boot,
 //     then every nSlowReadTime (default 10 s). One read at a time. A failed
 //     read logs / latches and the queue advances to the next entry.
 //
@@ -38,6 +42,10 @@ VAR_OUTPUT
     // Count of slow-queue entries that errored on their most recent attempt.
     // Cleared at the start of each slow sweep. Diagnostic only.
     nSlowReadFailures : UINT;
+    // Count of fast-queue (ChannelState) reads that errored or timed out.
+    // Diagnostic only -- not surfaced as a user-facing error, since polling
+    // retries every cadence and a lone miss is not a fault.
+    nFastReadFailures : UINT;
 END_VAR
 
 VAR
@@ -46,8 +54,12 @@ VAR
 
     // Fast queue
     fbChannelStateRead       : FB_EcCoESdoRead;
+    // Event queue
+    fbDriveErrCodeRead       : FB_EcCoESdoRead;
     // Slow queue
     fbMaxCloseLoopFreqRead   : FB_EcCoESdoRead;
+    fbSoftLimMinRead         : FB_EcCoESdoRead;
+    fbSoftLimMaxRead         : FB_EcCoESdoRead;
     fbPositionerTypeRead     : FB_EcCoESdoRead;
     fbCalibrationOptRead     : FB_EcCoESdoRead;
     fbSensorPowerModeRead    : FB_EcCoESdoRead;
@@ -58,12 +70,27 @@ VAR
     fbChannelTypeRead        : FB_EcCoESdoRead;
     fbLogicalScaleOffsetRead : FB_EcCoESdoRead;
     fbLogicalScaleInvRead    : FB_EcCoESdoRead;
+    fbChannelTempRead        : FB_EcCoESdoRead;
+    fbMovementTypeRead       : FB_EcCoESdoRead;
+    fbBaseUnitRead           : FB_EcCoESdoRead;
+    fbBaseResolutionRead     : FB_EcCoESdoRead;
+    fbDistCodeInvRead        : FB_EcCoESdoRead;
+    fbPositionerCtrlOptRead  : FB_EcCoESdoRead;
+    fbActuatorModeRead       : FB_EcCoESdoRead;
+    fbMotorLoadProtRead      : FB_EcCoESdoRead;
+    // Diag closed-loop frequency is a subindexed object (0x202A:1 = max,
+    // 0x202A:2 = avg); one reader per subindex.
+    fbDiagClfMaxRead         : FB_EcCoESdoRead;
+    fbDiagClfAvgRead         : FB_EcCoESdoRead;
 
 
     // Completion edge detectors
 
     ftChannelStateRead       : F_TRIG;
+    ftDriveErrCodeRead       : F_TRIG;
     ftMaxCloseLoopFreqRead   : F_TRIG;
+    ftSoftLimMinRead         : F_TRIG;
+    ftSoftLimMaxRead         : F_TRIG;
     ftPositionerTypeRead     : F_TRIG;
     ftCalibrationOptRead     : F_TRIG;
     ftSensorPowerModeRead    : F_TRIG;
@@ -74,12 +101,25 @@ VAR
     ftChannelTypeRead        : F_TRIG;
     ftLogicalScaleOffsetRead : F_TRIG;
     ftLogicalScaleInvRead    : F_TRIG;
+    ftChannelTempRead        : F_TRIG;
+    ftMovementTypeRead       : F_TRIG;
+    ftBaseUnitRead           : F_TRIG;
+    ftBaseResolutionRead     : F_TRIG;
+    ftDistCodeInvRead        : F_TRIG;
+    ftPositionerCtrlOptRead  : F_TRIG;
+    ftActuatorModeRead       : F_TRIG;
+    ftMotorLoadProtRead      : F_TRIG;
+    ftDiagClfMaxRead         : F_TRIG;
+    ftDiagClfAvgRead         : F_TRIG;
 
 
     // Per-reader execute lines (driven by queue FSMs)
 
     bExecChannelState       : BOOL;
+    bExecDriveErrCode       : BOOL;
     bExecMaxCloseLoopFreq   : BOOL;
+    bExecSoftLimMin         : BOOL;
+    bExecSoftLimMax         : BOOL;
     bExecPositionerType     : BOOL;
     bExecCalibrationOpt     : BOOL;
     bExecSensorPowerMode    : BOOL;
@@ -90,6 +130,16 @@ VAR
     bExecChannelType        : BOOL;
     bExecLogicalScaleOffset : BOOL;
     bExecLogicalScaleInv    : BOOL;
+    bExecChannelTemp        : BOOL;
+    bExecMovementType       : BOOL;
+    bExecBaseUnit           : BOOL;
+    bExecBaseResolution     : BOOL;
+    bExecDistCodeInv        : BOOL;
+    bExecPositionerCtrlOpt  : BOOL;
+    bExecActuatorMode       : BOOL;
+    bExecMotorLoadProt      : BOOL;
+    bExecDiagClfMax         : BOOL;
+    bExecDiagClfAvg         : BOOL;
 
 
     // Fast queue (ChannelState)
@@ -100,9 +150,27 @@ VAR
         FAST_READING       := 2
     ) := FAST_WAIT_CADENCE;
     tonFastCadence : TON;
+    // Set on a fault or limit event: the drive error code reports the failed move,
+    // not its cause, so the channel state bits must not be up to nReadTime stale.
+    bFastReadNow : BOOL;
     // Per-read watchdog for ChannelState.
     tonFastReadTimeout : TON;
     tFastReadTimeout : TIME := T#2S;
+
+
+    // Event queue (drive error code)
+
+    // 0x603F holds the last channel error and is refreshed by the drive when the
+    // Internal Limit flag is set, so it explains limit stops the NC cannot.
+    eEvt : (
+        EVT_IDLE    := 0,
+        EVT_READING := 1
+    ) := EVT_IDLE;
+    rtErrEvent : R_TRIG;
+    bEvtReadPending : BOOL;
+    bEvtReadActive : BOOL;
+    tonEvtReadTimeout : TON;
+    tEvtReadTimeout : TIME := T#2S;
 
 
     // Slow queue (everything else)
@@ -127,7 +195,7 @@ VAR
     tSlowReadTimeout  : TIME := T#2S;
 END_VAR
 VAR CONSTANT
-    NUM_SLOW : INT := 11;
+    NUM_SLOW : INT := 23;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -151,6 +219,22 @@ IF NOT bEnable THEN
     bExecChannelType        := FALSE;
     bExecLogicalScaleOffset := FALSE;
     bExecLogicalScaleInv    := FALSE;
+    bExecChannelTemp        := FALSE;
+    bExecMovementType       := FALSE;
+    bExecBaseUnit           := FALSE;
+    bExecBaseResolution     := FALSE;
+    bExecDistCodeInv        := FALSE;
+    bExecPositionerCtrlOpt  := FALSE;
+    bExecActuatorMode       := FALSE;
+    bExecMotorLoadProt      := FALSE;
+    bExecDiagClfMax         := FALSE;
+    bExecDiagClfAvg         := FALSE;
+    bExecDriveErrCode       := FALSE;
+    bEvtReadPending         := FALSE;
+    bEvtReadActive          := FALSE;
+    bFastReadNow            := FALSE;
+    eEvt                    := EVT_IDLE;
+    tonEvtReadTimeout(IN := FALSE);
     tonFastCadence(IN := FALSE);
     tonSlowCadence(IN := FALSE);
     CallAllSdoReaders();
@@ -159,7 +243,10 @@ END_IF
 
 // Tick all the F_TRIGs from the previous cycle's bBusy snapshots.
 ftChannelStateRead       (CLK := fbChannelStateRead.bBusy);
+ftDriveErrCodeRead       (CLK := fbDriveErrCodeRead.bBusy);
 ftMaxCloseLoopFreqRead   (CLK := fbMaxCloseLoopFreqRead.bBusy);
+    ftSoftLimMinRead         (CLK := fbSoftLimMinRead.bBusy);
+    ftSoftLimMaxRead         (CLK := fbSoftLimMaxRead.bBusy);
 ftPositionerTypeRead     (CLK := fbPositionerTypeRead.bBusy);
 ftCalibrationOptRead     (CLK := fbCalibrationOptRead.bBusy);
 ftSensorPowerModeRead    (CLK := fbSensorPowerModeRead.bBusy);
@@ -170,14 +257,34 @@ ftMotorLoadRead          (CLK := fbMotorLoadRead.bBusy);
 ftChannelTypeRead        (CLK := fbChannelTypeRead.bBusy);
 ftLogicalScaleOffsetRead (CLK := fbLogicalScaleOffsetRead.bBusy);
 ftLogicalScaleInvRead    (CLK := fbLogicalScaleInvRead.bBusy);
+ftChannelTempRead        (CLK := fbChannelTempRead.bBusy);
+ftMovementTypeRead       (CLK := fbMovementTypeRead.bBusy);
+ftBaseUnitRead           (CLK := fbBaseUnitRead.bBusy);
+ftBaseResolutionRead     (CLK := fbBaseResolutionRead.bBusy);
+ftDistCodeInvRead        (CLK := fbDistCodeInvRead.bBusy);
+ftPositionerCtrlOptRead  (CLK := fbPositionerCtrlOptRead.bBusy);
+ftActuatorModeRead       (CLK := fbActuatorModeRead.bBusy);
+ftMotorLoadProtRead      (CLK := fbMotorLoadProtRead.bBusy);
+ftDiagClfMaxRead         (CLK := fbDiagClfMaxRead.bBusy);
+ftDiagClfAvgRead         (CLK := fbDiagClfAvgRead.bBusy);
 
 // Run the two queues. Each yields to the other -- only one outstanding SDO
 // at a time across the whole FB.
+rtErrEvent(CLK := stMotionStage.bError OR stDS402Drive.stDriveStatus.InternalLimitActive);
+IF rtErrEvent.Q THEN
+    bEvtReadPending := TRUE;
+    bFastReadNow    := TRUE;
+END_IF
+
+EventQueueStep();
 FastQueueStep();
 SlowQueueStep();
 
 // Cyclically call every reader. bExecute lines are owned by the queues.
 CallAllSdoReaders();
+
+// Decode the raw option words into individual read-only flags.
+DecodeOptions();
 ]]></ST>
     </Implementation>
     <Method Name="CallAllSdoReaders" Id="{0a000001-0000-0000-0000-000000000009}">
@@ -196,6 +303,17 @@ fbChannelStateRead(
     bExecute   := bExecChannelState
 );
 
+// Event
+fbDriveErrCodeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanErrorCodeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMCS2ErrorCode),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMCS2ErrorCode),
+    bExecute   := bExecDriveErrCode
+);
+
 // Slow
 fbMaxCloseLoopFreqRead(
     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
@@ -205,6 +323,24 @@ fbMaxCloseLoopFreqRead(
     pDstBuf    := ADR(stMCS2ChanParameter.nMaxCloseLoopFreq),
     cbBufLen   := SIZEOF(stMCS2ChanParameter.nMaxCloseLoopFreq),
     bExecute   := bExecMaxCloseLoopFreq
+);
+fbSoftLimMinRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanSoftLimitIdx,
+    nSubIndex  := 1,
+    pDstBuf    := ADR(stMCS2ChanParameter.nSoftLimMin),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nSoftLimMin),
+    bExecute   := bExecSoftLimMin
+);
+fbSoftLimMaxRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanSoftLimitIdx,
+    nSubIndex  := 2,
+    pDstBuf    := ADR(stMCS2ChanParameter.nSoftLimMax),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nSoftLimMax),
+    bExecute   := bExecSoftLimMax
 );
 fbPositionerTypeRead(
     sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
@@ -296,6 +432,96 @@ fbLogicalScaleInvRead(
     cbBufLen   := SIZEOF(stMCS2ChanParameter.nLogicalScaleInv),
     bExecute   := bExecLogicalScaleInv
 );
+fbChannelTempRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanChannelTempIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nChannelTemp),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nChannelTemp),
+    bExecute   := bExecChannelTemp
+);
+fbMovementTypeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanMovementTypeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMovementType),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMovementType),
+    bExecute   := bExecMovementType
+);
+fbBaseUnitRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanBaseUnitIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nBaseUnit),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nBaseUnit),
+    bExecute   := bExecBaseUnit
+);
+fbBaseResolutionRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanBaseResolutionIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nBaseResolution),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nBaseResolution),
+    bExecute   := bExecBaseResolution
+);
+fbDistCodeInvRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanDistCodeInvIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nDistCodeInv),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nDistCodeInv),
+    bExecute   := bExecDistCodeInv
+);
+fbPositionerCtrlOptRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanPositionerCtrlOptIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nPositionerCtrlOpt),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nPositionerCtrlOpt),
+    bExecute   := bExecPositionerCtrlOpt
+);
+fbActuatorModeRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanActuatorModeIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nActuatorMode),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nActuatorMode),
+    bExecute   := bExecActuatorMode
+);
+fbMotorLoadProtRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanMotorLoadProtIdx,
+    nSubIndex  := 0,
+    pDstBuf    := ADR(stMCS2ChanParameter.nMotorLoadProt),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nMotorLoadProt),
+    bExecute   := bExecMotorLoadProt
+);
+fbDiagClfMaxRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanDiagClfIdx,
+    nSubIndex  := 1,
+    pDstBuf    := ADR(stMCS2ChanParameter.nDiagClfMax),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nDiagClfMax),
+    bExecute   := bExecDiagClfMax
+);
+fbDiagClfAvgRead(
+    sNetId     := stMotionStage.stAxisParameters.sAmsNetId,
+    nSlaveAddr := stDS402Drive.nSlaveAddr,
+    nIndex     := stMCS2ChanParameter.nChanDiagClfIdx,
+    nSubIndex  := 2,
+    pDstBuf    := ADR(stMCS2ChanParameter.nDiagClfAvg),
+    cbBufLen   := SIZEOF(stMCS2ChanParameter.nDiagClfAvg),
+    bExecute   := bExecDiagClfAvg
+);
 ]]></ST>
       </Implementation>
     </Method>
@@ -314,6 +540,18 @@ bExecMotorLoad          := FALSE;
 bExecChannelType        := FALSE;
 bExecLogicalScaleOffset := FALSE;
 bExecLogicalScaleInv    := FALSE;
+bExecChannelTemp        := FALSE;
+bExecMovementType       := FALSE;
+bExecBaseUnit           := FALSE;
+bExecBaseResolution     := FALSE;
+bExecDistCodeInv        := FALSE;
+bExecPositionerCtrlOpt  := FALSE;
+bExecActuatorMode       := FALSE;
+bExecMotorLoadProt      := FALSE;
+bExecDiagClfMax         := FALSE;
+bExecDiagClfAvg         := FALSE;
+bExecSoftLimMin         := FALSE;
+bExecSoftLimMax         := FALSE;
 ]]></ST>
       </Implementation>
     </Method>
@@ -336,6 +574,18 @@ END_VAR
     9:  bExecChannelType        := FALSE;
     10: bExecLogicalScaleOffset := FALSE;
     11: bExecLogicalScaleInv    := FALSE;
+    12: bExecChannelTemp        := FALSE;
+    13: bExecMovementType       := FALSE;
+    14: bExecBaseUnit           := FALSE;
+    15: bExecBaseResolution     := FALSE;
+    16: bExecDistCodeInv        := FALSE;
+    17: bExecPositionerCtrlOpt  := FALSE;
+    18: bExecActuatorMode       := FALSE;
+    19: bExecMotorLoadProt      := FALSE;
+    20: bExecDiagClfMax         := FALSE;
+    21: bExecDiagClfAvg         := FALSE;
+    22: bExecSoftLimMin         := FALSE;
+    23: bExecSoftLimMax         := FALSE;
 END_CASE
 ]]></ST>
       </Implementation>
@@ -370,13 +620,95 @@ stMCS2ChanParameter.stChannelState.bPositionerFault       := (n AND 16#00020000)
 stMCS2ChanParameter.stChannelState.bAmplifierEnabled      := (n AND 16#00040000) <> 0;
 stMCS2ChanParameter.stChannelState.bInPosition            := (n AND 16#00080000) <> 0;
 stMCS2ChanParameter.stChannelState.bBrakeEnabled          := (n AND 16#00100000) <> 0;
+
+// Preserve a useful MCS2 diagnostic even if the asynchronous 0x603F read is
+// delayed or unavailable. The SDO result, when available, replaces this
+// inferred summary with the drive's exact code.
+IF stMCS2ChanParameter.stChannelState.bRangeLimitReached THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#8500;
+ELSIF stMCS2ChanParameter.stChannelState.bEndStopReached THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#7121;
+ELSIF stMCS2ChanParameter.stChannelState.bFollowingLimitReached THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#8611;
+ELSIF stMCS2ChanParameter.stChannelState.bMovementFailed THEN
+    stMCS2ChanParameter.nMCS2ErrorCode := 16#8600;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="DecodeOptions" Id="{7f3a1c02-9b4e-4d21-8a6c-1e2f3a4b5c6d}">
+      <Declaration><![CDATA[// Decode the raw Referencing Options (0x200B) and Calibration Options (0x2004)
+// words read back from the drive into individual read-only flags.
+METHOD PRIVATE DecodeOptions
+VAR
+    n : DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[n := stMCS2ChanParameter.nReferencingOpt;
+stMCS2ChanParameter.bRefStartDirBackward   := (n AND 16#00000001) <> 0;
+stMCS2ChanParameter.bRefReverseDir         := (n AND 16#00000002) <> 0;
+stMCS2ChanParameter.bRefAutoZero           := (n AND 16#00000004) <> 0;
+stMCS2ChanParameter.bRefAbortOnEndStop     := (n AND 16#00000008) <> 0;
+stMCS2ChanParameter.bRefContinueOnRefFound := (n AND 16#00000010) <> 0;
+stMCS2ChanParameter.bRefStopOnRefFound     := (n AND 16#00000020) <> 0;
+stMCS2ChanParameter.bRefInvalidate         := (n AND 16#01000000) <> 0;
+
+n := stMCS2ChanParameter.nCalibrationOpt;
+stMCS2ChanParameter.bCalDirBackward        := (n AND 16#00000001) <> 0;
+stMCS2ChanParameter.bCalDetectDistCodeInv  := (n AND 16#00000002) <> 0;
+stMCS2ChanParameter.bCalAdvSensorCorr      := (n AND 16#00000004) <> 0;
+stMCS2ChanParameter.bCalLimitedTravelRange := (n AND 16#00000100) <> 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="EventQueueStep" Id="{0a000001-0000-0000-0000-00000000000a}">
+      <Declaration><![CDATA[// Event queue: one-shot read of the drive error code (0x603F) after a fault or
+// internal-limit event. Highest priority, but still mutually exclusive with the
+// fast and slow queues so only one SDO is outstanding on the mailbox.
+METHOD PRIVATE EventQueueStep
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE eEvt OF
+
+    EVT_IDLE:
+        bExecDriveErrCode := FALSE;
+        bEvtReadActive    := FALSE;
+        tonEvtReadTimeout(IN := FALSE);
+        IF bEvtReadPending
+           AND NOT bSlowReadActive
+           AND (eFast <> FAST_READING) THEN
+            bEvtReadPending   := FALSE;
+            bExecDriveErrCode := TRUE;
+            bEvtReadActive    := TRUE;
+            eEvt              := EVT_READING;
+        END_IF
+
+    EVT_READING:
+        tonEvtReadTimeout(IN := TRUE, PT := tEvtReadTimeout);
+        IF ftDriveErrCodeRead.Q THEN
+            // Keep an inferred or previously read code if this mailbox read
+            // fails. ChannelState provides a useful cause-level fallback.
+            bExecDriveErrCode := FALSE;
+            bEvtReadActive    := FALSE;
+            tonEvtReadTimeout(IN := FALSE);
+            eEvt              := EVT_IDLE;
+        ELSIF tonEvtReadTimeout.Q THEN
+            // Keep the inferred or previously read code for diagnostics.
+            bExecDriveErrCode := FALSE;
+            bEvtReadActive    := FALSE;
+            tonEvtReadTimeout(IN := FALSE);
+            eEvt              := EVT_IDLE;
+        END_IF
+
+END_CASE
 ]]></ST>
       </Implementation>
     </Method>
     <Method Name="FastQueueStep" Id="{0a000001-0000-0000-0000-000000000001}">
       <Declaration><![CDATA[// Fast queue: poll ChannelState at nReadTime cadence. Yields the bus to the
-// slow queue if a slow read is currently in flight, but does not back off
-// any further -- as soon as the slow read completes the fast read can fire.
+// slow and event queues if one of those reads is currently in flight, but does
+// not back off any further -- as soon as that read completes the fast read can fire.
 METHOD PRIVATE FastQueueStep
 ]]></Declaration>
       <Implementation>
@@ -396,8 +728,9 @@ METHOD PRIVATE FastQueueStep
         );
         // Only fire when the cadence has elapsed AND the slow queue isn't
         // currently using the mailbox.
-        IF tonFastCadence.Q AND NOT bSlowReadActive THEN
+        IF (tonFastCadence.Q OR bFastReadNow) AND NOT bSlowReadActive AND NOT bEvtReadActive THEN
             tonFastCadence(IN := FALSE);
+            bFastReadNow      := FALSE;
             bExecChannelState := TRUE;
             eFast             := FAST_READING;
         END_IF
@@ -409,20 +742,16 @@ METHOD PRIVATE FastQueueStep
             IF NOT fbChannelStateRead.bError THEN
                 DecodeChannelState();
             ELSE
-                // Don't stop polling on a single failure. Log once per
-                // failure if motion subsystem isn't already noisy.
-                IF NOT stMotionStage.bBusy THEN
-                    stMotionStage.sErrorMessage := 'Failed to read ChannelState';
-                END_IF
+                // Don't stop polling on a single failure, and don't surface
+                // it as a user-facing error -- it retries every cadence.
+                nFastReadFailures := nFastReadFailures + 1;
             END_IF
             bExecChannelState := FALSE;
             tonFastReadTimeout(IN := FALSE);
             eFast             := FAST_WAIT_CADENCE;
         ELSIF tonFastReadTimeout.Q THEN
             // Hung read -- give up and retry next cadence.
-            IF NOT stMotionStage.bBusy THEN
-                stMotionStage.sErrorMessage := 'ChannelState read timeout';
-            END_IF
+            nFastReadFailures := nFastReadFailures + 1;
             bExecChannelState := FALSE;
             tonFastReadTimeout(IN := FALSE);
             eFast             := FAST_WAIT_CADENCE;
@@ -433,7 +762,7 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="SlowQueueStep" Id="{0a000001-0000-0000-0000-000000000002}">
-      <Declaration><![CDATA[// Slow queue: sweep through 11 entries once at boot, then refresh every
+      <Declaration><![CDATA[// Slow queue: sweep through 21 entries once at boot, then refresh every
 // tSlowReadInterval. One entry at a time. A failed read latches a counter
 // and advances -- it does not stall the sweep or affect the fast queue.
 METHOD PRIVATE SlowQueueStep
@@ -468,7 +797,7 @@ METHOD PRIVATE SlowQueueStep
     SLOW_RUNNING:
         // Yield: never start a new slow read while the fast queue is
         // mid-read. Existing in-flight slow reads continue.
-        IF NOT bSlowReadActive AND (eFast = FAST_READING) THEN
+        IF NOT bSlowReadActive AND ((eFast = FAST_READING) OR bEvtReadActive) THEN
             // Just hold; don't kick the next read yet.
             RETURN;
         END_IF
@@ -534,6 +863,18 @@ END_VAR
     9:  SlowReadEdge := ftChannelTypeRead.Q;
     10: SlowReadEdge := ftLogicalScaleOffsetRead.Q;
     11: SlowReadEdge := ftLogicalScaleInvRead.Q;
+    12: SlowReadEdge := ftChannelTempRead.Q;
+    13: SlowReadEdge := ftMovementTypeRead.Q;
+    14: SlowReadEdge := ftBaseUnitRead.Q;
+    15: SlowReadEdge := ftBaseResolutionRead.Q;
+    16: SlowReadEdge := ftDistCodeInvRead.Q;
+    17: SlowReadEdge := ftPositionerCtrlOptRead.Q;
+    18: SlowReadEdge := ftActuatorModeRead.Q;
+    19: SlowReadEdge := ftMotorLoadProtRead.Q;
+    20: SlowReadEdge := ftDiagClfMaxRead.Q;
+    21: SlowReadEdge := ftDiagClfAvgRead.Q;
+    22: SlowReadEdge := ftSoftLimMinRead.Q;
+    23: SlowReadEdge := ftSoftLimMaxRead.Q;
     ELSE
         SlowReadEdge := FALSE;
 END_CASE
@@ -560,6 +901,18 @@ END_VAR
     9:  SlowReadError := fbChannelTypeRead.bError;
     10: SlowReadError := fbLogicalScaleOffsetRead.bError;
     11: SlowReadError := fbLogicalScaleInvRead.bError;
+    12: SlowReadError := fbChannelTempRead.bError;
+    13: SlowReadError := fbMovementTypeRead.bError;
+    14: SlowReadError := fbBaseUnitRead.bError;
+    15: SlowReadError := fbBaseResolutionRead.bError;
+    16: SlowReadError := fbDistCodeInvRead.bError;
+    17: SlowReadError := fbPositionerCtrlOptRead.bError;
+    18: SlowReadError := fbActuatorModeRead.bError;
+    19: SlowReadError := fbMotorLoadProtRead.bError;
+    20: SlowReadError := fbDiagClfMaxRead.bError;
+    21: SlowReadError := fbDiagClfAvgRead.bError;
+    22: SlowReadError := fbSoftLimMinRead.bError;
+    23: SlowReadError := fbSoftLimMaxRead.bError;
     ELSE
         SlowReadError := FALSE;
 END_CASE
@@ -586,6 +939,18 @@ END_VAR
     9:  bExecChannelType        := TRUE;
     10: bExecLogicalScaleOffset := TRUE;
     11: bExecLogicalScaleInv    := TRUE;
+    12: bExecChannelTemp        := TRUE;
+    13: bExecMovementType       := TRUE;
+    14: bExecBaseUnit           := TRUE;
+    15: bExecBaseResolution     := TRUE;
+    16: bExecDistCodeInv        := TRUE;
+    17: bExecPositionerCtrlOpt  := TRUE;
+    18: bExecActuatorMode       := TRUE;
+    19: bExecMotorLoadProt      := TRUE;
+    20: bExecDiagClfMax         := TRUE;
+    21: bExecDiagClfAvg         := TRUE;
+    22: bExecSoftLimMin         := TRUE;
+    23: bExecSoftLimMax         := TRUE;
 END_CASE
 ]]></ST>
       </Implementation>

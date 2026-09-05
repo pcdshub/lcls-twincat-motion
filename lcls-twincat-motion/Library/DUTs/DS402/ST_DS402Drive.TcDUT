@@ -32,6 +32,9 @@ STRUCT
     uScantargetVelocity		AT %Q*	: 	ULINT;
     (* Port Number of EtherCAT Slave *)
     nSlaveAddr	AT %I*  : UINT;
+    (* EtherCAT slave ESM state, linked to the slave's InfoData.State.
+       Low nibble is the state: 1=INIT, 2=PREOP, 4=SAFEOP, 8=OP. *)
+    nEcatState	AT %I*  : UINT;
 END_STRUCT
 END_TYPE
 ]]></Declaration>

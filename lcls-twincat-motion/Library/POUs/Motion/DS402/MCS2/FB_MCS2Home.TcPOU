@@ -14,7 +14,6 @@ VAR_OUTPUT
     bHomeMoveBusy        : BOOL;
     bHomeMoveDone        : BOOL;
     bHomeMoveAborted     : BOOL;
-    bHomed  : BOOL;
 END_VAR
 VAR
     eStepState           : E_MoveState := E_MoveState.IDLING;
@@ -41,6 +40,8 @@ CASE eStepState OF
     E_MoveState.IDLING:
         IF rtHomeMove.Q THEN
             bHomeMoveBusy := TRUE;
+            bHomeMoveDone := FALSE;
+            bHomeMoveAborted := FALSE;
             stMotionStage.bDone := FALSE;
             fbSetPos.Options.ClearPositionLag := TRUE;
             tonSettlingTime.IN:=FALSE;
@@ -51,11 +52,12 @@ CASE eStepState OF
     E_MoveState.INIT:
         IF stMotionStage.bError THEN
             eStepState := E_MoveState.ERROR;
-        ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN // Already homed
-            bHomed := TRUE;
-            eStepState := E_MoveState.DONE;
         ELSE
-            bHomed := FALSE;
+            // Always run the full homing sequence, even when the drive already
+            // reports Homing Attained (Bit12). These stick-slip stages use an
+            // incremental encoder, so re-referencing to the end stop is the only
+            // way to clear an undetected lost-count / slip drift. Required for
+            // slit blade re-homing without a power cycle.
             stDS402Drive.nDriveControl.4 := TRUE;
             tonSettlingTime.IN:=TRUE;
             eStepState := E_MoveState.STARTED;
@@ -87,18 +89,30 @@ CASE eStepState OF
         eStepState := E_MoveState.IDLING;
 
     E_MoveState.DONE:
-        bHomeMoveBusy := FALSE;
-        bHomeMoveDone := TRUE;
-        stMotionStage.fPosition := 0.0;
-        IF NOT bHomed THEN
-            fbSetPos(
-                Axis := stMotionStage.Axis,
-                Execute := TRUE,
-                Position := stMotionStage.fHomePosition
-            );
-        END_IF
+        // Clear the homing Run bit and sync the NC to the drive readback (raw
+        // count * scale + offset). Wait for MC_SetPosition to finish so the lag
+        // built up during the drive-side move is cleared before homing reports
+        // done. The caller re-enables position-lag monitoring and returns to CSP
+        // on that done edge, so reporting early trips a following error.
         stDS402Drive.nDriveControl.4 := FALSE;
-        eStepState := E_MoveState.IDLING;
+        fbSetPos(
+            Axis := stMotionStage.Axis,
+            Execute := TRUE,
+            Position := stMotionStage.nEncoderCount
+                        * stMotionStage.stAxisParameters.fEncScaleFactorInternal
+                        + stMotionStage.stAxisParameters.fEncOffset
+        );
+        IF fbSetPos.Done THEN
+            fbSetPos(Axis := stMotionStage.Axis, Execute := FALSE);
+            bHomeMoveBusy := FALSE;
+            bHomeMoveDone := TRUE;
+            eStepState := E_MoveState.IDLING;
+        ELSIF fbSetPos.Error THEN
+            fbSetPos(Axis := stMotionStage.Axis, Execute := FALSE);
+            bHomeMoveBusy := FALSE;
+            stMotionStage.bError := TRUE;
+            eStepState := E_MoveState.ERROR;
+        END_IF
 
     E_MoveState.ERROR:
         bHomeMoveDone := FALSE;

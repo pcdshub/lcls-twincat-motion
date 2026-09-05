@@ -47,10 +47,11 @@ CASE eStepState OF
         END_IF
 
     E_MoveState.INIT:
+        // Always run the routine, even when the drive reports Calibration Attained
+        // (Bit12): a Safe-Direction change invalidates the stored calibration while
+        // leaving Bit12 set, so re-calibration must not be skipped.
         IF stMotionStage.bError THEN
             eStepState := E_MoveState.ERROR;
-        ELSIF stDS402Drive.stDriveStatus.Bit12_OpModeSpecific THEN
-            eStepState := E_MoveState.REACHED;
         ELSE
             stDS402Drive.nDriveControl.4 := TRUE;
             tonSettlingTime.IN:=TRUE;
