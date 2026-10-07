@@ -36,18 +36,27 @@ END_IF
 stMCS2ChanParameter.sMCS2ErrorMessage :=
     F_MCS2ErrorCodeLookup(nErrorId := stMCS2ChanParameter.nMCS2ErrorCode);
 
-// Promote a genuine MCS2 fault the NC never latched (a drive-side stop that does
-// not disturb the NC position loop). Gated on CSP via the directly-linked mode
-// display, so the manual home/step/calibrate routines (which run their own
-// failure handling) never trip it. Edge-triggered so it
-// reports once: a reset clears bError, and a still-asserted condition (e.g. a
-// Movement-Failed bit that only clears on the next successful move) does not
-// re-latch and block the reset. A fresh fault re-fires on the next rising edge.
+// Promote a genuine MCS2 fault the NC never latched (a drive-side stop that
+// does not disturb the NC position loop). Only real-time conditions qualify,
+// checked in any op mode: Overload/OverTemperature/PositionerFault hold for as
+// long as the condition is physically present, and FollowingLimitReached is
+// the firmware's own Following Error Window (0x6065) protective stop, which
+// it enforces continuously, including during CSP streaming.
+//
+// MovementFailed is excluded: it describes the outcome of a discrete
+// MCS2-native move (home/step/calibrate), which CSP never issues. CSP only
+// streams continuous setpoints, so in CSP that bit can only ever be a stale
+// leftover from an earlier open-loop move, not a live result, and surfacing
+// it there faulted CSP moves that had actually succeeded. The open-loop
+// routines already detect their own move failures via the DS402 status word
+// (see FB_MCS2Home/FB_MCS2StepMode/FB_MCS2Calibrate).
+//
+// Edge-triggered so it reports once: a reset clears bError, and a
+// still-asserted condition does not re-latch and block the reset. A fresh
+// fault re-fires on the next rising edge.
 bMCS2Fault :=
     bEnable
-    AND (stDS402Drive.nModeOfOperationDisplay = E_MCS2OpMode.CSP)
-    AND (stMCS2ChanParameter.stChannelState.bMovementFailed
-         OR stMCS2ChanParameter.stChannelState.bFollowingLimitReached
+    AND (stMCS2ChanParameter.stChannelState.bFollowingLimitReached
          OR stMCS2ChanParameter.stChannelState.bPositionerOverload
          OR stMCS2ChanParameter.stChannelState.bOverTemperature
          OR stMCS2ChanParameter.stChannelState.bPositionerFault);
@@ -59,8 +68,8 @@ IF rtMCS2Fault.Q AND NOT stMotionStage.bError THEN
 END_IF
 
 // sErrorMessage is the only message channel exposed to the IOC. Rebuild it from
-// scratch each cycle so the MCS2 layer -- an SDO read that lands several cycles
-// after bError latches -- merges in exactly once it is available, without ever
+// scratch each cycle so the MCS2 layer, an SDO read that lands several cycles
+// after bError latches, merges in exactly once it is available, without ever
 // duplicating. The numeric values stay separate in PLC:nErrorId and MCS2_ERR so
 // the overlapping code spaces cannot be confused.
 IF stMotionStage.bError THEN
