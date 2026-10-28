@@ -82,9 +82,7 @@ bFaultLast := bFault;
 bDS402Manual := (stDS402Drive.nModeOfOperationDisplay <> E_MCS2OpMode.CSP);
 
 // Fires once per power-on when the NC-wired axis sits in CSP with a latched
-// boot fault; removes the long-standing "every cold boot needs a manual
-// reset" pain. Latch never re-arms within a session: a runtime fault must
-// still be cleared explicitly by the operator.
+// boot fault;
 IF NOT bBootResetDone
    AND stMotionStage.nMotionAxisID <> 0
    AND stDS402Drive.nModeOfOperationDisplay = E_MCS2OpMode.CSP

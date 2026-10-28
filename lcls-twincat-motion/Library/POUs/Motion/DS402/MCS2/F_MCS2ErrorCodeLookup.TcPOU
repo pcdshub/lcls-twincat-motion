@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="F_MCS2ErrorCodeLookup" Id="{3f6c1d84-91b2-4a57-8e30-5c7d9a2b41e6}" SpecialFunc="None">
+    <Declaration><![CDATA[(*
+    Decode an MCS2 drive error code read from the Error Code object (0x603F).
+    Separate from F_MotionErrorCodeLookup on purpose: MCS2/DS402 codes and TwinCAT
+    NC codes occupy overlapping numeric ranges (MCS2 0x4200 sits inside the NC
+    0x4xxx family), so the two tables must never be applied to the same value.
+    Codes per MCS2 EtherCAT Interface User Manual, appendix A.1.
+*)
+FUNCTION F_MCS2ErrorCodeLookup : STRING
+VAR_INPUT
+    nErrorId : UINT;
+END_VAR
+VAR
+    msg : STRING;
+    nClass : BYTE;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE nErrorId OF
+    // DS402-mapped errors
+    16#0000: msg := '';
+    16#1000: msg := 'General error (unspecified MCS2 error)';
+    16#1080: msg := 'Not ready for operation: amplifier disabled';
+    16#3230: msg := 'Load error: positioner overload';
+    16#4200: msg := 'Temperature error: over temperature';
+    16#5100: msg := 'Supply error: power supply disabled';
+    16#6100: msg := 'Internal software error';
+    16#6320: msg := 'Parameter error: invalid parameter';
+    16#7100: msg := 'Power error: supply failure or overload';
+    16#7121: msg := 'Motor blocked: end stop reached';
+    16#7300: msg := 'Sensor error: missing, disabled or unsupported type';
+    16#7320: msg := 'Sensor position: no sensor present';
+    16#7500: msg := 'Internal communication fault';
+    16#8311: msg := 'Excess torque: control loop unstable';
+    16#8500: msg := 'Range limit reached';
+    // Not in manual table A.1, but what the drive reports over EtherCAT once a
+    // move is aborted. It names the failed move, not the cause: read the channel
+    // state RANGE_LIMIT / END_STOP bits to tell a soft limit from an end stop.
+    16#8600: msg := 'Movement failed';
+    16#8611: msg := 'Following error limit reached';
+
+    // Manufacturer specific errors
+    16#FF00: msg := 'Timeout';
+    16#FF01: msg := 'Invalid data';
+    16#FF02: msg := 'Aborted';
+    16#FF03: msg := 'Permission denied';
+    16#FF04: msg := 'Movement locked';
+    16#FF05: msg := 'Overrange';
+    16#FF06: msg := 'Invalid configuration';
+    16#FF07: msg := 'Invalid sensor mode';
+    16#FF08: msg := 'Invalid actuator mode';
+    16#FF09: msg := 'Invalid control options';
+    16#FF21: msg := 'Internal communication';
+
+    ELSE
+        // Table A.1 is not exhaustive, so fall back to the DS402 error class in
+        // the high byte rather than reporting nothing useful.
+        nClass := UINT_TO_BYTE(SHR(nErrorId, 8));
+        CASE nClass OF
+            16#10:                      msg := 'Generic error';
+            16#20, 16#21, 16#22, 16#23: msg := 'Current error';
+            16#30, 16#31, 16#32, 16#33: msg := 'Voltage error';
+            16#40, 16#41, 16#42:        msg := 'Temperature error';
+            16#50:                      msg := 'Device hardware error';
+            16#60, 16#61, 16#62, 16#63: msg := 'Device software error';
+            16#70:                      msg := 'Additional modules error';
+            16#80:                      msg := 'Monitoring error';
+            16#81:                      msg := 'Communication error';
+            16#82:                      msg := 'Protocol error';
+            16#83:                      msg := 'Torque control error';
+            16#84:                      msg := 'Velocity controller error';
+            16#85:                      msg := 'Position controller error';
+            16#86:                      msg := 'Movement failed';
+            16#87:                      msg := 'Sync controller error';
+            16#90:                      msg := 'External error';
+            16#F0:                      msg := 'Additional functions error';
+            16#FF:                      msg := CONCAT('Device specific error (0x',
+                            CONCAT(WORD_TO_HEXSTR(in := nErrorId, iPrecision := 4, bLoCase := 0),
+                              ')'));
+            ELSE
+                msg := 'Unknown MCS2 error code';
+        END_CASE
+END_CASE
+
+F_MCS2ErrorCodeLookup := msg;]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

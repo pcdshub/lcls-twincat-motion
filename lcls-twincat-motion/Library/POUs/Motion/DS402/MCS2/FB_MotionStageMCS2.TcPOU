@@ -82,6 +82,13 @@ VAR
     bRecentEnPosLagStatus    : BOOL;
 
     {attribute 'hide'}
+    bLagClearPending         : BOOL;
+    {attribute 'hide'}
+    tonLagClearTimeout       : TON;
+    {attribute 'hide'}
+    rtMcWriteDone            : R_TRIG;
+
+    {attribute 'hide'}
     bReset                   : BOOL;
     bFault : BOOL := FALSE;
     {attribute 'hide'}
@@ -110,6 +117,10 @@ VAR
     rtHaltEdge : R_TRIG;
     {attribute 'hide'}
     rtStepCmdShortcut		 : R_TRIG;
+    {attribute 'hide'}
+    rtStepFwdCmdShortcut	 : R_TRIG;
+    {attribute 'hide'}
+    rtStepRevCmdShortcut	 : R_TRIG;
     {attribute 'hide'}
     rtCalibrateCmdShortcut	 : R_TRIG;
     {attribute 'hide'}
@@ -173,11 +184,36 @@ VAR CONSTANT
     nChanLogicalScaleOffsetBase  : WORD := 16#2008;
     {attribute 'hide'}
     nChanLogicalScaleInvBase     : WORD := 16#2009;
+    {attribute 'hide'}
+    nChanChannelTempBase         : WORD := 16#2026;
+    {attribute 'hide'}
+    nChanMovementTypeBase        : WORD := 16#2003;
+    {attribute 'hide'}
+    nChanBaseUnitBase            : WORD := 16#2005;
+    {attribute 'hide'}
+    nChanBaseResolutionBase      : WORD := 16#2006;
+    {attribute 'hide'}
+    nChanDistCodeInvBase         : WORD := 16#2029;
+    {attribute 'hide'}
+    nChanPositionerCtrlOptBase   : WORD := 16#2027;
+    {attribute 'hide'}
+    nChanActuatorModeBase        : WORD := 16#2028;
+    {attribute 'hide'}
+    nChanMotorLoadProtBase       : WORD := 16#202B;
+    {attribute 'hide'}
+    nChanDiagClfBase             : WORD := 16#202A;
+    // Held as constants so the retract check below cannot drift from the text posted.
+    {attribute 'hide'}
+    sMsgPosLimit                 : STRING := 'Cannot move past positive limit.';
+    {attribute 'hide'}
+    sMsgNegLimit                 : STRING := 'Cannot move past Negative limit.';
 END_VAR
 
 VAR PERSISTENT
     bSaved                   : BOOL;
     fSavedPosition           : LREAL;
+    bLastPositiveDirection   : BOOL;
+    bLastNegativeDirection   : BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[IF NOT __ISVALIDREF(stMotionStage)
@@ -202,6 +238,8 @@ END_IF
 rtMoveCmdShortcut    (CLK := stMotionStage.bMoveCmd);
 rtHomeCmdShortcut    (CLK := stMotionStage.bHomeCmd);
 rtStepCmdShortcut    (CLK := stChanParams.bStepMoveCmd);
+rtStepFwdCmdShortcut (CLK := stChanParams.bStepForwardCmd);
+rtStepRevCmdShortcut (CLK := stChanParams.bStepReverseCmd);
 rtCalibrateCmdShortcut(CLK := stChanParams.bCalibrationCmd);
 
 IF rtMoveCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
@@ -216,11 +254,31 @@ ELSIF rtStepCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     bEnPosLag              := bRecentEnPosLagStatus;
     fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
 
+ELSIF rtStepFwdCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    // Forward jog: drive the step count positive, then step
+    stChanParams.nChanStep := ABS(stChanParams.nChanStep);
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
+    bEnPosLag              := bRecentEnPosLagStatus;
+    fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+
+ELSIF rtStepRevCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
+    // Reverse jog: drive the step count negative, then step
+    stChanParams.nChanStep := -ABS(stChanParams.nChanStep);
+    stMotionStage.bExecute := TRUE;
+    stMotionStage.nCommand := E_EpicsMotorCmd.JOG;
+    bEnPosLag              := bRecentEnPosLagStatus;
+    fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+
 ELSIF rtCalibrateCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := TRUE;
     stMotionStage.nCommand := E_EpicsMotorCmd.CALIBRATE;
-    bEnPosLag              := bRecentEnPosLagStatus;
-    fParameterValue        := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+    bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
+    // Trigger WriteParameterNC to disable position lag during calibration.
+    bEnPosLag             := bRecentEnPosLagStatus;
+    // Write 0 = disable position lag monitoring.
+    fParameterValue       := 0;
+    bLagClearPending      := bRecentEnPosLagStatus;
 
 ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.nCommand := E_EpicsMotorCmd.HOME;
@@ -228,13 +286,12 @@ ELSIF rtHomeCmdShortcut.Q AND NOT stMotionStage.bExecute THEN
     stMotionStage.bExecute := (stChanParams.eHomeMode = E_MCS2HomeMethod.AutoMethod)
                               OR (stChanParams.eHomeMode = E_MCS2HomeMethod.CurrentPositionMethod);
 
-    IF stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0 THEN
-        bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
-        // trigger WriteParameterNC to disable pos lag during homing
-        bEnPosLag             := TRUE;
-        // write 0 = disable position lag monitoring
-        fParameterValue       := 0;
-    END_IF
+    bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
+    // Trigger WriteParameterNC to disable position lag during homing.
+    bEnPosLag             := bRecentEnPosLagStatus;
+    // Write 0 = disable position lag monitoring.
+    fParameterValue       := 0;
+    bLagClearPending      := bRecentEnPosLagStatus;
 END_IF
 
 // Main execute edge: covers both shortcut and direct bExecute paths
@@ -251,9 +308,18 @@ IF rtUserExec.Q THEN
     IF NOT rtMoveCmdShortcut.Q
         AND NOT rtStepCmdShortcut.Q
         AND NOT rtCalibrateCmdShortcut.Q
+        AND NOT rtHomeCmdShortcut.Q
     THEN
-        bEnPosLag       := bRecentEnPosLagStatus;
-        fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+        IF stMotionStage.nCommand = E_EpicsMotorCmd.HOME
+            OR stMotionStage.nCommand = E_EpicsMotorCmd.CALIBRATE THEN
+            bRecentEnPosLagStatus := stMotionStage.stAxisParameters.bCtrlEnablePosDiffControl.0;
+            bEnPosLag             := bRecentEnPosLagStatus;
+            fParameterValue       := 0;
+            bLagClearPending      := bRecentEnPosLagStatus;
+        ELSE
+            bEnPosLag       := bRecentEnPosLagStatus;
+            fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+        END_IF
     END_IF
 
     IF NOT stMotionStage.bHomeCmd
@@ -360,16 +426,20 @@ IF stMotionStage.bReset THEN
     stMotionStage.nErrorId          := 0;
     stMotionStage.sErrorMessage     := '';
     stMotionStage.sCustomErrorMessage := '';
+    stChanParams.nMCS2ErrorCode     := 0;
+    stChanParams.sMCS2ErrorMessage   := '';
     fbStepMode.Reset();
     fbhome.Reset();
     bReset := TRUE;
+    bLagClearPending := FALSE;
     IF fbDriveManager.bDS402Manual THEN
         stDS402Drive.nDriveControl.7 := TRUE;
     END_IF
     stMotionStage.bReset := FALSE;
 END_IF
 
-// Stop/halt detection
+// Stop/halt detection. bHalt is the user-stop channel only: execute dropped
+// mid-move. Limit reaction is handled by the direction enables, not from here.
 ftExec(CLK := stMotionStage.bExecute);
 bHalt := ftExec.Q AND stMotionStage.bBusy;
 rtHaltEdge(CLK := bHalt);
@@ -384,6 +454,16 @@ WriteParameterNC(
     ParameterNumber := MC_AxisParameter.AxisEnPositionLagMonitoring,
     ParameterValue  := fParameterValue
 );
+
+// Hold the open-loop home/calibrate move until the NC position-lag disable actually
+// lands, so the drive's referencing move cannot trip a following error on residual lag
+// monitoring. Timeout caps the wait so a missing write cannot hang the routine.
+rtMcWriteDone(CLK := fbMcWriteParameter.Done);
+tonLagClearTimeout(IN := bLagClearPending, PT := T#500MS);
+IF bLagClearPending
+   AND ((fParameterValue = 0 AND rtMcWriteDone.Q) OR tonLagClearTimeout.Q) THEN
+    bLagClearPending := FALSE;
+END_IF
 
 bParamsEnable := stMotionStage.bAxisParamsInit AND stChanParams.bEnableHardwareOps;
 
@@ -412,31 +492,35 @@ CASE nCommandLocal OF
 
     E_MCS2OpMode.HOME:
         (*DS402 Manual Homing*)
+        // Gate on the drive manager confirming HOME mode is active and operational.
         fbhome(
-            bExecute := bExecHome AND fbWriteParameters.bParamsSet,
+            bExecute := bExecHome AND fbWriteParameters.bParamsSet AND NOT bLagClearPending
+                        AND fbDriveManager.bHomeModeEnabled,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_MCS2OpMode.STEP:
         fbStepMode(
-            bExecute       := bExecMove AND fbWriteParameters.bParamsSet,
+            bExecute       := bExecMove AND fbWriteParameters.bParamsSet
+                              AND fbDriveManager.bStepModeEnabled,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 
     E_MCS2OpMode.CALIBRATE:
         fbCalibrate(
-            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet,
+            bExecute	 := bExecMove AND fbWriteParameters.bParamsSet AND NOT bLagClearPending
+                          AND fbDriveManager.bCalibrationModeEnabled,
             stDS402Drive  := stDS402Drive,
             stMotionStage := stMotionStage
         );
 END_CASE
 
 stMotionStage.bBusy := fbMcMoveAbsolute.Busy
-                       OR stChanParams.stChannelState.bReferencing
+                       OR fbhome.bHomeMoveBusy
                        OR fbStepMode.bStepMoveBusy
-                       OR stChanParams.stChannelState.bCalibrating;
+                       OR fbCalibrate.bCalibrateMoveBusy;
 // Check done moving via user stop, limit hit, Target Position reached, or from homing.
 PostMoveChecks();
 // update encoder value and calibrated position
@@ -481,8 +565,10 @@ ELSIF fbMcReadParams.Error AND NOT stMotionStage.bBusy THEN
     stMotionStage.nErrorId := fbMcReadParams.ErrorID;
 ELSE
     IF stMotionStage.bBusy THEN
-        stMotionStage.sErrorMessage       := '';
-        stMotionStage.sCustomErrorMessage := '';
+        // Clear the display message during normal motion, but leave sCustomErrorMessage
+        // intact: Interlock may have just set it on this same cycle, and the NC error
+        // that latches bError will not be visible until the next cycle.
+        stMotionStage.sErrorMessage := '';
     END_IF
 END_IF
 
@@ -511,6 +597,8 @@ END_IF
 stMotionStage.bMoveCmd             := FALSE;
 stMotionStage.bHomeCmd             := FALSE;
 stChanParams.bStepMoveCmd   := FALSE;
+stChanParams.bStepForwardCmd := FALSE;
+stChanParams.bStepReverseCmd := FALSE;
 stChanParams.bCalibrationCmd := FALSE;
 ]]></ST>
     </Implementation>
@@ -603,40 +691,100 @@ VAR_INST
     bNegativeDirection  : BOOL;
     {attribute 'hide'}
     ftForwardEnabled    : F_TRIG;
-
     {attribute 'hide'}
     ftBackwardEnabled   : F_TRIG;
+    {attribute 'hide'}
+    bHitForwardLimit    : BOOL;
+    {attribute 'hide'}
+    bHitBackwardLimit   : BOOL;
+    {attribute 'hide'}
+    fCurrentPosition    : LREAL;
 END_VAR]]></Declaration>
       <Implementation>
-        <ST><![CDATA[// Positive or Negative direction
-bPositiveDirection:= stMotionStage.bBusy AND  stMotionStage.fPosDiff > 0;
-bNegativeDirection:= stMotionStage.bBusy AND  stMotionStage.fPosDiff < 0;
+        <ST><![CDATA[// Positive or Negative direction.
+// In step mode fPosDiff is unreliable for direction: fPosition is the stale NC setpoint
+// and fMeasuredPos is the live encoder, so their difference inverts as the motor moves.
+// Use the step count sign instead, which is set explicitly at command issue time.
+IF fbDriveManager.bStepModeEnabled THEN
+    bPositiveDirection := stMotionStage.bBusy AND stChanParams.nChanStep > 0;
+    bNegativeDirection := stMotionStage.bBusy AND stChanParams.nChanStep < 0;
+ELSE
+    bPositiveDirection := stMotionStage.bBusy AND stMotionStage.fPosDiff > 0;
+    bNegativeDirection := stMotionStage.bBusy AND stMotionStage.fPosDiff < 0;
+END_IF
 
-// For SmartAct MCS2 these limit are range and enstop limits. however a single bit in the status is used
-// bLimOverride  : act as an override after limit was hit to allow reverse movement
- stMotionStage.bLimitForwardEnable :=  bLimOverride OR NOT( bPositiveDirection AND stDS402Drive.stDriveStatus.InternalLimitActive );
- stMotionStage.bLimitBackwardEnable := bLimOverride OR NOT( bNegativeDirection AND stDS402Drive.stDriveStatus.InternalLimitActive );
-
-// use falling trigger to avoid spaming  sErrorMessage
-ftForwardEnabled(CLK:= stMotionStage.bLimitForwardEnable);
-ftBackwardEnabled(CLK:= stMotionStage.bLimitBackwardEnable);
-
-IF  NOT fbhome.bHomeMoveBusy AND ftForwardEnabled.Q THEN
-    // Not an error, just a warning
-     stMotionStage.sCustomErrorMessage:='Cannot move past positive limit.';
-    IF NOT fbDriveManager.bStepModeEnabled THEN
-        bLimOverride := TRUE;
-        bHalt := TRUE;
+// If the drive starts limited and no direction history is available, infer the
+// blocked side from the nearest configured software range limit. The aggregate
+// InternalLimitActive bit does not identify the side by itself.
+fCurrentPosition := DINT_TO_LREAL(stMotionStage.nRawEncoderDINT)
+                    * MAX(stMotionStage.stAxisParameters.fEncScaleFactorInternal,
+                          stChanParams.fScalingFactor);
+IF stDS402Drive.stDriveStatus.InternalLimitActive THEN
+    IF NOT bLastPositiveDirection AND NOT bLastNegativeDirection THEN
+        IF fbReadChanParams.bAllReadsComplete THEN
+            IF stChanParams.nSoftLimMax > stChanParams.nSoftLimMin THEN
+                IF ABS(fCurrentPosition - stChanParams.nSoftLimMin)
+                   < ABS(stChanParams.nSoftLimMax - fCurrentPosition) THEN
+                    bLastNegativeDirection := TRUE;
+                ELSE
+                    bLastPositiveDirection := TRUE;
+                END_IF
+            END_IF
+        END_IF
     END_IF
 END_IF
 
-IF NOT fbhome.bHomeMoveBusy AND ftBackwardEnabled.Q THEN
-    // Not an error, just a warning
-     stMotionStage.sCustomErrorMessage:='Cannot move past Negative limit.';
-    IF NOT fbDriveManager.bStepModeEnabled THEN
-        bLimOverride := TRUE;
-        bHalt := TRUE;
+// Preserve the last commanded direction across the stop and PLC restart. The
+// drive exposes one aggregate limit bit, so this retained context identifies
+// which direction should remain blocked during recovery.
+IF NOT stDS402Drive.stDriveStatus.InternalLimitActive
+    OR (NOT bHitForwardLimit AND NOT bHitBackwardLimit) THEN
+    IF bPositiveDirection THEN
+        bLastPositiveDirection := TRUE;
+        bLastNegativeDirection := FALSE;
+    ELSIF bNegativeDirection THEN
+        bLastPositiveDirection := FALSE;
+        bLastNegativeDirection := TRUE;
     END_IF
+END_IF
+
+// Latch which physical limit was hit; clear once the drive is no longer reporting a limit.
+// A single InternalLimitActive bit covers both directions, so direction at the time of
+// the hit is used to determine which enable to hold off.
+bHitForwardLimit  S= stDS402Drive.stDriveStatus.InternalLimitActive
+                   AND (bPositiveDirection OR bLastPositiveDirection);
+bHitBackwardLimit S= stDS402Drive.stDriveStatus.InternalLimitActive
+                    AND (bNegativeDirection OR bLastNegativeDirection);
+bHitForwardLimit  R= NOT stDS402Drive.stDriveStatus.InternalLimitActive;
+bHitBackwardLimit R= NOT stDS402Drive.stDriveStatus.InternalLimitActive;
+
+// An active limit with no known direction disables both directions. Once the
+// hit direction is known, only that direction is disabled for reverse recovery.
+stMotionStage.bLimitForwardEnable := NOT stDS402Drive.stDriveStatus.InternalLimitActive
+                                     OR (bHitBackwardLimit AND NOT bHitForwardLimit);
+stMotionStage.bLimitBackwardEnable := NOT stDS402Drive.stDriveStatus.InternalLimitActive
+                                      OR (bHitForwardLimit AND NOT bHitBackwardLimit);
+
+// use falling trigger to avoid spamming sErrorMessage
+ftForwardEnabled(CLK := stMotionStage.bLimitForwardEnable);
+ftBackwardEnabled(CLK := stMotionStage.bLimitBackwardEnable);
+
+// A limit hit is the lowest priority message. Never post one over a latched fault,
+// and retract our own once the drive releases the limit so a stale warning cannot
+// later be promoted into sErrorMessage. The drive stops the positioner itself and
+// SetEnables drops the offending direction, so no halt is requested here.
+IF NOT stMotionStage.bError AND NOT fbhome.bHomeMoveBusy THEN
+    IF bHitForwardLimit AND ftForwardEnabled.Q THEN
+        stMotionStage.sCustomErrorMessage := sMsgPosLimit;
+    ELSIF bHitBackwardLimit AND ftBackwardEnabled.Q THEN
+        stMotionStage.sCustomErrorMessage := sMsgNegLimit;
+    END_IF
+END_IF
+
+IF NOT bHitForwardLimit AND NOT bHitBackwardLimit
+   AND (stMotionStage.sCustomErrorMessage = sMsgPosLimit
+        OR stMotionStage.sCustomErrorMessage = sMsgNegLimit) THEN
+    stMotionStage.sCustomErrorMessage := '';
 END_IF
 
 IF NOT  stMotionStage.bError AND  stMotionStage.bExecute AND NOT  stMotionStage.bUserEnable THEN
@@ -731,6 +879,15 @@ stChanParams.nChannelTypeIdx          	:= nChannelTypeBase       		+ ((eModule-1
 stChanParams.nChanStateIdx         		:= nChannelStateBase      		+ ((eModule-1) * nChanOfsBase);
 stChanParams.nChanLogicalScaleOfsIdx   	:= nChanLogicalScaleOffsetBase	+ ((eModule-1) * nChanOfsBase);
 stChanParams.nChanLogicalScaleInvIdx    := nChanLogicalScaleInvBase   	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanChannelTempIdx        := nChanChannelTempBase       	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanMovementTypeIdx       := nChanMovementTypeBase      	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanBaseUnitIdx           := nChanBaseUnitBase          	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanBaseResolutionIdx     := nChanBaseResolutionBase    	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanDistCodeInvIdx        := nChanDistCodeInvBase       	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanPositionerCtrlOptIdx  := nChanPositionerCtrlOptBase 	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanActuatorModeIdx       := nChanActuatorModeBase      	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanMotorLoadProtIdx      := nChanMotorLoadProtBase     	+ ((eModule-1) * nChanOfsBase);
+stChanParams.nChanDiagClfIdx            := nChanDiagClfBase           	+ ((eModule-1) * nChanOfsBase);
 bSystemInit := TRUE;
 ]]></ST>
       </Implementation>
@@ -779,9 +936,15 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
         ELSIF rtHomeDone.Q THEN
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.HomeDone;
+            // Homing runs in DS402 manual HOME mode. Request closed-loop so the
+            // drive manager switches the drive back to CSP now that homing is done.
+            stChanParams.eOpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
         ELSIF rtCalibrationDone.Q THEN
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.CalibrationDone;
+            // Calibration runs in DS402 manual CALIBRATE mode. Request closed-loop so
+            // the drive manager switches the drive back to CSP now that calibration is done.
+            stChanParams.eOpModeReq := E_MCS2OpModeReq.CLOSED_LOOP;
         ELSIF rtResetDone.Q THEN
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.ResetDone;
@@ -798,10 +961,14 @@ IF rtAbortedHome.Q OR rtAbortedStepMove.Q OR rtAbortedCalibration.Q
             stMotionStage.bDone := TRUE;
             eDoneCause := E_MoveDoneCause.AbortedCalibration;
         END_IF
-        IF fbDriveManager.bDS402Manual THEN
+        IF rtHomeDone.Q OR rtAbortedHome.Q OR rtCalibrationDone.Q OR rtAbortedCalibration.Q THEN
+            bEnPosLag       := bRecentEnPosLagStatus;
+            fParameterValue := BOOL_TO_LREAL(bRecentEnPosLagStatus);
+        END_IF
+        IF fbDriveManager.bDS402Manual
+           AND NOT (rtHomeDone.Q OR rtAbortedHome.Q OR rtCalibrationDone.Q OR rtAbortedCalibration.Q) THEN
             bEnPosLag := FALSE;
         END_IF
-        bLimOverride := FALSE;
         IF (stMotionStage.nEnableMode = E_StageEnableMode.DURING_MOTION) THEN
             bPositionHold := TRUE;
             tonHoldTime.IN := TRUE;
@@ -844,7 +1011,10 @@ END_IF
 
 ftEnableFallEdge(CLK := stMotionStage.bEnable);
 IF ftEnableFallEdge.Q THEN
-    IF fbDriveManager.bDS402Manual THEN
+    // Only power off in manual if we're staying in manual. During a switch back
+    // to CSP, let the NC ramp the control word down so it isn't disabled under it.
+    IF fbDriveManager.bDS402Manual
+       AND stChanParams.eOpModeReq <> E_MCS2OpModeReq.CLOSED_LOOP THEN
         stDS402Drive.nDriveControl := 6; // Manual mode power off
     END_IF
 END_IF]]></ST>

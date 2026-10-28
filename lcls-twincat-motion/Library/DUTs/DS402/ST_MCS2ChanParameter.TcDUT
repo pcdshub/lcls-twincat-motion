@@ -4,42 +4,42 @@
     <Declaration><![CDATA[TYPE ST_MCS2ChanParameter :
 STRUCT
     {attribute 'pytmc' := '
-        pv: nChanStep
+        pv: STEP_COUNT
         io: io
         field: DESC Open Loop Step Count
     '}
     nChanStep	: DINT := 500;
 
     {attribute 'pytmc' := '
-        pv: nChanStepEgu
+        pv: STEP_EGU
         io: io
         field: DESC Step scale factor
     '}
     nChanStepEgu	: LREAL := 827.15;
 
     {attribute 'pytmc' := '
-        pv: nChanStepFreq
+        pv: STEP_FREQ
         io: io
         field: DESC Step Frequency
     '}
     nChanStepFreq	: UINT := 500;
 
     {attribute 'pytmc' := '
-        pv: nChanStepAmp
+        pv: STEP_VOLTAGE
         io: io
         field: DESC Step Amplitude
     '}
     nChanStepAmp	: UINT := 50;
 
     {attribute 'pytmc' := '
-        pv: nHoldTime
+        pv: HOLD_TIME
         io: io
         field: DESC Close loop hold time
     '}
     nHoldTime	: UDINT := 30000;
 
     {attribute 'pytmc' := '
-        pv: bStepMoveCmd
+        pv: STEP_MOVE
         io: io
         field: ZNAM DISABLE
         field: ONAM ENABLE
@@ -48,92 +48,112 @@ STRUCT
     bStepMoveCmd	: BOOL;
 
     {attribute 'pytmc' := '
-        pv: nMaxCloseLoopFreq
+        pv: STEP_FORWARD
+        io: io
+        field: DESC Jog one step count forward
+    '}
+    bStepForwardCmd	: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: STEP_REVERSE
+        io: io
+        field: DESC Jog one step count backward
+    '}
+    bStepReverseCmd	: BOOL;
+
+    {attribute 'pytmc' := '
+        pv: MAX_CLF
         io: io
         field: DESC Max Close Loop Freq
     '}
     nMaxCloseLoopFreq     : UDINT;
 
     {attribute 'pytmc' := '
-        pv: nPositionerType
+        pv: PTYPE
         io: io
         field: DESC Positioner Type
     '}
     nPositionerType	: UDINT;
 
+    // Writable command pushed to 0x2004; the reader reads the drive value back
+    // into it, so io:io serves both command and read-back on one symbol.
     {attribute 'pytmc' := '
-        pv: nCalibrationOpt
+        pv: CAL_OPT
         io: io
         field: DESC Calibration Options
     '}
     nCalibrationOpt       : DWORD;
 
     {attribute 'pytmc' := '
-        pv: nSensorPowerMode
+        pv: SENSOR_MODE
         io: io
         field: DESC Sensor Power Mode
     '}
     nSensorPowerMode      : UDINT;
 
+    // Writable command pushed to 0x200B; the reader reads the drive value back
+    // into it, so io:io serves both command and read-back on one symbol.
     {attribute 'pytmc' := '
-        pv: nReferencingOpt
+        pv: REF_OPT
         io: io
         field: DESC Referencing Options
     '}
     nReferencingOpt       	   : DWORD;
 
     {attribute 'pytmc' := '
-        pv: nReferenceType
+        pv: REF_TYPE
         io: i
         field: DESC Reference Type
     '}
     nReferenceType 	: UDINT;
 
     {attribute 'pytmc' := '
-        pv: nSafeDir
+        pv: SAFE_DIR
         io: io
-        field: DESC Safe Direction
+        field: ZNAM FORWARD
+        field: ONAM BACKWARD
+        field: DESC Safe direction (0x200C, R(W)*: written in Pre-Op)
     '}
     nSafeDir	: BOOL;
 
     {attribute 'pytmc' := '
-        pv: nMotorLoad
+        pv: MOTOR_LOAD
         io: i
         field: DESC Motor Load
     '}
     nMotorLoad	: USINT;
 
     {attribute 'pytmc' := '
-        pv: nChannelType
+        pv: CHAN_TYPE
         io: io
         field: DESC Channel Type
     '}
     nChannelType          : UDINT;
 
     {attribute 'pytmc' := '
-        pv: nLogicalScaleOfs
+        pv: LSCO
         io: io
         field: DESC Logical Scale Offset
     '}
     nLogicalScaleOffset   : UDINT; // should LINT
 
     {attribute 'pytmc' := '
-        pv: nLogicalScaleInv
+        pv: LSCI
         io: io
         field: DESC Logical Scale Inversion
     '}
     nLogicalScaleInv  	 : BOOL;
 
     {attribute 'pytmc' := '
-        pv: bCalibrationCmd
+        pv: DO_CALIB
         io: io
-        field: DESC Logical Scale Offset
+        field: DESC Calibrate command
     '}
     bCalibrationCmd : BOOL;
 
     // Desired drive operating mode (source of truth). Default is closed-loop (CSP) absolute motion.
     {attribute 'pytmc' := '
-        pv: eOpModeReq
+        pv: OPMODE_REQ
         io: o
         field: DESC DS402 operation mode request (default closed loop)
     '}
@@ -147,11 +167,168 @@ STRUCT
     stChannelState        : ST_ChannelState;
 
     {attribute 'pytmc' := '
-        pv: eHomeMode
+        pv: HOME_MODE
         io: i
         field: DESC Vendor Homing Modes.
     '}
     eHomeMode			  : E_MCS2HomeMethod := E_MCS2HomeMethod.AutoMethod;
+
+    {attribute 'pytmc' := '
+        pv: CHANTEMP
+        io: i
+        field: DESC Channel Temperature
+    '}
+    nChannelTemp          : INT;
+
+    {attribute 'pytmc' := '
+        pv: MOVE_TYPE
+        io: i
+        field: DESC Movement Type
+    '}
+    nMovementType         : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: BASE_UNIT
+        io: i
+        field: DESC Base Unit
+    '}
+    nBaseUnit             : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: BASE_RES
+        io: i
+        field: DESC Base Resolution
+    '}
+    nBaseResolution       : DINT;
+
+    {attribute 'pytmc' := '
+        pv: DCIN
+        io: io
+        field: DESC Distance Code Inverted
+    '}
+    nDistCodeInv          : BOOL;
+
+    {attribute 'pytmc' := '
+        pv: POS_CTRL_OPT
+        io: io
+        field: DESC Positioner Control Options
+    '}
+    nPositionerCtrlOpt    : DWORD;
+
+    {attribute 'pytmc' := '
+        pv: ACT_MODE
+        io: io
+        field: DESC Actuator Mode
+    '}
+    nActuatorMode         : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: MOTOR_LOAD_PROT
+        io: io
+        field: DESC Motor Load Protection Threshold
+    '}
+    nMotorLoadProt        : USINT;
+
+    {attribute 'pytmc' := '
+        pv: DIAG_CLF_MAX
+        io: i
+        field: DESC Diagnostic Closed Loop Frequency (max)
+    '}
+    nDiagClfMax           : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: DIAG_CLF_AVG
+        io: i
+        field: DESC Diagnostic Closed Loop Frequency (avg)
+    '}
+    nDiagClfAvg           : UDINT;
+
+    {attribute 'pytmc' := '
+        pv: MCS2_ERR
+        io: i
+        field: DESC Last MCS2 drive error code (0x603F)
+    '}
+    nMCS2ErrorCode        : UINT;
+
+    {attribute 'pytmc' := '
+        pv: MCS2_ERR_MSG
+        io: i
+        field: DESC Decoded MCS2 drive error
+    '}
+    sMCS2ErrorMessage     : STRING;
+
+    // Read-only decode of the drive's actual Referencing Options (REF_OPT,
+    // 0x200B) into individual flags for verification. Command via REF_OPT.
+    {attribute 'pytmc' := '
+        pv: REF_OPT:START_DIR_BACK
+        io: i
+        field: DESC Ref start direction backward (bit0)
+    '}
+    bRefStartDirBackward  : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:REVERSE_DIR
+        io: i
+        field: DESC Ref reverse dir after 1st mark, multi-mark (bit1)
+    '}
+    bRefReverseDir        : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:AUTO_ZERO
+        io: i
+        field: DESC Ref auto-zero on reference found (bit2)
+    '}
+    bRefAutoZero          : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:ABORT_ENDSTOP
+        io: i
+        field: DESC Ref abort on end stop (bit3)
+    '}
+    bRefAbortOnEndStop    : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:CONT_ON_REF
+        io: i
+        field: DESC Ref continue on reference found (bit4)
+    '}
+    bRefContinueOnRefFound: BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:STOP_ON_REF
+        io: i
+        field: DESC Ref stop on reference found (bit5)
+    '}
+    bRefStopOnRefFound    : BOOL;
+    {attribute 'pytmc' := '
+        pv: REF_OPT:INVALIDATE
+        io: i
+        field: DESC Ref invalidate is-referenced flag (bit24)
+    '}
+    bRefInvalidate        : BOOL;
+
+    // Read-only decode of the drive's actual Calibration Options (CAL_OPT,
+    // 0x2004) into individual flags for verification. Command via CAL_OPT.
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:DIR_BACK
+        io: i
+        field: DESC Calib move direction backward (bit0)
+    '}
+    bCalDirBackward       : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:DETECT_DCI
+        io: i
+        field: DESC Calib detect distance code inversion (bit1)
+    '}
+    bCalDetectDistCodeInv : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:ADV_SENSOR
+        io: i
+        field: DESC Calib advanced sensor correction (bit2)
+    '}
+    bCalAdvSensorCorr     : BOOL;
+    {attribute 'pytmc' := '
+        pv: CAL_OPT:LIM_TRAVEL
+        io: i
+        field: DESC Calib limited travel range, >1 endstop (bit8)
+    '}
+    bCalLimitedTravelRange: BOOL;
+
     {attribute 'hide'}
     nHomeVeloFast         : UDINT;
     {attribute 'hide'}
@@ -218,6 +395,24 @@ STRUCT
     nChanLogicalScaleOfsIdx  : WORD;
     {attribute 'hide'}
     nChanLogicalScaleInvIdx  : WORD;
+    {attribute 'hide'}
+    nChanChannelTempIdx      : WORD;
+    {attribute 'hide'}
+    nChanMovementTypeIdx     : WORD;
+    {attribute 'hide'}
+    nChanBaseUnitIdx         : WORD;
+    {attribute 'hide'}
+    nChanBaseResolutionIdx   : WORD;
+    {attribute 'hide'}
+    nChanDistCodeInvIdx      : WORD;
+    {attribute 'hide'}
+    nChanPositionerCtrlOptIdx: WORD;
+    {attribute 'hide'}
+    nChanActuatorModeIdx     : WORD;
+    {attribute 'hide'}
+    nChanMotorLoadProtIdx    : WORD;
+    {attribute 'hide'}
+    nChanDiagClfIdx          : WORD;
     fPosition : LREAL;
     bStageReady : BOOL;
     // Temporary workaround: Avoid declaring mc_power externally from FB_MotionStage
